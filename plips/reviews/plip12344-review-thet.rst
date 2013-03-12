@@ -10,9 +10,12 @@ plone.app.contenttypes git rev: eed52a2f8327b065f6aaafa1553e141d9bfe4d28
 
 Steps
 =====
+
 - Used plone.app.contenttypes buildout from:
-  git@github.com:plone/plone.app.contenttypes.git
-- Ran test-plone-4.3.x.cfg
+  ``git@github.com:plone/plone.app.contenttypes.git``
+
+- Ran ``test-plone-4.3.x.cfg``
+
 - Ran ``./bin/test``. All Tests pass.
 
 
@@ -108,5 +111,6 @@ Review TODOs
 ============
 
 - Check test coverage and plausibility of tests.
+
 - Check Migrations.
 
