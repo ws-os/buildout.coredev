@@ -14,6 +14,7 @@ To test your changes locally, re-run buildout and then::
 Sphinx will poop out a directory that you can put in your browser to validate. For example: ``file:///home/user/buildout.coredev/docs/build/index.html``
 
 Please make sure to validate all warnings and errors before committing to make sure the documents remain valid. Once everything is ready to go, commit and push changes.
+Note that Sphinx may have to be run more than once if there's TOC's involved.
 
 Cherry pick commits on the latest branch to the currently released branch (as of this writing ``4.3``) if these changes apply to that version (you can get the SHA hash from git log)::
 
