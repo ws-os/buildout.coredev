@@ -1,0 +1,26 @@
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2014-11-12T02:42:06+01:00
+Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/fd76f3127627fdac82e80162dc63a23e163a25d3
+
+Last test mr.roboto
+
+Files changed:
+M README.rst
+
+diff --git a/README.rst b/README.rst
+index 7d9d1f3..f480b9e 100644
+--- a/README.rst
++++ b/README.rst
+@@ -11,7 +11,7 @@ many other features. Available protocols: FTP, XMLRPC, HTTP and WEBDAV
+ Turn it into a distributed application system by installing ZEO.
+ 
+ Plone shares some of the qualities of Livelink, Interwoven and Documentum. It
+-aims to be *the* open source out-of-the-box publishing system. 
++aims to be *the* open source out-of-the-box publishing system.
+ 
+ Installing Plone
+ -----------------
+
+
