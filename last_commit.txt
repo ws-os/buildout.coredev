@@ -1,28 +1,42 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-12T22:56:01-08:00
-Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/mockup/commit/dbb195998be523672c1e50575a37aefc5ce2cf71
+Date: 2014-11-13T10:04:56+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/mockup/commit/6c791636806ae570eb53bee582ba903fa7fbb5b5
 
-try switching to a different saucelabs account
+Restore original credentials and upgrade karma-sauce-launcher
 
 Files changed:
 M .travis.yml
+M mockup/package.json
 
 diff --git a/.travis.yml b/.travis.yml
-index 2a8760e..25c3b51 100644
+index 25c3b51..2a8760e 100644
 --- a/.travis.yml
 +++ b/.travis.yml
 @@ -4,8 +4,8 @@ node_js:
  env:
    global:
      - secure: "fPRKgxcbSXyiLqkUjAjPkn5eGBqMqf6c5haTZ9x76sDl1792nDyiL2FXSpiv2s8PeOqMbWgcXly0r+CLXypYkWba9nIxb4bhvtXyDoYAaoBV0lG1NbBakuOwqW/u60WpPJS1qTqmEUSEbSxdntqk7HF1yG6MdMi3PdubxMyw9h0="
--    - secure: "kC1ondeLedcnmrpI5McHHjd3AAl0piErC3iCy8hwdJXSkanG36XF0nM3VoiudhJX1c0iTD0uod3cglChRq7stmYsHLlCvWJAf/19+ce6wG7MBw2M31qRRcktIYEPKlm3iMRWy+WwWOivTrjVwWG3/mcCdyeDTvSFFSjtMSqmLOg="
--    - secure: "CyxPivnm/mpBX5Def/VlFHthxjMTjlThgd07tiGvd0vtDG1PPNzD0Y0q+4AmBilWZeIu1O1bP1vYMgMQ0rvcXr5K7+wZqoyss+ynRzMzdGLYQSU73zN5THKNeClioR90stsTr9GxX43VvgEIX9W3Zx1eSnmzT+ddnLYL94bAP9Q="
-+    - secure: VFB17+mogAMLzk1RkwQo4qY8jgc8tD8lUWV6j2xtqDBG6gdkUl+mhuUm8ibbD910/kjQJc47FAHiZi4xrRW1vDmOizw7K48Fq+V180bf+2fAvAJNakI6Z4uuPcA7VnuRYoNfUPXAmWgtvMzgMAF+sXeV+jhgha6Kx02xj39LjD0=
-+    - secure: lLMAD0VmG1/SpfuJKwOT9xn4lV1pUq71WszWjpF8TgxJfIgRBYLp9QkRTXQ6pfTwXTL22YSsc8N5yhJsALKV2V57Og6Pfta6jQqRIzJU6maIZBBLqW6LQThuazF6tmEcTpty1j1LdFf3tuNVchsbsii2eRhXNdIPXLjBliMJkuo=
+-    - secure: VFB17+mogAMLzk1RkwQo4qY8jgc8tD8lUWV6j2xtqDBG6gdkUl+mhuUm8ibbD910/kjQJc47FAHiZi4xrRW1vDmOizw7K48Fq+V180bf+2fAvAJNakI6Z4uuPcA7VnuRYoNfUPXAmWgtvMzgMAF+sXeV+jhgha6Kx02xj39LjD0=
+-    - secure: lLMAD0VmG1/SpfuJKwOT9xn4lV1pUq71WszWjpF8TgxJfIgRBYLp9QkRTXQ6pfTwXTL22YSsc8N5yhJsALKV2V57Og6Pfta6jQqRIzJU6maIZBBLqW6LQThuazF6tmEcTpty1j1LdFf3tuNVchsbsii2eRhXNdIPXLjBliMJkuo=
++    - secure: "kC1ondeLedcnmrpI5McHHjd3AAl0piErC3iCy8hwdJXSkanG36XF0nM3VoiudhJX1c0iTD0uod3cglChRq7stmYsHLlCvWJAf/19+ce6wG7MBw2M31qRRcktIYEPKlm3iMRWy+WwWOivTrjVwWG3/mcCdyeDTvSFFSjtMSqmLOg="
++    - secure: "CyxPivnm/mpBX5Def/VlFHthxjMTjlThgd07tiGvd0vtDG1PPNzD0Y0q+4AmBilWZeIu1O1bP1vYMgMQ0rvcXr5K7+wZqoyss+ynRzMzdGLYQSU73zN5THKNeClioR90stsTr9GxX43VvgEIX9W3Zx1eSnmzT+ddnLYL94bAP9Q="
      - SAUCE_CONNECT_READY_FILE=/tmp/sauce-connect-ready
    matrix:
      - BROWSERS="SL_Chrome,SL_Firefox"
+diff --git a/mockup/package.json b/mockup/package.json
+index 1bc72a6..62c5682 100644
+--- a/mockup/package.json
++++ b/mockup/package.json
+@@ -24,7 +24,7 @@
+     "karma-mocha": "~0.1.3",
+     "karma-phantomjs-launcher": "~0.1.4",
+     "karma-requirejs": "~0.2.1",
+-    "karma-sauce-launcher": "~0.2.7",
++    "karma-sauce-launcher": "~0.2.10",
+     "karma-script-launcher": "~0.1.0",
+     "lcov-result-merger": "~0.0.2",
+     "less": "~1.7.0",
 
 
