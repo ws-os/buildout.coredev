@@ -1,54 +1,41 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-12T23:42:29-06:00
+Date: 2014-11-12T23:45:26-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/1e77c14a7569e07828dacf92b02ad2c5a648e38f
+Commit: https://github.com/plone/mockup/commit/e4418b9e88cd4c89c4aadf38f43383d6f19b0759
 
-"remove" error logging is not actually an error
+oops
 
 Files changed:
 M mockup/patterns/resourceregistry/js/registry.js
-M mockup/patterns/structure/less/pattern.structure.less
 
 diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index e89d3e0..51bcb1b 100644
+index 51bcb1b..6c37583 100644
 --- a/mockup/patterns/resourceregistry/js/registry.js
 +++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -254,10 +254,13 @@ define([
+@@ -254,13 +254,12 @@ define([
        });
        var iframe = $iframe[0];
        var win = iframe.contentWindow || iframe;
-+
-+      // special error reporting
+-
+-      // special error reporting
        win.lessErrorReporting = function(what, error, href){
--        self.addResult('less compilation error on file ' + href + ': ' + error);
-+        if(what !== 'remove'){
-+          self.addResult('less compilation error on file ' + href + ': ' + error);
-+        }
+-        if(what !== 'remove'){
++        if(what !== "remove"){
+           self.addResult('less compilation error on file ' + href + ': ' + error);
+         }
        };
--      var head = $iframe.contents().find('head')[0];
++      var head = $iframe.contents().find('head')[0];
        _.each(config.less, function(less){
          var link = document.createElement('link');
          link.setAttribute('rel', 'stylesheet/less');
-@@ -265,6 +268,7 @@ define([
+@@ -268,7 +267,6 @@ define([
          link.setAttribute('href', less);
          head.appendChild(link); 
        });
-+
+-
        var script = document.createElement('script');
        script.setAttribute('type', 'text/javascript');
        script.setAttribute('src', self.rview.options.data.lessConfigUrl);
-diff --git a/mockup/patterns/structure/less/pattern.structure.less b/mockup/patterns/structure/less/pattern.structure.less
-index 448224c..3b2c7a3 100644
---- a/mockup/patterns/structure/less/pattern.structure.less
-+++ b/mockup/patterns/structure/less/pattern.structure.less
-@@ -5,6 +5,7 @@
-     @icon-font-path: "@{bowerPath}/bootstrap/dist/fonts/";
- 
-     @import "@{bowerPath}/bootstrap/less/mixins.less";
-+    @import "@{bowerPath}/bootstrap/less/buttons.less";
-     @import "@{bowerPath}/bootstrap/less/button-groups.less";
-     @import "@{bowerPath}/bootstrap/less/glyphicons.less";
-     @import "@{bowerPath}/bootstrap/less/badges.less";
 
 
