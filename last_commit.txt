@@ -1,26 +1,54 @@
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-12T02:42:06+01:00
-Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/fd76f3127627fdac82e80162dc63a23e163a25d3
+Date: 2014-11-12T23:42:29-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/1e77c14a7569e07828dacf92b02ad2c5a648e38f
 
-Last test mr.roboto
+"remove" error logging is not actually an error
 
 Files changed:
-M README.rst
+M mockup/patterns/resourceregistry/js/registry.js
+M mockup/patterns/structure/less/pattern.structure.less
 
-diff --git a/README.rst b/README.rst
-index 7d9d1f3..f480b9e 100644
---- a/README.rst
-+++ b/README.rst
-@@ -11,7 +11,7 @@ many other features. Available protocols: FTP, XMLRPC, HTTP and WEBDAV
- Turn it into a distributed application system by installing ZEO.
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index e89d3e0..51bcb1b 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -254,10 +254,13 @@ define([
+       });
+       var iframe = $iframe[0];
+       var win = iframe.contentWindow || iframe;
++
++      // special error reporting
+       win.lessErrorReporting = function(what, error, href){
+-        self.addResult('less compilation error on file ' + href + ': ' + error);
++        if(what !== 'remove'){
++          self.addResult('less compilation error on file ' + href + ': ' + error);
++        }
+       };
+-      var head = $iframe.contents().find('head')[0];
+       _.each(config.less, function(less){
+         var link = document.createElement('link');
+         link.setAttribute('rel', 'stylesheet/less');
+@@ -265,6 +268,7 @@ define([
+         link.setAttribute('href', less);
+         head.appendChild(link); 
+       });
++
+       var script = document.createElement('script');
+       script.setAttribute('type', 'text/javascript');
+       script.setAttribute('src', self.rview.options.data.lessConfigUrl);
+diff --git a/mockup/patterns/structure/less/pattern.structure.less b/mockup/patterns/structure/less/pattern.structure.less
+index 448224c..3b2c7a3 100644
+--- a/mockup/patterns/structure/less/pattern.structure.less
++++ b/mockup/patterns/structure/less/pattern.structure.less
+@@ -5,6 +5,7 @@
+     @icon-font-path: "@{bowerPath}/bootstrap/dist/fonts/";
  
- Plone shares some of the qualities of Livelink, Interwoven and Documentum. It
--aims to be *the* open source out-of-the-box publishing system. 
-+aims to be *the* open source out-of-the-box publishing system.
- 
- Installing Plone
- -----------------
+     @import "@{bowerPath}/bootstrap/less/mixins.less";
++    @import "@{bowerPath}/bootstrap/less/buttons.less";
+     @import "@{bowerPath}/bootstrap/less/button-groups.less";
+     @import "@{bowerPath}/bootstrap/less/glyphicons.less";
+     @import "@{bowerPath}/bootstrap/less/badges.less";
 
 
