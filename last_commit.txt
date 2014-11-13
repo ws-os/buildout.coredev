@@ -1,41 +1,25 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-12T23:45:26-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/e4418b9e88cd4c89c4aadf38f43383d6f19b0759
+Date: 2014-11-12T22:34:23-08:00
+Author: David Glick (davisagli) <david@glicksoftware.com>
+Commit: https://github.com/plone/mockup/commit/e6bb2f84afc01e1196ea95cec7d798939c07e3e9
 
-oops
+switch into the right dir before running travis
 
 Files changed:
-M mockup/patterns/resourceregistry/js/registry.js
+M .travis.yml
 
-diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index 51bcb1b..6c37583 100644
---- a/mockup/patterns/resourceregistry/js/registry.js
-+++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -254,13 +254,12 @@ define([
-       });
-       var iframe = $iframe[0];
-       var win = iframe.contentWindow || iframe;
--
--      // special error reporting
-       win.lessErrorReporting = function(what, error, href){
--        if(what !== 'remove'){
-+        if(what !== "remove"){
-           self.addResult('less compilation error on file ' + href + ': ' + error);
-         }
-       };
-+      var head = $iframe.contents().find('head')[0];
-       _.each(config.less, function(less){
-         var link = document.createElement('link');
-         link.setAttribute('rel', 'stylesheet/less');
-@@ -268,7 +267,6 @@ define([
-         link.setAttribute('href', less);
-         head.appendChild(link); 
-       });
--
-       var script = document.createElement('script');
-       script.setAttribute('type', 'text/javascript');
-       script.setAttribute('src', self.rview.options.data.lessConfigUrl);
+diff --git a/.travis.yml b/.travis.yml
+index 951a00c..2a8760e 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -16,6 +16,7 @@ env:
+     - BROWSERS="SL_IPad"
+     - BROWSERS="SL_Android"
+ install:
++  - cd mockup
+   - travis_retry make bootstrap
+   - echo "Host github.com" >> ~/.ssh/config
+   - echo "   StrictHostKeyChecking no" >> ~/.ssh/config
 
 
