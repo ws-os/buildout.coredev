@@ -1,152 +1,956 @@
-Repository: Products.Archetypes
+Repository: plone.app.textfield
 Branch: refs/heads/master
-Date: 2014-11-14T12:43:50+01:00
+Date: 2014-11-14T13:13:37+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.Archetypes/commit/bf2fcfdd55447aa1b420323b9302ea42aab9895e
+Commit: https://github.com/plone/plone.app.textfield/commit/0d4ae0a6aacd7a9114f349aab93b9f2bafab20ff
 
-For Plone 5, support getting markup control panel settings from the registry, while still supporting normal portal_properties access for Plone &lt; 5.
+resolved an interesting circular import case, which wasnt effective because of sort order of imports
 
 Files changed:
-M CHANGES.txt
-M Products/Archetypes/mimetype_utils.py
+M plone/app/textfield/__init__.py
+M plone/app/textfield/interfaces.py
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 7a28d03..48f0226 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -4,7 +4,9 @@ Changelog
- 1.10.3 (unreleased)
- -------------------
+diff --git a/plone/app/textfield/__init__.py b/plone/app/textfield/__init__.py
+index 306a089..22eedf2 100644
+--- a/plone/app/textfield/__init__.py
++++ b/plone/app/textfield/__init__.py
+@@ -1,17 +1,15 @@
+-from zope.interface import implements
+-from zope.interface import Invalid
++from plone.app.textfield.interfaces import IRichText, IRichTextValue
++from plone.app.textfield.value import RichTextValue
+ from zope.i18nmessageid.message import MessageFactory
++from zope.interface import Invalid
++from zope.interface import implements
+ from zope.schema import Object
+-
++from zope.schema._bootstrapinterfaces import ConstraintNotSatisfied
+ from zope.schema.interfaces import IFromUnicode
+ from zope.schema.interfaces import WrongType
+-from zope.schema._bootstrapinterfaces import ConstraintNotSatisfied
  
--- Nothing changed yet.
-+- For Plone 5, support getting markup control panel settings from the registry,
-+  while still supporting normal portal_properties access for Plone < 5.
-+  [thet]
+ _ = MessageFactory('plone')
+ 
+-from plone.app.textfield.interfaces import IRichText, IRichTextValue
+-from plone.app.textfield.value import RichTextValue
+-
+ 
+ class RichText(Object):
+     """Text field that also stores MIME type
+diff --git a/plone/app/textfield/interfaces.py b/plone/app/textfield/interfaces.py
+index 28eca3b..9aee21f 100644
+--- a/plone/app/textfield/interfaces.py
++++ b/plone/app/textfield/interfaces.py
+@@ -1,8 +1,9 @@
++from zope import schema
++from zope.i18nmessageid.message import MessageFactory
+ from zope.interface import Interface
+ from zope.schema.interfaces import IObject
+-from zope import schema
+ 
+-from plone.app.textfield import _
++_ = MessageFactory('plone')
  
  
- 1.10.2 (2014-10-23)
-diff --git a/Products/Archetypes/mimetype_utils.py b/Products/Archetypes/mimetype_utils.py
-index a1696f6..24c9945 100644
---- a/Products/Archetypes/mimetype_utils.py
-+++ b/Products/Archetypes/mimetype_utils.py
-@@ -1,16 +1,44 @@
-+"""Default- and allowable content type handling.
-+"""
- from Products.CMFCore.utils import getToolByName
+ class IRichText(IObject):
+
+
+Repository: plone.app.textfield
+Branch: refs/heads/master
+Date: 2014-11-14T13:15:05+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.textfield/commit/0a2833d20fc7f188e4973ba04afbf9786069d783
+
+pep8
+
+Files changed:
+M plone/__init__.py
+M plone/app/__init__.py
+M plone/app/textfield/__init__.py
+M plone/app/textfield/browser.py
+M plone/app/textfield/browser.zcml
+M plone/app/textfield/configure.zcml
+M plone/app/textfield/editor.py
+M plone/app/textfield/editor.zcml
+M plone/app/textfield/handler.py
+M plone/app/textfield/handler.zcml
+M plone/app/textfield/interfaces.py
+M plone/app/textfield/marshaler.py
+M plone/app/textfield/marshaler.zcml
+M plone/app/textfield/tests.py
+M plone/app/textfield/transform.py
+M plone/app/textfield/transform.zcml
+M plone/app/textfield/value.py
+M plone/app/textfield/widget.py
+M plone/app/textfield/widget.zcml
+M setup.py
+
+diff --git a/plone/__init__.py b/plone/__init__.py
+index f48ad10..de40ea7 100644
+--- a/plone/__init__.py
++++ b/plone/__init__.py
+@@ -1,6 +1 @@
+-# See http://peak.telecommunity.com/DevCenter/setuptools#namespace-packages
+-try:
+-    __import__('pkg_resources').declare_namespace(__name__)
+-except ImportError:
+-    from pkgutil import extend_path
+-    __path__ = extend_path(__path__, __name__)
++__import__('pkg_resources').declare_namespace(__name__)
+diff --git a/plone/app/__init__.py b/plone/app/__init__.py
+index f48ad10..de40ea7 100644
+--- a/plone/app/__init__.py
++++ b/plone/app/__init__.py
+@@ -1,6 +1 @@
+-# See http://peak.telecommunity.com/DevCenter/setuptools#namespace-packages
+-try:
+-    __import__('pkg_resources').declare_namespace(__name__)
+-except ImportError:
+-    from pkgutil import extend_path
+-    __path__ = extend_path(__path__, __name__)
++__import__('pkg_resources').declare_namespace(__name__)
+diff --git a/plone/app/textfield/__init__.py b/plone/app/textfield/__init__.py
+index 22eedf2..c837c3f 100644
+--- a/plone/app/textfield/__init__.py
++++ b/plone/app/textfield/__init__.py
+@@ -23,13 +23,13 @@ class RichText(Object):
+     max_length = None
  
--#
--# default- and allowable content type handling
--#
-+try:
-+    from Products.CMFPlone.interfaces import IMarkupSchema
-+    from plone.registry.interfaces import IRegistry
-+    from zope.component import getUtility
-+    from zope.component.interfaces import ComponentLookupError
-+except ImportError:
-+    IMarkupSchema = None
-+
-+
-+def markupRegistrySettings(context):
-+    if not IMarkupSchema:
-+        return None
-+    try:
-+        # get the new registry
-+        registry = getUtility(IRegistry, context=context)
-+        settings = registry.forInterface(
-+            IMarkupSchema,
-+            prefix='plone',
+     def __init__(self,
+-        default_mime_type='text/html',
+-        output_mime_type='text/x-html-safe',
+-        allowed_mime_types=None,
+-        max_length=None,
+-        schema=IRichTextValue,
+-        **kw
+-    ):
++                 default_mime_type='text/html',
++                 output_mime_type='text/x-html-safe',
++                 allowed_mime_types=None,
++                 max_length=None,
++                 schema=IRichTextValue,
++                 **kw
++                 ):
+         self.default_mime_type = default_mime_type
+         self.output_mime_type = output_mime_type
+         self.allowed_mime_types = allowed_mime_types
+@@ -45,20 +45,23 @@ def __init__(self,
+ 
+     def fromUnicode(self, str_val):
+         return RichTextValue(
+-                raw=str_val,
+-                mimeType=self.default_mime_type,
+-                outputMimeType=self.output_mime_type,
+-                encoding='utf-8',
+-            )
++            raw=str_val,
++            mimeType=self.default_mime_type,
++            outputMimeType=self.output_mime_type,
++            encoding='utf-8',
 +        )
-+    except (KeyError, ComponentLookupError):
-+        settings = None
-+    return settings
-+
  
- def getDefaultContentType(context):
--    portal_properties = getToolByName(context, 'portal_properties', None)
--    if portal_properties is not None:
--        site_properties = getattr(portal_properties, 'site_properties', None)
--        if site_properties is not None:
--            return site_properties.getProperty('default_contenttype')
--    return 'text/plain'
-+    default_type = 'text/plain'
-+    reg = markupRegistrySettings(context)
-+    if reg:
-+        default_type = reg.default_type
-+    else:
-+        portal_props = getToolByName(context, 'portal_properties', None)
-+        if portal_props is not None:
-+            site_props = getattr(portal_props, 'site_properties', None)
-+            if site_props is not None:
-+                default_type = site_props.getProperty('default_contenttype')
-+    return default_type
-+
+     def _validate(self, value):
+-        if self.allowed_mime_types and value.mimeType not in self.allowed_mime_types:
++        if self.allowed_mime_types\
++                and value.mimeType not in self.allowed_mime_types:
+             raise WrongType(value, self.allowed_mime_types)
  
- def setDefaultContentType(context, value):
-     portal_properties = getToolByName(context, 'portal_properties', None)
-@@ -19,36 +47,54 @@ def setDefaultContentType(context, value):
-         if site_properties is not None:
-             site_properties.manage_changeProperties(default_contenttype=value)
+         if self.max_length is not None and len(value.raw) > self.max_length:
+-            raise Invalid(_('msg_text_too_long',
+-                          default=u'Text is too long. (Maximum ${max} characters.)',
+-                          mapping={'max': self.max_length}))
++            raise Invalid(_(
++                'msg_text_too_long',
++                default=u'Text is too long. (Maximum ${max} characters.)',
++                mapping={'max': self.max_length}
++            ))
  
-+
- def getAllowedContentTypes(context):
--    """ computes the list of allowed content types by subtracting the site property blacklist
--        from the list of installed types.
-+    """Computes the list of allowed content types by subtracting the site
-+    property blacklist from the list of installed types.
+         if not self.constraint(value):
+             raise ConstraintNotSatisfied(value)
+diff --git a/plone/app/textfield/browser.py b/plone/app/textfield/browser.py
+index b3870d3..7f167f6 100644
+--- a/plone/app/textfield/browser.py
++++ b/plone/app/textfield/browser.py
+@@ -1,25 +1,20 @@
+ from Acquisition import aq_inner
+ from Products.Five.browser import BrowserView
+-
+ from plone.app.textfield.interfaces import ITransformer
+ 
+ 
+ class Transform(BrowserView):
+     """Invoke a transformation on a RichText field.
+ 
+-    Invoke as:
+-
++    Invoke as::
+         context/@@text-transform/fieldname
+ 
+-    Or:
+-
++    Or::
+         context/@@text-transform/fieldname/major/minor
+ 
+-    e.g.
+-
++    e.g.::
+         context/@@text-transform/fieldname/text/plain
      """
--    allowable_types = getAllowableContentTypes(context)
--    forbidden_types = getForbiddenContentTypes(context)
--    allowed_types = [type for type in allowable_types if type not in forbidden_types]
-+    allowed_types = []
-+    reg = markupRegistrySettings(context)
-+    if reg:
-+        allowed_types = reg.allowed_types
-+    else:
-+        allowable_types = getAllowableContentTypes(context)
-+        forbidden_types = getForbiddenContentTypes(context)
-+        allowed_types = [
-+            _type for _type in allowable_types if _type not in forbidden_types]
-     return allowed_types
+-
+     fieldName = None
+     major = None
+     minor = None
+diff --git a/plone/app/textfield/browser.zcml b/plone/app/textfield/browser.zcml
+index c310a22..63727c8 100644
+--- a/plone/app/textfield/browser.zcml
++++ b/plone/app/textfield/browser.zcml
+@@ -3,12 +3,12 @@
+     xmlns:browser="http://namespaces.zope.org/browser"
+     i18n_domain="plone.app.textfield">
  
-+
- def getAllowableContentTypes(context):
--    """ retrieves the list of installed content types by querying portal transforms. """
-+    """Retrieves the list of installed content types by querying portal
-+    transforms.
-+    """
-     portal_transforms = getToolByName(context, 'portal_transforms')
-     return portal_transforms.listAvailableTextInputs()
+-    <!-- Generic transform browser view -->
+-    <browser:page
+-        for="*"
+-        name="text-transform"
+-        permission="zope2.View"
+-        class=".browser.Transform"
+-        />
++  <!-- Generic transform browser view -->
++  <browser:page
++      for="*"
++      name="text-transform"
++      permission="zope2.View"
++      class=".browser.Transform"
++      />
  
-+
- def setForbiddenContentTypes(context, forbidden_contenttypes=None):
--    """ Convenience method for settng the site property 'forbidden_contenttypes'."""
-+    """Convenience method for settng the site property
-+    ``forbidden_contenttypes``.
-+    """
-     if forbidden_contenttypes is None:
-         forbidden_contenttypes = []
-     portal_properties = getToolByName(context, 'portal_properties', None)
-     if portal_properties is not None:
-         site_properties = getattr(portal_properties, 'site_properties', None)
-         if site_properties is not None:
--            site_properties.manage_changeProperties(forbidden_contenttypes=tuple(forbidden_contenttypes))
-+            site_properties.manage_changeProperties(
-+                forbidden_contenttypes=tuple(forbidden_contenttypes))
-+
+ </configure>
+diff --git a/plone/app/textfield/configure.zcml b/plone/app/textfield/configure.zcml
+index 0aaa599..e3bb0f6 100644
+--- a/plone/app/textfield/configure.zcml
++++ b/plone/app/textfield/configure.zcml
+@@ -3,32 +3,32 @@
+     xmlns:zcml="http://namespaces.zope.org/zcml"
+     i18n_domain="plone.app.textfield">
  
- def getForbiddenContentTypes(context):
--    """ Convenence method for retrevng the site property 'forbidden_contenttypes'."""
-+    """Convenence method for retrevng the site property
-+    ``forbidden_contenttypes``.
-+    """
-     portal_properties = getToolByName(context, 'portal_properties', None)
-     if portal_properties is not None:
-         site_properties = getattr(portal_properties, 'site_properties', None)
-         if site_properties is not None:
-             if site_properties.hasProperty('forbidden_contenttypes'):
--                return list(site_properties.getProperty('forbidden_contenttypes'))
-+                return list(
-+                    site_properties.getProperty('forbidden_contenttypes'))
-     return []
+-    <!-- Configure plone.supermodel support if available -->
+-    <include zcml:condition="installed plone.supermodel"
+-        file="handler.zcml"
+-        />
++  <!-- Configure plone.supermodel support if available -->
++  <include zcml:condition="installed plone.supermodel"
++      file="handler.zcml"
++      />
+ 
+-    <!-- Configure PortalTransforms based transformer if available -->
+-    <include zcml:condition="installed Products.PortalTransforms"
+-        file="transform.zcml"
+-        />
++  <!-- Configure PortalTransforms based transformer if available -->
++  <include zcml:condition="installed Products.PortalTransforms"
++      file="transform.zcml"
++      />
+ 
+-    <!-- Configure z3c.form widget if z3c.form is installed -->
+-    <include zcml:condition="installed z3c.form"
+-        file="widget.zcml"
+-        />
++  <!-- Configure z3c.form widget if z3c.form is installed -->
++  <include zcml:condition="installed z3c.form"
++      file="widget.zcml"
++      />
+ 
+-    <!-- Configure plone.rfc822 marshaler if installed -->
+-    <include zcml:condition="installed plone.rfc822"
+-        file="marshaler.zcml"
+-        />
++  <!-- Configure plone.rfc822 marshaler if installed -->
++  <include zcml:condition="installed plone.rfc822"
++      file="marshaler.zcml"
++      />
+ 
+-    <!-- Configure plone.schemaeditor field factory if installed -->
+-    <include zcml:condition="installed plone.schemaeditor"
+-        file="editor.zcml"
+-        />
++  <!-- Configure plone.schemaeditor field factory if installed -->
++  <include zcml:condition="installed plone.schemaeditor"
++      file="editor.zcml"
++      />
+ 
+-    <!-- Configure transform invocation browser view -->
+-    <include file="browser.zcml" />
++  <!-- Configure transform invocation browser view -->
++  <include file="browser.zcml" />
+ 
+ </configure>
+diff --git a/plone/app/textfield/editor.py b/plone/app/textfield/editor.py
+index e6b968d..3bbfecd 100644
+--- a/plone/app/textfield/editor.py
++++ b/plone/app/textfield/editor.py
+@@ -1,16 +1,14 @@
+-from zope.interface import Attribute
+-from zope.schema import interfaces as schema_ifaces
+-from zope import schema
+-
+-from plone.schemaeditor.fields import FieldFactory
+-from plone.app.textfield import interfaces
+ from plone.app.textfield import RichText
+ from plone.app.textfield import _
++from plone.app.textfield import interfaces
++from plone.schemaeditor.fields import FieldFactory
++from zope import schema
++from zope.interface import Attribute
++from zope.schema import interfaces as schema_ifaces
+ 
+ 
+ try:
+-    import plone.app.vocabularies
+-    plone.app.vocabularies    # make pyflakes happy
++    import plone.app.vocabularies  # noqa
+     HAS_VOCABS = True
+ except ImportError:
+     HAS_VOCABS = False
+@@ -23,7 +21,7 @@ class IRichText(interfaces.IRichText, schema_ifaces.IFromUnicode):
+             title=_(u'Input format'),
+             vocabulary='plone.app.vocabularies.AllowedContentTypes',
+             default='text/html',
+-            )
++        )
+     else:
+         default_mime_type = Attribute('')
+ 
+diff --git a/plone/app/textfield/editor.zcml b/plone/app/textfield/editor.zcml
+index 5265d28..e5f54d6 100644
+--- a/plone/app/textfield/editor.zcml
++++ b/plone/app/textfield/editor.zcml
+@@ -6,9 +6,9 @@
+     <implements interface=".editor.IRichText" />
+   </class>
+ 
+-    <utility
+-        name="plone.app.textfield.RichText"
+-        component=".editor.RichTextFactory"
+-        />
++  <utility
++      name="plone.app.textfield.RichText"
++      component=".editor.RichTextFactory"
++      />
+ 
+ </configure>
+diff --git a/plone/app/textfield/handler.py b/plone/app/textfield/handler.py
+index e9a0194..68e6b7f 100644
+--- a/plone/app/textfield/handler.py
++++ b/plone/app/textfield/handler.py
+@@ -12,7 +12,6 @@
+     from plone.supermodel.interfaces import IToUnicode
+     from plone.app.textfield.interfaces import IRichText
+ 
+-
+     class RichTextHandler_(BaseHandler):
+         """Special handling for the RichText field, to deal with 'default'
+         that may be unicode.
+@@ -25,7 +24,6 @@ class RichTextHandler_(BaseHandler):
+         def __init__(self, klass):
+             super(RichTextHandler_, self).__init__(klass)
+ 
+-
+     class RichTextToUnicode(object):
+         implements(IToUnicode)
+         adapts(IRichText)
+diff --git a/plone/app/textfield/handler.zcml b/plone/app/textfield/handler.zcml
+index 90d44ef..d8a15c4 100644
+--- a/plone/app/textfield/handler.zcml
++++ b/plone/app/textfield/handler.zcml
+@@ -2,15 +2,13 @@
+     xmlns="http://namespaces.zope.org/zope"
+     i18n_domain="plone.app.textfield">
+ 
+-    <!-- plone.supermodel configuration -->
+-
+-    <utility
+-        component=".handler.RichTextHandler"
+-        name="plone.app.textfield.RichText"
+-        />
+-
+-    <adapter
+-        factory=".handler.RichTextToUnicode"
+-        />
+-
+-</configure>
+\ No newline at end of file
++  <!-- plone.supermodel configuration -->
++  <utility
++      component=".handler.RichTextHandler"
++      name="plone.app.textfield.RichText"
++      />
++  <adapter
++      factory=".handler.RichTextToUnicode"
++      />
++
++</configure>
+diff --git a/plone/app/textfield/interfaces.py b/plone/app/textfield/interfaces.py
+index 9aee21f..3364f53 100644
+--- a/plone/app/textfield/interfaces.py
++++ b/plone/app/textfield/interfaces.py
+@@ -11,22 +11,22 @@ class IRichText(IObject):
+     """
+ 
+     default_mime_type = schema.ASCIILine(
+-            title=_(u"Default MIME type"),
+-            default='text/html',
+-        )
++        title=_(u"Default MIME type"),
++        default='text/html',
++    )
+ 
+     output_mime_type = schema.ASCIILine(
+-            title=_(u"Default output MIME type"),
+-            default='text/x-html-safe'
+-        )
++        title=_(u"Default output MIME type"),
++        default='text/x-html-safe'
++    )
+ 
+     allowed_mime_types = schema.Tuple(
+-            title=_(u"Allowed MIME types"),
+-            description=_(u"Set to None to disable checking"),
+-            default=None,
+-            required=False,
+-            value_type=schema.ASCIILine(title=u"MIME type"),
+-        )
++        title=_(u"Allowed MIME types"),
++        description=_(u"Set to None to disable checking"),
++        default=None,
++        required=False,
++        value_type=schema.ASCIILine(title=u"MIME type"),
++    )
+ 
+     max_length = schema.Int(
+         title=_(u'Maximum length'),
+@@ -34,7 +34,7 @@ class IRichText(IObject):
+         required=False,
+         min=0,
+         default=None,
+-        )
++    )
+ 
+ 
+ class IRichTextValue(Interface):
+@@ -49,39 +49,39 @@ class IRichTextValue(Interface):
+     """
+ 
+     raw = schema.Text(
+-            title=_(u"Raw value in the original MIME type"),
+-            readonly=True,
+-        )
++        title=_(u"Raw value in the original MIME type"),
++        readonly=True,
++    )
+ 
+     mimeType = schema.ASCIILine(
+-            title=_(u"MIME type"),
+-            readonly=True,
+-        )
++        title=_(u"MIME type"),
++        readonly=True,
++    )
+ 
+     outputMimeType = schema.ASCIILine(
+-            title=_(u"Default output MIME type"),
+-            readonly=True,
+-        )
++        title=_(u"Default output MIME type"),
++        readonly=True,
++    )
+ 
+     encoding = schema.ASCIILine(
+-            title=_(u"Default encoding for the value"),
+-            description=_(u"Mainly used internally"),
+-            readonly=True,
+-        )
++        title=_(u"Default encoding for the value"),
++        description=_(u"Mainly used internally"),
++        readonly=True,
++    )
+ 
+     raw_encoded = schema.ASCII(
+-            title=_(u"Get the raw value as an encoded string"),
+-            description=_(u"Mainly used internally"),
+-            readonly=True,
+-        )
++        title=_(u"Get the raw value as an encoded string"),
++        description=_(u"Mainly used internally"),
++        readonly=True,
++    )
+ 
+     output = schema.Text(
+-            title=_(u"Transformed value in the target MIME type"),
+-            description=_(u"May be None if the transform cannot be completed"),
+-            readonly=True,
+-            required=False,
+-            missing_value=None,
+-        )
++        title=_(u"Transformed value in the target MIME type"),
++        description=_(u"May be None if the transform cannot be completed"),
++        readonly=True,
++        required=False,
++        missing_value=None,
++    )
+ 
+ 
+ class TransformError(Exception):
+diff --git a/plone/app/textfield/marshaler.py b/plone/app/textfield/marshaler.py
+index 41a17f2..482647e 100644
+--- a/plone/app/textfield/marshaler.py
++++ b/plone/app/textfield/marshaler.py
+@@ -12,7 +12,6 @@
+     from plone.app.textfield.interfaces import IRichText
+     from plone.app.textfield.value import RichTextValue
+ 
+-
+     class RichTextFieldMarshaler(BaseFieldMarshaler):
+         """Field marshaler for plone.app.textfield values.
+         """
+@@ -26,13 +25,19 @@ def encode(self, value, charset='utf-8', primary=False):
+                 return
+             return value.raw.encode(charset)
+ 
+-        def decode(self, value, message=None, charset='utf-8', contentType=None, primary=False):
++        def decode(
++                self,
++                value,
++                message=None,
++                charset='utf-8',
++                contentType=None,
++                primary=False):
+             return RichTextValue(
+-                    raw=value,
+-                    mimeType=contentType or self.field.default_mime_type,
+-                    outputMimeType=self.field.output_mime_type,
+-                    encoding=charset
+-                )
++                raw=value,
++                mimeType=contentType or self.field.default_mime_type,
++                outputMimeType=self.field.output_mime_type,
++                encoding=charset
++            )
+ 
+         def getContentType(self):
+             value = self._query()
+diff --git a/plone/app/textfield/marshaler.zcml b/plone/app/textfield/marshaler.zcml
+index 9d01a59..06f20c8 100644
+--- a/plone/app/textfield/marshaler.zcml
++++ b/plone/app/textfield/marshaler.zcml
+@@ -2,6 +2,6 @@
+     xmlns="http://namespaces.zope.org/zope"
+     i18n_domain="plone.app.textfield">
+ 
+-    <adapter factory=".marshaler.RichTextFieldMarshaler" />
++  <adapter factory=".marshaler.RichTextFieldMarshaler" />
+ 
+ </configure>
+diff --git a/plone/app/textfield/tests.py b/plone/app/textfield/tests.py
+index e4e1a1c..726038d 100644
+--- a/plone/app/textfield/tests.py
++++ b/plone/app/textfield/tests.py
+@@ -82,7 +82,8 @@ class Context(PortalContent):
+         output = context.restrictedTraverse('@@text-transform/text')()
+         self.assertEquals(u'<p>Some <strong>text</strong></p>', output.strip())
+ 
+-        output = context.restrictedTraverse('@@text-transform/text/text/plain')()
++        output = context.restrictedTraverse(
++            '@@text-transform/text/text/plain')()
+         self.assertEquals(u'Some text', output.strip())
+ 
+         # test transform shortcircuit when input and output type is the
+@@ -124,7 +125,8 @@ class Context(PortalContent):
+         output = context.restrictedTraverse('@@text-transform/text')()
+         self.assertEquals(u'', output.strip())
+ 
+-        output = context.restrictedTraverse('@@text-transform/text/text/plain')()
++        output = context.restrictedTraverse(
++            '@@text-transform/text/text/plain')()
+         self.assertEquals(u'', output.strip())
+ 
+     def testWidgetExtract(self):
+@@ -159,14 +161,17 @@ class Context(PortalContent):
+         request.form['%s.mimeType' % widget.name] = 'text/structured'
+ 
+         value = widget.extract()
+-        self.assertEquals(u"<p>Sample <strong>text</strong></p>", value.output.strip())
++        self.assertEquals(
++            u"<p>Sample <strong>text</strong></p>",
++            value.output.strip())
+ 
+     def testWidgetConverter(self):
+         from zope.interface import Interface
+         from plone.app.textfield import RichText
+         from zope.publisher.browser import TestRequest
+         from plone.app.textfield.value import RichTextValue
+-        from plone.app.textfield.widget import RichTextWidget, RichTextConverter
++        from plone.app.textfield.widget import RichTextWidget
++        from plone.app.textfield.widget import RichTextConverter
+         from z3c.form.widget import FieldWidget
+ 
+         _marker = object()
+@@ -211,7 +216,9 @@ class Context(PortalContent):
+         widget = FieldWidget(IWithText['text'], RichTextWidget(request))
+         widget.update()
+ 
+-        self.portal['portal_properties']['site_properties']._setPropValue('forbidden_contenttypes', ['text/structured'])
++        self.portal['portal_properties']['site_properties']._setPropValue(
++            'forbidden_contenttypes',
++            ['text/structured'])
+ 
+         allowed = widget.allowedMimeTypes()
+         self.failUnless('text/html' in allowed)
+@@ -227,10 +234,13 @@ def testWidgetAllowedTypesField(self):
+ 
+         class IWithText(Interface):
+ 
+-            text = RichText(title=u"Text",
+-                            default_mime_type='text/structured',
+-                            output_mime_type='text/html',
+-                            allowed_mime_types=('text/structured', 'text/html'))
++            text = RichText(
++                title=u"Text",
++                default_mime_type='text/structured',
++                output_mime_type='text/html',
++                allowed_mime_types=(
++                    'text/structured',
++                    'text/html'))
+ 
+         class Context(PortalContent):
+             implements(IWithText)
+@@ -242,7 +252,9 @@ class Context(PortalContent):
+         widget = FieldWidget(IWithText['text'], RichTextWidget(request))
+         widget.update()
+ 
+-        self.portal['portal_properties']['site_properties']._setPropValue('forbidden_contenttypes', ['text/structured'])
++        self.portal['portal_properties']['site_properties']._setPropValue(
++            'forbidden_contenttypes',
++            ['text/structured'])
+ 
+         allowed = widget.allowedMimeTypes()
+         self.failUnless('text/html' in allowed)
+diff --git a/plone/app/textfield/transform.py b/plone/app/textfield/transform.py
+index 66777f9..fe6af04 100644
+--- a/plone/app/textfield/transform.py
++++ b/plone/app/textfield/transform.py
+@@ -1,16 +1,16 @@
+-import logging
+-
+-from plone.app.textfield.interfaces import ITransformer, TransformError
+-from Products.CMFCore.utils import getToolByName
+ # from Products.statusmessages.interfaces import IStatusMessage
++from Products.CMFCore.utils import getToolByName
+ from ZODB.POSException import ConflictError
++from plone.app.textfield.interfaces import ITransformer, TransformError
+ from zope.component.hooks import getSite
+ from zope.interface import implements
++import logging
+ 
+ LOG = logging.getLogger('plone.app.textfield')
+ 
+ 
+ class PortalTransformsTransformer(object):
++
+     """Invoke portal_transforms to perform a conversion
+     """
+ 
+@@ -45,12 +45,13 @@ def __call__(self, value, mimeType):
+             if data is None:
+                 # TODO: i18n
+                 msg = (u'No transform path found from "%s" to "%s".' %
+-                          (value.mimeType, mimeType))
++                       (value.mimeType, mimeType))
+                 LOG.error(msg)
+                 # TODO: memoize?
+-                ## plone_utils = getToolByName(self.context, 'plone_utils')
+-                ## plone_utils.addPortalMessage(msg, type='error')
+-                # FIXME: message not always rendered, or rendered later on other page.
++                # plone_utils = getToolByName(self.context, 'plone_utils')
++                # plone_utils.addPortalMessage(msg, type='error')
++                # FIXME: message not always rendered, or rendered later on
++                # other page.
+                 # The following might work better, but how to get the request?
+                 # IStatusMessage(request).add(msg, type='error')
+                 return u''
+@@ -60,7 +61,7 @@ def __call__(self, value, mimeType):
+                 return output.decode(value.encoding)
+         except ConflictError:
+             raise
+-        except Exception, e:
++        except Exception as e:
+             # log the traceback of the original exception
+             LOG.error("Transform exception", exc_info=True)
+             raise TransformError('Error during transformation', e)
+diff --git a/plone/app/textfield/transform.zcml b/plone/app/textfield/transform.zcml
+index 92a0d26..f1d6cc1 100644
+--- a/plone/app/textfield/transform.zcml
++++ b/plone/app/textfield/transform.zcml
+@@ -2,14 +2,14 @@
+     xmlns="http://namespaces.zope.org/zope"
+     i18n_domain="plone.app.textfield">
+ 
+-    <adapter
+-        factory=".transform.PortalTransformsTransformer"
+-        for="Products.CMFCore.interfaces.IContentish"
+-        />
++  <adapter
++      factory=".transform.PortalTransformsTransformer"
++      for="Products.CMFCore.interfaces.IContentish"
++      />
+ 
+-    <adapter
+-        factory=".transform.PortalTransformsTransformer"
+-        for="Products.CMFCore.interfaces.ISiteRoot"
+-        />
++  <adapter
++      factory=".transform.PortalTransformsTransformer"
++      for="Products.CMFCore.interfaces.ISiteRoot"
++      />
+ 
+ </configure>
+diff --git a/plone/app/textfield/value.py b/plone/app/textfield/value.py
+index c3f0040..025ebb1 100644
+--- a/plone/app/textfield/value.py
++++ b/plone/app/textfield/value.py
+@@ -1,10 +1,9 @@
+-import logging
+-
+-from zope.interface import implements
+-from zope.component.hooks import getSite
+ from Products.CMFPlone.utils import safe_unicode
+-from plone.app.textfield.interfaces import IRichTextValue, ITransformer
+ from persistent import Persistent
++from plone.app.textfield.interfaces import IRichTextValue, ITransformer
++from zope.component.hooks import getSite
++from zope.interface import implements
++import logging
+ 
+ LOG = logging.getLogger('plone.app.textfield')
+ 
+@@ -30,7 +29,8 @@ class RichTextValue(object):
+ 
+     implements(IRichTextValue)
+ 
+-    def __init__(self, raw=None, mimeType=None, outputMimeType=None, encoding='utf-8', output=None):
++    def __init__(self, raw=None, mimeType=None, outputMimeType=None,
++                 encoding='utf-8', output=None):
+         self._raw_holder = RawValueHolder(raw)
+         self._mimeType = mimeType
+         self._outputMimeType = outputMimeType
+@@ -96,4 +96,5 @@ def output_relative_to(self, context):
+         return transformer(self, self.outputMimeType)
+ 
+     def __repr__(self):
+-        return u"RichTextValue object. (Did you mean <attribute>.raw or <attribute>.output?)"
++        return u"RichTextValue object. (Did you mean <attribute>.raw or "\
++               u"<attribute>.output?)"
+diff --git a/plone/app/textfield/widget.py b/plone/app/textfield/widget.py
+index cf3f3e9..7798e7a 100644
+--- a/plone/app/textfield/widget.py
++++ b/plone/app/textfield/widget.py
+@@ -1,20 +1,19 @@
+ from Acquisition import ImplicitAcquisitionWrapper
+ from UserDict import UserDict
+-
+-from zope.interface import implementsOnly, implementer
+-from zope.component import adapts, adapter
+-
+-from z3c.form.interfaces import ITextAreaWidget, IFormLayer, IFieldWidget, NOVALUE
+-from z3c.form.browser.textarea import TextAreaWidget
+-from z3c.form.browser.widget import addFieldClass
+-from z3c.form.widget import FieldWidget
+-from z3c.form.converter import BaseDataConverter
+-
+ from plone.app.textfield.interfaces import IRichText, IRichTextValue
++from plone.app.textfield.utils import getAllowedContentTypes
+ from plone.app.textfield.value import RichTextValue
+ from plone.app.z3cform.utils import closest_content
+-
+-from plone.app.textfield.utils import getAllowedContentTypes
++from z3c.form.browser.textarea import TextAreaWidget
++from z3c.form.browser.widget import addFieldClass
++from z3c.form.converter import BaseDataConverter
++from z3c.form.interfaces import IFieldWidget
++from z3c.form.interfaces import IFormLayer
++from z3c.form.interfaces import ITextAreaWidget
++from z3c.form.interfaces import NOVALUE
++from z3c.form.widget import FieldWidget
++from zope.component import adapts, adapter
++from zope.interface import implementsOnly, implementer
+ 
+ 
+ class IRichTextWidget(ITextAreaWidget):
+@@ -53,7 +52,8 @@ def extract(self, default=NOVALUE):
+         if raw is default:
+             return default
+ 
+-        mimeType = self.request.get("%s.mimeType" % self.name, self.field.default_mime_type)
++        mimeType = self.request.get(
++            "%s.mimeType" % self.name, self.field.default_mime_type)
+         return RichTextValue(raw=raw,
+                              mimeType=mimeType,
+                              outputMimeType=self.field.output_mime_type,
+@@ -86,7 +86,8 @@ def toWidgetValue(self, value):
+             return self.field.fromUnicode(value)
+         elif value is None:
+             return None
+-        raise ValueError("Cannot convert %s to an IRichTextValue" % repr(value))
++        raise ValueError(
++            "Cannot convert %s to an IRichTextValue" % repr(value))
+ 
+     def toFieldValue(self, value):
+         if IRichTextValue.providedBy(value):
+@@ -97,4 +98,5 @@ def toFieldValue(self, value):
+             if value == u'':
+                 return self.field.missing_value
+             return self.field.fromUnicode(value)
+-        raise ValueError("Cannot convert %s to an IRichTextValue" % repr(value))
++        raise ValueError(
++            "Cannot convert %s to an IRichTextValue" % repr(value))
+diff --git a/plone/app/textfield/widget.zcml b/plone/app/textfield/widget.zcml
+index b0cb2e0..3381c63 100644
+--- a/plone/app/textfield/widget.zcml
++++ b/plone/app/textfield/widget.zcml
+@@ -4,31 +4,31 @@
+     xmlns:browser="http://namespaces.zope.org/browser"
+     i18n_domain="plone.app.textfield">
+ 
+-    <include package="z3c.form" file="meta.zcml" />
+-    <include package="z3c.form" />
++  <include package="z3c.form" file="meta.zcml" />
++  <include package="z3c.form" />
+ 
+-    <adapter factory=".widget.RichTextFieldWidget" />
+-    <adapter factory=".widget.RichTextConverter" />
++  <adapter factory=".widget.RichTextFieldWidget" />
++  <adapter factory=".widget.RichTextConverter" />
+ 
+-    <class class=".widget.RichTextWidget">
+-        <require
+-            permission="zope.Public"
+-            interface=".widget.IRichTextWidget"
+-        />
+-    </class>
++  <class class=".widget.RichTextWidget">
++      <require
++          permission="zope.Public"
++          interface=".widget.IRichTextWidget"
++      />
++  </class>
+ 
+-    <z3c:widgetTemplate
+-        mode="display"
+-        widget=".widget.IRichTextWidget"
+-        layer="z3c.form.interfaces.IFormLayer"
+-        template="widget_display.pt"
+-        />
++  <z3c:widgetTemplate
++      mode="display"
++      widget=".widget.IRichTextWidget"
++      layer="z3c.form.interfaces.IFormLayer"
++      template="widget_display.pt"
++      />
+ 
+-    <z3c:widgetTemplate
+-        mode="input"
+-        widget=".widget.IRichTextWidget"
+-        layer="z3c.form.interfaces.IFormLayer"
+-        template="widget_input.pt"
+-        />
++  <z3c:widgetTemplate
++      mode="input"
++      widget=".widget.IRichTextWidget"
++      layer="z3c.form.interfaces.IFormLayer"
++      template="widget_input.pt"
++      />
+ 
+ </configure>
+diff --git a/setup.py b/setup.py
+index 529c585..7359ce0 100644
+--- a/setup.py
++++ b/setup.py
+@@ -3,46 +3,48 @@
+ 
+ version = '1.2.5.dev0'
+ 
+-setup(name='plone.app.textfield',
+-      version=version,
+-      description="Text field with MIME type support",
+-      long_description=open("README.rst").read() + "\n" +
+-                       open(os.path.join("docs", "HISTORY.rst")).read(),
+-      # Get more strings from http://www.python.org/pypi?%3Aaction=list_classifiers
+-      classifiers=[
++setup(
++    name='plone.app.textfield',
++    version=version,
++    description="Text field with MIME type support",
++    long_description=open("README.rst").read() + "\n" +
++    open(os.path.join("docs", "HISTORY.rst")).read(),
++    # Get more strings from
++    # http://www.python.org/pypi?%3Aaction=list_classifiers
++    classifiers=[
+         "Framework :: Plone",
+         "Framework :: Plone :: 5.0",
+         "Programming Language :: Python",
+         "Programming Language :: Python :: 2.7",
+         "Topic :: Software Development :: Libraries :: Python Modules",
+-        ],
+-      keywords='plone schema field',
+-      author='Martin Aspeli',
+-      author_email='optilude@gmail.com',
+-      url='http://pypi.python.org/pypi/plone.app.textfield',
+-      license='GPL',
+-      packages=find_packages(exclude=['ez_setup']),
+-      namespace_packages=['plone', 'plone.app'],
+-      include_package_data=True,
+-      zip_safe=False,
+-      install_requires=[
+-          'setuptools',
+-          'zope.schema',
+-          'zope.interface',
+-          'zope.component',
+-          'ZODB3 >= 3.8.1',
+-      ],
+-      extras_require={
++    ],
++    keywords='plone schema field',
++    author='Martin Aspeli',
++    author_email='optilude@gmail.com',
++    url='http://pypi.python.org/pypi/plone.app.textfield',
++    license='GPL',
++    packages=find_packages(exclude=['ez_setup']),
++    namespace_packages=['plone', 'plone.app'],
++    include_package_data=True,
++    zip_safe=False,
++    install_requires=[
++        'setuptools',
++        'zope.schema',
++        'zope.interface',
++        'zope.component',
++        'ZODB3 >= 3.8.1',
++    ],
++    extras_require={
+         'portaltransforms': ['Products.PortalTransforms'],
+         'supermodel': ['plone.supermodel'],
+         'widget': ['z3c.form'],
+         'marshaler': ['plone.rfc822'],
+         'editor': ['plone.schemaeditor'],
+         'tests': [
+-          'plone.app.testing',
+-          'plone.supermodel [test]',
++            'plone.app.testing',
++            'plone.supermodel [test]',
+         ],
+-      },
+-      entry_points="""
++    },
++    entry_points="""
+       """,
+-      )
++)
 
 
