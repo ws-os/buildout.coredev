@@ -1,386 +1,441 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-14T14:41:01+01:00
+Date: 2014-11-14T15:40:08+01:00
 Author: JC Brand (jcbrand) <jc@opkode.com>
-Commit: https://github.com/plone/mockup/commit/4ad9fe671060cd10a2c453d33301653dbc6a1797
+Commit: https://github.com/plone/Products.CMFPlone/commit/e90963057c2aae9a1039c184f15dc8e68337abdd
 
-New pattern pat-cookietrigger
+Changes required to Plone for pat-cookietrigger.
 
-containing legacy JS from plone_ecmascripts/login.js
+Updates #282
 
-See Products.CMFPlone ticket #282
+* Remove login.js, this code is now in pat-cookietrigger
+* Add pat-cookietrigger to registry.xml
 
 Files changed:
-A mockup/patterns/cookietrigger/pattern.js
-A mockup/tests/pattern-cookietrigger-test.js
-M mockup/js/bundles/docs.js
-M mockup/js/config.js
+M Products/CMFPlone/profiles/dependencies/registry.xml
+M Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt
+M Products/CMFPlone/skins/plone_login/logged_out.cpt
+M Products/CMFPlone/skins/plone_login/login_failed.cpt
+M Products/CMFPlone/skins/plone_login/login_form.cpt
+M Products/CMFPlone/skins/plone_login/registered.pt
+M Products/CMFPlone/static/plone.js
+D Products/CMFPlone/skins/plone_ecmascript/login.js
 
-diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
-index 8db620f..3823cee 100644
---- a/mockup/js/bundles/docs.js
-+++ b/mockup/js/bundles/docs.js
-@@ -47,6 +47,11 @@ require([
-             description: 'TODO',
-             url: 'patterns/backdrop/pattern.js'
-           },
-+          { id: 'cookiewarning',
-+            title: 'Cookie Warning',
-+            description: "Warns the user that they won't be able to log in until cookies are enabled.",
-+            url: 'patterns/cookiewarning/pattern.js'
-+          },
-           { id: 'formautofocus',
-             title: 'Form Auto Focus',
-             description: 'TODO',
-diff --git a/mockup/js/config.js b/mockup/js/config.js
-index 1ab1ef6..0541d0a 100644
---- a/mockup/js/config.js
-+++ b/mockup/js/config.js
-@@ -63,6 +63,7 @@
-       'mockup-patterns-autotoc': 'patterns/autotoc/pattern',
-       'mockup-patterns-backdrop': 'patterns/backdrop/pattern',
-       'mockup-patterns-base': 'bower_components/mockup-core/js/pattern',
-+      'mockup-patterns-cookietrigger': 'patterns/cookietrigger/pattern',
-       'mockup-patterns-eventedit': 'patterns/eventedit/pattern',
-       'mockup-patterns-filemanager': 'patterns/filemanager/pattern',
-       'mockup-patterns-filemanager-url': 'patterns/filemanager',
-diff --git a/mockup/patterns/cookietrigger/pattern.js b/mockup/patterns/cookietrigger/pattern.js
-new file mode 100644
-index 0000000..972006e
---- /dev/null
-+++ b/mockup/patterns/cookietrigger/pattern.js
-@@ -0,0 +1,55 @@
-+/* Cookie Trigger pattern.
-+ *
-+ * Show a DOM element if browser cookies are disabled.
-+ */
-+
-+define([
-+  'jquery',
-+  'mockup-patterns-base'
-+], function ($, Base) {
-+  'use strict';
-+
-+  var CookieTrigger = Base.extend({
-+    name: 'cookietrigger',
-+
-+    isCookiesEnabled: function() {
-+      /* Test whether cookies are enabled by attempting to set a cookie
-+       * and then change its value set test cookie.
-+       */
-+      var c = "areYourCookiesEnabled=0";
-+      document.cookie = c;
-+      var dc = document.cookie;
-+      // cookie not set?  fail
-+      if (dc.indexOf(c) === -1) {
-+        return 0;
-+      }
-+      // change test cookie
-+      c = "areYourCookiesEnabled=1";
-+      document.cookie = c;
-+      dc = document.cookie;
-+      // cookie not changed?  fail
-+      if (dc.indexOf(c) === -1) {
-+        return 0;
-+      }
-+      // delete cookie
-+      document.cookie = "areYourCookiesEnabled=; expires=Thu, 01-Jan-70 00:00:01 GMT";
-+      return 1;
-+    },
-+
-+    showIfCookiesDisabled: function() {
-+      /* Show the element on which this pattern is defined if cookies are
-+       * disabled.
-+       */
-+      if (this.isCookiesEnabled()) {
-+        this.$el.hide();
-+      } else {
-+        this.$el.show();
-+      }
-+    },
-+
-+    init: function () {
-+      this.showIfCookiesDisabled();
-+    },
-+  });
-+  return CookieTrigger;
-+});
-diff --git a/mockup/tests/pattern-cookietrigger-test.js b/mockup/tests/pattern-cookietrigger-test.js
-new file mode 100644
-index 0000000..1d837cc
---- /dev/null
-+++ b/mockup/tests/pattern-cookietrigger-test.js
-@@ -0,0 +1,48 @@
-+define([
-+  'expect',
-+  'jquery',
-+  'sinon',
-+  'mockup-registry',
-+  'mockup-patterns-cookietrigger'
-+], function(expect, $, sinon, registry, Pattern) {
-+  'use strict';
-+
-+  window.mocha.setup('bdd');
-+  $.fx.off = true;
-+
-+/* ====================
-+   TEST: Cookie Trigger 
-+   ==================== */
-+
-+  describe('Cookie Trigger', function () {
-+    afterEach(function() {
-+      $('body').empty();
-+    });
-+
-+    it('The .pat-cookietrigger DOM element is shown if cookies are disabled', function() {
-+      var widget = 
-+        '<div class="portalMessage error pat-cookietrigger">' +
-+        '  Cookies are not enabled. You must enable cookies before you can log in.' +
-+        '</div>';
-+
-+      var $el = $(widget).appendTo('body').hide();
-+      Pattern.extend({isCookiesEnabled: sinon.stub().returns(0)});
-+      expect($el.is(':visible')).to.equal(false);
-+      var pattern = registry.init($el, 'cookietrigger');
-+      expect($el.is(':visible')).to.equal(true);
-+    });
-+
-+    it('The .pat-cookietrigger DOM element is hidden if cookies are enabled', function() {
-+      var widget = 
-+        '<div class="portalMessage error pat-cookietrigger">' +
-+        '  Cookies are not enabled. You must enable cookies before you can log in.' +
-+        '</div>';
-+
-+      var $el = $(widget).appendTo('body').hide();
-+      Pattern.extend({isCookiesEnabled: sinon.stub().returns(1)});
-+      expect($el.is(':visible')).to.equal(false);
-+      var pattern = registry.init($el, 'cookietrigger');
-+      expect($el.is(':visible')).to.equal(false);
-+    });
-+  });
-+});
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-14T14:44:32+01:00
-Author: JC Brand (jcbrand) <jc@opkode.com>
-Commit: https://github.com/plone/mockup/commit/a3410f6e62e012996f622b0dc99bea07dc180123
-
-Fix name in docs.js and add docstring.
-
-Files changed:
-M mockup/js/bundles/docs.js
-M mockup/patterns/cookietrigger/pattern.js
-
-diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
-index 3823cee..fdcdcbc 100644
---- a/mockup/js/bundles/docs.js
-+++ b/mockup/js/bundles/docs.js
-@@ -47,10 +47,10 @@ require([
-             description: 'TODO',
-             url: 'patterns/backdrop/pattern.js'
-           },
--          { id: 'cookiewarning',
--            title: 'Cookie Warning',
--            description: "Warns the user that they won't be able to log in until cookies are enabled.",
--            url: 'patterns/cookiewarning/pattern.js'
-+          { id: 'cookietrigger',
-+            title: 'Cookie Trigger',
-+            description: "Shows a DOM element if browser cookies are disabled.",
-+            url: 'patterns/cookietrigger/pattern.js'
-           },
-           { id: 'formautofocus',
-             title: 'Form Auto Focus',
-diff --git a/mockup/patterns/cookietrigger/pattern.js b/mockup/patterns/cookietrigger/pattern.js
-index 972006e..f13b7c8 100644
---- a/mockup/patterns/cookietrigger/pattern.js
-+++ b/mockup/patterns/cookietrigger/pattern.js
-@@ -1,6 +1,15 @@
- /* Cookie Trigger pattern.
-  *
-  * Show a DOM element if browser cookies are disabled.
-+ *
-+ * Documentation:
-+ *
-+ *    {{ example-1 }}
-+ *
-+ * Example: example-1
-+ *    <div class="portalMessage error pat-cookietrigger">
-+ *      Cookies are not enabled. You must enable cookies before you can log in.
-+ *    </div>
-  */
+diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
+index 29d27ec..bcb8ddc 100644
+--- a/Products/CMFPlone/profiles/dependencies/registry.xml
++++ b/Products/CMFPlone/profiles/dependencies/registry.xml
+@@ -655,6 +655,11 @@
+       <value key="js">++resource++mockup/backdrop/pattern.js</value>
+   </records>
  
- define([
++  <records prefix="plone.resources/mockup-patterns-cookietrigger"
++            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++      <value key="js">++resource++mockup/cookietrigger/pattern.js</value>
++  </records>
++
+   <records prefix="plone.resources/mockup-patterns-sortable"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">++resource++mockup/sortable/pattern.js</value>
+diff --git a/Products/CMFPlone/skins/plone_ecmascript/login.js b/Products/CMFPlone/skins/plone_ecmascript/login.js
+deleted file mode 100644
+index a66dc13..0000000
+--- a/Products/CMFPlone/skins/plone_ecmascript/login.js
++++ /dev/null
+@@ -1,74 +0,0 @@
+-// Functions used by login pages
+-
+-function cookiesEnabled() {
+-  // Test whether cookies are enabled by attempting to set a cookie and then change its value
+-  // set test cookie
+-  var c = "areYourCookiesEnabled=0";
+-  document.cookie = c;
+-  var dc = document.cookie;
+-  // cookie not set?  fail
+-  if (dc.indexOf(c) == -1) return 0;
+-  // change test cookie
+-  c = "areYourCookiesEnabled=1";
+-  document.cookie = c;
+-  dc = document.cookie;
+-  // cookie not changed?  fail
+-  if (dc.indexOf(c) == -1) return 0;
+-  // delete cookie
+-  document.cookie = "areYourCookiesEnabled=; expires=Thu, 01-Jan-70 00:00:01 GMT";
+-  return 1;
+-}
+-
+-function setLoginVars(user_name_id, alt_user_name_id, password_id, empty_password_id, js_enabled_id, cookies_enabled_id) {
+-  // Indicate that javascript is enabled, set cookie status, copy username and password length info to 
+-  // alternative variables since these vars are removed from the request by zope's authentication mechanism.
+-  if (js_enabled_id) {
+-    el = document.getElementById(js_enabled_id);
+-    if (el) { el.value = 1; }
+-  }
+-  if (cookies_enabled_id) {
+-    el = document.getElementById(cookies_enabled_id);
+-    // Do a fresh cookies enabled test every time we press the login button
+-    //   so that we are up to date in case the user enables cookies after seeing
+-    //   the cookies message.
+-    if (el) { el.value = cookiesEnabled(); } 
+-  }
+-  if (user_name_id && alt_user_name_id) {
+-    user_name = document.getElementById(user_name_id)
+-    alt_user_name = document.getElementById(alt_user_name_id)
+-    if (user_name && alt_user_name) {
+-       alt_user_name.value = user_name.value;
+-    } 
+-  }
+-  if (password_id && empty_password_id) {
+-    password = document.getElementById(password_id)
+-    empty_password = document.getElementById(empty_password_id)
+-    if (password && empty_password) {
+-       if (password.value.length==0) {
+-          empty_password.value = '1';
+-       } else {
+-          empty_password.value = '0';
+-       }
+-    }
+-  }
+-  return 1;
+-}
+-
+-function showCookieMessage(msg_id) {
+-  // Show the element with the given id if cookies are not enabled
+-  msg = document.getElementById(msg_id)
+-  if (msg) {
+-     if (cookiesEnabled()) {
+-        msg.style.display = 'none';
+-     } else {
+-        msg.style.display = 'block';
+-     }
+-  }
+-}
+-
+-function showEnableCookiesMessage() {
+-  // Show the element with the id 'enable_cookies_message' if cookies are not enabled
+-  showCookieMessage('enable_cookies_message')
+-}
+-// Call showEnableCookiesMessage after the page loads
+-jQuery(showEnableCookiesMessage);
+diff --git a/Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt b/Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt
+index 224707e..7a58954 100644
+--- a/Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt
++++ b/Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt
+@@ -43,9 +43,7 @@ If you do not have an account here, head over to the
+ </p>
+ 
+ 
+-<div class="portalMessage error"
+-    id="enable_cookies_message"
+-    style="display:none">
++<div class="portalMessage error pat-cookietrigger" style="display:none">
+     <strong i18n:translate="">
+         Error
+     </strong>
+diff --git a/Products/CMFPlone/skins/plone_login/logged_out.cpt b/Products/CMFPlone/skins/plone_login/logged_out.cpt
+index b05ea0f..e00fbcf 100644
+--- a/Products/CMFPlone/skins/plone_login/logged_out.cpt
++++ b/Products/CMFPlone/skins/plone_login/logged_out.cpt
+@@ -6,11 +6,6 @@
+       i18n:domain="plone">
+ 
+ <head>
+-    <metal:js fill-slot="javascript_head_slot">
+-        <script type="text/javascript" src=""
+-                tal:attributes="src string:${context/portal_url}/login.js">
+-        </script>
+-    </metal:js>
+     <metal:block fill-slot="top_slot"
+                  tal:define="dummy python:request.set('disable_border',1);
+                              disable_column_one python:request.set('disable_plone.leftcolumn',1);
+diff --git a/Products/CMFPlone/skins/plone_login/login_failed.cpt b/Products/CMFPlone/skins/plone_login/login_failed.cpt
+index 48a9e0a..6a35335 100644
+--- a/Products/CMFPlone/skins/plone_login/login_failed.cpt
++++ b/Products/CMFPlone/skins/plone_login/login_failed.cpt
+@@ -7,11 +7,6 @@
+       i18n:domain="plone">
+ 
+ <head>
+-    <metal:js fill-slot="javascript_head_slot">
+-        <script type="text/javascript" src=""
+-                tal:attributes="src string:${context/portal_url}/login.js">
+-        </script>
+-    </metal:js>
+     <metal:block fill-slot="top_slot"
+                  tal:define="dummy python:request.set('disable_border',1);
+                              disable_column_one python:request.set('disable_plone.leftcolumn',1);
+diff --git a/Products/CMFPlone/skins/plone_login/login_form.cpt b/Products/CMFPlone/skins/plone_login/login_form.cpt
+index 9da9e5a..bbf7c07 100644
+--- a/Products/CMFPlone/skins/plone_login/login_form.cpt
++++ b/Products/CMFPlone/skins/plone_login/login_form.cpt
+@@ -6,11 +6,6 @@
+       i18n:domain="plone">
+ 
+ <head>
+-    <metal:js fill-slot="javascript_head_slot">
+-        <script type="text/javascript" src=""
+-                tal:attributes="src string:${context/portal_url}/login.js">
+-        </script>
+-    </metal:js>
+     <metal:block fill-slot="top_slot"
+                  tal:define="dummy python:request.set('disable_border',1);
+                              disable_column_one python:request.set('disable_plone.leftcolumn',1);
+@@ -55,9 +50,7 @@
+                         target python:test(target in ('_parent', '_top', '_blank', '_self'), target, None);
+                         ztu modules/ZTUtils;">
+ 
+-            <div class="portalMessage error"
+-                id="enable_cookies_message"
+-                style="display:none">
++            <div class="portalMessage error pat-cookietrigger" style="display:none">
+                 <strong i18n:translate="">
+                     Error
+                 </strong>
+diff --git a/Products/CMFPlone/skins/plone_login/registered.pt b/Products/CMFPlone/skins/plone_login/registered.pt
+index 59ac0df..a8fe7e1 100644
+--- a/Products/CMFPlone/skins/plone_login/registered.pt
++++ b/Products/CMFPlone/skins/plone_login/registered.pt
+@@ -45,9 +45,7 @@
+                     Click the button to log in immediately.
+                 </p>
+ 
+-                <div class="portalMessage error"
+-                    id="enable_cookies_message"
+-                    style="display:none">
++                <div class="portalMessage error pat-cookietrigger" style="display:none">
+                     <strong i18n:translate="">
+                         Error
+                     </strong>
+diff --git a/Products/CMFPlone/static/plone.js b/Products/CMFPlone/static/plone.js
+index b79b820..ab9b442 100644
+--- a/Products/CMFPlone/static/plone.js
++++ b/Products/CMFPlone/static/plone.js
+@@ -34,6 +34,7 @@ require([
+   'plone-patterns-toolbar',
+   'mockup-patterns-accessibility',
+   'mockup-patterns-autotoc',
++  'mockup-patterns-cookietrigger',
+   'mockup-patterns-formunloadalert',
+   'mockup-patterns-preventdoublesubmit',
+   'mockup-patterns-inlinevalidation',
 
 
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-14T08:30:45-06:00
+Date: 2014-11-14T08:48:41-06:00
 Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/f19ac0c6001b9b728a1526e1397cbe6707033044
+Commit: https://github.com/plone/Products.CMFPlone/commit/d9b43f1728898543eaded6674a3902fca5e47f48
 
-Merge pull request #438 from plone/cookiewarning
+Merge pull request #301 from plone/cookiewarning
 
-New pattern: pat-cookietrigger
+Changes required to Plone for pat-cookietrigger.
 
 Files changed:
-A mockup/patterns/cookietrigger/pattern.js
-A mockup/tests/pattern-cookietrigger-test.js
-M mockup/js/bundles/docs.js
-M mockup/js/config.js
+M Products/CMFPlone/profiles/dependencies/registry.xml
+M Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt
+M Products/CMFPlone/skins/plone_login/logged_out.cpt
+M Products/CMFPlone/skins/plone_login/login_failed.cpt
+M Products/CMFPlone/skins/plone_login/login_form.cpt
+M Products/CMFPlone/skins/plone_login/registered.pt
+M Products/CMFPlone/static/plone.js
+D Products/CMFPlone/skins/plone_ecmascript/login.js
 
-diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
-index 8db620f..fdcdcbc 100644
---- a/mockup/js/bundles/docs.js
-+++ b/mockup/js/bundles/docs.js
-@@ -47,6 +47,11 @@ require([
-             description: 'TODO',
-             url: 'patterns/backdrop/pattern.js'
-           },
-+          { id: 'cookietrigger',
-+            title: 'Cookie Trigger',
-+            description: "Shows a DOM element if browser cookies are disabled.",
-+            url: 'patterns/cookietrigger/pattern.js'
-+          },
-           { id: 'formautofocus',
-             title: 'Form Auto Focus',
-             description: 'TODO',
-diff --git a/mockup/js/config.js b/mockup/js/config.js
-index 1ab1ef6..0541d0a 100644
---- a/mockup/js/config.js
-+++ b/mockup/js/config.js
-@@ -63,6 +63,7 @@
-       'mockup-patterns-autotoc': 'patterns/autotoc/pattern',
-       'mockup-patterns-backdrop': 'patterns/backdrop/pattern',
-       'mockup-patterns-base': 'bower_components/mockup-core/js/pattern',
-+      'mockup-patterns-cookietrigger': 'patterns/cookietrigger/pattern',
-       'mockup-patterns-eventedit': 'patterns/eventedit/pattern',
-       'mockup-patterns-filemanager': 'patterns/filemanager/pattern',
-       'mockup-patterns-filemanager-url': 'patterns/filemanager',
-diff --git a/mockup/patterns/cookietrigger/pattern.js b/mockup/patterns/cookietrigger/pattern.js
-new file mode 100644
-index 0000000..f13b7c8
---- /dev/null
-+++ b/mockup/patterns/cookietrigger/pattern.js
-@@ -0,0 +1,64 @@
-+/* Cookie Trigger pattern.
-+ *
-+ * Show a DOM element if browser cookies are disabled.
-+ *
-+ * Documentation:
-+ *
-+ *    {{ example-1 }}
-+ *
-+ * Example: example-1
-+ *    <div class="portalMessage error pat-cookietrigger">
-+ *      Cookies are not enabled. You must enable cookies before you can log in.
-+ *    </div>
-+ */
+diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
+index 29d27ec..bcb8ddc 100644
+--- a/Products/CMFPlone/profiles/dependencies/registry.xml
++++ b/Products/CMFPlone/profiles/dependencies/registry.xml
+@@ -655,6 +655,11 @@
+       <value key="js">++resource++mockup/backdrop/pattern.js</value>
+   </records>
+ 
++  <records prefix="plone.resources/mockup-patterns-cookietrigger"
++            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++      <value key="js">++resource++mockup/cookietrigger/pattern.js</value>
++  </records>
 +
-+define([
-+  'jquery',
-+  'mockup-patterns-base'
-+], function ($, Base) {
-+  'use strict';
-+
-+  var CookieTrigger = Base.extend({
-+    name: 'cookietrigger',
-+
-+    isCookiesEnabled: function() {
-+      /* Test whether cookies are enabled by attempting to set a cookie
-+       * and then change its value set test cookie.
-+       */
-+      var c = "areYourCookiesEnabled=0";
-+      document.cookie = c;
-+      var dc = document.cookie;
-+      // cookie not set?  fail
-+      if (dc.indexOf(c) === -1) {
-+        return 0;
-+      }
-+      // change test cookie
-+      c = "areYourCookiesEnabled=1";
-+      document.cookie = c;
-+      dc = document.cookie;
-+      // cookie not changed?  fail
-+      if (dc.indexOf(c) === -1) {
-+        return 0;
-+      }
-+      // delete cookie
-+      document.cookie = "areYourCookiesEnabled=; expires=Thu, 01-Jan-70 00:00:01 GMT";
-+      return 1;
-+    },
-+
-+    showIfCookiesDisabled: function() {
-+      /* Show the element on which this pattern is defined if cookies are
-+       * disabled.
-+       */
-+      if (this.isCookiesEnabled()) {
-+        this.$el.hide();
-+      } else {
-+        this.$el.show();
-+      }
-+    },
-+
-+    init: function () {
-+      this.showIfCookiesDisabled();
-+    },
-+  });
-+  return CookieTrigger;
-+});
-diff --git a/mockup/tests/pattern-cookietrigger-test.js b/mockup/tests/pattern-cookietrigger-test.js
-new file mode 100644
-index 0000000..1d837cc
---- /dev/null
-+++ b/mockup/tests/pattern-cookietrigger-test.js
-@@ -0,0 +1,48 @@
-+define([
-+  'expect',
-+  'jquery',
-+  'sinon',
-+  'mockup-registry',
-+  'mockup-patterns-cookietrigger'
-+], function(expect, $, sinon, registry, Pattern) {
-+  'use strict';
-+
-+  window.mocha.setup('bdd');
-+  $.fx.off = true;
-+
-+/* ====================
-+   TEST: Cookie Trigger 
-+   ==================== */
-+
-+  describe('Cookie Trigger', function () {
-+    afterEach(function() {
-+      $('body').empty();
-+    });
-+
-+    it('The .pat-cookietrigger DOM element is shown if cookies are disabled', function() {
-+      var widget = 
-+        '<div class="portalMessage error pat-cookietrigger">' +
-+        '  Cookies are not enabled. You must enable cookies before you can log in.' +
-+        '</div>';
-+
-+      var $el = $(widget).appendTo('body').hide();
-+      Pattern.extend({isCookiesEnabled: sinon.stub().returns(0)});
-+      expect($el.is(':visible')).to.equal(false);
-+      var pattern = registry.init($el, 'cookietrigger');
-+      expect($el.is(':visible')).to.equal(true);
-+    });
-+
-+    it('The .pat-cookietrigger DOM element is hidden if cookies are enabled', function() {
-+      var widget = 
-+        '<div class="portalMessage error pat-cookietrigger">' +
-+        '  Cookies are not enabled. You must enable cookies before you can log in.' +
-+        '</div>';
-+
-+      var $el = $(widget).appendTo('body').hide();
-+      Pattern.extend({isCookiesEnabled: sinon.stub().returns(1)});
-+      expect($el.is(':visible')).to.equal(false);
-+      var pattern = registry.init($el, 'cookietrigger');
-+      expect($el.is(':visible')).to.equal(false);
-+    });
-+  });
-+});
+   <records prefix="plone.resources/mockup-patterns-sortable"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">++resource++mockup/sortable/pattern.js</value>
+diff --git a/Products/CMFPlone/skins/plone_ecmascript/login.js b/Products/CMFPlone/skins/plone_ecmascript/login.js
+deleted file mode 100644
+index a66dc13..0000000
+--- a/Products/CMFPlone/skins/plone_ecmascript/login.js
++++ /dev/null
+@@ -1,74 +0,0 @@
+-// Functions used by login pages
+-
+-function cookiesEnabled() {
+-  // Test whether cookies are enabled by attempting to set a cookie and then change its value
+-  // set test cookie
+-  var c = "areYourCookiesEnabled=0";
+-  document.cookie = c;
+-  var dc = document.cookie;
+-  // cookie not set?  fail
+-  if (dc.indexOf(c) == -1) return 0;
+-  // change test cookie
+-  c = "areYourCookiesEnabled=1";
+-  document.cookie = c;
+-  dc = document.cookie;
+-  // cookie not changed?  fail
+-  if (dc.indexOf(c) == -1) return 0;
+-  // delete cookie
+-  document.cookie = "areYourCookiesEnabled=; expires=Thu, 01-Jan-70 00:00:01 GMT";
+-  return 1;
+-}
+-
+-function setLoginVars(user_name_id, alt_user_name_id, password_id, empty_password_id, js_enabled_id, cookies_enabled_id) {
+-  // Indicate that javascript is enabled, set cookie status, copy username and password length info to 
+-  // alternative variables since these vars are removed from the request by zope's authentication mechanism.
+-  if (js_enabled_id) {
+-    el = document.getElementById(js_enabled_id);
+-    if (el) { el.value = 1; }
+-  }
+-  if (cookies_enabled_id) {
+-    el = document.getElementById(cookies_enabled_id);
+-    // Do a fresh cookies enabled test every time we press the login button
+-    //   so that we are up to date in case the user enables cookies after seeing
+-    //   the cookies message.
+-    if (el) { el.value = cookiesEnabled(); } 
+-  }
+-  if (user_name_id && alt_user_name_id) {
+-    user_name = document.getElementById(user_name_id)
+-    alt_user_name = document.getElementById(alt_user_name_id)
+-    if (user_name && alt_user_name) {
+-       alt_user_name.value = user_name.value;
+-    } 
+-  }
+-  if (password_id && empty_password_id) {
+-    password = document.getElementById(password_id)
+-    empty_password = document.getElementById(empty_password_id)
+-    if (password && empty_password) {
+-       if (password.value.length==0) {
+-          empty_password.value = '1';
+-       } else {
+-          empty_password.value = '0';
+-       }
+-    }
+-  }
+-  return 1;
+-}
+-
+-function showCookieMessage(msg_id) {
+-  // Show the element with the given id if cookies are not enabled
+-  msg = document.getElementById(msg_id)
+-  if (msg) {
+-     if (cookiesEnabled()) {
+-        msg.style.display = 'none';
+-     } else {
+-        msg.style.display = 'block';
+-     }
+-  }
+-}
+-
+-function showEnableCookiesMessage() {
+-  // Show the element with the id 'enable_cookies_message' if cookies are not enabled
+-  showCookieMessage('enable_cookies_message')
+-}
+-// Call showEnableCookiesMessage after the page loads
+-jQuery(showEnableCookiesMessage);
+diff --git a/Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt b/Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt
+index 224707e..7a58954 100644
+--- a/Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt
++++ b/Products/CMFPlone/skins/plone_login/failsafe_login_form.cpt
+@@ -43,9 +43,7 @@ If you do not have an account here, head over to the
+ </p>
+ 
+ 
+-<div class="portalMessage error"
+-    id="enable_cookies_message"
+-    style="display:none">
++<div class="portalMessage error pat-cookietrigger" style="display:none">
+     <strong i18n:translate="">
+         Error
+     </strong>
+diff --git a/Products/CMFPlone/skins/plone_login/logged_out.cpt b/Products/CMFPlone/skins/plone_login/logged_out.cpt
+index b05ea0f..e00fbcf 100644
+--- a/Products/CMFPlone/skins/plone_login/logged_out.cpt
++++ b/Products/CMFPlone/skins/plone_login/logged_out.cpt
+@@ -6,11 +6,6 @@
+       i18n:domain="plone">
+ 
+ <head>
+-    <metal:js fill-slot="javascript_head_slot">
+-        <script type="text/javascript" src=""
+-                tal:attributes="src string:${context/portal_url}/login.js">
+-        </script>
+-    </metal:js>
+     <metal:block fill-slot="top_slot"
+                  tal:define="dummy python:request.set('disable_border',1);
+                              disable_column_one python:request.set('disable_plone.leftcolumn',1);
+diff --git a/Products/CMFPlone/skins/plone_login/login_failed.cpt b/Products/CMFPlone/skins/plone_login/login_failed.cpt
+index 48a9e0a..6a35335 100644
+--- a/Products/CMFPlone/skins/plone_login/login_failed.cpt
++++ b/Products/CMFPlone/skins/plone_login/login_failed.cpt
+@@ -7,11 +7,6 @@
+       i18n:domain="plone">
+ 
+ <head>
+-    <metal:js fill-slot="javascript_head_slot">
+-        <script type="text/javascript" src=""
+-                tal:attributes="src string:${context/portal_url}/login.js">
+-        </script>
+-    </metal:js>
+     <metal:block fill-slot="top_slot"
+                  tal:define="dummy python:request.set('disable_border',1);
+                              disable_column_one python:request.set('disable_plone.leftcolumn',1);
+diff --git a/Products/CMFPlone/skins/plone_login/login_form.cpt b/Products/CMFPlone/skins/plone_login/login_form.cpt
+index 9da9e5a..bbf7c07 100644
+--- a/Products/CMFPlone/skins/plone_login/login_form.cpt
++++ b/Products/CMFPlone/skins/plone_login/login_form.cpt
+@@ -6,11 +6,6 @@
+       i18n:domain="plone">
+ 
+ <head>
+-    <metal:js fill-slot="javascript_head_slot">
+-        <script type="text/javascript" src=""
+-                tal:attributes="src string:${context/portal_url}/login.js">
+-        </script>
+-    </metal:js>
+     <metal:block fill-slot="top_slot"
+                  tal:define="dummy python:request.set('disable_border',1);
+                              disable_column_one python:request.set('disable_plone.leftcolumn',1);
+@@ -55,9 +50,7 @@
+                         target python:test(target in ('_parent', '_top', '_blank', '_self'), target, None);
+                         ztu modules/ZTUtils;">
+ 
+-            <div class="portalMessage error"
+-                id="enable_cookies_message"
+-                style="display:none">
++            <div class="portalMessage error pat-cookietrigger" style="display:none">
+                 <strong i18n:translate="">
+                     Error
+                 </strong>
+diff --git a/Products/CMFPlone/skins/plone_login/registered.pt b/Products/CMFPlone/skins/plone_login/registered.pt
+index 59ac0df..a8fe7e1 100644
+--- a/Products/CMFPlone/skins/plone_login/registered.pt
++++ b/Products/CMFPlone/skins/plone_login/registered.pt
+@@ -45,9 +45,7 @@
+                     Click the button to log in immediately.
+                 </p>
+ 
+-                <div class="portalMessage error"
+-                    id="enable_cookies_message"
+-                    style="display:none">
++                <div class="portalMessage error pat-cookietrigger" style="display:none">
+                     <strong i18n:translate="">
+                         Error
+                     </strong>
+diff --git a/Products/CMFPlone/static/plone.js b/Products/CMFPlone/static/plone.js
+index b79b820..ab9b442 100644
+--- a/Products/CMFPlone/static/plone.js
++++ b/Products/CMFPlone/static/plone.js
+@@ -34,6 +34,7 @@ require([
+   'plone-patterns-toolbar',
+   'mockup-patterns-accessibility',
+   'mockup-patterns-autotoc',
++  'mockup-patterns-cookietrigger',
+   'mockup-patterns-formunloadalert',
+   'mockup-patterns-preventdoublesubmit',
+   'mockup-patterns-inlinevalidation',
 
 
