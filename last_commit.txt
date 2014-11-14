@@ -1,148 +1,25 @@
-Repository: plone.app.z3cform
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-13T17:02:54+01:00
-Author: JC Brand (jcbrand) <jc@opkode.com>
-Commit: https://github.com/plone/plone.app.z3cform/commit/eed87dae937735464af7b9b9330fbb6dbaa72507
+Date: 2014-11-14T22:38:35+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/Products.CMFPlone/commit/858a53adea25d4b44918da9dded4ae38f71a0b47
 
-Update markup to use pat-inlinevalidation.
-
-See Products.CMFPlone issues 282 and 299
+fix doctest assignment of markup controlpanel settings
 
 Files changed:
-M plone/app/z3cform/templates/multi_input.pt
-M plone/app/z3cform/templates/object_input.pt
-M plone/app/z3cform/templates/singlecheckbox.pt
-M plone/app/z3cform/templates/widget.pt
+M Products/CMFPlone/controlpanel/README.rst
 
-diff --git a/plone/app/z3cform/templates/multi_input.pt b/plone/app/z3cform/templates/multi_input.pt
-index 5f4e787..a553ba2 100644
---- a/plone/app/z3cform/templates/multi_input.pt
-+++ b/plone/app/z3cform/templates/multi_input.pt
-@@ -9,7 +9,8 @@
-                          key_error key_widget/error|nothing;
-                          error_class python:(error or key_error) and ' error' or '';
-                          fieldname_class string:kssattr-fieldname-${widget/name};"
--             tal:attributes="class string:multi-widget-field field z3cformInlineValidation ${fieldname_class}${error_class};
-+             data-pat-inlinevalidation='{"type":"z3c.form"}'
-+             tal:attributes="class string:multi-widget-field field pat-inlinevalidation ${fieldname_class}${error_class};
-                              id string:formfield-${widget/id};">
+diff --git a/Products/CMFPlone/controlpanel/README.rst b/Products/CMFPlone/controlpanel/README.rst
+index ab497d2..0255ac5 100644
+--- a/Products/CMFPlone/controlpanel/README.rst
++++ b/Products/CMFPlone/controlpanel/README.rst
+@@ -92,5 +92,5 @@ Markup Control Panel
+   >>> from Products.CMFPlone.interfaces import IMarkupSchema
+   >>> markup_settings = registry.forInterface(IMarkupSchema, prefix='plone')
  
-             <input id="" name=""
-diff --git a/plone/app/z3cform/templates/object_input.pt b/plone/app/z3cform/templates/object_input.pt
-index 9dc0ad9..0f27865 100644
---- a/plone/app/z3cform/templates/object_input.pt
-+++ b/plone/app/z3cform/templates/object_input.pt
-@@ -4,7 +4,8 @@
-                          error widget/error;
-                          error_class python:error and ' error' or '';
-                          fieldname_class string:kssattr-fieldname-${widget/name};"
--             tal:attributes="class string:object-widget-field field z3cformInlineValidation ${fieldname_class}${error_class};
-+             data-pat-inlinevalidation='{"type":"z3c.form"}'
-+             tal:attributes="class string:object-widget-field field pat-inlinevalidation ${fieldname_class}${error_class};
-              data-fieldname widget/name;
-                              id string:formfield-${widget/id};">
- 
-diff --git a/plone/app/z3cform/templates/singlecheckbox.pt b/plone/app/z3cform/templates/singlecheckbox.pt
-index d890837..84e51f4 100644
---- a/plone/app/z3cform/templates/singlecheckbox.pt
-+++ b/plone/app/z3cform/templates/singlecheckbox.pt
-@@ -5,7 +5,8 @@
-                error widget/error;
-                error_class python:error and ' error' or '';
-                fieldname_class string:kssattr-fieldname-${widget/name};"
--   tal:attributes="class string:field z3cformInlineValidation ${fieldname_class}${error_class};
-+   data-pat-inlinevalidation='{"type":"z3c.form"}'
-+   tal:attributes="class string:field pat-inlinevalidation ${fieldname_class}${error_class};
-                    data-fieldname widget/name;
-                    id string:formfield-${widget/id};">
- 
-diff --git a/plone/app/z3cform/templates/widget.pt b/plone/app/z3cform/templates/widget.pt
-index 07199ea..bbed533 100644
---- a/plone/app/z3cform/templates/widget.pt
-+++ b/plone/app/z3cform/templates/widget.pt
-@@ -8,7 +8,8 @@
-                empty_values python: (None, '', [], ('', '', '', '00', '00', ''), ('', '', ''));
-                empty_class python: (widget.value in empty_values) and ' empty' or '';
-                fieldname_class string:kssattr-fieldname-${widget/name};"
--   tal:attributes="class string:field z3cformInlineValidation ${fieldname_class}${error_class}${empty_class};
-+   data-pat-inlinevalidation='{"type":"z3c.form"}'
-+   tal:attributes="class string:field pat-inlinevalidation ${fieldname_class}${error_class}${empty_class};
-                    data-fieldname widget/name;
-                    id string:formfield-${widget/id};">
-     <label for="" class="horizontal"
-
-
-Repository: plone.app.z3cform
-Branch: refs/heads/master
-Date: 2014-11-14T12:56:34-06:00
-Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.z3cform/commit/970ebd0307d7ad6e109791e78b010c6e2fb3c2d0
-
-Merge pull request #15 from plone/inlinevalidation
-
-Update markup to use pat-inlinevalidation.
-
-Files changed:
-M plone/app/z3cform/templates/multi_input.pt
-M plone/app/z3cform/templates/object_input.pt
-M plone/app/z3cform/templates/singlecheckbox.pt
-M plone/app/z3cform/templates/widget.pt
-
-diff --git a/plone/app/z3cform/templates/multi_input.pt b/plone/app/z3cform/templates/multi_input.pt
-index 5f4e787..a553ba2 100644
---- a/plone/app/z3cform/templates/multi_input.pt
-+++ b/plone/app/z3cform/templates/multi_input.pt
-@@ -9,7 +9,8 @@
-                          key_error key_widget/error|nothing;
-                          error_class python:(error or key_error) and ' error' or '';
-                          fieldname_class string:kssattr-fieldname-${widget/name};"
--             tal:attributes="class string:multi-widget-field field z3cformInlineValidation ${fieldname_class}${error_class};
-+             data-pat-inlinevalidation='{"type":"z3c.form"}'
-+             tal:attributes="class string:multi-widget-field field pat-inlinevalidation ${fieldname_class}${error_class};
-                              id string:formfield-${widget/id};">
- 
-             <input id="" name=""
-diff --git a/plone/app/z3cform/templates/object_input.pt b/plone/app/z3cform/templates/object_input.pt
-index 9dc0ad9..0f27865 100644
---- a/plone/app/z3cform/templates/object_input.pt
-+++ b/plone/app/z3cform/templates/object_input.pt
-@@ -4,7 +4,8 @@
-                          error widget/error;
-                          error_class python:error and ' error' or '';
-                          fieldname_class string:kssattr-fieldname-${widget/name};"
--             tal:attributes="class string:object-widget-field field z3cformInlineValidation ${fieldname_class}${error_class};
-+             data-pat-inlinevalidation='{"type":"z3c.form"}'
-+             tal:attributes="class string:object-widget-field field pat-inlinevalidation ${fieldname_class}${error_class};
-              data-fieldname widget/name;
-                              id string:formfield-${widget/id};">
- 
-diff --git a/plone/app/z3cform/templates/singlecheckbox.pt b/plone/app/z3cform/templates/singlecheckbox.pt
-index d890837..84e51f4 100644
---- a/plone/app/z3cform/templates/singlecheckbox.pt
-+++ b/plone/app/z3cform/templates/singlecheckbox.pt
-@@ -5,7 +5,8 @@
-                error widget/error;
-                error_class python:error and ' error' or '';
-                fieldname_class string:kssattr-fieldname-${widget/name};"
--   tal:attributes="class string:field z3cformInlineValidation ${fieldname_class}${error_class};
-+   data-pat-inlinevalidation='{"type":"z3c.form"}'
-+   tal:attributes="class string:field pat-inlinevalidation ${fieldname_class}${error_class};
-                    data-fieldname widget/name;
-                    id string:formfield-${widget/id};">
- 
-diff --git a/plone/app/z3cform/templates/widget.pt b/plone/app/z3cform/templates/widget.pt
-index 07199ea..bbed533 100644
---- a/plone/app/z3cform/templates/widget.pt
-+++ b/plone/app/z3cform/templates/widget.pt
-@@ -8,7 +8,8 @@
-                empty_values python: (None, '', [], ('', '', '', '00', '00', ''), ('', '', ''));
-                empty_class python: (widget.value in empty_values) and ' empty' or '';
-                fieldname_class string:kssattr-fieldname-${widget/name};"
--   tal:attributes="class string:field z3cformInlineValidation ${fieldname_class}${error_class}${empty_class};
-+   data-pat-inlinevalidation='{"type":"z3c.form"}'
-+   tal:attributes="class string:field pat-inlinevalidation ${fieldname_class}${error_class}${empty_class};
-                    data-fieldname widget/name;
-                    id string:formfield-${widget/id};">
-     <label for="" class="horizontal"
+-  >>> markup_settings.default_type = True
+-  >>> markup_settings.allowed_types = True
++  >>> markup_settings.default_type = 'text/html'
++  >>> markup_settings.allowed_types = ('text/html', 'text/x-web-textile')
 
 
