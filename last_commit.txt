@@ -1,75 +1,386 @@
-Repository: plone.app.controlpanel
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-14T13:35:57+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/67a35c316a5bd4c35f7fce640541286f02d59999
+Date: 2014-11-14T14:41:01+01:00
+Author: JC Brand (jcbrand) <jc@opkode.com>
+Commit: https://github.com/plone/mockup/commit/4ad9fe671060cd10a2c453d33301653dbc6a1797
 
-Remove the markup control panel, as it was moved to Products.CMFPlone.
+New pattern pat-cookietrigger
+
+containing legacy JS from plone_ecmascripts/login.js
+
+See Products.CMFPlone ticket #282
 
 Files changed:
-M CHANGES.rst
-M plone/app/controlpanel/configure.zcml
-M plone/app/controlpanel/tests/test_doctests.py
+A mockup/patterns/cookietrigger/pattern.js
+A mockup/tests/pattern-cookietrigger-test.js
+M mockup/js/bundles/docs.js
+M mockup/js/config.js
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index dfaefd3..2d36f21 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,10 +4,14 @@ Changelog
- 3.0.0 (unreleased)
- ------------------
- 
-+- Remove the markup control panel, as it was moved to Products.CMFPlone.
-+  [thet]
+diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
+index 8db620f..3823cee 100644
+--- a/mockup/js/bundles/docs.js
++++ b/mockup/js/bundles/docs.js
+@@ -47,6 +47,11 @@ require([
+             description: 'TODO',
+             url: 'patterns/backdrop/pattern.js'
+           },
++          { id: 'cookiewarning',
++            title: 'Cookie Warning',
++            description: "Warns the user that they won't be able to log in until cookies are enabled.",
++            url: 'patterns/cookiewarning/pattern.js'
++          },
+           { id: 'formautofocus',
+             title: 'Form Auto Focus',
+             description: 'TODO',
+diff --git a/mockup/js/config.js b/mockup/js/config.js
+index 1ab1ef6..0541d0a 100644
+--- a/mockup/js/config.js
++++ b/mockup/js/config.js
+@@ -63,6 +63,7 @@
+       'mockup-patterns-autotoc': 'patterns/autotoc/pattern',
+       'mockup-patterns-backdrop': 'patterns/backdrop/pattern',
+       'mockup-patterns-base': 'bower_components/mockup-core/js/pattern',
++      'mockup-patterns-cookietrigger': 'patterns/cookietrigger/pattern',
+       'mockup-patterns-eventedit': 'patterns/eventedit/pattern',
+       'mockup-patterns-filemanager': 'patterns/filemanager/pattern',
+       'mockup-patterns-filemanager-url': 'patterns/filemanager',
+diff --git a/mockup/patterns/cookietrigger/pattern.js b/mockup/patterns/cookietrigger/pattern.js
+new file mode 100644
+index 0000000..972006e
+--- /dev/null
++++ b/mockup/patterns/cookietrigger/pattern.js
+@@ -0,0 +1,55 @@
++/* Cookie Trigger pattern.
++ *
++ * Show a DOM element if browser cookies are disabled.
++ */
 +
- - Remove the control panel overview (moved to Products.CMFPlone)
-   This breaks Plone 4 compatibility.
-   PLIP 10359 (https://dev.plone.org/ticket/10359)
-   https://github.com/plone/Products.CMFPlone/issues/290
-+  [khink]
++define([
++  'jquery',
++  'mockup-patterns-base'
++], function ($, Base) {
++  'use strict';
++
++  var CookieTrigger = Base.extend({
++    name: 'cookietrigger',
++
++    isCookiesEnabled: function() {
++      /* Test whether cookies are enabled by attempting to set a cookie
++       * and then change its value set test cookie.
++       */
++      var c = "areYourCookiesEnabled=0";
++      document.cookie = c;
++      var dc = document.cookie;
++      // cookie not set?  fail
++      if (dc.indexOf(c) === -1) {
++        return 0;
++      }
++      // change test cookie
++      c = "areYourCookiesEnabled=1";
++      document.cookie = c;
++      dc = document.cookie;
++      // cookie not changed?  fail
++      if (dc.indexOf(c) === -1) {
++        return 0;
++      }
++      // delete cookie
++      document.cookie = "areYourCookiesEnabled=; expires=Thu, 01-Jan-70 00:00:01 GMT";
++      return 1;
++    },
++
++    showIfCookiesDisabled: function() {
++      /* Show the element on which this pattern is defined if cookies are
++       * disabled.
++       */
++      if (this.isCookiesEnabled()) {
++        this.$el.hide();
++      } else {
++        this.$el.show();
++      }
++    },
++
++    init: function () {
++      this.showIfCookiesDisabled();
++    },
++  });
++  return CookieTrigger;
++});
+diff --git a/mockup/tests/pattern-cookietrigger-test.js b/mockup/tests/pattern-cookietrigger-test.js
+new file mode 100644
+index 0000000..1d837cc
+--- /dev/null
++++ b/mockup/tests/pattern-cookietrigger-test.js
+@@ -0,0 +1,48 @@
++define([
++  'expect',
++  'jquery',
++  'sinon',
++  'mockup-registry',
++  'mockup-patterns-cookietrigger'
++], function(expect, $, sinon, registry, Pattern) {
++  'use strict';
++
++  window.mocha.setup('bdd');
++  $.fx.off = true;
++
++/* ====================
++   TEST: Cookie Trigger 
++   ==================== */
++
++  describe('Cookie Trigger', function () {
++    afterEach(function() {
++      $('body').empty();
++    });
++
++    it('The .pat-cookietrigger DOM element is shown if cookies are disabled', function() {
++      var widget = 
++        '<div class="portalMessage error pat-cookietrigger">' +
++        '  Cookies are not enabled. You must enable cookies before you can log in.' +
++        '</div>';
++
++      var $el = $(widget).appendTo('body').hide();
++      Pattern.extend({isCookiesEnabled: sinon.stub().returns(0)});
++      expect($el.is(':visible')).to.equal(false);
++      var pattern = registry.init($el, 'cookietrigger');
++      expect($el.is(':visible')).to.equal(true);
++    });
++
++    it('The .pat-cookietrigger DOM element is hidden if cookies are enabled', function() {
++      var widget = 
++        '<div class="portalMessage error pat-cookietrigger">' +
++        '  Cookies are not enabled. You must enable cookies before you can log in.' +
++        '</div>';
++
++      var $el = $(widget).appendTo('body').hide();
++      Pattern.extend({isCookiesEnabled: sinon.stub().returns(1)});
++      expect($el.is(':visible')).to.equal(false);
++      var pattern = registry.init($el, 'cookietrigger');
++      expect($el.is(':visible')).to.equal(false);
++    });
++  });
++});
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2014-11-14T14:44:32+01:00
+Author: JC Brand (jcbrand) <jc@opkode.com>
+Commit: https://github.com/plone/mockup/commit/a3410f6e62e012996f622b0dc99bea07dc180123
+
+Fix name in docs.js and add docstring.
+
+Files changed:
+M mockup/js/bundles/docs.js
+M mockup/patterns/cookietrigger/pattern.js
+
+diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
+index 3823cee..fdcdcbc 100644
+--- a/mockup/js/bundles/docs.js
++++ b/mockup/js/bundles/docs.js
+@@ -47,10 +47,10 @@ require([
+             description: 'TODO',
+             url: 'patterns/backdrop/pattern.js'
+           },
+-          { id: 'cookiewarning',
+-            title: 'Cookie Warning',
+-            description: "Warns the user that they won't be able to log in until cookies are enabled.",
+-            url: 'patterns/cookiewarning/pattern.js'
++          { id: 'cookietrigger',
++            title: 'Cookie Trigger',
++            description: "Shows a DOM element if browser cookies are disabled.",
++            url: 'patterns/cookietrigger/pattern.js'
+           },
+           { id: 'formautofocus',
+             title: 'Form Auto Focus',
+diff --git a/mockup/patterns/cookietrigger/pattern.js b/mockup/patterns/cookietrigger/pattern.js
+index 972006e..f13b7c8 100644
+--- a/mockup/patterns/cookietrigger/pattern.js
++++ b/mockup/patterns/cookietrigger/pattern.js
+@@ -1,6 +1,15 @@
+ /* Cookie Trigger pattern.
+  *
+  * Show a DOM element if browser cookies are disabled.
++ *
++ * Documentation:
++ *
++ *    {{ example-1 }}
++ *
++ * Example: example-1
++ *    <div class="portalMessage error pat-cookietrigger">
++ *      Cookies are not enabled. You must enable cookies before you can log in.
++ *    </div>
+  */
  
- 
- 2.4.6 (2014-11-01)
-diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
-index 44dc07e..b74abd5 100644
---- a/plone/app/controlpanel/configure.zcml
-+++ b/plone/app/controlpanel/configure.zcml
-@@ -20,7 +20,7 @@
- 
-   <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
- 
--  <adapter factory=".markup.MarkupControlPanelAdapter" />
-+  <!-- adapter factory=".markup.MarkupControlPanelAdapter" /-->
- 
-   <adapter factory=".ram.RAMCacheControlPanelAdapter" />
- 
-@@ -62,12 +62,12 @@
-       permission="plone.app.controlpanel.Mail"
-       />
- 
--  <browser:page
-+  <!-- browser:page
-       name="markup-controlpanel"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-       class=".markup.MarkupControlPanel"
-       permission="plone.app.controlpanel.Markup"
--      />
-+      /-->
- 
-   <!--
-   <browser:page
-diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
-index 2fd56bf..1eabf16 100644
---- a/plone/app/controlpanel/tests/test_doctests.py
-+++ b/plone/app/controlpanel/tests/test_doctests.py
-@@ -23,7 +23,7 @@ def test_suite():
- #             'search.txt',
- #             'site.txt',
- #             'skins.txt',
--             'markup.txt',
-+#             'markup.txt',
- #             'navigation.txt',
-              'types.txt',
-              'syndication.txt'
+ define([
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2014-11-14T08:30:45-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/f19ac0c6001b9b728a1526e1397cbe6707033044
+
+Merge pull request #438 from plone/cookiewarning
+
+New pattern: pat-cookietrigger
+
+Files changed:
+A mockup/patterns/cookietrigger/pattern.js
+A mockup/tests/pattern-cookietrigger-test.js
+M mockup/js/bundles/docs.js
+M mockup/js/config.js
+
+diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
+index 8db620f..fdcdcbc 100644
+--- a/mockup/js/bundles/docs.js
++++ b/mockup/js/bundles/docs.js
+@@ -47,6 +47,11 @@ require([
+             description: 'TODO',
+             url: 'patterns/backdrop/pattern.js'
+           },
++          { id: 'cookietrigger',
++            title: 'Cookie Trigger',
++            description: "Shows a DOM element if browser cookies are disabled.",
++            url: 'patterns/cookietrigger/pattern.js'
++          },
+           { id: 'formautofocus',
+             title: 'Form Auto Focus',
+             description: 'TODO',
+diff --git a/mockup/js/config.js b/mockup/js/config.js
+index 1ab1ef6..0541d0a 100644
+--- a/mockup/js/config.js
++++ b/mockup/js/config.js
+@@ -63,6 +63,7 @@
+       'mockup-patterns-autotoc': 'patterns/autotoc/pattern',
+       'mockup-patterns-backdrop': 'patterns/backdrop/pattern',
+       'mockup-patterns-base': 'bower_components/mockup-core/js/pattern',
++      'mockup-patterns-cookietrigger': 'patterns/cookietrigger/pattern',
+       'mockup-patterns-eventedit': 'patterns/eventedit/pattern',
+       'mockup-patterns-filemanager': 'patterns/filemanager/pattern',
+       'mockup-patterns-filemanager-url': 'patterns/filemanager',
+diff --git a/mockup/patterns/cookietrigger/pattern.js b/mockup/patterns/cookietrigger/pattern.js
+new file mode 100644
+index 0000000..f13b7c8
+--- /dev/null
++++ b/mockup/patterns/cookietrigger/pattern.js
+@@ -0,0 +1,64 @@
++/* Cookie Trigger pattern.
++ *
++ * Show a DOM element if browser cookies are disabled.
++ *
++ * Documentation:
++ *
++ *    {{ example-1 }}
++ *
++ * Example: example-1
++ *    <div class="portalMessage error pat-cookietrigger">
++ *      Cookies are not enabled. You must enable cookies before you can log in.
++ *    </div>
++ */
++
++define([
++  'jquery',
++  'mockup-patterns-base'
++], function ($, Base) {
++  'use strict';
++
++  var CookieTrigger = Base.extend({
++    name: 'cookietrigger',
++
++    isCookiesEnabled: function() {
++      /* Test whether cookies are enabled by attempting to set a cookie
++       * and then change its value set test cookie.
++       */
++      var c = "areYourCookiesEnabled=0";
++      document.cookie = c;
++      var dc = document.cookie;
++      // cookie not set?  fail
++      if (dc.indexOf(c) === -1) {
++        return 0;
++      }
++      // change test cookie
++      c = "areYourCookiesEnabled=1";
++      document.cookie = c;
++      dc = document.cookie;
++      // cookie not changed?  fail
++      if (dc.indexOf(c) === -1) {
++        return 0;
++      }
++      // delete cookie
++      document.cookie = "areYourCookiesEnabled=; expires=Thu, 01-Jan-70 00:00:01 GMT";
++      return 1;
++    },
++
++    showIfCookiesDisabled: function() {
++      /* Show the element on which this pattern is defined if cookies are
++       * disabled.
++       */
++      if (this.isCookiesEnabled()) {
++        this.$el.hide();
++      } else {
++        this.$el.show();
++      }
++    },
++
++    init: function () {
++      this.showIfCookiesDisabled();
++    },
++  });
++  return CookieTrigger;
++});
+diff --git a/mockup/tests/pattern-cookietrigger-test.js b/mockup/tests/pattern-cookietrigger-test.js
+new file mode 100644
+index 0000000..1d837cc
+--- /dev/null
++++ b/mockup/tests/pattern-cookietrigger-test.js
+@@ -0,0 +1,48 @@
++define([
++  'expect',
++  'jquery',
++  'sinon',
++  'mockup-registry',
++  'mockup-patterns-cookietrigger'
++], function(expect, $, sinon, registry, Pattern) {
++  'use strict';
++
++  window.mocha.setup('bdd');
++  $.fx.off = true;
++
++/* ====================
++   TEST: Cookie Trigger 
++   ==================== */
++
++  describe('Cookie Trigger', function () {
++    afterEach(function() {
++      $('body').empty();
++    });
++
++    it('The .pat-cookietrigger DOM element is shown if cookies are disabled', function() {
++      var widget = 
++        '<div class="portalMessage error pat-cookietrigger">' +
++        '  Cookies are not enabled. You must enable cookies before you can log in.' +
++        '</div>';
++
++      var $el = $(widget).appendTo('body').hide();
++      Pattern.extend({isCookiesEnabled: sinon.stub().returns(0)});
++      expect($el.is(':visible')).to.equal(false);
++      var pattern = registry.init($el, 'cookietrigger');
++      expect($el.is(':visible')).to.equal(true);
++    });
++
++    it('The .pat-cookietrigger DOM element is hidden if cookies are enabled', function() {
++      var widget = 
++        '<div class="portalMessage error pat-cookietrigger">' +
++        '  Cookies are not enabled. You must enable cookies before you can log in.' +
++        '</div>';
++
++      var $el = $(widget).appendTo('body').hide();
++      Pattern.extend({isCookiesEnabled: sinon.stub().returns(1)});
++      expect($el.is(':visible')).to.equal(false);
++      var pattern = registry.init($el, 'cookietrigger');
++      expect($el.is(':visible')).to.equal(false);
++    });
++  });
++});
 
 
