@@ -1,25 +1,75 @@
-Repository: Products.CMFPlone
+Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-11-14T13:32:10+01:00
+Date: 2014-11-14T13:35:57+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/1bac023e45b27956e0a0e9b513306df96c9f987e
+Commit: https://github.com/plone/plone.app.controlpanel/commit/67a35c316a5bd4c35f7fce640541286f02d59999
 
-Revert "increase profile version for new upgrade steps"
-
-This reverts commit 48a6796b6ef040bc868983c2fde926f52a197ba6.
+Remove the markup control panel, as it was moved to Products.CMFPlone.
 
 Files changed:
-M Products/CMFPlone/profiles/default/metadata.xml
+M CHANGES.rst
+M plone/app/controlpanel/configure.zcml
+M plone/app/controlpanel/tests/test_doctests.py
 
-diff --git a/Products/CMFPlone/profiles/default/metadata.xml b/Products/CMFPlone/profiles/default/metadata.xml
-index 679ff60..986ec19 100644
---- a/Products/CMFPlone/profiles/default/metadata.xml
-+++ b/Products/CMFPlone/profiles/default/metadata.xml
-@@ -1,4 +1,4 @@
- <?xml version="1.0"?>
- <metadata>
--  <version>5004</version>
-+  <version>5003</version>
- </metadata>
+diff --git a/CHANGES.rst b/CHANGES.rst
+index dfaefd3..2d36f21 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,10 +4,14 @@ Changelog
+ 3.0.0 (unreleased)
+ ------------------
+ 
++- Remove the markup control panel, as it was moved to Products.CMFPlone.
++  [thet]
++
+ - Remove the control panel overview (moved to Products.CMFPlone)
+   This breaks Plone 4 compatibility.
+   PLIP 10359 (https://dev.plone.org/ticket/10359)
+   https://github.com/plone/Products.CMFPlone/issues/290
++  [khink]
+ 
+ 
+ 2.4.6 (2014-11-01)
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index 44dc07e..b74abd5 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -20,7 +20,7 @@
+ 
+   <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
+ 
+-  <adapter factory=".markup.MarkupControlPanelAdapter" />
++  <!-- adapter factory=".markup.MarkupControlPanelAdapter" /-->
+ 
+   <adapter factory=".ram.RAMCacheControlPanelAdapter" />
+ 
+@@ -62,12 +62,12 @@
+       permission="plone.app.controlpanel.Mail"
+       />
+ 
+-  <browser:page
++  <!-- browser:page
+       name="markup-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+       class=".markup.MarkupControlPanel"
+       permission="plone.app.controlpanel.Markup"
+-      />
++      /-->
+ 
+   <!--
+   <browser:page
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 2fd56bf..1eabf16 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -23,7 +23,7 @@ def test_suite():
+ #             'search.txt',
+ #             'site.txt',
+ #             'skins.txt',
+-             'markup.txt',
++#             'markup.txt',
+ #             'navigation.txt',
+              'types.txt',
+              'syndication.txt'
 
 
