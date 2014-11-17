@@ -1,124 +1,184 @@
-Repository: Products.Archetypes
+Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-11-17T12:29:25+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.Archetypes/commit/32b9115be67568c363374c2fe7f28b09566d4639
+Date: 2014-11-17T16:22:11+01:00
+Author: JC Brand (jcbrand) <jc@opkode.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/c8bc0313490cf4fc41e8d7260f3ce9893ce54d5a
 
-allow defaultType to be set also when settings are stored in p.a.registry. create _getSiteProperties for reducing duplicate code. should make build green again
+Remove usage of popupforms.js
+
+See https://github.com/plone/Products.CMFPlone/issues/282
 
 Files changed:
-M Products/Archetypes/mimetype_utils.py
+M plone/app/controlpanel/skins.py
+M plone/app/controlpanel/tests/skins.txt
 
-diff --git a/Products/Archetypes/mimetype_utils.py b/Products/Archetypes/mimetype_utils.py
-index 24c9945..9d08d3f 100644
---- a/Products/Archetypes/mimetype_utils.py
-+++ b/Products/Archetypes/mimetype_utils.py
-@@ -11,7 +11,7 @@
-     IMarkupSchema = None
+diff --git a/plone/app/controlpanel/skins.py b/plone/app/controlpanel/skins.py
+index 20ab79b..ec42b86 100644
+--- a/plone/app/controlpanel/skins.py
++++ b/plone/app/controlpanel/skins.py
+@@ -55,12 +55,6 @@ class ISkinsSchema(Interface):
+                                             "won't be visible."),
+                              vocabulary=ICON_VISIBILITY_VOCABULARY)
  
- 
--def markupRegistrySettings(context):
-+def _markupRegistrySettings(context):
-     if not IMarkupSchema:
-         return None
-     try:
-@@ -26,24 +26,33 @@ def markupRegistrySettings(context):
-     return settings
- 
- 
-+def _getSiteProperties(context):
-+    portal_properties = getToolByName(context, 'portal_properties', None)
-+    if portal_properties is not None:
-+        site_properties = getattr(portal_properties, 'site_properties', None)
-+        if site_properties is not None:
-+            return site_properties
-+    return None
-+
-+
- def getDefaultContentType(context):
-     default_type = 'text/plain'
--    reg = markupRegistrySettings(context)
-+    reg = _markupRegistrySettings(context)
-     if reg:
-         default_type = reg.default_type
-     else:
--        portal_props = getToolByName(context, 'portal_properties', None)
--        if portal_props is not None:
--            site_props = getattr(portal_props, 'site_properties', None)
--            if site_props is not None:
--                default_type = site_props.getProperty('default_contenttype')
-+        site_properties = _getSiteProperties(context)
-+        if site_properties is not None:
-+            default_type = site_properties.getProperty('default_contenttype')
-     return default_type
- 
- 
- def setDefaultContentType(context, value):
--    portal_properties = getToolByName(context, 'portal_properties', None)
--    if portal_properties is not None:
--        site_properties = getattr(portal_properties, 'site_properties', None)
-+    reg = _markupRegistrySettings(context)
-+    if reg:
-+        reg.default_type = value
-+    else:
-+        site_properties = _getSiteProperties(context)
-         if site_properties is not None:
-             site_properties.manage_changeProperties(default_contenttype=value)
- 
-@@ -53,7 +62,7 @@ def getAllowedContentTypes(context):
-     property blacklist from the list of installed types.
-     """
-     allowed_types = []
--    reg = markupRegistrySettings(context)
-+    reg = _markupRegistrySettings(context)
-     if reg:
-         allowed_types = reg.allowed_types
-     else:
-@@ -72,29 +81,26 @@ def getAllowableContentTypes(context):
-     return portal_transforms.listAvailableTextInputs()
- 
- 
-+def getForbiddenContentTypes(context):
-+    """Convenence method for retrevng the site property
-+    ``forbidden_contenttypes``.
-+    """
-+    site_properties = _getSiteProperties(context)
-+    if site_properties is not None:
-+        if site_properties.hasProperty('forbidden_contenttypes'):
-+            return list(
-+                site_properties.getProperty('forbidden_contenttypes'))
-+    return []
-+
-+
- def setForbiddenContentTypes(context, forbidden_contenttypes=None):
-     """Convenience method for settng the site property
-     ``forbidden_contenttypes``.
-     """
-     if forbidden_contenttypes is None:
-         forbidden_contenttypes = []
--    portal_properties = getToolByName(context, 'portal_properties', None)
--    if portal_properties is not None:
--        site_properties = getattr(portal_properties, 'site_properties', None)
--        if site_properties is not None:
--            site_properties.manage_changeProperties(
--                forbidden_contenttypes=tuple(forbidden_contenttypes))
- 
+-    use_popups = Bool(title=_(u'Use popup overlays for simple forms'),
+-                        description=_(u"If enabled popup overlays will be "
+-                                       "used for simple forms like login, "
+-                                       "contact and delete confirmation."),
+-                        default=True)
 -
--def getForbiddenContentTypes(context):
--    """Convenence method for retrevng the site property
--    ``forbidden_contenttypes``.
--    """
--    portal_properties = getToolByName(context, 'portal_properties', None)
--    if portal_properties is not None:
--        site_properties = getattr(portal_properties, 'site_properties', None)
--        if site_properties is not None:
--            if site_properties.hasProperty('forbidden_contenttypes'):
--                return list(
--                    site_properties.getProperty('forbidden_contenttypes'))
--    return []
-+    site_properties = _getSiteProperties(context)
-+    if site_properties is not None:
-+        site_properties.manage_changeProperties(
-+            forbidden_contenttypes=tuple(forbidden_contenttypes))
+ 
+ class SkinsControlPanelAdapter(SchemaAdapterBase):
+ 
+@@ -140,26 +134,6 @@ def set_icon_visibility(self, value):
+ 
+     icon_visibility = property(get_icon_visibility,set_icon_visibility)
+ 
+-    def get_use_popups(self):
+-        popupforms = self.jstool.getResource('popupforms.js')
+-        if popupforms:
+-            return popupforms.getEnabled()
+-        jqoverlays = self.csstool.getResource('++resource++plone.app.jquerytools.overlays.css')
+-        if jqoverlays:
+-            return jqoverlays.getEnabled()
+-
+-    def set_use_popups(self, value):
+-        popupforms = self.jstool.getResource('popupforms.js')
+-        if popupforms:
+-            popupforms.setEnabled(value)
+-        self.jstool.cookResources()
+-        jqoverlays = self.csstool.getResource('++resource++plone.app.jquerytools.overlays.css')
+-        if jqoverlays:
+-            jqoverlays.setEnabled(value)
+-        self.csstool.cookResources()
+-
+-    use_popups = property(get_use_popups, set_use_popups)
+-
+ 
+ class SkinsControlPanel(ControlPanelForm):
+ 
+diff --git a/plone/app/controlpanel/tests/skins.txt b/plone/app/controlpanel/tests/skins.txt
+index cdbcd87..f9d22e5 100644
+--- a/plone/app/controlpanel/tests/skins.txt
++++ b/plone/app/controlpanel/tests/skins.txt
+@@ -130,27 +130,3 @@ Unchecking new_window should finally turn off the js support:
+ 
+     >>> jstool.getResource('mark_special_links.js').getEnabled()
+     False
+-
+-
+-Overlayed popup forms are also controlled here
+--------------------------------------------------------------------
+-
+-We should be starting with popupforms.js enabled:
+-
+-    >>> jstool = getToolByName(self.portal, 'portal_javascripts')
+-    >>> jstool.getResource('popupforms.js').getEnabled()
+-    True
+-
+-Unchecking use_popups should turn off the js support:
+-
+-    >>> self.browser.getControl(name='form.use_popups').value = False
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> jstool.getResource('popupforms.js').getEnabled()
+-    False
+-
+-Checking use_popups should turn re-enable:
+-
+-    >>> self.browser.getControl(name='form.use_popups').value = True
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> jstool.getResource('popupforms.js').getEnabled()
+-    True
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2014-11-17T10:00:09-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/4c1bf2d94328a785c110d389f956c54369905ddd
+
+Merge pull request #32 from plone/popupforms
+
+Remove usage of popupforms.js
+
+Files changed:
+M plone/app/controlpanel/skins.py
+M plone/app/controlpanel/tests/skins.txt
+
+diff --git a/plone/app/controlpanel/skins.py b/plone/app/controlpanel/skins.py
+index 20ab79b..ec42b86 100644
+--- a/plone/app/controlpanel/skins.py
++++ b/plone/app/controlpanel/skins.py
+@@ -55,12 +55,6 @@ class ISkinsSchema(Interface):
+                                             "won't be visible."),
+                              vocabulary=ICON_VISIBILITY_VOCABULARY)
+ 
+-    use_popups = Bool(title=_(u'Use popup overlays for simple forms'),
+-                        description=_(u"If enabled popup overlays will be "
+-                                       "used for simple forms like login, "
+-                                       "contact and delete confirmation."),
+-                        default=True)
+-
+ 
+ class SkinsControlPanelAdapter(SchemaAdapterBase):
+ 
+@@ -140,26 +134,6 @@ def set_icon_visibility(self, value):
+ 
+     icon_visibility = property(get_icon_visibility,set_icon_visibility)
+ 
+-    def get_use_popups(self):
+-        popupforms = self.jstool.getResource('popupforms.js')
+-        if popupforms:
+-            return popupforms.getEnabled()
+-        jqoverlays = self.csstool.getResource('++resource++plone.app.jquerytools.overlays.css')
+-        if jqoverlays:
+-            return jqoverlays.getEnabled()
+-
+-    def set_use_popups(self, value):
+-        popupforms = self.jstool.getResource('popupforms.js')
+-        if popupforms:
+-            popupforms.setEnabled(value)
+-        self.jstool.cookResources()
+-        jqoverlays = self.csstool.getResource('++resource++plone.app.jquerytools.overlays.css')
+-        if jqoverlays:
+-            jqoverlays.setEnabled(value)
+-        self.csstool.cookResources()
+-
+-    use_popups = property(get_use_popups, set_use_popups)
+-
+ 
+ class SkinsControlPanel(ControlPanelForm):
+ 
+diff --git a/plone/app/controlpanel/tests/skins.txt b/plone/app/controlpanel/tests/skins.txt
+index cdbcd87..f9d22e5 100644
+--- a/plone/app/controlpanel/tests/skins.txt
++++ b/plone/app/controlpanel/tests/skins.txt
+@@ -130,27 +130,3 @@ Unchecking new_window should finally turn off the js support:
+ 
+     >>> jstool.getResource('mark_special_links.js').getEnabled()
+     False
+-
+-
+-Overlayed popup forms are also controlled here
+--------------------------------------------------------------------
+-
+-We should be starting with popupforms.js enabled:
+-
+-    >>> jstool = getToolByName(self.portal, 'portal_javascripts')
+-    >>> jstool.getResource('popupforms.js').getEnabled()
+-    True
+-
+-Unchecking use_popups should turn off the js support:
+-
+-    >>> self.browser.getControl(name='form.use_popups').value = False
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> jstool.getResource('popupforms.js').getEnabled()
+-    False
+-
+-Checking use_popups should turn re-enable:
+-
+-    >>> self.browser.getControl(name='form.use_popups').value = True
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> jstool.getResource('popupforms.js').getEnabled()
+-    True
 
 
