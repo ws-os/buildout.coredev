@@ -1,66 +1,48 @@
-Repository: plone.app.contenttypes
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-16T20:52:17-05:00
-Author: Eric Steele (esteele) <eric@esteele.net>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/add969feaf14c443f06d3a303b5703e938cba0b8
+Date: 2014-11-17T10:03:11+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/Products.CMFPlone/commit/0428a32a0b28edf7af0ba67dcef6796f69c32582
 
-Spelling
+rm commented out pdb
 
 Files changed:
-M plone/app/contenttypes/interfaces.py
+M Products/CMFPlone/controlpanel/tests/test_controlpanel_bbb_markup_adapter.py
 
-diff --git a/plone/app/contenttypes/interfaces.py b/plone/app/contenttypes/interfaces.py
-index 3b8a90b..73908f8 100644
---- a/plone/app/contenttypes/interfaces.py
-+++ b/plone/app/contenttypes/interfaces.py
-@@ -13,40 +13,40 @@ class IPloneAppContenttypesLayer(Interface):
+diff --git a/Products/CMFPlone/controlpanel/tests/test_controlpanel_bbb_markup_adapter.py b/Products/CMFPlone/controlpanel/tests/test_controlpanel_bbb_markup_adapter.py
+index 07e5c61..6ad1b2d 100644
+--- a/Products/CMFPlone/controlpanel/tests/test_controlpanel_bbb_markup_adapter.py
++++ b/Products/CMFPlone/controlpanel/tests/test_controlpanel_bbb_markup_adapter.py
+@@ -23,7 +23,6 @@ def test_adapter_lookup(self):
+         self.assertTrue(getAdapter(self.portal, IMarkupSchema))
  
+     def test_get_default_type(self):
+-#        import pdb; pdb.set_trace()
+         self.settings.default_type = 'text/plain'
+         self.assertEquals(
+             getAdapter(self.portal, IMarkupSchema).default_type,
+@@ -31,7 +30,6 @@ def test_get_default_type(self):
+         )
  
- class ICollection(Interface):
--    """Explixiet marker interface for Collection
-+    """Explicit marker interface for Collection
-     """
+     def test_set_default_type(self):
+-#        import pdb; pdb.set_trace()
+         getAdapter(self.portal, IMarkupSchema).default_type = 'text/plain'  # noqa
+         self.assertEquals(
+             self.settings.default_type,
+@@ -40,14 +38,12 @@ def test_set_default_type(self):
  
+     def test_get_allowed_types(self):
+         self.settings.allowed_types = ('text/plain', 'text/x-web-textile')
+-#        import pdb; pdb.set_trace()
+         self.assertEquals(
+             getAdapter(self.portal, IMarkupSchema).allowed_types,
+             ('text/plain', 'text/x-web-textile')
+         )
  
- class IDocument(Interface):
--    """Explixit marker interface for Document
-+    """Explicit marker interface for Document
-     """
- 
- 
- class IFile(Interface):
--    """Explixit marker interface for File
-+    """Explicit marker interface for File
-     """
- 
- 
- class IFolder(Interface):
--    """Explixit marker interface for Folder
-+    """Explicit marker interface for Folder
-     """
- 
- 
- class IImage(Interface):
--    """Explixit marker interface for Image
-+    """Explicit marker interface for Image
-     """
- 
- 
- class ILink(Interface):
--    """Explixit marker interface for Link
-+    """Explicit marker interface for Link
-     """
- 
- 
- class INewsItem(Interface):
--    """Explixit marker interface for News Item
-+    """Explicit marker interface for News Item
-     """
- 
- 
- class IEvent(Interface):
--    """Explixit marker interface for Event
-+    """Explicit marker interface for Event
-     """
+     def test_set_allowed_types(self):
+-#        import pdb; pdb.set_trace()
+         getAdapter(self.portal, IMarkupSchema).allowed_types =\
+             ('text/plain', 'text/x-web-textile')
+         self.assertEquals(
 
 
