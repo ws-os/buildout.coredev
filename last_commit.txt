@@ -1,195 +1,29 @@
 Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2014-11-18T14:49:22-03:00
+Date: 2014-11-18T15:59:18-03:00
 Author: Franco Pellegrini (frapell) <frapell@gmail.com>
-Commit: https://github.com/plone/plone.app.widgets/commit/5d0d778c43b9cf7b3b6846f9c6f245ed0914ba05
+Commit: https://github.com/plone/plone.app.widgets/commit/cd8e95b10b053c8e0e4aa1d34a5d185af73e170b
 
-Allow to remove a selected option in the select2 widget if the field is not required
+Also include the field widget factory for the SelectWidget
 
 Files changed:
-M CHANGES.rst
 M plone/app/widgets/dx.py
-M plone/app/widgets/tests/test_dx.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index da3043e..08b8dbb 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,10 @@ Changelog
- 1.8.0 (unreleased)
- ------------------
- 
-+- Allow to remove a selected option in the ``select2`` widget if the field
-+  is not required
-+  [frapell]
-+
- - Test fixes.
-   [thet]
- 
 diff --git a/plone/app/widgets/dx.py b/plone/app/widgets/dx.py
-index 1011c84..1ed5953 100644
+index 1ed5953..582c744 100644
 --- a/plone/app/widgets/dx.py
 +++ b/plone/app/widgets/dx.py
-@@ -567,8 +567,11 @@ class SelectWidget(BaseWidget, z3cform_SelectWidget):
-     pattern_options = BaseWidget.pattern_options.copy()
+@@ -868,6 +868,11 @@ def DatetimeFieldWidget(field, request):
  
-     separator = ';'
--    multiple = False
-+    noValueToken = u''
-+    noValueMessage = u''
-+    multiple = None
-     orderable = False
-+    required = True
  
-     def _base_args(self):
-         """Method which will calculate _base class arguments.
-@@ -589,16 +592,8 @@ def _base_args(self):
-         args['value'] = self.value
-         args['multiple'] = self.multiple
- 
--        items = []
--        for item in self.items():
--            if not isinstance(item['content'], basestring):
--                item['content'] = translate(
--                    item['content'],
--                    context=self.request,
--                    default=item['value'])
--            items.append((item['value'], item['content']))
--        args['items'] = items
--
-+        self.required = self.field.required
-+ 
-         options = args.setdefault('pattern_options', {})
-         if self.multiple or ICollection.providedBy(self.field):
-             options['multiple'] = args['multiple'] = self.multiple = True
-@@ -610,6 +605,20 @@ def _base_args(self):
-         if self.multiple:
-             options['separator'] = self.separator
- 
-+        # Allow to clear field value if it is not required
-+        if not self.required:
-+            options['allowClear'] = True
+ @implementer(IFieldWidget)
++def SelectFieldWidget(field, request):
++    return FieldWidget(field, SelectWidget(request))
 +
-+        items = []
-+        for item in self.items():
-+            if not isinstance(item['content'], basestring):
-+                item['content'] = translate(
-+                    item['content'],
-+                    context=self.request,
-+                    default=item['value'])
-+            items.append((item['value'], item['content']))
-+        args['items'] = items
-+       
-         return args
- 
-     def extract(self, default=NO_VALUE):
-diff --git a/plone/app/widgets/tests/test_dx.py b/plone/app/widgets/tests/test_dx.py
-index b009d27..75bfd33 100644
---- a/plone/app/widgets/tests/test_dx.py
-+++ b/plone/app/widgets/tests/test_dx.py
-@@ -370,14 +370,16 @@ def tearDown(self):
-     def test_widget(self):
-         from plone.app.widgets.dx import SelectWidget
-         widget = SelectWidget(self.request)
-+        widget.id = 'test-widget'
-         widget.field = Choice(
-             __name__='selectfield',
-             values=['one', 'two', 'three']
-         )
-         widget.terms = widget.field.vocabulary
-+        widget.field.required = True
-         self.assertEqual(
-             {
--                'multiple': False,
-+                'multiple': None,
-                 'name': None,
-                 'pattern_options': {},
-                 'pattern': 'select2',
-@@ -391,6 +393,25 @@ def test_widget(self):
-             widget._base_args(),
-         )
- 
-+        widget.field.required = False
-+        self.assertEqual(
-+            {
-+                'multiple': None,
-+                'name': None,
-+                'pattern_options': {'allowClear': True},
-+                'pattern': 'select2',
-+                'value': (),
-+                'items': [
-+                    (u'', u''),
-+                    ('one', 'one'),
-+                    ('two', 'two'),
-+                    ('three', 'three')
-+                ]
-+            },
-+            widget._base_args(),
-+        )
 +
-+        widget.field.required = True
-         widget.multiple = True
-         self.assertEqual(
-             {
-@@ -408,12 +429,34 @@ def test_widget(self):
-             widget._base_args(),
-         )
- 
-+        widget.field.required = False
-+        widget.multiple = True
-+        self.assertEqual(
-+            {
-+                'multiple': True,
-+                'name': None,
-+                'pattern_options': {'allowClear': True,
-+                                    'separator': ';',
-+                                    'multiple': True},
-+                'pattern': 'select2',
-+                'value': (),
-+                'items': [
-+                    ('one', 'one'),
-+                    ('two', 'two'),
-+                    ('three', 'three')
-+                ]
-+            },
-+            widget._base_args(),
-+        )
-+
-         widget.value = 'one'
-         self.assertEqual(
-             {
-                 'multiple': True,
-                 'name': None,
--                'pattern_options': {'separator': ';', 'multiple': True},
-+                'pattern_options': {'allowClear': True,
-+                                    'separator': ';',
-+                                    'multiple': True},
-                 'pattern': 'select2',
-                 'value': ('one'),
-                 'items': [
-@@ -428,6 +471,7 @@ def test_widget(self):
-     def test_widget_list_orderable(self):
-         from plone.app.widgets.dx import SelectWidget
-         widget = SelectWidget(self.request)
-+        widget.id = 'test-widget'
-         widget.separator = '.'
-         widget.field = List(
-             __name__='selectfield',
-@@ -454,6 +498,7 @@ def test_widget_list_orderable(self):
-     def test_widget_tuple_orderable(self):
-         from plone.app.widgets.dx import SelectWidget
-         widget = SelectWidget(self.request)
-+        widget.id = 'test-widget'
-         widget.field = Tuple(
-             __name__='selectfield',
-             value_type=Choice(values=['one', 'two', 'three'])
-@@ -479,6 +524,7 @@ def test_widget_tuple_orderable(self):
-     def test_widget_set_not_orderable(self):
-         from plone.app.widgets.dx import SelectWidget
-         widget = SelectWidget(self.request)
-+        widget.id = 'test-widget'
-         # A set is not orderable
-         widget.field = Set(
-             __name__='selectfield',
++@implementer(IFieldWidget)
+ def AjaxSelectFieldWidget(field, request, extra=None):
+     if extra is not None:
+         request = extra
 
 
