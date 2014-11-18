@@ -1,80 +1,195 @@
-Repository: Products.CMFPlone
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2014-11-18T18:01:44+01:00
-Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/27e83e97697fcf6e2865539c8b2d5074f36ee02e
+Date: 2014-11-18T14:49:22-03:00
+Author: Franco Pellegrini (frapell) <frapell@gmail.com>
+Commit: https://github.com/plone/plone.app.widgets/commit/5d0d778c43b9cf7b3b6846f9c6f245ed0914ba05
 
-removed superfluos/dup registerClass for plone.app.folder.nogopip.GopipIndex (it is registered already in plone.app.folder)
-also gs-depend on plone.app.folder and use the profile over there
+Allow to remove a selected option in the select2 widget if the field is not required
 
 Files changed:
 M CHANGES.rst
-M Products/CMFPlone/__init__.py
-M Products/CMFPlone/profiles/default/catalog.xml
-M Products/CMFPlone/profiles/dependencies/metadata.xml
+M plone/app/widgets/dx.py
+M plone/app/widgets/tests/test_dx.py
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 7feb62f..4cafad9 100644
+index da3043e..08b8dbb 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -8,6 +8,12 @@ Changelog
- 5.0b1 (unreleased)
+@@ -4,6 +4,10 @@ Changelog
+ 1.8.0 (unreleased)
  ------------------
  
-+- removed superfluos/dup registerClass for 
-+  ``plone.app.folder.nogopip.GopipIndex`` (it is registered already in 
-+  plone.app.folder). Remove gopip index from catalog.xml and laod the one 
-+  as dependency from plone.app.folder.
-+  [jensens]
++- Allow to remove a selected option in the ``select2`` widget if the field
++  is not required
++  [frapell]
 +
- - Move markup control panel to CMFPlone. Fixes #220.
-   [djay, thet]
+ - Test fixes.
+   [thet]
  
-diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
-index 5a27eba..03213a5 100644
---- a/Products/CMFPlone/__init__.py
-+++ b/Products/CMFPlone/__init__.py
-@@ -178,15 +178,6 @@ def initialize(context):
-         constructors=(zmi_constructor, ),
-     )
+diff --git a/plone/app/widgets/dx.py b/plone/app/widgets/dx.py
+index 1011c84..1ed5953 100644
+--- a/plone/app/widgets/dx.py
++++ b/plone/app/widgets/dx.py
+@@ -567,8 +567,11 @@ class SelectWidget(BaseWidget, z3cform_SelectWidget):
+     pattern_options = BaseWidget.pattern_options.copy()
  
--    from plone.app.folder import nogopip
--    context.registerClass(nogopip.GopipIndex,
--        permission='Add Pluggable Index',
--        constructors=(nogopip.manage_addGopipForm,
--                      nogopip.manage_addGopipIndex),
--        icon='index.gif',
--        visibility=None)
+     separator = ';'
+-    multiple = False
++    noValueToken = u''
++    noValueMessage = u''
++    multiple = None
+     orderable = False
++    required = True
+ 
+     def _base_args(self):
+         """Method which will calculate _base class arguments.
+@@ -589,16 +592,8 @@ def _base_args(self):
+         args['value'] = self.value
+         args['multiple'] = self.multiple
+ 
+-        items = []
+-        for item in self.items():
+-            if not isinstance(item['content'], basestring):
+-                item['content'] = translate(
+-                    item['content'],
+-                    context=self.request,
+-                    default=item['value'])
+-            items.append((item['value'], item['content']))
+-        args['items'] = items
 -
--
- # Import PloneMessageFactory to create messages in the plone domain
- from zope.i18nmessageid import MessageFactory
- PloneMessageFactory = MessageFactory('plone')
-diff --git a/Products/CMFPlone/profiles/default/catalog.xml b/Products/CMFPlone/profiles/default/catalog.xml
-index 6df55e9..70b2abb 100644
---- a/Products/CMFPlone/profiles/default/catalog.xml
-+++ b/Products/CMFPlone/profiles/default/catalog.xml
-@@ -66,9 +66,6 @@
-  <index name="getId" meta_type="FieldIndex">
-   <indexed_attr value="getId"/>
-  </index>
-- <index name="getObjPositionInParent" meta_type="GopipIndex">
--  <indexed_attr value="getObjPositionInParent"/>
-- </index>
-  <index name="getRawRelatedItems" meta_type="KeywordIndex">
-   <indexed_attr value="getRawRelatedItems"/>
-  </index>
-diff --git a/Products/CMFPlone/profiles/dependencies/metadata.xml b/Products/CMFPlone/profiles/dependencies/metadata.xml
-index 07ff3b7..ad22633 100644
---- a/Products/CMFPlone/profiles/dependencies/metadata.xml
-+++ b/Products/CMFPlone/profiles/dependencies/metadata.xml
-@@ -8,6 +8,7 @@
-     <dependency>profile-Products.CMFEditions:CMFEditions</dependency>
-     <dependency>profile-Products.PloneLanguageTool:PloneLanguageTool</dependency>
-     <dependency>profile-Products.PlonePAS:PlonePAS</dependency>
-+    <dependency>profile-plone.app.folder:default</dependency>
-     <dependency>profile-plone.app.discussion:default</dependency>
-     <dependency>profile-plone.app.jquerytools:default</dependency>
-     <dependency>profile-plone.app.registry:default</dependency>
++        self.required = self.field.required
++ 
+         options = args.setdefault('pattern_options', {})
+         if self.multiple or ICollection.providedBy(self.field):
+             options['multiple'] = args['multiple'] = self.multiple = True
+@@ -610,6 +605,20 @@ def _base_args(self):
+         if self.multiple:
+             options['separator'] = self.separator
+ 
++        # Allow to clear field value if it is not required
++        if not self.required:
++            options['allowClear'] = True
++
++        items = []
++        for item in self.items():
++            if not isinstance(item['content'], basestring):
++                item['content'] = translate(
++                    item['content'],
++                    context=self.request,
++                    default=item['value'])
++            items.append((item['value'], item['content']))
++        args['items'] = items
++       
+         return args
+ 
+     def extract(self, default=NO_VALUE):
+diff --git a/plone/app/widgets/tests/test_dx.py b/plone/app/widgets/tests/test_dx.py
+index b009d27..75bfd33 100644
+--- a/plone/app/widgets/tests/test_dx.py
++++ b/plone/app/widgets/tests/test_dx.py
+@@ -370,14 +370,16 @@ def tearDown(self):
+     def test_widget(self):
+         from plone.app.widgets.dx import SelectWidget
+         widget = SelectWidget(self.request)
++        widget.id = 'test-widget'
+         widget.field = Choice(
+             __name__='selectfield',
+             values=['one', 'two', 'three']
+         )
+         widget.terms = widget.field.vocabulary
++        widget.field.required = True
+         self.assertEqual(
+             {
+-                'multiple': False,
++                'multiple': None,
+                 'name': None,
+                 'pattern_options': {},
+                 'pattern': 'select2',
+@@ -391,6 +393,25 @@ def test_widget(self):
+             widget._base_args(),
+         )
+ 
++        widget.field.required = False
++        self.assertEqual(
++            {
++                'multiple': None,
++                'name': None,
++                'pattern_options': {'allowClear': True},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    (u'', u''),
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++        widget.field.required = True
+         widget.multiple = True
+         self.assertEqual(
+             {
+@@ -408,12 +429,34 @@ def test_widget(self):
+             widget._base_args(),
+         )
+ 
++        widget.field.required = False
++        widget.multiple = True
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': None,
++                'pattern_options': {'allowClear': True,
++                                    'separator': ';',
++                                    'multiple': True},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
+         widget.value = 'one'
+         self.assertEqual(
+             {
+                 'multiple': True,
+                 'name': None,
+-                'pattern_options': {'separator': ';', 'multiple': True},
++                'pattern_options': {'allowClear': True,
++                                    'separator': ';',
++                                    'multiple': True},
+                 'pattern': 'select2',
+                 'value': ('one'),
+                 'items': [
+@@ -428,6 +471,7 @@ def test_widget(self):
+     def test_widget_list_orderable(self):
+         from plone.app.widgets.dx import SelectWidget
+         widget = SelectWidget(self.request)
++        widget.id = 'test-widget'
+         widget.separator = '.'
+         widget.field = List(
+             __name__='selectfield',
+@@ -454,6 +498,7 @@ def test_widget_list_orderable(self):
+     def test_widget_tuple_orderable(self):
+         from plone.app.widgets.dx import SelectWidget
+         widget = SelectWidget(self.request)
++        widget.id = 'test-widget'
+         widget.field = Tuple(
+             __name__='selectfield',
+             value_type=Choice(values=['one', 'two', 'three'])
+@@ -479,6 +524,7 @@ def test_widget_tuple_orderable(self):
+     def test_widget_set_not_orderable(self):
+         from plone.app.widgets.dx import SelectWidget
+         widget = SelectWidget(self.request)
++        widget.id = 'test-widget'
+         # A set is not orderable
+         widget.field = Set(
+             __name__='selectfield',
 
 
