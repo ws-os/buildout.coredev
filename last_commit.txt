@@ -1,14 +1,15 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-18T17:57:54+01:00
+Date: 2014-11-18T18:01:44+01:00
 Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/aba12a4d7b6da7ec825ed6b1b4aaa432c73c353f
+Commit: https://github.com/plone/Products.CMFPlone/commit/27e83e97697fcf6e2865539c8b2d5074f36ee02e
 
 removed superfluos/dup registerClass for plone.app.folder.nogopip.GopipIndex (it is registered already in plone.app.folder)
 also gs-depend on plone.app.folder and use the profile over there
 
 Files changed:
 M CHANGES.rst
+M Products/CMFPlone/__init__.py
 M Products/CMFPlone/profiles/default/catalog.xml
 M Products/CMFPlone/profiles/dependencies/metadata.xml
 
@@ -29,6 +30,26 @@ index 7feb62f..4cafad9 100644
  - Move markup control panel to CMFPlone. Fixes #220.
    [djay, thet]
  
+diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
+index 5a27eba..03213a5 100644
+--- a/Products/CMFPlone/__init__.py
++++ b/Products/CMFPlone/__init__.py
+@@ -178,15 +178,6 @@ def initialize(context):
+         constructors=(zmi_constructor, ),
+     )
+ 
+-    from plone.app.folder import nogopip
+-    context.registerClass(nogopip.GopipIndex,
+-        permission='Add Pluggable Index',
+-        constructors=(nogopip.manage_addGopipForm,
+-                      nogopip.manage_addGopipIndex),
+-        icon='index.gif',
+-        visibility=None)
+-
+-
+ # Import PloneMessageFactory to create messages in the plone domain
+ from zope.i18nmessageid import MessageFactory
+ PloneMessageFactory = MessageFactory('plone')
 diff --git a/Products/CMFPlone/profiles/default/catalog.xml b/Products/CMFPlone/profiles/default/catalog.xml
 index 6df55e9..70b2abb 100644
 --- a/Products/CMFPlone/profiles/default/catalog.xml
