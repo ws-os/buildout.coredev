@@ -1,133 +1,59 @@
-Repository: plone.app.dexterity
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-18T10:19:26+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.dexterity/commit/08c5437652f66d4600eca1577f5e3dd0cf12dce5
+Date: 2014-11-18T17:57:54+01:00
+Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
+Commit: https://github.com/plone/Products.CMFPlone/commit/aba12a4d7b6da7ec825ed6b1b4aaa432c73c353f
 
-Revert "document changes"
-
-This reverts commit ff8584797ba9639c2530fdd45ea0d788031972cc.
+removed superfluos/dup registerClass for plone.app.folder.nogopip.GopipIndex (it is registered already in plone.app.folder)
+also gs-depend on plone.app.folder and use the profile over there
 
 Files changed:
-M docs/HISTORY.txt
+M CHANGES.rst
+M Products/CMFPlone/profiles/default/catalog.xml
+M Products/CMFPlone/profiles/dependencies/metadata.xml
 
-diff --git a/docs/HISTORY.txt b/docs/HISTORY.txt
-index 53b49ed..a4e4959 100644
---- a/docs/HISTORY.txt
-+++ b/docs/HISTORY.txt
-@@ -4,8 +4,7 @@ Changelog for plone.app.dexterity
- 2.1.3 (unreleased)
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 7feb62f..4cafad9 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -8,6 +8,12 @@ Changelog
+ 5.0b1 (unreleased)
  ------------------
  
--- Remove PloneTestCase traces
--  [tomgross]
-+- Nothing changed yet.
++- removed superfluos/dup registerClass for 
++  ``plone.app.folder.nogopip.GopipIndex`` (it is registered already in 
++  plone.app.folder). Remove gopip index from catalog.xml and laod the one 
++  as dependency from plone.app.folder.
++  [jensens]
++
+ - Move markup control panel to CMFPlone. Fixes #220.
+   [djay, thet]
  
- 
- 2.1.2 (2014-10-23)
-
-
-Repository: plone.app.dexterity
-Branch: refs/heads/master
-Date: 2014-11-18T10:19:39+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.dexterity/commit/0cba04ec615c8d589ad04e3ea7b3a2fdb2a7a84a
-
-Revert "remove PloneTestCase traces"
-
-This reverts commit a2809e18da90e507ac86808fb46e7d4cb66e768d.
-
-Files changed:
-A plone/app/dexterity/tests/base.py
-A plone/app/dexterity/tests/layer.py
-M setup.py
-
-diff --git a/plone/app/dexterity/tests/base.py b/plone/app/dexterity/tests/base.py
-new file mode 100644
-index 0000000..8bda264
---- /dev/null
-+++ b/plone/app/dexterity/tests/base.py
-@@ -0,0 +1,15 @@
-+# Note: These test case classes are deprecated.  We recommend using the
-+# plone.app.testing-based test setup in plone.app.dexterity.testing
-+
-+from Products.PloneTestCase import PloneTestCase as ptc
-+from plone.app.dexterity.tests.layer import DexterityLayer
-+
-+ptc.setupPloneSite()
-+
-+
-+class DexterityTestCase(ptc.PloneTestCase):
-+    layer = DexterityLayer
-+
-+
-+class DexterityFunctionalTestCase(ptc.FunctionalTestCase):
-+    layer = DexterityLayer
-diff --git a/plone/app/dexterity/tests/layer.py b/plone/app/dexterity/tests/layer.py
-new file mode 100644
-index 0000000..bf8fcfb
---- /dev/null
-+++ b/plone/app/dexterity/tests/layer.py
-@@ -0,0 +1,46 @@
-+# Note: This layer is deprecated.  We recommend using the
-+# plone.app.testing-based test setup in plone.app.dexterity.testing
-+
-+from Testing.ZopeTestCase import app, close
-+from Products.CMFCore.utils import getToolByName
-+from Products.PloneTestCase.layer import PloneSite
-+from zope.component.hooks import setSite, setHooks
-+from transaction import commit
-+
-+# BBB Zope 2.12
-+try:
-+    from Zope2.App import zcml
-+    from OFS import metaconfigure
-+    zcml  # pyflakes
-+    metaconfigure
-+except ImportError:
-+    from Products.Five import zcml
-+    from Products.Five import fiveconfigure as metaconfigure
-+
-+
-+class DexterityLayer(PloneSite):
-+
-+    @classmethod
-+    def setUp(cls):
-+        metaconfigure.debug_mode = True
-+        import plone.app.dexterity
-+        zcml.load_config('meta.zcml', plone.app.dexterity)
-+        zcml.load_config('configure.zcml', plone.app.dexterity)
-+        metaconfigure.debug_mode = False
-+
-+        # import the default profile
-+        root = app()
-+        portal = root.plone
-+        setHooks()
-+        setSite(portal)
-+        tool = getToolByName(portal, 'portal_setup')
-+        profile = 'profile-plone.app.dexterity:default'
-+        tool.runAllImportStepsFromProfile(profile, purge_old=False)
-+        setSite(None)
-+        # and commit the changes
-+        commit()
-+        close(root)
-+
-+    @classmethod
-+    def tearDown(cls):
-+        pass
-diff --git a/setup.py b/setup.py
-index 2ee7ec8..dd04666 100644
---- a/setup.py
-+++ b/setup.py
-@@ -15,9 +15,7 @@
-       long_description=long_description,
-       classifiers=[
-           "Framework :: Plone",
--          "Framework :: Plone :: 5.0",
-           "Programming Language :: Python",
--          "Programming Language :: Python :: 2.7",
-           "Topic :: Software Development :: Libraries :: Python Modules",
-           "Development Status :: 5 - Production/Stable",
-       ],
+diff --git a/Products/CMFPlone/profiles/default/catalog.xml b/Products/CMFPlone/profiles/default/catalog.xml
+index 6df55e9..70b2abb 100644
+--- a/Products/CMFPlone/profiles/default/catalog.xml
++++ b/Products/CMFPlone/profiles/default/catalog.xml
+@@ -66,9 +66,6 @@
+  <index name="getId" meta_type="FieldIndex">
+   <indexed_attr value="getId"/>
+  </index>
+- <index name="getObjPositionInParent" meta_type="GopipIndex">
+-  <indexed_attr value="getObjPositionInParent"/>
+- </index>
+  <index name="getRawRelatedItems" meta_type="KeywordIndex">
+   <indexed_attr value="getRawRelatedItems"/>
+  </index>
+diff --git a/Products/CMFPlone/profiles/dependencies/metadata.xml b/Products/CMFPlone/profiles/dependencies/metadata.xml
+index 07ff3b7..ad22633 100644
+--- a/Products/CMFPlone/profiles/dependencies/metadata.xml
++++ b/Products/CMFPlone/profiles/dependencies/metadata.xml
+@@ -8,6 +8,7 @@
+     <dependency>profile-Products.CMFEditions:CMFEditions</dependency>
+     <dependency>profile-Products.PloneLanguageTool:PloneLanguageTool</dependency>
+     <dependency>profile-Products.PlonePAS:PlonePAS</dependency>
++    <dependency>profile-plone.app.folder:default</dependency>
+     <dependency>profile-plone.app.discussion:default</dependency>
+     <dependency>profile-plone.app.jquerytools:default</dependency>
+     <dependency>profile-plone.app.registry:default</dependency>
 
 
