@@ -1,28 +1,26 @@
-Repository: Products.CMFPlone
+Repository: plone.schema
 Branch: refs/heads/master
-Date: 2014-11-17T20:32:26+01:00
-Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/a4458bc03e9480270a2f331c92fc20c0a0787bc8
+Date: 2014-11-18T01:07:14+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.schema/commit/d5bfa865b0a17d4681344b76cd6cd7a1627dce7a
 
-Revert less async, no commits on red build ou jenking
+Oops: missed a backslash
 
 Files changed:
-M Products/CMFPlone/resources/browser/mixins.py
+M setup.py
 
-diff --git a/Products/CMFPlone/resources/browser/mixins.py b/Products/CMFPlone/resources/browser/mixins.py
-index cd4a3ba..1ff3dc5 100644
---- a/Products/CMFPlone/resources/browser/mixins.py
-+++ b/Products/CMFPlone/resources/browser/mixins.py
-@@ -11,8 +11,8 @@
-  window.less = {
-     env: "development",
-     logLevel: %i,
--    async: true,
--    fileAsync: true,
-+    async: false,
-+    fileAsync: false,
-     errorReporting: window.lessErrorReporting || 'console',
-     poll: 1000,
-     functions: {},
+diff --git a/setup.py b/setup.py
+index ab12db3..bce873d 100644
+--- a/setup.py
++++ b/setup.py
+@@ -2,7 +2,7 @@
+ 
+ version = '1.0a2.dev0'
+ 
+-long_description = open("README.rst").read() + "\n" +
++long_description = open("README.rst").read() + "\n" + \
+                    open("CHANGES.rst").read()
+ 
+ setup(
 
 
