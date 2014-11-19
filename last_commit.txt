@@ -1,112 +1,25 @@
-Repository: Products.CMFPlone
+Repository: plone.app.versioningbehavior
 Branch: refs/heads/master
-Date: 2014-11-19T15:39:02+01:00
-Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/dea01b4c515dbc4103a80693367f17419e7503b3
+Date: 2014-11-19T18:58:55+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.versioningbehavior/commit/6c24c3cb2b07f900ea5e9d921e56594208796582
 
-Revert "removed superfluos/dup registerClass for plone.app.folder.nogopip.GopipIndex (it is registered already in plone.app.folder)"
-
-This reverts commit 27e83e97697fcf6e2865539c8b2d5074f36ee02e.
+Add undeclared test dependency.
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/__init__.py
-M Products/CMFPlone/profiles/default/catalog.xml
-M Products/CMFPlone/profiles/dependencies/metadata.xml
+M setup.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 4cafad9..7feb62f 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,12 +8,6 @@ Changelog
- 5.0b1 (unreleased)
- ------------------
+diff --git a/setup.py b/setup.py
+index eab31ed..39e2e22 100644
+--- a/setup.py
++++ b/setup.py
+@@ -12,6 +12,7 @@
+     'plone.app.testing',
+     'plone.app.versioningbehavior',
+     'plone.namedfile[blobs]',
++    'zope.app.intid',
+     ]
  
--- removed superfluos/dup registerClass for 
--  ``plone.app.folder.nogopip.GopipIndex`` (it is registered already in 
--  plone.app.folder). Remove gopip index from catalog.xml and laod the one 
--  as dependency from plone.app.folder.
--  [jensens]
--
- - Move markup control panel to CMFPlone. Fixes #220.
-   [djay, thet]
- 
-diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
-index 03213a5..5a27eba 100644
---- a/Products/CMFPlone/__init__.py
-+++ b/Products/CMFPlone/__init__.py
-@@ -178,6 +178,15 @@ def initialize(context):
-         constructors=(zmi_constructor, ),
-     )
- 
-+    from plone.app.folder import nogopip
-+    context.registerClass(nogopip.GopipIndex,
-+        permission='Add Pluggable Index',
-+        constructors=(nogopip.manage_addGopipForm,
-+                      nogopip.manage_addGopipIndex),
-+        icon='index.gif',
-+        visibility=None)
-+
-+
- # Import PloneMessageFactory to create messages in the plone domain
- from zope.i18nmessageid import MessageFactory
- PloneMessageFactory = MessageFactory('plone')
-diff --git a/Products/CMFPlone/profiles/default/catalog.xml b/Products/CMFPlone/profiles/default/catalog.xml
-index 70b2abb..6df55e9 100644
---- a/Products/CMFPlone/profiles/default/catalog.xml
-+++ b/Products/CMFPlone/profiles/default/catalog.xml
-@@ -66,6 +66,9 @@
-  <index name="getId" meta_type="FieldIndex">
-   <indexed_attr value="getId"/>
-  </index>
-+ <index name="getObjPositionInParent" meta_type="GopipIndex">
-+  <indexed_attr value="getObjPositionInParent"/>
-+ </index>
-  <index name="getRawRelatedItems" meta_type="KeywordIndex">
-   <indexed_attr value="getRawRelatedItems"/>
-  </index>
-diff --git a/Products/CMFPlone/profiles/dependencies/metadata.xml b/Products/CMFPlone/profiles/dependencies/metadata.xml
-index ad22633..07ff3b7 100644
---- a/Products/CMFPlone/profiles/dependencies/metadata.xml
-+++ b/Products/CMFPlone/profiles/dependencies/metadata.xml
-@@ -8,7 +8,6 @@
-     <dependency>profile-Products.CMFEditions:CMFEditions</dependency>
-     <dependency>profile-Products.PloneLanguageTool:PloneLanguageTool</dependency>
-     <dependency>profile-Products.PlonePAS:PlonePAS</dependency>
--    <dependency>profile-plone.app.folder:default</dependency>
-     <dependency>profile-plone.app.discussion:default</dependency>
-     <dependency>profile-plone.app.jquerytools:default</dependency>
-     <dependency>profile-plone.app.registry:default</dependency>
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2014-11-19T15:39:32+01:00
-Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/bf89ef02f67e8f372d0e0670ce423ad44115b369
-
-Merge branch 'master' of git://github.com/plone/Products.CMFPlone
-
-Files changed:
-M Products/CMFPlone/utils.py
-
-diff --git a/Products/CMFPlone/utils.py b/Products/CMFPlone/utils.py
-index 0f74ada..109da90 100644
---- a/Products/CMFPlone/utils.py
-+++ b/Products/CMFPlone/utils.py
-@@ -1,12 +1,7 @@
- # -*- coding: utf-8 -*-
- 
- import re
--
--try:
--    import simplejson as json
--    json  # Pyflakes
--except ImportError:
--    import json
-+import json
- 
- from types import ClassType
- from os.path import join, abspath, split
+ setup(name='plone.app.versioningbehavior',
 
 
