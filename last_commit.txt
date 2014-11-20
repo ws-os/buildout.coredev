@@ -1,25 +1,63 @@
-Repository: plone.app.relationfield
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-20T12:13:59+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.relationfield/commit/da2c174ba98a001f1e19f798479efe95bfa90fea
+Date: 2014-11-20T19:50:46Z
+Author: Franco Pellegrini (frapell) <frapell@gmail.com>
+Commit: https://github.com/plone/mockup/commit/3f14f9de885e91a07a8854f710401857a0287dbd
 
-wrong msgid domain
+Use a different variable so we don't step over the one used in the outer loop
 
 Files changed:
-M plone/app/relationfield/schemaeditor.zcml
+M mockup/patterns/tinymce/js/links.js
 
-diff --git a/plone/app/relationfield/schemaeditor.zcml b/plone/app/relationfield/schemaeditor.zcml
-index 05c353a..ef72e41 100644
---- a/plone/app/relationfield/schemaeditor.zcml
-+++ b/plone/app/relationfield/schemaeditor.zcml
-@@ -1,6 +1,6 @@
- <configure
-     xmlns="http://namespaces.zope.org/zope"
--    i18n_domain="plone.app.textfield">
-+    i18n_domain="plone.app.relationfield">
+diff --git a/mockup/patterns/tinymce/js/links.js b/mockup/patterns/tinymce/js/links.js
+index 8a583b6..92e8aeb 100644
+--- a/mockup/patterns/tinymce/js/links.js
++++ b/mockup/patterns/tinymce/js/links.js
+@@ -165,7 +165,7 @@ define([
+       self.$select.find('option').remove();
+       self.anchorNodes = [];
+       self.anchorData = [];
+-      var node, i, name, title;
++      var node, i, j, name, title;
  
-   <include package="plone.schemaeditor" />
- 
+       var nodes = self.tiny.dom.select('a.mceItemAnchor,img.mceItemAnchor,a.mce-item-anchor,img.mce-item-anchor');
+       for (i = 0; i < nodes.length; i = i + 1) {
+@@ -192,8 +192,8 @@ define([
+           name = name.replace(/[^a-z0-9]/g, '-');
+           /* okay, ugly, but we need to first check that this anchor isn't already available */
+           var found = false;
+-          for (i = 0; i < self.anchorNodes.length; i = i + 1) {
+-            var anode = self.anchorData[i];
++          for (j = 0; j < self.anchorNodes.length; j = j + 1) {
++            var anode = self.anchorData[j];
+             if (anode.name === name) {
+               found = true;
+               // so it's also found, let's update the title to be more presentable
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2014-11-20T19:51:23Z
+Author: Franco Pellegrini (frapell) <frapell@gmail.com>
+Commit: https://github.com/plone/mockup/commit/edfd4fccf73bcf09430b852c84246cbe4adeaef2
+
+Index val on 'id' not on 0
+
+Files changed:
+M mockup/patterns/tinymce/js/links.js
+
+diff --git a/mockup/patterns/tinymce/js/links.js b/mockup/patterns/tinymce/js/links.js
+index 92e8aeb..29ff234 100644
+--- a/mockup/patterns/tinymce/js/links.js
++++ b/mockup/patterns/tinymce/js/links.js
+@@ -156,7 +156,7 @@ define([
+       var self = this;
+       var val = self.$select.select2('data');
+       if (val && typeof(val) === 'object') {
+-        val = val[0];
++        val = val['id'];
+       }
+       return val;
+     },
 
 
