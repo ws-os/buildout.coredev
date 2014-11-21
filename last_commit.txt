@@ -1,26 +1,606 @@
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-21T02:31:29+01:00
+Date: 2014-11-21T10:47:57+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/871737dd8b829cffc3b09b9c34d4c6f1984b65f8
+Commit: https://github.com/plone/mockup/commit/0de9a73e3aa1ba2d81923069de5d48f56d358662
 
-fix typo in path
+Add mimetype selector pattern for textareas
 
 Files changed:
-M Products/CMFPlone/profiles/dependencies/registry.xml
+A mockup/patterns/textareamimetypeselector/pattern.js
+A mockup/tests/pattern-textareamimetypeselector-test.js
+M CHANGES.rst
+M mockup/js/bundles/docs.js
+M mockup/js/bundles/plone.js
+M mockup/js/bundles/widgets.js
+M mockup/js/config.js
+M mockup/patterns/tinymce/pattern.js
 
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index ffdc1db..93203bf 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -718,7 +718,7 @@
+diff --git a/CHANGES.rst b/CHANGES.rst
+index ef72f24..ed665c3 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ Changelog
+ 1.8.3 (unreleased)
+ ------------------
  
-   <records prefix="plone.resources/mockup-patterns-select2"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++resource++mockup/select2/patterns.js</value>
-+      <value key="js">++resource++mockup/select2/pattern.js</value>
-       <value key="css">
-         <element>++resource++mockup/select2/pattern.select2.less</element>
-       </value>
++- Add mimetype selector pattern for textareas.
++  [thet]
++
+ - Fix broken HTML tag on structure pattern's ``actionmenu.xml``.
+   [datakurre]
+ 
+diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
+index fdcdcbc..94f6d0e 100644
+--- a/mockup/js/bundles/docs.js
++++ b/mockup/js/bundles/docs.js
+@@ -117,6 +117,11 @@ require([
+             description: 'A pattern you can apply to a table so it can have its items rearranged when clicking the header',
+             url: 'patterns/tablesorter/pattern.js'
+           },
++          { id: 'textareamimetypeselector',
++            title: 'Textarea MimeType Selector',
++            description: 'Selects the MimeType for a textarea and changes the widget according to the MimeType',
++            url: 'patterns/textareamimetypeselector/pattern.js'
++          },
+           { id: 'tinymce',
+             title: 'TinyMCE',
+             description: 'Rich text editor',
+diff --git a/mockup/js/bundles/plone.js b/mockup/js/bundles/plone.js
+index 6ba2a77..8ce75ef 100644
+--- a/mockup/js/bundles/plone.js
++++ b/mockup/js/bundles/plone.js
+@@ -16,6 +16,7 @@ define([
+   'mockup-patterns-formautofocus',
+   'mockup-patterns-modal',
+   'mockup-patterns-structure',
++  'mockup-patterns-textareamimetypeselector',
+   'bootstrap-dropdown',
+   'bootstrap-collapse',
+   'bootstrap-tooltip'
+diff --git a/mockup/js/bundles/widgets.js b/mockup/js/bundles/widgets.js
+index 1062fbc..ce555f9 100644
+--- a/mockup/js/bundles/widgets.js
++++ b/mockup/js/bundles/widgets.js
+@@ -7,6 +7,7 @@ define([
+   'mockup-patterns-pickadate',
+   'mockup-patterns-relateditems',
+   'mockup-patterns-querystring',
++  'mockup-patterns-textareamimetypeselector',
+   'mockup-patterns-tinymce'
+ ], function($, Registry, Base) {
+   'use strict';
+diff --git a/mockup/js/config.js b/mockup/js/config.js
+index 0541d0a..a41aa7e 100644
+--- a/mockup/js/config.js
++++ b/mockup/js/config.js
+@@ -83,6 +83,7 @@
+       'mockup-patterns-structure': 'patterns/structure/pattern',
+       'mockup-patterns-structure-url': 'patterns/structure',
+       'mockup-patterns-tablesorter': 'patterns/tablesorter/pattern',
++      'mockup-patterns-textareamimetypeselector': 'patterns/textareamimetypeselector/pattern',
+       'mockup-patterns-texteditor': 'patterns/texteditor/pattern',
+       'mockup-patterns-thememapper': 'patterns/thememapper/pattern',
+       'mockup-patterns-thememapper-url': 'patterns/thememapper',
+diff --git a/mockup/patterns/textareamimetypeselector/pattern.js b/mockup/patterns/textareamimetypeselector/pattern.js
+new file mode 100644
+index 0000000..5a0c84c
+--- /dev/null
++++ b/mockup/patterns/textareamimetypeselector/pattern.js
+@@ -0,0 +1,108 @@
++/* TextareaMimetypeSelector pattern.
++ *
++ *
++ * Options:
++ *    textareaName(string): Value of name attribute of the textarea ('')
++ *    widgets(object): MimeType/PatternConfig pairs ({'text/html': {pattern: 'tinymce', patternOptions: {}}})
++ *
++ *
++ * Documentation:
++ *   # General
++ *
++ *   This pattern displays a mimetype selection widget for textareas. It
++ *   switches the widget according to the selected mimetype.
++ *
++ *   ## widgets option Structure
++ *
++ *   Complex Object/JSON structure with MimeType/PatternConfig pairs. The
++ *   MimeType is a string like "text/html". The PatternConfig is a object with
++ *   a "pattern" and an optional "patternOptions" attribute. The "pattern"
++ *   attribute's value is a string with the patterns name and the
++ *   "patternOptions" attribute is a object with whatever options the pattern
++ *   needs. For example, to use the TinyMCE pattern for the HTML mimetype, use
++ *   "text/html": {"pattern": "tinymce"}
++ *
++ *   # Mimetype selection on textarea including text/html mimetype with TinyMCE editor.
++ *
++ *   {{ example-1 }}
++ *
++ * Example: example-1
++ *
++ *    <textarea name="text">
++ *      <h1>hello world</h1>
++ *    </textarea>
++ *    <select
++ *        name="text.mimeType"
++ *        class="pat-textareamimetypeselector"
++ *        data-pat-textareamimetypeselector='{
++ *          "textareaName": "text",
++ *          "widgets": {
++ *            "text/html": {
++ *              "pattern": "tinymce",
++ *              "patternOptions": {
++ *                "tiny": {
++ *                  "plugins": [],
++ *                  "menubar": "edit format tools",
++ *                  "toolbar": " "
++ *                }
++ *              }
++ *            }
++ *          }
++ *        }'
++ *      >
++ *      <option value="text/html">text/html</option>
++ *      <option value="text/plain" selected="selected">text/plain</option>
++ *    </select>
++ *
++ */
++
++define([
++  'jquery',
++  'mockup-patterns-base',
++  'mockup-registry',
++  'mockup-patterns-tinymce'
++], function ($, Base, registry, tinymce) {
++  'use strict';
++
++  var TextareaMimetypeSelector = Base.extend({
++    name: 'textareamimetypeselector',
++    textarea: undefined,
++    currentWidget: undefined,
++    defaults: {
++      textareaName: '',
++      widgets: {'text/html': {pattern: 'tinymce', patternOptions: {}}}
++    },
++    init: function () {
++      var self = this,
++          $el = self.$el,
++          current;
++      self.textarea = $('[name="' + self.options.textareaName + '"]');
++      $el.change(function (e) {
++        self.initTextarea(e.target.value);
++      });
++      self.initTextarea($el.val());
++
++    },
++    initTextarea: function (mimetype) {
++      var self = this,
++          patternConfig = self.options.widgets[mimetype],
++          pattern;
++      // First, destroy current
++      if (self.currentWidget) {
++        // The pattern must implement the destroy method.
++        self.currentWidget.destroy();
++      }
++      // Then, setup new
++      if (patternConfig) {
++          pattern = new registry.patterns[patternConfig.pattern](
++            self.textarea,
++            patternConfig.patternOptions || {}
++          );
++          self.currentWidget = pattern;
++      }
++    }
++
++  });
++
++  return TextareaMimetypeSelector;
++});
+diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
+index 7bb64d1..1cde373 100644
+--- a/mockup/patterns/tinymce/pattern.js
++++ b/mockup/patterns/tinymce/pattern.js
+@@ -284,6 +284,9 @@ define([
+       $form.on('submit', function() {
+         self.tiny.save();
+       });
++    },
++    destroy: function() {
++      this.tiny.destroy();
+     }
+   });
+ 
+diff --git a/mockup/tests/pattern-textareamimetypeselector-test.js b/mockup/tests/pattern-textareamimetypeselector-test.js
+new file mode 100644
+index 0000000..413e18a
+--- /dev/null
++++ b/mockup/tests/pattern-textareamimetypeselector-test.js
+@@ -0,0 +1,82 @@
++define([
++  'expect',
++  'jquery',
++  'mockup-registry',
++  'mockup-patterns-textareamimetypeselector',
++  'mockup-patterns-tinymce'
++], function(expect, $, registry, textareamimetypeselector, tinymce) {
++  'use strict';
++
++  window.mocha.setup('bdd');
++  $.fx.off = true;
++
++/* ================================
++   TEST: Textarea MimeType Selector
++  ================================= */
++
++  describe('Textarea MimeType Selector', function () {
++
++    afterEach(function() {
++      $('body').empty();
++    });
++
++    it('Switching changes widget', function() {
++
++      var dom_structure =
++        '<textarea name="text">hello world</textarea>' +
++        '<select' +
++        '    name="text.mimeType"' +
++        '    class="pat-textareamimetypeselector"' +
++        '    data-pat-textareamimetypeselector=\'{' +
++        '      "textareaName": "text",' +
++        '      "widgets": {' +
++        '        "text/html": {' +
++        '          "pattern": "tinymce",' +
++        '          "patternOptions": {' +
++        '            "tiny": {' +
++        '              "plugins": [],' +
++        '              "menubar": "edit format tools",' +
++        '              "toolbar": " "' +
++        '            }' +
++        '          }' +
++        '        }' +
++        '      }' +
++        '    }\'' +
++        '  >' +
++        '  <option value="text/html">text/html</option>' +
++        '  <option value="text/plain" selected="selected">text/plain</option>' +
++        '</select>';
++
++      var $doc = $(dom_structure).appendTo('body');
++      registry.scan($doc);
++
++      var $el = $("[name='text.mimeType']");
++      var $textarea = $("[name='text']");
++
++      // Initially, text/plain is selected and textarea should be visible.
++      expect($textarea.is(":visible")).to.be.ok();
++      // But TinyMCE shouldn't be there
++      expect($(".mce-tinymce").length).to.be(0);
++      // Value should be at it's initial state
++      expect($textarea.val()).to.be.equal("hello world");
++
++      // Now, select text/html
++      $el.val("text/html").change();
++
++      // Textarea should be hidden
++      expect($textarea.is(":hidden")).to.be.ok();
++      // And TinyMCE should be shown
++      expect($(".mce-tinymce").is(":visible")).to.be.ok();
++
++      // Switching back to text/plain should destroy TinyMCE
++      $el.val("text/plain").change();
++      expect($textarea.is(":visible")).to.be.ok();
++      expect($(".mce-tinymce").length).to.be(0);
++      // Unfortunately, TinyMCE changes the value just by loading TinyMCE.
++      expect($textarea.val()).to.be.equal("<p>hello world</p>");
++
++    });
++
++  });
++});
++
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2014-11-21T08:12:27-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/e4bbdeaaa66a00a0e3f9359b707e38254e0de458
+
+Merge pull request #440 from plone/thet-mimetypeselector
+
+MimeType selector pattern for textareas
+
+Files changed:
+A mockup/patterns/textareamimetypeselector/pattern.js
+A mockup/tests/pattern-textareamimetypeselector-test.js
+M CHANGES.rst
+M mockup/js/bundles/docs.js
+M mockup/js/bundles/plone.js
+M mockup/js/bundles/widgets.js
+M mockup/js/config.js
+M mockup/patterns/tinymce/pattern.js
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index ef72f24..ed665c3 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ Changelog
+ 1.8.3 (unreleased)
+ ------------------
+ 
++- Add mimetype selector pattern for textareas.
++  [thet]
++
+ - Fix broken HTML tag on structure pattern's ``actionmenu.xml``.
+   [datakurre]
+ 
+diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
+index fdcdcbc..94f6d0e 100644
+--- a/mockup/js/bundles/docs.js
++++ b/mockup/js/bundles/docs.js
+@@ -117,6 +117,11 @@ require([
+             description: 'A pattern you can apply to a table so it can have its items rearranged when clicking the header',
+             url: 'patterns/tablesorter/pattern.js'
+           },
++          { id: 'textareamimetypeselector',
++            title: 'Textarea MimeType Selector',
++            description: 'Selects the MimeType for a textarea and changes the widget according to the MimeType',
++            url: 'patterns/textareamimetypeselector/pattern.js'
++          },
+           { id: 'tinymce',
+             title: 'TinyMCE',
+             description: 'Rich text editor',
+diff --git a/mockup/js/bundles/plone.js b/mockup/js/bundles/plone.js
+index 6ba2a77..8ce75ef 100644
+--- a/mockup/js/bundles/plone.js
++++ b/mockup/js/bundles/plone.js
+@@ -16,6 +16,7 @@ define([
+   'mockup-patterns-formautofocus',
+   'mockup-patterns-modal',
+   'mockup-patterns-structure',
++  'mockup-patterns-textareamimetypeselector',
+   'bootstrap-dropdown',
+   'bootstrap-collapse',
+   'bootstrap-tooltip'
+diff --git a/mockup/js/bundles/widgets.js b/mockup/js/bundles/widgets.js
+index 1062fbc..ce555f9 100644
+--- a/mockup/js/bundles/widgets.js
++++ b/mockup/js/bundles/widgets.js
+@@ -7,6 +7,7 @@ define([
+   'mockup-patterns-pickadate',
+   'mockup-patterns-relateditems',
+   'mockup-patterns-querystring',
++  'mockup-patterns-textareamimetypeselector',
+   'mockup-patterns-tinymce'
+ ], function($, Registry, Base) {
+   'use strict';
+diff --git a/mockup/js/config.js b/mockup/js/config.js
+index 0541d0a..a41aa7e 100644
+--- a/mockup/js/config.js
++++ b/mockup/js/config.js
+@@ -83,6 +83,7 @@
+       'mockup-patterns-structure': 'patterns/structure/pattern',
+       'mockup-patterns-structure-url': 'patterns/structure',
+       'mockup-patterns-tablesorter': 'patterns/tablesorter/pattern',
++      'mockup-patterns-textareamimetypeselector': 'patterns/textareamimetypeselector/pattern',
+       'mockup-patterns-texteditor': 'patterns/texteditor/pattern',
+       'mockup-patterns-thememapper': 'patterns/thememapper/pattern',
+       'mockup-patterns-thememapper-url': 'patterns/thememapper',
+diff --git a/mockup/patterns/textareamimetypeselector/pattern.js b/mockup/patterns/textareamimetypeselector/pattern.js
+new file mode 100644
+index 0000000..5a0c84c
+--- /dev/null
++++ b/mockup/patterns/textareamimetypeselector/pattern.js
+@@ -0,0 +1,108 @@
++/* TextareaMimetypeSelector pattern.
++ *
++ *
++ * Options:
++ *    textareaName(string): Value of name attribute of the textarea ('')
++ *    widgets(object): MimeType/PatternConfig pairs ({'text/html': {pattern: 'tinymce', patternOptions: {}}})
++ *
++ *
++ * Documentation:
++ *   # General
++ *
++ *   This pattern displays a mimetype selection widget for textareas. It
++ *   switches the widget according to the selected mimetype.
++ *
++ *   ## widgets option Structure
++ *
++ *   Complex Object/JSON structure with MimeType/PatternConfig pairs. The
++ *   MimeType is a string like "text/html". The PatternConfig is a object with
++ *   a "pattern" and an optional "patternOptions" attribute. The "pattern"
++ *   attribute's value is a string with the patterns name and the
++ *   "patternOptions" attribute is a object with whatever options the pattern
++ *   needs. For example, to use the TinyMCE pattern for the HTML mimetype, use
++ *   "text/html": {"pattern": "tinymce"}
++ *
++ *   # Mimetype selection on textarea including text/html mimetype with TinyMCE editor.
++ *
++ *   {{ example-1 }}
++ *
++ * Example: example-1
++ *
++ *    <textarea name="text">
++ *      <h1>hello world</h1>
++ *    </textarea>
++ *    <select
++ *        name="text.mimeType"
++ *        class="pat-textareamimetypeselector"
++ *        data-pat-textareamimetypeselector='{
++ *          "textareaName": "text",
++ *          "widgets": {
++ *            "text/html": {
++ *              "pattern": "tinymce",
++ *              "patternOptions": {
++ *                "tiny": {
++ *                  "plugins": [],
++ *                  "menubar": "edit format tools",
++ *                  "toolbar": " "
++ *                }
++ *              }
++ *            }
++ *          }
++ *        }'
++ *      >
++ *      <option value="text/html">text/html</option>
++ *      <option value="text/plain" selected="selected">text/plain</option>
++ *    </select>
++ *
++ */
++
++define([
++  'jquery',
++  'mockup-patterns-base',
++  'mockup-registry',
++  'mockup-patterns-tinymce'
++], function ($, Base, registry, tinymce) {
++  'use strict';
++
++  var TextareaMimetypeSelector = Base.extend({
++    name: 'textareamimetypeselector',
++    textarea: undefined,
++    currentWidget: undefined,
++    defaults: {
++      textareaName: '',
++      widgets: {'text/html': {pattern: 'tinymce', patternOptions: {}}}
++    },
++    init: function () {
++      var self = this,
++          $el = self.$el,
++          current;
++      self.textarea = $('[name="' + self.options.textareaName + '"]');
++      $el.change(function (e) {
++        self.initTextarea(e.target.value);
++      });
++      self.initTextarea($el.val());
++
++    },
++    initTextarea: function (mimetype) {
++      var self = this,
++          patternConfig = self.options.widgets[mimetype],
++          pattern;
++      // First, destroy current
++      if (self.currentWidget) {
++        // The pattern must implement the destroy method.
++        self.currentWidget.destroy();
++      }
++      // Then, setup new
++      if (patternConfig) {
++          pattern = new registry.patterns[patternConfig.pattern](
++            self.textarea,
++            patternConfig.patternOptions || {}
++          );
++          self.currentWidget = pattern;
++      }
++    }
++
++  });
++
++  return TextareaMimetypeSelector;
++});
+diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
+index 7bb64d1..1cde373 100644
+--- a/mockup/patterns/tinymce/pattern.js
++++ b/mockup/patterns/tinymce/pattern.js
+@@ -284,6 +284,9 @@ define([
+       $form.on('submit', function() {
+         self.tiny.save();
+       });
++    },
++    destroy: function() {
++      this.tiny.destroy();
+     }
+   });
+ 
+diff --git a/mockup/tests/pattern-textareamimetypeselector-test.js b/mockup/tests/pattern-textareamimetypeselector-test.js
+new file mode 100644
+index 0000000..413e18a
+--- /dev/null
++++ b/mockup/tests/pattern-textareamimetypeselector-test.js
+@@ -0,0 +1,82 @@
++define([
++  'expect',
++  'jquery',
++  'mockup-registry',
++  'mockup-patterns-textareamimetypeselector',
++  'mockup-patterns-tinymce'
++], function(expect, $, registry, textareamimetypeselector, tinymce) {
++  'use strict';
++
++  window.mocha.setup('bdd');
++  $.fx.off = true;
++
++/* ================================
++   TEST: Textarea MimeType Selector
++  ================================= */
++
++  describe('Textarea MimeType Selector', function () {
++
++    afterEach(function() {
++      $('body').empty();
++    });
++
++    it('Switching changes widget', function() {
++
++      var dom_structure =
++        '<textarea name="text">hello world</textarea>' +
++        '<select' +
++        '    name="text.mimeType"' +
++        '    class="pat-textareamimetypeselector"' +
++        '    data-pat-textareamimetypeselector=\'{' +
++        '      "textareaName": "text",' +
++        '      "widgets": {' +
++        '        "text/html": {' +
++        '          "pattern": "tinymce",' +
++        '          "patternOptions": {' +
++        '            "tiny": {' +
++        '              "plugins": [],' +
++        '              "menubar": "edit format tools",' +
++        '              "toolbar": " "' +
++        '            }' +
++        '          }' +
++        '        }' +
++        '      }' +
++        '    }\'' +
++        '  >' +
++        '  <option value="text/html">text/html</option>' +
++        '  <option value="text/plain" selected="selected">text/plain</option>' +
++        '</select>';
++
++      var $doc = $(dom_structure).appendTo('body');
++      registry.scan($doc);
++
++      var $el = $("[name='text.mimeType']");
++      var $textarea = $("[name='text']");
++
++      // Initially, text/plain is selected and textarea should be visible.
++      expect($textarea.is(":visible")).to.be.ok();
++      // But TinyMCE shouldn't be there
++      expect($(".mce-tinymce").length).to.be(0);
++      // Value should be at it's initial state
++      expect($textarea.val()).to.be.equal("hello world");
++
++      // Now, select text/html
++      $el.val("text/html").change();
++
++      // Textarea should be hidden
++      expect($textarea.is(":hidden")).to.be.ok();
++      // And TinyMCE should be shown
++      expect($(".mce-tinymce").is(":visible")).to.be.ok();
++
++      // Switching back to text/plain should destroy TinyMCE
++      $el.val("text/plain").change();
++      expect($textarea.is(":visible")).to.be.ok();
++      expect($(".mce-tinymce").length).to.be(0);
++      // Unfortunately, TinyMCE changes the value just by loading TinyMCE.
++      expect($textarea.val()).to.be.equal("<p>hello world</p>");
++
++    });
++
++  });
++});
++
 
 
