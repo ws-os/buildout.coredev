@@ -1,44 +1,26 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-21T02:03:07+01:00
+Date: 2014-11-21T02:31:29+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/3907c973fc3688b1ab6fa04d54026ad6c5c34c58
+Commit: https://github.com/plone/Products.CMFPlone/commit/871737dd8b829cffc3b09b9c34d4c6f1984b65f8
 
-remove duplicate mockup-patterns-select2 registry entry
+fix typo in path
 
 Files changed:
 M Products/CMFPlone/profiles/dependencies/registry.xml
 
 diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index 7b26410..ffdc1db 100644
+index ffdc1db..93203bf 100644
 --- a/Products/CMFPlone/profiles/dependencies/registry.xml
 +++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -631,14 +631,6 @@
-       </value>
-   </records>
- 
--  <records prefix="plone.resources/mockup-patterns-select2"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++resource++mockup/select2/patterns.js</value>
--      <value key="css">
--        <element>++resource++mockup/select2/pattern.select2.less</element>
--      </value>
--  </records>
--
-   <records prefix="plone.resources/mockup-patterns-accessibility"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++resource++mockup/accessibility/pattern.js</value>
-@@ -726,7 +718,10 @@
+@@ -718,7 +718,7 @@
  
    <records prefix="plone.resources/mockup-patterns-select2"
              interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++resource++mockup/select2/pattern.js</value>
-+      <value key="js">++resource++mockup/select2/patterns.js</value>
-+      <value key="css">
-+        <element>++resource++mockup/select2/pattern.select2.less</element>
-+      </value>
-   </records>
- 
-   <records prefix="plone.resources/mockup-patterns-structure"
+-      <value key="js">++resource++mockup/select2/patterns.js</value>
++      <value key="js">++resource++mockup/select2/pattern.js</value>
+       <value key="css">
+         <element>++resource++mockup/select2/pattern.select2.less</element>
+       </value>
 
 
