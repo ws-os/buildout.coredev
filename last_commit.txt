@@ -1,48 +1,35 @@
 Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2014-11-22T11:56:07+01:00
+Date: 2014-11-22T14:32:54+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/8ed9eb9bd8e77945661f53640302bbfe8c15bd29
+Commit: https://github.com/plone/plone.app.contenttypes/commit/516086f7ede72dbe240d454eafef34fc4185e112
 
-add warning about folderish-profile
+call view only once
 
 Files changed:
-M docs/README.rst
+M plone/app/contenttypes/tests/test_document.py
 
-diff --git a/docs/README.rst b/docs/README.rst
-index b2ea4ab..afbe256 100644
---- a/docs/README.rst
-+++ b/docs/README.rst
-@@ -221,6 +221,10 @@ However if you'd like to migrate your content-types to Dexterity before this fea
- Migrating to folderish objects or change base class for any dexterity type
- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+diff --git a/plone/app/contenttypes/tests/test_document.py b/plone/app/contenttypes/tests/test_document.py
+index 9f8c044..947c531 100644
+--- a/plone/app/contenttypes/tests/test_document.py
++++ b/plone/app/contenttypes/tests/test_document.py
+@@ -73,12 +73,12 @@ def test_view(self):
+         self.request.set('ACTUAL_URL', document.absolute_url())
+         alsoProvides(self.request, IPloneFormLayer)
+         view = document.restrictedTraverse('@@view')
+-
+-        self.assertTrue(view())
+         self.assertEqual(view.request.response.status, 200)
+-        self.assertTrue('My Document' in view())
+-        self.assertTrue('This is my document.' in view())
+-        self.assertTrue('Lorem ipsum' in view())
++        output = view()
++        self.assertTrue(output)
++        self.assertTrue('My Document' in output)
++        self.assertTrue('This is my document.' in output)
++        self.assertTrue('Lorem ipsum' in output)
  
-+.. warning::
-+
-+   All types will probably be folderish in Plone 5 (see https://dev.plone.org/ticket/20144). The additional profile ``folderish`` will be removed soon. Use it at your own risk!
-+
- Migration non folderish object to folderish has few steps.
- 
- Step 1: Enable folderish types
-@@ -236,7 +240,7 @@ If you changed the base-class of existing types you might also want to upgrade t
- 
- On this you will see checkboxes with class names and the amount of objects that are going to be updated. Select classes that you want to update and click on button `Update`.
- 
--If the migration was successful you see the info box with number of successfully updated objects or a warning with number of not updated objects.
-+If the migration was successful you see the info box with number of successfully updated objects or a warning with the number of skipped objects.
- 
- This form can be used to change the base-class of any dexterity-types instances.
- 
-@@ -318,6 +322,10 @@ If you use the profile ``default`` then the default-content in new sites will st
- Using folderish types
- ^^^^^^^^^^^^^^^^^^^^^
- 
-+.. warning::
-+
-+   All types will probably be folderish in Plone 5 (see https://dev.plone.org/ticket/20144). The additional profile ``folderish`` will be removed soon. Use it at your own risk!
-+
- If you want all types folderish you need to depend on the profile ``folderish`` in your own ``metadata.xml``.
- 
- .. code:: xml
+     def tearDown(self):
+         if 'document' in self.portal.objectIds():
 
 
