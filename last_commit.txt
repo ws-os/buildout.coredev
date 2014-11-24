@@ -1,840 +1,258 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-16T17:12:29+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/mockup/commit/d4c30ef37d911b71b850b4c80f9682e85502b4c5
+Date: 2014-11-24T16:31:44+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/mockup/commit/7c1085147c59eced56176d17cf68efca50cbaae8
 
-get file and save file
-
-Files changed:
-M mockup/patterns/filemanager/pattern.js
-
-diff --git a/mockup/patterns/filemanager/pattern.js b/mockup/patterns/filemanager/pattern.js
-index c45560b..eb47f78 100644
---- a/mockup/patterns/filemanager/pattern.js
-+++ b/mockup/patterns/filemanager/pattern.js
-@@ -116,6 +116,8 @@ define([
-       var translations = self.options.translations;
- 
-       self.fileData = {};
-+      self.currentPath;
-+
-       self.saveBtn = new ButtonView({
-         id: 'save',
-         title: translations.save,
-@@ -220,7 +222,9 @@ define([
-         self.doAction('saveFile', {
-           type: 'POST',
-           data: {
--            path: self.$tree.tree('getSelectedNode').label
-+            path: self.getNodePath(),
-+            data: self.ace.editor.getValue(),
-+            _authenticator: utils.getAuthenticator()
-           },
-           success: function(data) {
-             /* XXX unhighlight save button */
-@@ -258,54 +262,57 @@ define([
-     },
-     openFile: function(event) {
-       var self = this;
--      var doc = event.node.path;
-+      var doc = event.node.name;
-       if (event.node.folder){
-         return true;
-       }
--
--      self.doAction('getFile', {
--        data: { path: doc },
--        dataType: 'json',
--        success: function(data) {
--          self.fileData[doc] = data;
--          $('li', self.$tabs).removeClass('active');
--          var $existing = $('[data-path="' + doc + '"]');
--          if ($existing.length === 0){
--            var $item = $(self.tabItemTemplate({path: doc}));
--            self.$tabs.append($item);
--            $('.remove', $item).click(function(e){
--              e.preventDefault();
--              if ($(this).parent().hasClass('active'))
--              {
--                var $siblings = $(this).parent().siblings();
--                if ($siblings.length > 0){
--                  var $item;
--                  if ($(this).parent().prev().length > 0){
--                    $item = $(this).parent().prev();
--                  } else {
--                    $item = $(this).parent().next();
--                  }
--                  $item.addClass('active');
--                  self.openEditor($item.attr('data-path'));
-+      if(self.fileData[doc]) {
-+        $('li', self.$tabs).removeClass('active');
-+        var $existing = $('[data-path="' + doc + '"]');
-+        if ($existing.length === 0){
-+          var $item = $(self.tabItemTemplate({path: doc}));
-+          self.$tabs.append($item);
-+          $('.remove', $item).click(function(e){
-+            e.preventDefault();
-+            if ($(this).parent().hasClass('active'))
-+            {
-+              var $siblings = $(this).parent().siblings();
-+              if ($siblings.length > 0){
-+                var $item;
-+                if ($(this).parent().prev().length > 0){
-+                  $item = $(this).parent().prev();
-                 } else {
--                  self.ace.setText('');
-+                  $item = $(this).parent().next();
-                 }
-+                $item.addClass('active');
-+                self.openEditor($item.attr('data-path'));
-+              } else {
-+                self.ace.setText('');
-               }
--              $(this).parent().remove();
--            });
--            $('.select', $item).click(function(e){
--              e.preventDefault();
--              $('li', self.$tabs).removeClass('active');
--              var $li = $(this).parent();
--              $li.addClass('active');
--              self.openEditor($li.attr('data-path'));
--            });
--          }else{
--            $existing.addClass('active');
--          }
--          self.openEditor(doc);
-+            }
-+            $(this).parent().remove();
-+          });
-+          $('.select', $item).click(function(e){
-+            e.preventDefault();
-+            $('li', self.$tabs).removeClass('active');
-+            var $li = $(this).parent();
-+            $li.addClass('active');
-+            self.openEditor($li.attr('data-path'));
-+          });
-+        }else{
-+          $existing.addClass('active');
-         }
--      });
-+        self.openEditor(doc);
-+      } else {
-+        self.doAction('getFile', {
-+          data: { path: doc },
-+          dataType: 'json',
-+          success: function(data) {
-+            self.fileData[doc] = data;
-+            self.openFile(event);
-+          }
-+        });
-+      }
-     },
-     doAction: function(action, options) {
-       var self = this;
-@@ -325,6 +332,11 @@ define([
-     },
-     openEditor: function(path) {
-       var self = this;
-+      // first we need to save the current editor content
-+      if(self.currentPath) {
-+        self.fileData[self.currentPath].contents = self.ace.editor.getValue();
-+      }
-+      self.currentPath = path;
-       if (self.ace !== undefined){
-         self.ace.editor.destroy();
-       }
-@@ -332,7 +344,7 @@ define([
-         width: self.$editor.width()
-       });
-       self.ace.setSyntax(path);
--      self.ace.setText(self.fileData[path].data);
-+      self.ace.setText(self.fileData[path].contents);
-       self.ace.editor.clearSelection();
-     },
-     getSelectedNode: function() {
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-18T19:54:16+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/mockup/commit/ae0e69eb564c680a0ebaf2fe98a74b64baf8fb6e
-
-fix path in addnew
+Depend on tinymce-builded 4.1.6, include TinyMCE copy and sed configuration in here and fix some sed tasks.  Revert cd89d377e10a28b797fd3c9d48410ad6ad597486: 'Remove bower dependency on tinymce-builded, since the tinymce dependency already points to the official builded tinymce-dist reposotory.' tinymce-dist doesn't include the language files, which are needed.
 
 Files changed:
-M mockup/patterns/filemanager/js/addnew.js
-
-diff --git a/mockup/patterns/filemanager/js/addnew.js b/mockup/patterns/filemanager/js/addnew.js
-index 5c79066..1d96520 100644
---- a/mockup/patterns/filemanager/js/addnew.js
-+++ b/mockup/patterns/filemanager/js/addnew.js
-@@ -30,7 +30,7 @@ define([
-           type: 'POST',
-           data: {
-             filename: filename,
--            path: self.getFolderPath()
-+            path: self.app.getFolderPath()
-           },
-           success: function(data) {
-             self.hide();
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-18T19:54:25+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/mockup/commit/93a9ec69bf434724c81567fd9e7dfd8b7dab9a7f
-
-filemanage: sync tree on tab selection
-
-Files changed:
-M mockup/patterns/filemanager/pattern.js
-
-diff --git a/mockup/patterns/filemanager/pattern.js b/mockup/patterns/filemanager/pattern.js
-index eb47f78..84394f9 100644
---- a/mockup/patterns/filemanager/pattern.js
-+++ b/mockup/patterns/filemanager/pattern.js
-@@ -297,7 +297,8 @@ define([
-             $('li', self.$tabs).removeClass('active');
-             var $li = $(this).parent();
-             $li.addClass('active');
--            self.openEditor($li.attr('data-path'));
-+            self.$tree.tree('selectNode', event.node);
-+            self.openFile({node: event.node});
-           });
-         }else{
-           $existing.addClass('active');
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-18T20:30:23+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/mockup/commit/013890b15e7820b92b1d7edf6117a4e4d454c7ad
-
-filemanager: JqTree.reload() does not reload, use loadDataFromUrl instead
-
-Files changed:
-M mockup/patterns/filemanager/js/addnew.js
-M mockup/patterns/filemanager/js/customize.js
-M mockup/patterns/filemanager/js/delete.js
-M mockup/patterns/filemanager/js/newfolder.js
-M mockup/patterns/filemanager/js/rename.js
-
-diff --git a/mockup/patterns/filemanager/js/addnew.js b/mockup/patterns/filemanager/js/addnew.js
-index 1d96520..020a7a6 100644
---- a/mockup/patterns/filemanager/js/addnew.js
-+++ b/mockup/patterns/filemanager/js/addnew.js
-@@ -34,7 +34,10 @@ define([
-           },
-           success: function(data) {
-             self.hide();
--            self.app.$tree.tree('reload');
-+            self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-           }
-         });
-         // XXX show loading
-diff --git a/mockup/patterns/filemanager/js/customize.js b/mockup/patterns/filemanager/js/customize.js
-index 7fb664a..e75fe1a 100644
---- a/mockup/patterns/filemanager/js/customize.js
-+++ b/mockup/patterns/filemanager/js/customize.js
-@@ -63,7 +63,10 @@ define([
-           // clear out
-           self.$('input.search').attr('value', '');
-           self.$results.empty();
--          self.app.$tree.tree('reload');
-+          self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-         }
-       });
-     }
-diff --git a/mockup/patterns/filemanager/js/delete.js b/mockup/patterns/filemanager/js/delete.js
-index 1da559e..a5f3bfc 100644
---- a/mockup/patterns/filemanager/js/delete.js
-+++ b/mockup/patterns/filemanager/js/delete.js
-@@ -29,7 +29,10 @@ define([
-         },
-         success: function(data) {
-           self.hide();
--          self.app.$tree.tree('reload');
-+          self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-         }
-       });
-       // XXX show loading
-diff --git a/mockup/patterns/filemanager/js/newfolder.js b/mockup/patterns/filemanager/js/newfolder.js
-index 340e597..60b9a52 100644
---- a/mockup/patterns/filemanager/js/newfolder.js
-+++ b/mockup/patterns/filemanager/js/newfolder.js
-@@ -34,7 +34,10 @@ define([
-           },
-           success: function(data) {
-             self.hide();
--            self.app.$tree.tree('reload');
-+            self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-           }
-         });
-         // XXX show loading
-diff --git a/mockup/patterns/filemanager/js/rename.js b/mockup/patterns/filemanager/js/rename.js
-index e4c68e9..0ff2b6f 100644
---- a/mockup/patterns/filemanager/js/rename.js
-+++ b/mockup/patterns/filemanager/js/rename.js
-@@ -44,7 +44,10 @@ define([
-           },
-           success: function(data) {
-             self.hide();
--            self.app.$tree.tree('reload');
-+            self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-           }
-         });
-         // XXX show loading
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-18T20:53:34+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/mockup/commit/8371e7572ba503ea1064e7f1d845859961c54fc8
-
-filemanager: close active tab when delete or rename
-
-Files changed:
-M mockup/patterns/filemanager/js/delete.js
-M mockup/patterns/filemanager/js/rename.js
-
-diff --git a/mockup/patterns/filemanager/js/delete.js b/mockup/patterns/filemanager/js/delete.js
-index a5f3bfc..2f4a8ce 100644
---- a/mockup/patterns/filemanager/js/delete.js
-+++ b/mockup/patterns/filemanager/js/delete.js
-@@ -30,9 +30,11 @@ define([
-         success: function(data) {
-           self.hide();
-           self.app.$tree.tree(
--              'loadDataFromUrl',
--              self.app.options.actionUrl + '?action=dataTree'
--            );
-+            'loadDataFromUrl',
-+            self.app.options.actionUrl + '?action=dataTree'
-+          );
-+          // ugly, $tabs should have an API
-+          $('.nav .active .remove').click();
-         }
-       });
-       // XXX show loading
-diff --git a/mockup/patterns/filemanager/js/rename.js b/mockup/patterns/filemanager/js/rename.js
-index 0ff2b6f..0443256 100644
---- a/mockup/patterns/filemanager/js/rename.js
-+++ b/mockup/patterns/filemanager/js/rename.js
-@@ -48,6 +48,8 @@ define([
-               'loadDataFromUrl',
-               self.app.options.actionUrl + '?action=dataTree'
-             );
-+            // ugly, $tabs should have an API
-+            $('.nav .active .remove').click();
-           }
-         });
-         // XXX show loading
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-18T22:55:14+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/mockup/commit/4b05b4ca89a3498e109d45ec43b2bd1edc434c7c
-
-fix openfile if file not in root
-
-Files changed:
-M mockup/patterns/filemanager/pattern.js
-
-diff --git a/mockup/patterns/filemanager/pattern.js b/mockup/patterns/filemanager/pattern.js
-index 84394f9..4d19d96 100644
---- a/mockup/patterns/filemanager/pattern.js
-+++ b/mockup/patterns/filemanager/pattern.js
-@@ -262,7 +262,7 @@ define([
-     },
-     openFile: function(event) {
-       var self = this;
--      var doc = event.node.name;
-+      var doc = event.node.path;
-       if (event.node.folder){
-         return true;
-       }
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-18T23:14:19+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/mockup/commit/9e9e360d58dc738583d49bfac81f3d3e3c5ed6d2
-
-fix theme inspectors layout
-
-Files changed:
-M mockup/patterns/thememapper/pattern.thememapper.less
-
-diff --git a/mockup/patterns/thememapper/pattern.thememapper.less b/mockup/patterns/thememapper/pattern.thememapper.less
-index 0259627..0ea8d9d 100644
---- a/mockup/patterns/thememapper/pattern.thememapper.less
-+++ b/mockup/patterns/thememapper/pattern.thememapper.less
-@@ -11,6 +11,10 @@
-         height: 600px;
-     }
- 
-+    .mockup-inspector {
-+        clear: both;
-+    }
-+
-     .fullscreen {
-         vertical-align: top;
-         display: inline-block;
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-23T11:10:58+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/mockup/commit/e4bf38dfec48ce52b963b3bfed967c5b93176fa9
-
-Merge branch 'master' into ebrehault-thememapper
-
-Files changed:
-A mockup/patterns/cookietrigger/pattern.js
-A mockup/tests/pattern-cookietrigger-test.js
-M mockup/js/bundles/docs.js
+M CHANGES.rst
+M mockup/Gruntfile.js
+M mockup/bower.json
 M mockup/js/config.js
+M mockup/patterns/tinymce/pattern.js
 
-diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
-index 8db620f..fdcdcbc 100644
---- a/mockup/js/bundles/docs.js
-+++ b/mockup/js/bundles/docs.js
-@@ -47,6 +47,11 @@ require([
-             description: 'TODO',
-             url: 'patterns/backdrop/pattern.js'
-           },
-+          { id: 'cookietrigger',
-+            title: 'Cookie Trigger',
-+            description: "Shows a DOM element if browser cookies are disabled.",
-+            url: 'patterns/cookietrigger/pattern.js'
-+          },
-           { id: 'formautofocus',
-             title: 'Form Auto Focus',
-             description: 'TODO',
+diff --git a/CHANGES.rst b/CHANGES.rst
+index ed665c3..64517bd 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,14 @@ Changelog
+ 1.8.3 (unreleased)
+ ------------------
+ 
++- Depend on ``tinymce-builded`` 4.1.6, include TinyMCE copy and sed
++  configuration in here and fix some sed tasks.
++  Revert cd89d377e10a28b797fd3c9d48410ad6ad597486: "Remove bower dependency on
++  ``tinymce-builded``, since the ``tinymce`` dependency already points to the
++  official builded ``tinymce-dist`` reposotory." ``tinymce-dist`` doesn't
++  include the language files, which are needed. 
++  [thet]
++
+ - Add mimetype selector pattern for textareas.
+   [thet]
+ 
+diff --git a/mockup/Gruntfile.js b/mockup/Gruntfile.js
+index a3ecaa8..7799c75 100644
+--- a/mockup/Gruntfile.js
++++ b/mockup/Gruntfile.js
+@@ -9,6 +9,7 @@ module.exports = function(grunt) {
+ 
+   var MockupGrunt = require('./bower_components/mockup-core/js/grunt'),
+       requirejsOptions = require('./js/config'),
++      extend = require('./node_modules/extend/index'),
+       mockup = new MockupGrunt(requirejsOptions),
+       docsExtraIncludes = [];
+ 
+@@ -20,6 +21,74 @@ module.exports = function(grunt) {
+     }
+   }
+ 
++  var copy_tinymce = function (name, path) {
++    var ret = {};
++    ret[name] = {
++      files: [
++        {
++          expand: true, cwd: 'bower_components/tinymce-builded/js/tinymce/langs', src: '*', dest: path + name + '-tinymce/langs'
++        }, {
++          expand: true, cwd: 'bower_components/tinymce-builded/js/tinymce/skins/lightgray/fonts/', src: 'tinymce*', dest: path,
++          rename: function(dest, src) { return dest + name + '-tinymce-font-' + src; }
++        }, {
++          expand: true, cwd: 'bower_components/tinymce-builded/js/tinymce/skins/lightgray/img/', src: '*', dest: path,
++          rename: function(dest, src) { return dest + name + '-tinymce-img-' + src; }
++        }, {
++          expand: true, cwd: 'bower_components/tinymce-builded/js/tinymce/skins/lightgray/', src: 'content.min.css', dest: path,
++          rename: function(dest, src) { return dest + name + '-tinymce-' + src; }
++        }
++      ]
++    };
++    return ret;
++  };
++  var sed_tinymce = function(name, path, url) {
++    var ret = {};
++
++    ret[name + '-tinymce-fonts'] = {
++      path: path + name + '.min.css',
++      pattern: 'url\\(\'?fonts/tinymce\'?',  // match urls with and without quotes
++      replacement: 'url(\'' + url + '-tinymce-font-tinymce\''
++    };
++    ret[name + '-tinymce-img-loader'] = {
++      path: path + name + '.min.css',
++      pattern: 'url\\(\'?img/loader.gif\'?',
++      replacement: 'url(\'' + url + '-tinymce-img-loader.gif\''
++    };
++    ret[name + '-tinymce-img-anchor'] = {
++      path: path + name + '.min.css',
++      pattern: 'url\\(\'?img/anchor.gif\'?',
++      replacement: 'url(\'' + url + '-tinymce-img-anchor.gif\''
++    };
++    ret[name + '-tinymce-img-object'] = {
++      path: path + name + '.min.css',
++      pattern: 'url\\(\'?img/object.gif\'?',
++      replacement: 'url(\'' + url + '-tinymce-img-object.gif\''
++    };
++
++    ret[name + '-tinymce-fonts2'] = {
++      path: path + name + '-tinymce-content.min.css',
++      pattern: 'url\\(\'?fonts/tinymce\'?',  // match urls with and without quotes
++      replacement: 'url(\'' + url + '-tinymce-font-tinymce\''
++    };
++    ret[name + '-tinymce-img-loader2'] = {
++      path: path + name + '-tinymce-content.min.css',
++      pattern: 'url\\(\'?img/loader.gif\'?',
++      replacement: 'url(\'' + url + '-tinymce-img-loader.gif\''
++    };
++    ret[name + '-tinymce-img-anchor2'] = {
++      path: path + name + '-tinymce-content.min.css',
++      pattern: 'url\\(\'?img/anchor.gif\'?',
++      replacement: 'url(\'' + url + '-tinymce-img-anchor.gif\''
++    };
++    ret[name + '-tinymce-img-object2'] = {
++      path: path + name + '-tinymce-content.min.css',
++      pattern: 'url\\(\'?img/object.gif\'?',
++      replacement: 'url(\'' + url + '-tinymce-img-object.gif\''
++    };
++    return ret;
++  };
++
++
+   mockup.registerBundle('docs', {
+     less: {
+       options : {
+@@ -32,48 +101,61 @@ module.exports = function(grunt) {
+       }
+     },
+     copy: {
+-      docs: {
+-        files: [
+-          { expand: true, src: 'index.html', dest: 'docs/dev/' },
+-          { expand: true, src: '*.md', dest: 'docs/dev/' },
+-          { expand: true, src: 'js/**', dest: 'docs/dev/' },
+-          { expand: true, src: 'tests/**', dest: 'docs/dev/' },
+-          { expand: true, src: 'lib/**', dest: 'docs/dev/' },
+-          { expand: true, src: 'bower_components/**', dest: 'docs/dev/' },
+-          { expand: true, src: 'node_modules/requirejs/require.js', dest: 'docs/dev/' },
+-          { expand: true, src: 'build/**', dest: 'docs/dev/' },
+-          { expand: true, src: 'less/**', dest: 'docs/dev/' }
+-        ]
+-      }
++      docs: extend(true,
++        {
++          files: [
++            { expand: true, src: 'index.html', dest: 'docs/dev/' },
++            { expand: true, src: '*.md', dest: 'docs/dev/' },
++            { expand: true, src: 'js/**', dest: 'docs/dev/' },
++            { expand: true, src: 'tests/**', dest: 'docs/dev/' },
++            { expand: true, src: 'lib/**', dest: 'docs/dev/' },
++            { expand: true, src: 'bower_components/**', dest: 'docs/dev/' },
++            { expand: true, src: 'node_modules/requirejs/require.js', dest: 'docs/dev/' },
++            { expand: true, src: 'build/**', dest: 'docs/dev/' },
++            { expand: true, src: 'less/**', dest: 'docs/dev/' }
++          ]
++        },
++        copy_tinymce('docs', 'docs/dev/')
++      )
+     },
+-    sed: {
+-      'docs-css': {
+-        path: 'docs/dev/index.html',
+-        pattern: 'href="docs/dev/docs.min.css"',
+-        replacement: 'href="docs.min.css"'
+-      },
+-      'docs-js': {
+-        path: 'docs/dev/index.html',
+-        pattern: '<script src="node_modules/grunt-contrib-less/node_modules/less/dist/less-1.6.1.js"></script>\n  <script src="node_modules/requirejs/require.js"></script>\n  <script src="js/config.js"></script>\n  <script>require\\(\\[\'mockup-bundles-docs\'\\]\\);</script>',
+-        replacement: '<script src="docs.min.js"></script>'
++    sed: extend(true,
++      {
++        'docs-css': {
++          path: 'docs/dev/index.html',
++          pattern: 'href="docs/dev/docs.min.css"',
++          replacement: 'href="docs.min.css"'
++        },
++        'docs-js': {
++          path: 'docs/dev/index.html',
++          pattern: '<script src="node_modules/grunt-contrib-less/node_modules/less/dist/less-1.6.1.js"></script>\n  <script src="node_modules/requirejs/require.js"></script>\n  <script src="js/config.js"></script>\n  <script>require\\(\\[\'mockup-bundles-docs\'\\]\\);</script>',
++          replacement: '<script src="docs.min.js"></script>'
++        },
++        'docs-legacy-js': {
++          path: 'docs/dev/index.html',
++          pattern: '<script src="bower_components/es5-shim/es5-shim.js"></script>\n    <script src="bower_components/es5-shim/es5-sham.js"></script>\n    <script src="bower_components/console-polyfill/index.js"></script>',
++          replacement: '<script src="docs-legacy.js"></script>'
++        }
+       },
+-      'docs-legacy-js': {
+-        path: 'docs/dev/index.html',
+-        pattern: '<script src="bower_components/es5-shim/es5-shim.js"></script>\n    <script src="bower_components/es5-shim/es5-sham.js"></script>\n    <script src="bower_components/console-polyfill/index.js"></script>',
+-        replacement: '<script src="docs-legacy.js"></script>'
+-      }
+-    }
++      sed_tinymce('widgets', 'docs/dev/', '++resource++plone.app.widgets')
++    )
+   }, {
+     path: 'docs/dev/',
+     url: 'docs',
+     extraInclude: docsExtraIncludes,
+-  }, ['requirejs', 'less', 'copy', 'sed']);
++  }, ['requirejs', 'uglify', 'less', 'copy', 'sed']);
+ 
+   mockup.registerBundle('structure', {}, { url: '++resource++wildcard.foldercontents-structure' });
+   mockup.registerBundle('filemanager', {}, { url: '++resource++plone.resourceeditor-filemanager' });
+   mockup.registerBundle('resourceregistry');
+-  mockup.registerBundle('plone', {}, {url: '++resource++plone'});
+-  mockup.registerBundle('widgets');
++  mockup.registerBundle('plone', {
++    copy: copy_tinymce('plone', 'build/'),
++    sed: sed_tinymce('plone', 'build/', '++resource++plone')
++  }, {path: 'build/', url: '++resource++plone'});
++  mockup.registerBundle('widgets', {
++    copy: copy_tinymce('widgets', 'build/'),
++    sed: sed_tinymce('widgets', 'build/', '++resource++plone.app.widgets')
++  }, {path: 'build/', url: '++resource++plone.app.widgets'});
++
+ 
+   mockup.initGrunt(grunt, {
+     sed: {
+diff --git a/mockup/bower.json b/mockup/bower.json
+index e6d5ff9..fa4ea7a 100644
+--- a/mockup/bower.json
++++ b/mockup/bower.json
+@@ -19,7 +19,7 @@
+     "pickadate": "3.4.0",
+     "requirejs-text": "2.0.12",
+     "select2": "3.5.1",
+-    "tinymce": "4.1.6"
++    "tinymce-builded": "4.1.6"
+   },
+   "devDependencies": {
+     "expect": "0.3.1",
 diff --git a/mockup/js/config.js b/mockup/js/config.js
-index 1ab1ef6..0541d0a 100644
+index a41aa7e..f7b7497 100644
 --- a/mockup/js/config.js
 +++ b/mockup/js/config.js
-@@ -63,6 +63,7 @@
-       'mockup-patterns-autotoc': 'patterns/autotoc/pattern',
-       'mockup-patterns-backdrop': 'patterns/backdrop/pattern',
-       'mockup-patterns-base': 'bower_components/mockup-core/js/pattern',
-+      'mockup-patterns-cookietrigger': 'patterns/cookietrigger/pattern',
-       'mockup-patterns-eventedit': 'patterns/eventedit/pattern',
-       'mockup-patterns-filemanager': 'patterns/filemanager/pattern',
-       'mockup-patterns-filemanager-url': 'patterns/filemanager',
-diff --git a/mockup/patterns/cookietrigger/pattern.js b/mockup/patterns/cookietrigger/pattern.js
-new file mode 100644
-index 0000000..f13b7c8
---- /dev/null
-+++ b/mockup/patterns/cookietrigger/pattern.js
-@@ -0,0 +1,64 @@
-+/* Cookie Trigger pattern.
-+ *
-+ * Show a DOM element if browser cookies are disabled.
-+ *
-+ * Documentation:
-+ *
-+ *    {{ example-1 }}
-+ *
-+ * Example: example-1
-+ *    <div class="portalMessage error pat-cookietrigger">
-+ *      Cookies are not enabled. You must enable cookies before you can log in.
-+ *    </div>
-+ */
-+
-+define([
-+  'jquery',
-+  'mockup-patterns-base'
-+], function ($, Base) {
-+  'use strict';
-+
-+  var CookieTrigger = Base.extend({
-+    name: 'cookietrigger',
-+
-+    isCookiesEnabled: function() {
-+      /* Test whether cookies are enabled by attempting to set a cookie
-+       * and then change its value set test cookie.
-+       */
-+      var c = "areYourCookiesEnabled=0";
-+      document.cookie = c;
-+      var dc = document.cookie;
-+      // cookie not set?  fail
-+      if (dc.indexOf(c) === -1) {
-+        return 0;
-+      }
-+      // change test cookie
-+      c = "areYourCookiesEnabled=1";
-+      document.cookie = c;
-+      dc = document.cookie;
-+      // cookie not changed?  fail
-+      if (dc.indexOf(c) === -1) {
-+        return 0;
-+      }
-+      // delete cookie
-+      document.cookie = "areYourCookiesEnabled=; expires=Thu, 01-Jan-70 00:00:01 GMT";
-+      return 1;
-+    },
-+
-+    showIfCookiesDisabled: function() {
-+      /* Show the element on which this pattern is defined if cookies are
-+       * disabled.
-+       */
-+      if (this.isCookiesEnabled()) {
-+        this.$el.hide();
-+      } else {
-+        this.$el.show();
-+      }
-+    },
-+
-+    init: function () {
-+      this.showIfCookiesDisabled();
-+    },
-+  });
-+  return CookieTrigger;
-+});
-diff --git a/mockup/tests/pattern-cookietrigger-test.js b/mockup/tests/pattern-cookietrigger-test.js
-new file mode 100644
-index 0000000..1d837cc
---- /dev/null
-+++ b/mockup/tests/pattern-cookietrigger-test.js
-@@ -0,0 +1,48 @@
-+define([
-+  'expect',
-+  'jquery',
-+  'sinon',
-+  'mockup-registry',
-+  'mockup-patterns-cookietrigger'
-+], function(expect, $, sinon, registry, Pattern) {
-+  'use strict';
-+
-+  window.mocha.setup('bdd');
-+  $.fx.off = true;
-+
-+/* ====================
-+   TEST: Cookie Trigger 
-+   ==================== */
-+
-+  describe('Cookie Trigger', function () {
-+    afterEach(function() {
-+      $('body').empty();
-+    });
-+
-+    it('The .pat-cookietrigger DOM element is shown if cookies are disabled', function() {
-+      var widget = 
-+        '<div class="portalMessage error pat-cookietrigger">' +
-+        '  Cookies are not enabled. You must enable cookies before you can log in.' +
-+        '</div>';
-+
-+      var $el = $(widget).appendTo('body').hide();
-+      Pattern.extend({isCookiesEnabled: sinon.stub().returns(0)});
-+      expect($el.is(':visible')).to.equal(false);
-+      var pattern = registry.init($el, 'cookietrigger');
-+      expect($el.is(':visible')).to.equal(true);
-+    });
-+
-+    it('The .pat-cookietrigger DOM element is hidden if cookies are enabled', function() {
-+      var widget = 
-+        '<div class="portalMessage error pat-cookietrigger">' +
-+        '  Cookies are not enabled. You must enable cookies before you can log in.' +
-+        '</div>';
-+
-+      var $el = $(widget).appendTo('body').hide();
-+      Pattern.extend({isCookiesEnabled: sinon.stub().returns(1)});
-+      expect($el.is(':visible')).to.equal(false);
-+      var pattern = registry.init($el, 'cookietrigger');
-+      expect($el.is(':visible')).to.equal(false);
-+    });
-+  });
-+});
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-23T21:23:38-06:00
-Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/b4b8a6a0c5d17013f88b3b400f1e85663b265851
-
-Merge pull request #441 from plone/ebrehault-thememapper
-
-Fix thememapper and filemanager
-
-Files changed:
-M mockup/patterns/filemanager/js/addnew.js
-M mockup/patterns/filemanager/js/customize.js
-M mockup/patterns/filemanager/js/delete.js
-M mockup/patterns/filemanager/js/newfolder.js
-M mockup/patterns/filemanager/js/rename.js
-M mockup/patterns/filemanager/pattern.js
-M mockup/patterns/thememapper/pattern.thememapper.less
-
-diff --git a/mockup/patterns/filemanager/js/addnew.js b/mockup/patterns/filemanager/js/addnew.js
-index 5c79066..020a7a6 100644
---- a/mockup/patterns/filemanager/js/addnew.js
-+++ b/mockup/patterns/filemanager/js/addnew.js
-@@ -30,11 +30,14 @@ define([
-           type: 'POST',
-           data: {
-             filename: filename,
--            path: self.getFolderPath()
-+            path: self.app.getFolderPath()
-           },
-           success: function(data) {
-             self.hide();
--            self.app.$tree.tree('reload');
-+            self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-           }
-         });
-         // XXX show loading
-diff --git a/mockup/patterns/filemanager/js/customize.js b/mockup/patterns/filemanager/js/customize.js
-index 7fb664a..e75fe1a 100644
---- a/mockup/patterns/filemanager/js/customize.js
-+++ b/mockup/patterns/filemanager/js/customize.js
-@@ -63,7 +63,10 @@ define([
-           // clear out
-           self.$('input.search').attr('value', '');
-           self.$results.empty();
--          self.app.$tree.tree('reload');
-+          self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-         }
-       });
-     }
-diff --git a/mockup/patterns/filemanager/js/delete.js b/mockup/patterns/filemanager/js/delete.js
-index 1da559e..2f4a8ce 100644
---- a/mockup/patterns/filemanager/js/delete.js
-+++ b/mockup/patterns/filemanager/js/delete.js
-@@ -29,7 +29,12 @@ define([
-         },
-         success: function(data) {
-           self.hide();
--          self.app.$tree.tree('reload');
-+          self.app.$tree.tree(
-+            'loadDataFromUrl',
-+            self.app.options.actionUrl + '?action=dataTree'
-+          );
-+          // ugly, $tabs should have an API
-+          $('.nav .active .remove').click();
-         }
-       });
-       // XXX show loading
-diff --git a/mockup/patterns/filemanager/js/newfolder.js b/mockup/patterns/filemanager/js/newfolder.js
-index 340e597..60b9a52 100644
---- a/mockup/patterns/filemanager/js/newfolder.js
-+++ b/mockup/patterns/filemanager/js/newfolder.js
-@@ -34,7 +34,10 @@ define([
-           },
-           success: function(data) {
-             self.hide();
--            self.app.$tree.tree('reload');
-+            self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-           }
-         });
-         // XXX show loading
-diff --git a/mockup/patterns/filemanager/js/rename.js b/mockup/patterns/filemanager/js/rename.js
-index e4c68e9..0443256 100644
---- a/mockup/patterns/filemanager/js/rename.js
-+++ b/mockup/patterns/filemanager/js/rename.js
-@@ -44,7 +44,12 @@ define([
-           },
-           success: function(data) {
-             self.hide();
--            self.app.$tree.tree('reload');
-+            self.app.$tree.tree(
-+              'loadDataFromUrl',
-+              self.app.options.actionUrl + '?action=dataTree'
-+            );
-+            // ugly, $tabs should have an API
-+            $('.nav .active .remove').click();
-           }
-         });
-         // XXX show loading
-diff --git a/mockup/patterns/filemanager/pattern.js b/mockup/patterns/filemanager/pattern.js
-index c45560b..4d19d96 100644
---- a/mockup/patterns/filemanager/pattern.js
-+++ b/mockup/patterns/filemanager/pattern.js
-@@ -116,6 +116,8 @@ define([
-       var translations = self.options.translations;
- 
-       self.fileData = {};
-+      self.currentPath;
-+
-       self.saveBtn = new ButtonView({
-         id: 'save',
-         title: translations.save,
-@@ -220,7 +222,9 @@ define([
-         self.doAction('saveFile', {
-           type: 'POST',
-           data: {
--            path: self.$tree.tree('getSelectedNode').label
-+            path: self.getNodePath(),
-+            data: self.ace.editor.getValue(),
-+            _authenticator: utils.getAuthenticator()
-           },
-           success: function(data) {
-             /* XXX unhighlight save button */
-@@ -262,50 +266,54 @@ define([
-       if (event.node.folder){
-         return true;
-       }
--
--      self.doAction('getFile', {
--        data: { path: doc },
--        dataType: 'json',
--        success: function(data) {
--          self.fileData[doc] = data;
--          $('li', self.$tabs).removeClass('active');
--          var $existing = $('[data-path="' + doc + '"]');
--          if ($existing.length === 0){
--            var $item = $(self.tabItemTemplate({path: doc}));
--            self.$tabs.append($item);
--            $('.remove', $item).click(function(e){
--              e.preventDefault();
--              if ($(this).parent().hasClass('active'))
--              {
--                var $siblings = $(this).parent().siblings();
--                if ($siblings.length > 0){
--                  var $item;
--                  if ($(this).parent().prev().length > 0){
--                    $item = $(this).parent().prev();
--                  } else {
--                    $item = $(this).parent().next();
--                  }
--                  $item.addClass('active');
--                  self.openEditor($item.attr('data-path'));
-+      if(self.fileData[doc]) {
-+        $('li', self.$tabs).removeClass('active');
-+        var $existing = $('[data-path="' + doc + '"]');
-+        if ($existing.length === 0){
-+          var $item = $(self.tabItemTemplate({path: doc}));
-+          self.$tabs.append($item);
-+          $('.remove', $item).click(function(e){
-+            e.preventDefault();
-+            if ($(this).parent().hasClass('active'))
-+            {
-+              var $siblings = $(this).parent().siblings();
-+              if ($siblings.length > 0){
-+                var $item;
-+                if ($(this).parent().prev().length > 0){
-+                  $item = $(this).parent().prev();
-                 } else {
--                  self.ace.setText('');
-+                  $item = $(this).parent().next();
-                 }
-+                $item.addClass('active');
-+                self.openEditor($item.attr('data-path'));
-+              } else {
-+                self.ace.setText('');
-               }
--              $(this).parent().remove();
--            });
--            $('.select', $item).click(function(e){
--              e.preventDefault();
--              $('li', self.$tabs).removeClass('active');
--              var $li = $(this).parent();
--              $li.addClass('active');
--              self.openEditor($li.attr('data-path'));
--            });
--          }else{
--            $existing.addClass('active');
--          }
--          self.openEditor(doc);
-+            }
-+            $(this).parent().remove();
-+          });
-+          $('.select', $item).click(function(e){
-+            e.preventDefault();
-+            $('li', self.$tabs).removeClass('active');
-+            var $li = $(this).parent();
-+            $li.addClass('active');
-+            self.$tree.tree('selectNode', event.node);
-+            self.openFile({node: event.node});
-+          });
-+        }else{
-+          $existing.addClass('active');
-         }
--      });
-+        self.openEditor(doc);
-+      } else {
-+        self.doAction('getFile', {
-+          data: { path: doc },
-+          dataType: 'json',
-+          success: function(data) {
-+            self.fileData[doc] = data;
-+            self.openFile(event);
-+          }
-+        });
-+      }
+@@ -108,8 +108,8 @@
+       'select2': 'bower_components/select2/select2',
+       'sinon': 'bower_components/sinonjs/sinon',
+       'text': 'bower_components/requirejs-text/text',
+-      'tinymce': 'bower_components/tinymce/tinymce',
+-      'tinymce-modern-theme': 'bower_components/tinymce/themes/modern/theme',
++      'tinymce': 'bower_components/tinymce-builded/js/tinymce/tinymce',
++      'tinymce-modern-theme': 'bower_components/tinymce-builded/js/tinymce/themes/modern/theme',
+       'underscore': 'bower_components/lodash/dist/lodash.underscore'
      },
-     doAction: function(action, options) {
-       var self = this;
-@@ -325,6 +333,11 @@ define([
-     },
-     openEditor: function(path) {
-       var self = this;
-+      // first we need to save the current editor content
-+      if(self.currentPath) {
-+        self.fileData[self.currentPath].contents = self.ace.editor.getValue();
-+      }
-+      self.currentPath = path;
-       if (self.ace !== undefined){
-         self.ace.editor.destroy();
-       }
-@@ -332,7 +345,7 @@ define([
-         width: self.$editor.width()
-       });
-       self.ace.setSyntax(path);
--      self.ace.setText(self.fileData[path].data);
-+      self.ace.setText(self.fileData[path].contents);
-       self.ace.editor.clearSelection();
-     },
-     getSelectedNode: function() {
-diff --git a/mockup/patterns/thememapper/pattern.thememapper.less b/mockup/patterns/thememapper/pattern.thememapper.less
-index 0259627..0ea8d9d 100644
---- a/mockup/patterns/thememapper/pattern.thememapper.less
-+++ b/mockup/patterns/thememapper/pattern.thememapper.less
-@@ -11,6 +11,10 @@
-         height: 600px;
-     }
- 
-+    .mockup-inspector {
-+        clear: both;
-+    }
-+
-     .fullscreen {
-         vertical-align: top;
-         display: inline-block;
+     shim: {
+diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
+index 1cde373..1b74013 100644
+--- a/mockup/patterns/tinymce/pattern.js
++++ b/mockup/patterns/tinymce/pattern.js
+@@ -116,7 +116,7 @@ define([
+         externalImage: _t('External Image URI')
+       },
+       // URL generation options
+-      loadingBaseUrl: '../../../bower_components/tinymce/',
++      loadingBaseUrl: '../../../bower_components/tinymce-builded/js/tinymce/',
+       prependToUrl: '',
+       appendToUrl: '',
+       linkAttribute: 'path', // attribute to get link value from data
 
 
