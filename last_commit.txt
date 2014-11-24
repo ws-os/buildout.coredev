@@ -1,115 +1,39 @@
-Repository: mockup
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2014-11-24T16:38:25+01:00
+Date: 2014-11-24T22:08:34+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/mockup/commit/789a37efa01f34b02f6c698937c62557d34b464d
+Commit: https://github.com/plone/plone.app.widgets/commit/2041f5bf76c2c1454f6abf37a2e84c8343dd38c5
 
-need new mockup-core version
+Remove dependency on plone.app.jquery.
 
 Files changed:
-M mockup/bower.json
+M CHANGES.rst
+M plone/app/widgets/configure.zcml
 
-diff --git a/mockup/bower.json b/mockup/bower.json
-index fa4ea7a..da5915a 100644
---- a/mockup/bower.json
-+++ b/mockup/bower.json
-@@ -14,7 +14,7 @@
-     "jquery-form": "3.46.0",
-     "jquery.cookie": "1.4.1",
-     "lodash": "2.4.1",
--    "mockup-core": "1.2.14",
-+    "mockup-core": "1.2.15",
-     "moment": "2.8.3",
-     "pickadate": "3.4.0",
-     "requirejs-text": "2.0.12",
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2014-11-24T17:23:35+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/mockup/commit/39d7b3864d773da1717b2e4ffc27b5361b440d0e
-
-fixed tinymce paths and stlyes
-
-Files changed:
-M mockup/Gruntfile.js
-M mockup/js/config.js
-M mockup/patterns/tinymce/less/pattern.tinymce.less
-M mockup/patterns/tinymce/pattern.js
-
-diff --git a/mockup/Gruntfile.js b/mockup/Gruntfile.js
-index 7799c75..b9ee36d 100644
---- a/mockup/Gruntfile.js
-+++ b/mockup/Gruntfile.js
-@@ -46,12 +46,14 @@ module.exports = function(grunt) {
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 0d7e2ef..f3d6c2c 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -9,7 +9,7 @@ Changelog
  
-     ret[name + '-tinymce-fonts'] = {
-       path: path + name + '.min.css',
--      pattern: 'url\\(\'?fonts/tinymce\'?',  // match urls with and without quotes
--      replacement: 'url(\'' + url + '-tinymce-font-tinymce\''
-+      pattern: 'url\\(fonts/tinymce',
-+      replacement: 'url(' + url + '-tinymce-font-tinymce'
-+      //pattern: 'url\\(\'?fonts/tinymce(.*)\'?',  // match urls with and without quotes
-+      //replacement: 'url(\'' + url + '-tinymce-font-tinymce$1\''
-     };
-     ret[name + '-tinymce-img-loader'] = {
-       path: path + name + '.min.css',
--      pattern: 'url\\(\'?img/loader.gif\'?',
-+      pattern: 'url\\(\'?img/loader.gif\'?',  // match urls with and without quotes
-       replacement: 'url(\'' + url + '-tinymce-img-loader.gif\''
-     };
-     ret[name + '-tinymce-img-anchor'] = {
-@@ -67,8 +69,8 @@ module.exports = function(grunt) {
+ - Raise minimum ``Products.CMFPlone`` requirement to 4.3.4 to ensure
+   compatibility with jQuery 1.9+. jQuery 1.11.1 is included in recent
+-  ``mockup``.
++  ``mockup``. Remove dependency on plone.app.jquery.
+   [thet]
  
-     ret[name + '-tinymce-fonts2'] = {
-       path: path + name + '-tinymce-content.min.css',
--      pattern: 'url\\(\'?fonts/tinymce\'?',  // match urls with and without quotes
--      replacement: 'url(\'' + url + '-tinymce-font-tinymce\''
-+      pattern: 'url\\(fonts/tinymce',
-+      replacement: 'url(' + url + '-tinymce-font-tinymce'
-     };
-     ret[name + '-tinymce-img-loader2'] = {
-       path: path + name + '-tinymce-content.min.css',
-diff --git a/mockup/js/config.js b/mockup/js/config.js
-index f7b7497..1cb9500 100644
---- a/mockup/js/config.js
-+++ b/mockup/js/config.js
-@@ -137,7 +137,7 @@
-   };
-   for(var i=0; i<tinymcePlugins.length; i=i+1){
-     var plugin = tinymcePlugins[i];
--    requirejsOptions.paths['tinymce-' + plugin] = 'bower_components/tinymce/plugins/' + plugin + '/plugin';
-+    requirejsOptions.paths['tinymce-' + plugin] = 'bower_components/tinymce-builded/js/tinymce/plugins/' + plugin + '/plugin';
-     requirejsOptions.shim['tinymce-' + plugin] = {
-       deps: ['tinymce']
-     };
-diff --git a/mockup/patterns/tinymce/less/pattern.tinymce.less b/mockup/patterns/tinymce/less/pattern.tinymce.less
-index 212e05c..0828146 100644
---- a/mockup/patterns/tinymce/less/pattern.tinymce.less
-+++ b/mockup/patterns/tinymce/less/pattern.tinymce.less
-@@ -1,6 +1,6 @@
--@import (less) "@{bowerPath}/tinymce/skins/lightgray/skin.min.css";
--@import (less) "@{bowerPath}/tinymce/skins/lightgray/content.inline.min.css";
--@import (less) "@{bowerPath}/tinymce/plugins/visualblocks/css/visualblocks.css";
-+@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/skin.min.css";
-+@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/content.inline.min.css";
-+@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/plugins/visualblocks/css/visualblocks.css";
- @import "@{mockupPath}/modal/pattern.modal.less";
- @import "@{mockupPath}/autotoc/pattern.autotoc.less";
- @import "@{bowerPath}/bootstrap/less/buttons.less";
-diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
-index 1b74013..34e1998 100644
---- a/mockup/patterns/tinymce/pattern.js
-+++ b/mockup/patterns/tinymce/pattern.js
-@@ -135,7 +135,7 @@ define([
-       folderTypes: 'Folder,Plone Site',
-       linkableTypes: 'Document,Event,File,Folder,Image,News Item,Topic',
-       tiny: {
--        'content_css': '../../../bower_components/tinymce/skins/lightgray/content.min.css',
-+        'content_css': '../../../bower_components/tinymce-builded/js/tinymce/skins/lightgray/content.min.css',
-         theme: '-modern',
-         plugins: [
-           '-advlist -autolink -lists -charmap -print -preview -anchor ' +
+ - Always include CSS and JS SourceMap files. They are only loaded, when the
+diff --git a/plone/app/widgets/configure.zcml b/plone/app/widgets/configure.zcml
+index 7eec136..cb7434b 100644
+--- a/plone/app/widgets/configure.zcml
++++ b/plone/app/widgets/configure.zcml
+@@ -13,7 +13,6 @@
+ 
+   <include package="Products.CMFPlone" />
+   <include package="plone.app.vocabularies" />
+-  <include package="plone.app.jquery" />
+   <include package=".browser" />
+ 
+   <include package="mockup"
 
 
