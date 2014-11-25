@@ -1,39 +1,25 @@
-Repository: plone.app.widgets
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2014-11-24T22:08:34+01:00
+Date: 2014-11-25T14:42:35+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.widgets/commit/2041f5bf76c2c1454f6abf37a2e84c8343dd38c5
+Commit: https://github.com/plone/plone.app.upgrade/commit/99857de43e777998e2b7cf566a238f4a89ddb68b
 
-Remove dependency on plone.app.jquery.
+add plone.app.jquery, which dropped out as plone core dependency in 5.0
 
 Files changed:
-M CHANGES.rst
-M plone/app/widgets/configure.zcml
+M setup.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 0d7e2ef..f3d6c2c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -9,7 +9,7 @@ Changelog
- 
- - Raise minimum ``Products.CMFPlone`` requirement to 4.3.4 to ensure
-   compatibility with jQuery 1.9+. jQuery 1.11.1 is included in recent
--  ``mockup``.
-+  ``mockup``. Remove dependency on plone.app.jquery.
-   [thet]
- 
- - Always include CSS and JS SourceMap files. They are only loaded, when the
-diff --git a/plone/app/widgets/configure.zcml b/plone/app/widgets/configure.zcml
-index 7eec136..cb7434b 100644
---- a/plone/app/widgets/configure.zcml
-+++ b/plone/app/widgets/configure.zcml
-@@ -13,7 +13,6 @@
- 
-   <include package="Products.CMFPlone" />
-   <include package="plone.app.vocabularies" />
--  <include package="plone.app.jquery" />
-   <include package=".browser" />
- 
-   <include package="mockup"
+diff --git a/setup.py b/setup.py
+index 696f0b5..1dd33a5 100644
+--- a/setup.py
++++ b/setup.py
+@@ -42,6 +42,7 @@
+         'setuptools',
+         'borg.localrole',
+         'five.localsitemanager',
++        'plone.app.jquery',
+         'plone.portlets',
+         'plone.session',
+         'plone.app.folder',
 
 
