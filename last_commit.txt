@@ -1,25 +1,63 @@
-Repository: plone.app.upgrade
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-25T14:42:35+01:00
+Date: 2014-11-25T15:05:46+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.upgrade/commit/99857de43e777998e2b7cf566a238f4a89ddb68b
+Commit: https://github.com/plone/mockup/commit/7cb9f41bfc4b33f9613552dcae3c6461fe505fdd
 
-add plone.app.jquery, which dropped out as plone core dependency in 5.0
+add missing changelog entries
 
 Files changed:
-M setup.py
+M CHANGES.rst
 
-diff --git a/setup.py b/setup.py
-index 696f0b5..1dd33a5 100644
---- a/setup.py
-+++ b/setup.py
-@@ -42,6 +42,7 @@
-         'setuptools',
-         'borg.localrole',
-         'five.localsitemanager',
-+        'plone.app.jquery',
-         'plone.portlets',
-         'plone.session',
-         'plone.app.folder',
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 64517bd..30b840f 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,23 +4,39 @@ Changelog
+ 1.8.3 (unreleased)
+ ------------------
+ 
++New patterns:
++
++- Add mimetype selector pattern for textareas.
++  [thet]
++
++- Add Cookie Trigger pattern. It shows a DOM element if browser cookies are
++  disabled.
++  [jcbrand]
++
++- Add Inline Validation pattern for z3c.form, Archetypes and zope.formlib
++  inline validation.
++  [jcbrand]
++
++- Add passwordstrength pattern based on the ``zxcvbn`` library. Ref: #433.
++  [lentinj]
++
++
++Fixes and enhancements:
++
+ - Depend on ``tinymce-builded`` 4.1.6, include TinyMCE copy and sed
+   configuration in here and fix some sed tasks.
+   Revert cd89d377e10a28b797fd3c9d48410ad6ad597486: "Remove bower dependency on
+   ``tinymce-builded``, since the ``tinymce`` dependency already points to the
+   official builded ``tinymce-dist`` reposotory." ``tinymce-dist`` doesn't
+-  include the language files, which are needed. 
++  include the language files, which are needed.
+   [thet]
+ 
+-- Add mimetype selector pattern for textareas.
+-  [thet]
++- Fix thememapper pattern.
++  [ebrehault]
+ 
+ - Fix broken HTML tag on structure pattern's ``actionmenu.xml``.
+   [datakurre]
+ 
+-- Add passwordstrength pattern based on the ``zxcvbn`` library. Ref: #433.
+-  [lentinj]
+-
+ - File label cannot be used as path.
+   [ebrehault]
+ 
 
 
