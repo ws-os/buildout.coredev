@@ -1,43 +1,25 @@
-Repository: plone.app.widgets
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2014-11-25T17:36:16+01:00
-Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/plone.app.widgets/commit/906cfb01060b21cedcff60ec37a200f1a588c3fd
+Date: 2014-11-25T17:57:02+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.upgrade/commit/f30e9d49490d2195ea21db256e34de7bd8784ad0
 
-Revert "Remove dependency on plone.app.jquery."
-
-This commit broke the Plone 5 build.
-
-This reverts commit 2041f5bf76c2c1454f6abf37a2e84c8343dd38c5.
+include plone.app.jquery configuration for 4.2 upgrade steps
 
 Files changed:
-M CHANGES.rst
-M plone/app/widgets/configure.zcml
+M plone/app/upgrade/v42/configure.zcml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index f3d6c2c..0d7e2ef 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -9,7 +9,7 @@ Changelog
+diff --git a/plone/app/upgrade/v42/configure.zcml b/plone/app/upgrade/v42/configure.zcml
+index 93d03f8..11cdb91 100644
+--- a/plone/app/upgrade/v42/configure.zcml
++++ b/plone/app/upgrade/v42/configure.zcml
+@@ -3,6 +3,7 @@
+     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+     i18n_domain="plone">
  
- - Raise minimum ``Products.CMFPlone`` requirement to 4.3.4 to ensure
-   compatibility with jQuery 1.9+. jQuery 1.11.1 is included in recent
--  ``mockup``. Remove dependency on plone.app.jquery.
-+  ``mockup``.
-   [thet]
++    <include package="plone.app.jquery" />
+     <include file="profiles.zcml" />
  
- - Always include CSS and JS SourceMap files. They are only loaded, when the
-diff --git a/plone/app/widgets/configure.zcml b/plone/app/widgets/configure.zcml
-index cb7434b..7eec136 100644
---- a/plone/app/widgets/configure.zcml
-+++ b/plone/app/widgets/configure.zcml
-@@ -13,6 +13,7 @@
- 
-   <include package="Products.CMFPlone" />
-   <include package="plone.app.vocabularies" />
-+  <include package="plone.app.jquery" />
-   <include package=".browser" />
- 
-   <include package="mockup"
+     <genericsetup:upgradeSteps
 
 
