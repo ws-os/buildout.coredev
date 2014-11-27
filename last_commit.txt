@@ -1,25 +1,33 @@
-Repository: plone.app.widgets
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2014-11-27T14:15:01+01:00
+Date: 2014-11-27T14:41:14+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.widgets/commit/5ee58b8a9d6a3d0eb656497aa0d7c69a21fa6adb
+Commit: https://github.com/plone/plone.app.contenttypes/commit/456e87dbafd26c91c1de3ef7675d9074eec6e2e3
 
-rm unnecessary dependency on plone.app.jquery again. should be fixed by recent plone.app.upgrade.
+migration package needs schemaextender. test for it in zcml conditional
 
 Files changed:
-M plone/app/widgets/configure.zcml
+M plone/app/contenttypes/upgrades.zcml
 
-diff --git a/plone/app/widgets/configure.zcml b/plone/app/widgets/configure.zcml
-index 7eec136..cb7434b 100644
---- a/plone/app/widgets/configure.zcml
-+++ b/plone/app/widgets/configure.zcml
-@@ -13,7 +13,6 @@
+diff --git a/plone/app/contenttypes/upgrades.zcml b/plone/app/contenttypes/upgrades.zcml
+index 53803c1..1f964e7 100644
+--- a/plone/app/contenttypes/upgrades.zcml
++++ b/plone/app/contenttypes/upgrades.zcml
+@@ -23,6 +23,7 @@
  
-   <include package="Products.CMFPlone" />
-   <include package="plone.app.vocabularies" />
--  <include package="plone.app.jquery" />
-   <include package=".browser" />
+   <!-- We still need Archetypes to use Products.contentmigrator -->
+   <configure zcml:condition="installed Products.Archetypes">
++  <configure zcml:condition="installed archetypes.schemaextender">
+   <genericsetup:upgradeStep
+       source="1001"
+       destination="1100"
+@@ -32,6 +33,7 @@
+       handler=".migration.dxmigration.migrate_to_pa_event"
+       />
+   </configure>
++  </configure>
  
-   <include package="mockup"
+   <genericsetup:upgradeStep
+       source="1100"
 
 
