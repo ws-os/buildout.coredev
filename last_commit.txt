@@ -1,33 +1,121 @@
-Repository: plone.app.contenttypes
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-27T14:41:14+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/456e87dbafd26c91c1de3ef7675d9074eec6e2e3
+Date: 2014-11-27T17:37:12+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/Products.CMFPlone/commit/e53a0028dc528144143b8471896ea10fd9f5996c
 
-migration package needs schemaextender. test for it in zcml conditional
+Fix to update last_compilation time on bundle build
 
 Files changed:
-M plone/app/contenttypes/upgrades.zcml
+M Products/CMFPlone/controlpanel/browser/resourceregistry.py
 
-diff --git a/plone/app/contenttypes/upgrades.zcml b/plone/app/contenttypes/upgrades.zcml
-index 53803c1..1f964e7 100644
---- a/plone/app/contenttypes/upgrades.zcml
-+++ b/plone/app/contenttypes/upgrades.zcml
-@@ -23,6 +23,7 @@
- 
-   <!-- We still need Archetypes to use Products.contentmigrator -->
-   <configure zcml:condition="installed Products.Archetypes">
-+  <configure zcml:condition="installed archetypes.schemaextender">
-   <genericsetup:upgradeStep
-       source="1001"
-       destination="1100"
-@@ -32,6 +33,7 @@
-       handler=".migration.dxmigration.migrate_to_pa_event"
-       />
-   </configure>
-+  </configure>
- 
-   <genericsetup:upgradeStep
-       source="1100"
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.py b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+index 8b9b2e7..b62ed29 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.py
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+@@ -1,3 +1,4 @@
++from datetime import datetime
+ from Products.CMFPlone.interfaces import IBundleRegistry
+ from Products.CMFPlone.interfaces import IResourceRegistry
+ from Products.CMFPlone.interfaces.resources import OVERRIDE_RESOURCE_DIRECTORY_NAME  # noqa
+@@ -236,6 +237,10 @@ def save_js_build(self):
+         req = self.request
+         filepath = 'static/%s-compiled.js' % req.form['bundle']
+         overrides.save_file(filepath, req.form['data'])
++        bundle = self.get_bundles().get(req.form['bundle'])
++        if bundle:
++            bundle.last_compilation = datetime.now()
++            bundle.jscompilation = '++plone++' + filepath
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+@@ -248,6 +253,10 @@ def save_less_build(self):
+         data = '\n'.join([req.form[k] for k in req.form.keys()
+                           if k.startswith('data-')])
+         overrides.save_file(filepath, data)
++        bundle = self.get_bundles().get(req.form['bundle'])
++        if bundle:
++            bundle.last_compilation = datetime.now()
++            bundle.csscompilation = '++plone++' + filepath
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2014-11-27T17:43:51+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/Products.CMFPlone/commit/7f8342403643bb6e8ba054567c3cc4f72a1e8daf
+
+Fix not to update jscompilation/csscompilation paths to avoid issues when deleting overrides
+
+Files changed:
+M Products/CMFPlone/controlpanel/browser/resourceregistry.py
+
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.py b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+index b62ed29..77270bc 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.py
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+@@ -240,7 +240,6 @@ def save_js_build(self):
+         bundle = self.get_bundles().get(req.form['bundle'])
+         if bundle:
+             bundle.last_compilation = datetime.now()
+-            bundle.jscompilation = '++plone++' + filepath
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+@@ -256,7 +255,6 @@ def save_less_build(self):
+         bundle = self.get_bundles().get(req.form['bundle'])
+         if bundle:
+             bundle.last_compilation = datetime.now()
+-            bundle.csscompilation = '++plone++' + filepath
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2014-11-27T11:15:41-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/1793dd64af97c10a9f381a565a8d9ae79fb1b8b5
+
+Merge pull request #311 from plone/datakurre-fix_last_compilation_on_resource_build
+
+Fix to update last_compilation time on bundle build
+
+Files changed:
+M Products/CMFPlone/controlpanel/browser/resourceregistry.py
+
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.py b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+index 8b9b2e7..77270bc 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.py
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+@@ -1,3 +1,4 @@
++from datetime import datetime
+ from Products.CMFPlone.interfaces import IBundleRegistry
+ from Products.CMFPlone.interfaces import IResourceRegistry
+ from Products.CMFPlone.interfaces.resources import OVERRIDE_RESOURCE_DIRECTORY_NAME  # noqa
+@@ -236,6 +237,9 @@ def save_js_build(self):
+         req = self.request
+         filepath = 'static/%s-compiled.js' % req.form['bundle']
+         overrides.save_file(filepath, req.form['data'])
++        bundle = self.get_bundles().get(req.form['bundle'])
++        if bundle:
++            bundle.last_compilation = datetime.now()
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+@@ -248,6 +252,9 @@ def save_less_build(self):
+         data = '\n'.join([req.form[k] for k in req.form.keys()
+                           if k.startswith('data-')])
+         overrides.save_file(filepath, data)
++        bundle = self.get_bundles().get(req.form['bundle'])
++        if bundle:
++            bundle.last_compilation = datetime.now()
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
 
 
