@@ -1,26 +1,25 @@
-Repository: plone.app.referenceablebehavior
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2014-11-27T13:23:19+01:00
+Date: 2014-11-27T14:15:01+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.referenceablebehavior/commit/841c24ec1fdfa85360bee9ddc7171f435670c8e5
+Commit: https://github.com/plone/plone.app.widgets/commit/5ee58b8a9d6a3d0eb656497aa0d7c69a21fa6adb
 
-dont depend on "Plone" distribution in test extra, but only on Products.CMFPlone to avoid dependency on plone.app.upgrade
+rm unnecessary dependency on plone.app.jquery again. should be fixed by recent plone.app.upgrade.
 
 Files changed:
-M setup.py
+M plone/app/widgets/configure.zcml
 
-diff --git a/setup.py b/setup.py
-index e84714c..a7e839c 100644
---- a/setup.py
-+++ b/setup.py
-@@ -34,7 +34,7 @@
-           # -*- Extra requirements: -*-
-       ],
-       extras_require={
--        'test': ['Plone',
-+        'test': ['Products.CMFPlone',
-                  'plone.app.testing',
-                  'plone.app.dexterity'],
-       },
+diff --git a/plone/app/widgets/configure.zcml b/plone/app/widgets/configure.zcml
+index 7eec136..cb7434b 100644
+--- a/plone/app/widgets/configure.zcml
++++ b/plone/app/widgets/configure.zcml
+@@ -13,7 +13,6 @@
+ 
+   <include package="Products.CMFPlone" />
+   <include package="plone.app.vocabularies" />
+-  <include package="plone.app.jquery" />
+   <include package=".browser" />
+ 
+   <include package="mockup"
 
 
