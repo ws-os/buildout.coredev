@@ -1,86 +1,26 @@
-Repository: plone.stringinterp
+Repository: plone.app.referenceablebehavior
 Branch: refs/heads/master
-Date: 2014-11-26T18:26:52+01:00
-Author: Vincent Fretin (vincentfretin) <vincent.fretin@gmail.com>
-Commit: https://github.com/plone/plone.stringinterp/commit/b8484c0c4a5c4a9730dbee606f6165575b137e4d
+Date: 2014-11-27T13:23:19+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.referenceablebehavior/commit/841c24ec1fdfa85360bee9ddc7171f435670c8e5
 
-Fix "RuntimeError: maximum recursion depth exceeded" in
-recursiveGetGroupUsers when you have a group A containing group B containing
-group A.
+dont depend on "Plone" distribution in test extra, but only on Products.CMFPlone to avoid dependency on plone.app.upgrade
 
 Files changed:
-M CHANGES.txt
-M plone/stringinterp/adapters.py
-M plone/stringinterp/tests/moreSubstitutionTests.txt
+M setup.py
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 504bac8..7ed6b1b 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -4,7 +4,10 @@ Changelog
- 1.1.2 (unreleased)
- ------------------
- 
--- Nothing changed yet.
-+- Fix "RuntimeError: maximum recursion depth exceeded" in
-+  recursiveGetGroupUsers when you have a group A containing group B containing
-+  group A.
-+  [vincentfretin]
- 
- 
- 1.1.1 (2014-11-01)
-diff --git a/plone/stringinterp/adapters.py b/plone/stringinterp/adapters.py
-index 7621114..655b268 100644
---- a/plone/stringinterp/adapters.py
-+++ b/plone/stringinterp/adapters.py
-@@ -422,8 +422,9 @@ def _recursiveGetMembersFromIds(portal, group_and_user_ids):
-     gtool = getToolByName(portal, 'portal_groups')
-     mtool = getToolByName(portal, 'portal_membership')
-     members = set()
-+    seen = set()
- 
--    def recursiveGetGroupUsers(mtool, gtool, group):
-+    def recursiveGetGroupUsers(mtool, gtool, seen, group):
-         users = set()
-         if IGroupData.providedBy(group):
-             group_members = group.getGroupMembers()
-@@ -432,8 +433,13 @@ def recursiveGetGroupUsers(mtool, gtool, group):
- 
-         for group_or_user in group_members:
-             if IGroupData.providedBy(group_or_user):
-+                group_or_user_id = group_or_user.getId()
-+                if group_or_user_id in seen:
-+                    continue
-+
-+                seen.add(group_or_user_id)
-                 users = users.union(
--                            recursiveGetGroupUsers(mtool, gtool, group_or_user))
-+                            recursiveGetGroupUsers(mtool, gtool, seen, group_or_user))
-             elif group_or_user is not None:
-                 # Other group data PAS plugins might not filter no
-                 # longer existing group members.
-@@ -444,7 +450,8 @@ def recursiveGetGroupUsers(mtool, gtool, group):
-     for group_or_user_id in group_and_user_ids:
-         _group = gtool.getGroupById(group_or_user_id)
-         if _group:
--            members = members.union(recursiveGetGroupUsers(mtool, gtool, _group))
-+            seen.add(group_or_user_id)
-+            members = members.union(recursiveGetGroupUsers(mtool, gtool, seen, _group))
-         else:
-             member = mtool.getMemberById(group_or_user_id)
-             if member is not None:
-diff --git a/plone/stringinterp/tests/moreSubstitutionTests.txt b/plone/stringinterp/tests/moreSubstitutionTests.txt
-index 36d19f9..1a676f0 100644
---- a/plone/stringinterp/tests/moreSubstitutionTests.txt
-+++ b/plone/stringinterp/tests/moreSubstitutionTests.txt
-@@ -52,6 +52,8 @@ Setup
-     ...         group.addMember(id)
-     >>> self.portal.portal_groups.getGroupById(
-     ...     'Reviewers').addMember('groupreviewers')
-+    >>> self.portal.portal_groups.getGroupById(
-+    ...     'groupreviewers').addMember('Reviewers')  # add a group cycle to test we don't have a "RuntimeError: maximum recursion depth exceeded"
-     >>> self.login(TEST_USER_NAME)
-     >>> sandbox_localusers = (
-     ... ('userfive', ('Contributor',)),
+diff --git a/setup.py b/setup.py
+index e84714c..a7e839c 100644
+--- a/setup.py
++++ b/setup.py
+@@ -34,7 +34,7 @@
+           # -*- Extra requirements: -*-
+       ],
+       extras_require={
+-        'test': ['Plone',
++        'test': ['Products.CMFPlone',
+                  'plone.app.testing',
+                  'plone.app.dexterity'],
+       },
 
 
