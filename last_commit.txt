@@ -1,56 +1,87 @@
-Repository: plone.app.theming
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-11-27T17:32:17+02:00
-Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
-Commit: https://github.com/plone/plone.app.theming/commit/92011013303b6f22982656b2789749e65c524213
+Date: 2014-11-28T11:29:31+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/mockup/commit/85f3840abd2aa85d0f60c6de0c6c269ea806412f
 
-Fix issue where skinsSettings does not have use_popups attribute on Plone 5
+Fixes + Test for "Get base url from base-url data param"
+
+Fixes tests and add one for the change in
+https://github.com/plone/mockup/commit/919f94339b23d3fa55d642d50257f9807ef1cd4f
+by @ACatlla
+Even Plone 5 dropped the base tag, we should still support base tags.
+The regex is needed, as jQuery unreliably parses HTML strings.
 
 Files changed:
-M src/plone/app/theming/browser/controlpanel.pt
+M CHANGES.rst
+M mockup/patterns/modal/pattern.js
+M mockup/tests/pattern-modal-test.js
 
-diff --git a/src/plone/app/theming/browser/controlpanel.pt b/src/plone/app/theming/browser/controlpanel.pt
-index 2dedab7..eedb171 100644
---- a/src/plone/app/theming/browser/controlpanel.pt
-+++ b/src/plone/app/theming/browser/controlpanel.pt
-@@ -530,7 +530,8 @@
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 30b840f..241a720 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -23,6 +23,11 @@ New patterns:
  
-                     <div
-                         class="field"
--                        tal:define="selected python:request.get('usePopups', view.skinsSettings.use_popups)">
-+                        tal:define="selected_default view/skinsSettings/use_popups|python:False;
-+                                    selected python:request.get('usePopups', selected_default)">
+ Fixes and enhancements:
  
-                         <input type="hidden" value="" name="usePopups:boolean:default" />
-                         <input type="checkbox" value="1" name="usePopups:boolean" id="usePopups"
-
-
-Repository: plone.app.theming
-Branch: refs/heads/master
-Date: 2014-11-27T11:16:10-06:00
-Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.theming/commit/828c9e2c350260b2aa674081fefe4bc8b724d366
-
-Merge pull request #33 from plone/datakurre-fix-controlpanel.pt
-
-Fix issue where skinsSettings does not have use_popups attribute on Plone 5
-
-Files changed:
-M src/plone/app/theming/browser/controlpanel.pt
-
-diff --git a/src/plone/app/theming/browser/controlpanel.pt b/src/plone/app/theming/browser/controlpanel.pt
-index 2dedab7..eedb171 100644
---- a/src/plone/app/theming/browser/controlpanel.pt
-+++ b/src/plone/app/theming/browser/controlpanel.pt
-@@ -530,7 +530,8 @@
- 
-                     <div
-                         class="field"
--                        tal:define="selected python:request.get('usePopups', view.skinsSettings.use_popups)">
-+                        tal:define="selected_default view/skinsSettings/use_popups|python:False;
-+                                    selected python:request.get('usePopups', selected_default)">
- 
-                         <input type="hidden" value="" name="usePopups:boolean:default" />
-                         <input type="checkbox" value="1" name="usePopups:boolean" id="usePopups"
++- Modal Pattern: If ``data-base-url`` attribute is available on the body, use
++  it. Otherwise search for a ``<base>`` tag. Plone 5 dropped the usage of base
++  tags.
++  [ACatlla, thet]
++
+ - Depend on ``tinymce-builded`` 4.1.6, include TinyMCE copy and sed
+   configuration in here and fix some sed tasks.
+   Revert cd89d377e10a28b797fd3c9d48410ad6ad597486: "Remove bower dependency on
+diff --git a/mockup/patterns/modal/pattern.js b/mockup/patterns/modal/pattern.js
+index 66387d1..5f1c3e1 100644
+--- a/mockup/patterns/modal/pattern.js
++++ b/mockup/patterns/modal/pattern.js
+@@ -156,7 +156,19 @@ define([
+         onTimeout: null,
+         redirectOnResponse: false,
+         redirectToUrl: function($action, response, options) {
+-          return $('body').data('base-url');
++          var baseUrl = '';
++          var reg = /<body.*data-base-url=[\"'](.*)[\"'].*/im.exec(response);
++          if (reg && reg.length > 1) {
++            // Base url as data attribute on body (Plone 5)
++            baseUrl = reg[1];
++          } else {
++            reg = /<base.*href=[\"'](.*)[\"'].*/im.exec(response);
++            if (reg && reg.length > 1) {
++              // base tag available (Plone 4)
++              baseUrl = reg[1];
++            }
++          }
++          return baseUrl;
+         }
+       },
+       routerOptions: {
+diff --git a/mockup/tests/pattern-modal-test.js b/mockup/tests/pattern-modal-test.js
+index cb6e17e..21acaa4 100644
+--- a/mockup/tests/pattern-modal-test.js
++++ b/mockup/tests/pattern-modal-test.js
+@@ -136,12 +136,16 @@ define([
+           var modal = $(this).data('pattern-modal');
+           expect(modal.defaults.actionOptions.redirectToUrl(
+             'ignore',
+-            '<html><head><base href="testurl"></base></head></html>'
+-          )).to.equal('testurl');
++            '<html><head><base href="testurl1"></base></head></html>'
++          )).to.equal('testurl1');
+           expect(modal.defaults.actionOptions.redirectToUrl(
+             'ignore',
+-            '<html><head><base href="testurl" /></head></html>'
+-          )).to.equal('testurl');
++            '<html><head><base href="testurl2" /></head></html>'
++          )).to.equal('testurl2');
++          expect(modal.defaults.actionOptions.redirectToUrl(
++            'ignore',
++            '<html><body data-base-url="testurl3"></body></html>'
++          )).to.equal('testurl3');
+           done();
+         })
+         .click();
 
 
