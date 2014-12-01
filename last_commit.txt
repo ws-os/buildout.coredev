@@ -1,26 +1,214 @@
-Repository: plone.app.contenttypes
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-12-01T14:33:09+01:00
-Author: Martin Opstad Reistadbakk (martior) <martin@blaastolen.com>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/74cf0fad7c2cb40a30591d362fc90b483923bd8e
+Date: 2014-12-01T12:13:09+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/mockup/commit/610f242b73a00e37613284b89c846bdf3c4387f8
 
-fix stupid copy paste error
+change from MIT to BSD. Refs: #422
 
 Files changed:
-M plone/app/contenttypes/testing.py
+M LICENSE.rst
+M README.rst
+M mockup/package.json
+M setup.py
 
-diff --git a/plone/app/contenttypes/testing.py b/plone/app/contenttypes/testing.py
-index a297c21..471ae9a 100644
---- a/plone/app/contenttypes/testing.py
-+++ b/plone/app/contenttypes/testing.py
-@@ -48,7 +48,7 @@ def setUpPloneSite(self, portal):
-         # install and enable referenceablebehavior on Documents to be able to test
-         # controlpanel to enable plone.app.linkintegrity checks
-         applyProfile(portal, 'plone.app.referenceablebehavior:default')
--        portal.portal_types.Document.behaviors += ('zope.lifecycleevent.interfaces.IObjectModifiedEvent',)
-+        portal.portal_types.Document.behaviors += ('plone.app.referenceablebehavior.referenceable.IReferenceable',)
+diff --git a/LICENSE.rst b/LICENSE.rst
+index a672032..000d01d 100644
+--- a/LICENSE.rst
++++ b/LICENSE.rst
+@@ -1,21 +1,27 @@
+-The MIT License (MIT)
++Copyright (c) 2014, Plone Foundation
++All rights reserved.
  
-         mtr = portal.mimetypes_registry
-         mime_doc = mtr.lookup('application/msword')[0]
+-Copyright (c) 2014 Plone Foundation
++Redistribution and use in source and binary forms, with or without
++modification, are permitted provided that the following conditions are met:
+ 
+-Permission is hereby granted, free of charge, to any person obtaining a copy
+-of this software and associated documentation files (the "Software"), to deal
+-in the Software without restriction, including without limitation the rights
+-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+-copies of the Software, and to permit persons to whom the Software is
+-furnished to do so, subject to the following conditions:
++1. Redistributions of source code must retain the above copyright notice, this
++   list of conditions and the following disclaimer.
+ 
+-The above copyright notice and this permission notice shall be included in
+-all copies or substantial portions of the Software.
++2. Redistributions in binary form must reproduce the above copyright notice,
++   this list of conditions and the following disclaimer in the documentation
++   and/or other materials provided with the distribution.
+ 
+-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+-THE SOFTWARE.
++3. Neither the name of the copyright holder nor the names of its contributors
++   may be used to endorse or promote products derived from this software
++   without specific prior written permission.
++
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
++ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
++FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
++CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+diff --git a/README.rst b/README.rst
+index 2c19b38..30e9905 100644
+--- a/README.rst
++++ b/README.rst
+@@ -46,7 +46,7 @@ Run tests with Chrome::
+ License
+ =======
+ 
+-The MIT License (MIT). Copyrights hold the Plone Foundation.
++The BSD 3-Clause License. Copyrights hold the Plone Foundation.
+ See `LICENSE.rst <LICENSE.rst>`_ for details.
+ 
+ 
+diff --git a/mockup/package.json b/mockup/package.json
+index 62c5682..c36cee5 100644
+--- a/mockup/package.json
++++ b/mockup/package.json
+@@ -48,8 +48,8 @@
+   },
+   "licenses": [
+     {
+-      "type": "MIT",
+-      "url": "http://www.opensource.org/licenses/mit-license.php"
++      "type": "BSD",
++      "url": "http://opensource.org/licenses/BSD-3-Clause"
+     }
+   ]
+ }
+diff --git a/setup.py b/setup.py
+index ea7c331..6df8267 100644
+--- a/setup.py
++++ b/setup.py
+@@ -19,7 +19,7 @@
+     author='Plone Foundation',
+     author_email='plone-developers@lists.sourceforge.net',
+     url='https://github.com/plone/mockup',
+-    license='MIT',
++    license='BSD',
+     packages=find_packages(),
+     include_package_data=True,
+     zip_safe=False,
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2014-12-01T07:55:43-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/3aac66736c7ac4e02bfbc1673cd477c9f7f8c665
+
+Merge pull request #445 from plone/relicense-BSD
+
+change from MIT to BSD. Refs: #422
+
+Files changed:
+M LICENSE.rst
+M README.rst
+M mockup/package.json
+M setup.py
+
+diff --git a/LICENSE.rst b/LICENSE.rst
+index a672032..000d01d 100644
+--- a/LICENSE.rst
++++ b/LICENSE.rst
+@@ -1,21 +1,27 @@
+-The MIT License (MIT)
++Copyright (c) 2014, Plone Foundation
++All rights reserved.
+ 
+-Copyright (c) 2014 Plone Foundation
++Redistribution and use in source and binary forms, with or without
++modification, are permitted provided that the following conditions are met:
+ 
+-Permission is hereby granted, free of charge, to any person obtaining a copy
+-of this software and associated documentation files (the "Software"), to deal
+-in the Software without restriction, including without limitation the rights
+-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+-copies of the Software, and to permit persons to whom the Software is
+-furnished to do so, subject to the following conditions:
++1. Redistributions of source code must retain the above copyright notice, this
++   list of conditions and the following disclaimer.
+ 
+-The above copyright notice and this permission notice shall be included in
+-all copies or substantial portions of the Software.
++2. Redistributions in binary form must reproduce the above copyright notice,
++   this list of conditions and the following disclaimer in the documentation
++   and/or other materials provided with the distribution.
+ 
+-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+-THE SOFTWARE.
++3. Neither the name of the copyright holder nor the names of its contributors
++   may be used to endorse or promote products derived from this software
++   without specific prior written permission.
++
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
++ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
++FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
++CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+diff --git a/README.rst b/README.rst
+index 2c19b38..30e9905 100644
+--- a/README.rst
++++ b/README.rst
+@@ -46,7 +46,7 @@ Run tests with Chrome::
+ License
+ =======
+ 
+-The MIT License (MIT). Copyrights hold the Plone Foundation.
++The BSD 3-Clause License. Copyrights hold the Plone Foundation.
+ See `LICENSE.rst <LICENSE.rst>`_ for details.
+ 
+ 
+diff --git a/mockup/package.json b/mockup/package.json
+index 62c5682..c36cee5 100644
+--- a/mockup/package.json
++++ b/mockup/package.json
+@@ -48,8 +48,8 @@
+   },
+   "licenses": [
+     {
+-      "type": "MIT",
+-      "url": "http://www.opensource.org/licenses/mit-license.php"
++      "type": "BSD",
++      "url": "http://opensource.org/licenses/BSD-3-Clause"
+     }
+   ]
+ }
+diff --git a/setup.py b/setup.py
+index ea7c331..6df8267 100644
+--- a/setup.py
++++ b/setup.py
+@@ -19,7 +19,7 @@
+     author='Plone Foundation',
+     author_email='plone-developers@lists.sourceforge.net',
+     url='https://github.com/plone/mockup',
+-    license='MIT',
++    license='BSD',
+     packages=find_packages(),
+     include_package_data=True,
+     zip_safe=False,
 
 
