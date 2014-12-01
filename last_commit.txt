@@ -1,34 +1,59 @@
-Repository: plone.app.robotframework
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-12-01T09:36:10+01:00
+Date: 2014-12-01T11:06:17+01:00
 Author: Martin Opstad Reistadbakk (martior) <martin@blaastolen.com>
-Commit: https://github.com/plone/plone.app.robotframework/commit/bd2402b165c20a14e412561d64a0f9c79ebf53b7
+Commit: https://github.com/plone/Products.CMFPlone/commit/9e81f3097ecfdfd20fa6e5c4d0a2913bf53efb8d
 
-send a object modified event on Set field value to fix Products.CMFPlone/issues/255
+enable disabled tests
 
 Files changed:
-M src/plone/app/robotframework/content.py
+M Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
 
-diff --git a/src/plone/app/robotframework/content.py b/src/plone/app/robotframework/content.py
-index 21fae41..7cbcb89 100644
---- a/src/plone/app/robotframework/content.py
-+++ b/src/plone/app/robotframework/content.py
-@@ -11,6 +11,8 @@
- from plone.app.robotframework.config import HAS_DEXTERITY
- from plone.app.robotframework.config import HAS_DEXTERITY_RELATIONS
- from plone.app.robotframework.config import HAS_BLOBS
-+from zope.event import notify
-+from zope.lifecycleevent import ObjectModifiedEvent
+diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot b/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
+index 23f10f9..ae03e13 100644
+--- a/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
++++ b/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
+@@ -13,16 +13,16 @@ Test Teardown  Run keywords  Report test status  Close all browsers
  
- if HAS_DEXTERITY:
-     from plone.app.textfield.value import RichTextValue
-@@ -199,6 +201,7 @@ def set_field_value(self, uid, field, value, field_type):
+ *** Test Cases ***************************************************************
  
-             setattr(obj, field, value)
-             obj.reindexObject()
-+            notify(ObjectModifiedEvent(obj, dict(field=value)))
+-#Scenario: Enable Visible IDs in the Editing Control Panel
+-#  Given a logged-in site administrator
+-#    and the editing control panel
+-#   When I enable visible ids
+-#   Then I can see an id field in the settings tab when I create a document
+-
+-#Scenario: Disable Standard Editor in the Editing Control Panel
+-#  Given a logged-in site administrator
+-#    and the editing control panel
+-#   When I disable the standard editor
++Scenario: Enable Visible IDs in the Editing Control Panel
++  Given a logged-in site administrator
++    and the editing control panel
++   When I enable visible ids
++   Then I can see an id field in the settings tab when I create a document
++
++Scenario: Disable Standard Editor in the Editing Control Panel
++  Given a logged-in site administrator
++    and the editing control panel
++   When I disable the standard editor
+ # XXX: This test fails because the TinyMCE 4 widget ignores both the old and
+ # the new setting.
+ #   Then I do not see the standard editor when I create a document
+@@ -36,10 +36,10 @@ Scenario: Enable Link Integrity Check in the Editing Control Panel
+    Then I will be warned if I remove a linked document
  
-     def uid_to_url(self, uid):
-         """Return absolute path for an UID"""
+ 
+-#Scenario: Enable Lock on Through The Web in the Editing Control Panel
+-#  Given a logged-in site administrator
+-#    and the editing control panel
+-#   When I enable lock on through the web
++Scenario: Enable Lock on Through The Web in the Editing Control Panel
++  Given a logged-in site administrator
++    and the editing control panel
++   When I enable lock on through the web
+ # XXX: This test is not finished yet.
+ #   Then I will see a warning if a document is edited by another user
+ 
 
 
