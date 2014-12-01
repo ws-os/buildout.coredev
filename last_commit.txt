@@ -1,59 +1,26 @@
-Repository: Products.CMFPlone
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2014-12-01T11:06:17+01:00
+Date: 2014-12-01T14:33:09+01:00
 Author: Martin Opstad Reistadbakk (martior) <martin@blaastolen.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/9e81f3097ecfdfd20fa6e5c4d0a2913bf53efb8d
+Commit: https://github.com/plone/plone.app.contenttypes/commit/74cf0fad7c2cb40a30591d362fc90b483923bd8e
 
-enable disabled tests
+fix stupid copy paste error
 
 Files changed:
-M Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
+M plone/app/contenttypes/testing.py
 
-diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot b/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
-index 23f10f9..ae03e13 100644
---- a/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
-+++ b/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
-@@ -13,16 +13,16 @@ Test Teardown  Run keywords  Report test status  Close all browsers
+diff --git a/plone/app/contenttypes/testing.py b/plone/app/contenttypes/testing.py
+index a297c21..471ae9a 100644
+--- a/plone/app/contenttypes/testing.py
++++ b/plone/app/contenttypes/testing.py
+@@ -48,7 +48,7 @@ def setUpPloneSite(self, portal):
+         # install and enable referenceablebehavior on Documents to be able to test
+         # controlpanel to enable plone.app.linkintegrity checks
+         applyProfile(portal, 'plone.app.referenceablebehavior:default')
+-        portal.portal_types.Document.behaviors += ('zope.lifecycleevent.interfaces.IObjectModifiedEvent',)
++        portal.portal_types.Document.behaviors += ('plone.app.referenceablebehavior.referenceable.IReferenceable',)
  
- *** Test Cases ***************************************************************
- 
--#Scenario: Enable Visible IDs in the Editing Control Panel
--#  Given a logged-in site administrator
--#    and the editing control panel
--#   When I enable visible ids
--#   Then I can see an id field in the settings tab when I create a document
--
--#Scenario: Disable Standard Editor in the Editing Control Panel
--#  Given a logged-in site administrator
--#    and the editing control panel
--#   When I disable the standard editor
-+Scenario: Enable Visible IDs in the Editing Control Panel
-+  Given a logged-in site administrator
-+    and the editing control panel
-+   When I enable visible ids
-+   Then I can see an id field in the settings tab when I create a document
-+
-+Scenario: Disable Standard Editor in the Editing Control Panel
-+  Given a logged-in site administrator
-+    and the editing control panel
-+   When I disable the standard editor
- # XXX: This test fails because the TinyMCE 4 widget ignores both the old and
- # the new setting.
- #   Then I do not see the standard editor when I create a document
-@@ -36,10 +36,10 @@ Scenario: Enable Link Integrity Check in the Editing Control Panel
-    Then I will be warned if I remove a linked document
- 
- 
--#Scenario: Enable Lock on Through The Web in the Editing Control Panel
--#  Given a logged-in site administrator
--#    and the editing control panel
--#   When I enable lock on through the web
-+Scenario: Enable Lock on Through The Web in the Editing Control Panel
-+  Given a logged-in site administrator
-+    and the editing control panel
-+   When I enable lock on through the web
- # XXX: This test is not finished yet.
- #   Then I will see a warning if a document is edited by another user
- 
+         mtr = portal.mimetypes_registry
+         mime_doc = mtr.lookup('application/msword')[0]
 
 
