@@ -1,30 +1,154 @@
-Repository: plone.app.contenttypes
+Repository: plone.app.testing
 Branch: refs/heads/master
-Date: 2014-12-02T13:49:07+01:00
-Author: Martin Opstad Reistadbakk (martior) <martin@blaastolen.com>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/93d307fd12c57554723e7140b6b713adca81df36
+Date: 2014-12-03T00:31:53+01:00
+Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
+Commit: https://github.com/plone/plone.app.testing/commit/9b56dffacf19188655f773995f64cd06d0c8733a
 
-din't enable plone.app.referenceablebehavior.referenceable.IReferenceable in tests for Documents as it is causing errors in plone.app.discussion tests
+fix: Products.CMFPlone needs the gopip index from plone.app.folder.
+So latter has to be initialized before CMFPlones profile is applied (which installs the index to catalog).
+At the moment CMFPlone therefore registers the index itself, but plone.app.folder registers it too, which resulted in plone/Products.CMFPlone#313 "GopipIndex registered twice"
+In tests the registration does not succedd, because plone.app.folder was never initialized as z2 products.
+In order to remove the misleading regisatration from CMFPlone we must take care that the index is available, which is achieved with this change.
+Also minor pep8 optimizations in the file touched.
 
 Files changed:
-M plone/app/contenttypes/testing.py
+M CHANGES.rst
+M plone/app/testing/layers.py
 
-diff --git a/plone/app/contenttypes/testing.py b/plone/app/contenttypes/testing.py
-index 471ae9a..aa4a2a3 100644
---- a/plone/app/contenttypes/testing.py
-+++ b/plone/app/contenttypes/testing.py
-@@ -47,8 +47,10 @@ def setUpPloneSite(self, portal):
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 31852fa..8c89146 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,17 @@ Changelog
+ 5.0b2 (unreleased)
+ ------------------
  
-         # install and enable referenceablebehavior on Documents to be able to test
-         # controlpanel to enable plone.app.linkintegrity checks
--        applyProfile(portal, 'plone.app.referenceablebehavior:default')
--        portal.portal_types.Document.behaviors += ('plone.app.referenceablebehavior.referenceable.IReferenceable',)
-+        # XXX Disabled as it is causing test errors in comments
-+        # see https://github.com/plone/Products.CMFPlone/issues/255
-+        #applyProfile(portal, 'plone.app.referenceablebehavior:default')
-+        #portal.portal_types.Document.behaviors += ('plone.app.referenceablebehavior.referenceable.IReferenceable',)
+-- Nothing changed yet.
++- fix: ``Products.CMFPlone`` needs the ``gopip`` index from 
++  ``plone.app.folder``. So latter has to be initialized before CMFPlones 
++  profile is applied (which installs the index to catalog). At the moment 
++  CMFPlone therefore registers the index itself, but plone.app.folder 
++  registers it too, which resulted in plone/Products.CMFPlone#313 
++  "GopipIndex registered twice" In tests the registration does not succedd, 
++  because plone.app.folder was never initialized as z2 products. In order to 
++  remove the misleading regisatration from CMFPlone we must take care that the
++  index is available, which is achieved with this change. Also minor pep8 
++  optimizations in the file touched.
++  [jensens]
  
-         mtr = portal.mimetypes_registry
-         mime_doc = mtr.lookup('application/msword')[0]
+ 
+ 5.0b1 (2014-10-23)
+diff --git a/plone/app/testing/layers.py b/plone/app/testing/layers.py
+index e39406d..7f7012e 100644
+--- a/plone/app/testing/layers.py
++++ b/plone/app/testing/layers.py
+@@ -33,47 +33,48 @@ class PloneFixture(Layer):
+ 
+     # Products that will be installed, plus options
+     products = (
+-        ('Products.GenericSetup'                , {'loadZCML': True},),
+-        ('Products.DCWorkflow'                  , {'loadZCML': True}, ),
+-        ('Products.ZCTextIndex'                 , {'loadZCML': True}, ),
+-        ('Products.DateRecurringIndex'          , {'loadZCML': False},),
++        ('Products.GenericSetup',                {'loadZCML': True}, ),
++        ('Products.DCWorkflow',                  {'loadZCML': True}, ),
++        ('Products.ZCTextIndex',                 {'loadZCML': True}, ),
++        ('Products.DateRecurringIndex',          {'loadZCML': False},),
+ 
+-        ('Products.CMFUid'                      , {'loadZCML': True}, ),
++        ('Products.CMFUid',                      {'loadZCML': True}, ),
+ 
+-        ('Products.CMFCore'                     , {'loadZCML': True},),
+-        ('Products.CMFDefault'                  , {'loadZCML': True}, ),
++        ('Products.CMFCore',                     {'loadZCML': True},),
++        ('Products.CMFDefault',                  {'loadZCML': True}, ),
+ 
+-        ('Products.PluggableAuthService'        , {'loadZCML': True}, ),
+-        ('Products.PluginRegistry'              , {'loadZCML': True}, ),
+-        ('Products.PlonePAS'                    , {'loadZCML': True}, ),
++        ('Products.PluggableAuthService',        {'loadZCML': True}, ),
++        ('Products.PluginRegistry',              {'loadZCML': True}, ),
++        ('Products.PlonePAS',                    {'loadZCML': True}, ),
+ 
+-        ('Products.CMFQuickInstallerTool'       , {'loadZCML': True}, ),
+-        ('Products.CMFFormController'           , {'loadZCML': True}, ),
+-        ('Products.CMFDynamicViewFTI'           , {'loadZCML': True}, ),
+-        ('Products.CMFPlacefulWorkflow'         , {'loadZCML': True}, ),
++        ('Products.CMFQuickInstallerTool',       {'loadZCML': True}, ),
++        ('Products.CMFFormController',           {'loadZCML': True}, ),
++        ('Products.CMFDynamicViewFTI',           {'loadZCML': True}, ),
++        ('Products.CMFPlacefulWorkflow',         {'loadZCML': True}, ),
+ 
+-        ('Products.MimetypesRegistry'           , {'loadZCML': True}, ),
+-        ('Products.PortalTransforms'            , {'loadZCML': True}, ),
++        ('Products.MimetypesRegistry',           {'loadZCML': True}, ),
++        ('Products.PortalTransforms',            {'loadZCML': True}, ),
+ 
+-        ('Products.ExternalEditor'              , {'loadZCML': True}, ),
+-        ('Products.ExtendedPathIndex'           , {'loadZCML': True}, ),
+-        ('Products.ResourceRegistries'          , {'loadZCML': True}, ),
+-        ('Products.SecureMailHost'              , {'loadZCML': True}, ),
+-        ('Products.SiteAccess'                  , {'loadZCML': False}, ),
++        ('Products.ExternalEditor',              {'loadZCML': True}, ),
++        ('Products.ExtendedPathIndex',           {'loadZCML': True}, ),
++        ('Products.ResourceRegistries',          {'loadZCML': True}, ),
++        ('Products.SecureMailHost',              {'loadZCML': True}, ),
++        ('Products.SiteAccess',                  {'loadZCML': False}, ),
+ 
+-        ('Products.PasswordResetTool'           , {'loadZCML': True}, ),
++        ('Products.PasswordResetTool',           {'loadZCML': True}, ),
+ 
+-        ('Products.CMFEditions'                 , {'loadZCML': True}, ),
+-        ('Products.CMFDiffTool'                 , {'loadZCML': True}, ),
++        ('Products.CMFEditions',                 {'loadZCML': True}, ),
++        ('Products.CMFDiffTool',                 {'loadZCML': True}, ),
+ 
+-        ('Products.PlacelessTranslationService' , {'loadZCML': True}, ),
+-        ('Products.PloneLanguageTool'           , {'loadZCML': True}, ),
++        ('Products.PlacelessTranslationService', {'loadZCML': True}, ),
++        ('Products.PloneLanguageTool',           {'loadZCML': True}, ),
+ 
+-        ('plonetheme.barceloneta'               , {'loadZCML': True,
+-                                                   'install': False}, ),
++        ('plonetheme.barceloneta',               {'loadZCML': True,
++                                                  'install': False}, ),
+ 
+-        ('Products.CMFPlone'                    , {'loadZCML': True}, ),
+-        ('Products.PythonScripts'               , {'loadZCML': False}, ),
++        ('plone.app.folder',                     {'loadZCML': True}, ),
++        ('Products.CMFPlone',                    {'loadZCML': True}, ),
++        ('Products.PythonScripts',               {'loadZCML': False}, ),
+ 
+     )
+ 
+@@ -87,7 +88,10 @@ class PloneFixture(Layer):
+     def setUp(self):
+ 
+         # Stack a new DemoStorage on top of the one from z2.STARTUP.
+-        self['zodbDB'] = zodb.stackDemoStorage(self.get('zodbDB'), name='PloneFixture')
++        self['zodbDB'] = zodb.stackDemoStorage(
++            self.get('zodbDB'),
++            name='PloneFixture'
++        )
+ 
+         self.setUpZCML()
+ 
+@@ -121,12 +125,14 @@ def setUpZCML(self):
+ 
+         from zope.configuration import xmlconfig
+         self['configurationContext'] = context = zca.stackConfigurationContext(
+-            self.get('configurationContext'))
++            self.get('configurationContext')
++        )
+ 
+         # Turn off z3c.autoinclude
+ 
+         xmlconfig.string("""\
+-<configure xmlns="http://namespaces.zope.org/zope" xmlns:meta="http://namespaces.zope.org/meta">
++<configure xmlns="http://namespaces.zope.org/zope"
++           xmlns:meta="http://namespaces.zope.org/meta">
+     <meta:provides feature="disable-autoinclude" />
+ </configure>
+ """, context=context)
 
 
