@@ -1,47 +1,32 @@
-Repository: Products.CMFPlone
+Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2014-12-03T00:41:22+01:00
-Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/28c30e5c80d3993f814003e5541f883a6a4a69db
+Date: 2014-12-03T12:03:26+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.discussion/commit/19026439ddc00209d2580c4b7bdbfd91435e63b8
 
-fixes #313 GopipIndex registered twice
+Use spaces please
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/__init__.py
+M plone/app/discussion/profiles/default/rolemap.xml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 145b3c7..bc240d7 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,6 +8,9 @@ Changelog
- 5.0b1 (unreleased)
- ------------------
- 
-+- Fix `GopipIndex registered twice <https://github.com/plone/Products.CMFPlone/issues/313>`_
-+  [jensens]
-+
- - Added a link for the advanced 'Create a Plone site' screen to the Plone overview.
-   [jaroel]
- 
-diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
-index 5a27eba..8c58ea6 100644
---- a/Products/CMFPlone/__init__.py
-+++ b/Products/CMFPlone/__init__.py
-@@ -178,14 +178,6 @@ def initialize(context):
-         constructors=(zmi_constructor, ),
-     )
- 
--    from plone.app.folder import nogopip
--    context.registerClass(nogopip.GopipIndex,
--        permission='Add Pluggable Index',
--        constructors=(nogopip.manage_addGopipForm,
--                      nogopip.manage_addGopipIndex),
--        icon='index.gif',
--        visibility=None)
--
- 
- # Import PloneMessageFactory to create messages in the plone domain
- from zope.i18nmessageid import MessageFactory
+diff --git a/plone/app/discussion/profiles/default/rolemap.xml b/plone/app/discussion/profiles/default/rolemap.xml
+index 83a67fc..8fc9ed6 100644
+--- a/plone/app/discussion/profiles/default/rolemap.xml
++++ b/plone/app/discussion/profiles/default/rolemap.xml
+@@ -3,12 +3,12 @@
+     <permissions>
+         <permission name="Review comments" acquire="True">
+             <role name="Manager"/>
+-	        <role name="Site Administrator"/>
++            <role name="Site Administrator"/>
+             <role name="Reviewer"/>
+         </permission>
+         <permission name="Edit comments" acquire="True">
+             <role name="Manager"/>
+-	        <role name="Site Administrator"/>
++            <role name="Site Administrator"/>
+             <role name="Reviewer"/>
+             <role name="Owner"/>
+         </permission>
 
 
