@@ -1,32 +1,29 @@
-Repository: plone.app.discussion
+Repository: plone.app.collection
 Branch: refs/heads/master
-Date: 2014-12-03T12:03:26+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/19026439ddc00209d2580c4b7bdbfd91435e63b8
+Date: 2014-12-05T01:18:48+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.collection/commit/94f412ab4ee63a6bc6b66c450d64652a5b1a11c9
 
-Use spaces please
+better changelog entry
 
 Files changed:
-M plone/app/discussion/profiles/default/rolemap.xml
+M CHANGES.rst
 
-diff --git a/plone/app/discussion/profiles/default/rolemap.xml b/plone/app/discussion/profiles/default/rolemap.xml
-index 83a67fc..8fc9ed6 100644
---- a/plone/app/discussion/profiles/default/rolemap.xml
-+++ b/plone/app/discussion/profiles/default/rolemap.xml
-@@ -3,12 +3,12 @@
-     <permissions>
-         <permission name="Review comments" acquire="True">
-             <role name="Manager"/>
--	        <role name="Site Administrator"/>
-+            <role name="Site Administrator"/>
-             <role name="Reviewer"/>
-         </permission>
-         <permission name="Edit comments" acquire="True">
-             <role name="Manager"/>
--	        <role name="Site Administrator"/>
-+            <role name="Site Administrator"/>
-             <role name="Reviewer"/>
-             <role name="Owner"/>
-         </permission>
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 227ed74..169f9c9 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -13,7 +13,10 @@ Changelog
+ - Add a ``custom_query`` parameter to the ``Collection`` class' ``results`` and
+   ``queryCatalog`` methods, and pass it over to ``QueryField``. The
+   ``custom_query`` parameter allows for run time customization of the stored
+-  query, e.g. by request parameters.
++  query. This can be done for example by views using the ``contentFilter``
++  dictionary, which can be build from request parameters.  custom_query as well
++  as contentFilter are dictionaries of index names and their associated query
++  values.
+   [thet]
+ 
+ 
 
 
