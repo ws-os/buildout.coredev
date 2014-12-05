@@ -1,49 +1,47 @@
-Repository: Products.CMFPlone
+Repository: plone.app.search
 Branch: refs/heads/master
-Date: 2014-12-05T08:32:37+01:00
+Date: 2014-12-05T11:17:55+01:00
 Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/Products.CMFPlone/commit/8773bfdb48185c8b556a123e858e721222ef205a
+Commit: https://github.com/plone/plone.app.search/commit/e9f7e60208d23597c6beb52e857cbe15dd3471db
 
-Revert "fixes #313 GopipIndex registered twice"
-
-This reverts commit 28c30e5c80d3993f814003e5541f883a6a4a69db.
+Pep8.
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/__init__.py
+M plone/app/search/tests/test_integration.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index bc240d7..145b3c7 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,9 +8,6 @@ Changelog
- 5.0b1 (unreleased)
- ------------------
+diff --git a/plone/app/search/tests/test_integration.py b/plone/app/search/tests/test_integration.py
+index 1a24275..8c1fee8 100644
+--- a/plone/app/search/tests/test_integration.py
++++ b/plone/app/search/tests/test_integration.py
+@@ -9,7 +9,6 @@
+ from zope.component import getUtility
+ from plone.registry.interfaces import IRegistry
  
--- Fix `GopipIndex registered twice <https://github.com/plone/Products.CMFPlone/issues/313>`_
--  [jensens]
--
- - Added a link for the advanced 'Create a Plone site' screen to the Plone overview.
-   [jaroel]
+-from Products.CMFCore.utils import getToolByName
+ from Products.CMFPlone.interfaces import ISearchSchema
  
-diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
-index 8c58ea6..5a27eba 100644
---- a/Products/CMFPlone/__init__.py
-+++ b/Products/CMFPlone/__init__.py
-@@ -178,6 +178,14 @@ def initialize(context):
-         constructors=(zmi_constructor, ),
-     )
+ from plone.app.contentlisting.interfaces import IContentListing
+@@ -26,10 +25,12 @@ def test_searchjs_is_available(self):
+         portal = self.layer['portal']
+         resreg = getattr(portal, 'portal_registry')
+         from Products.CMFPlone.interfaces import IResourceRegistry
+-        resources_ids = resreg.collectionOfInterface(IResourceRegistry, prefix="plone.resources").keys()
++        resources_ids = resreg.collectionOfInterface(
++            IResourceRegistry, prefix="plone.resources").keys()
+         self.assertTrue(
+             'resource-search-js' in resources_ids)
  
-+    from plone.app.folder import nogopip
-+    context.registerClass(nogopip.GopipIndex,
-+        permission='Add Pluggable Index',
-+        constructors=(nogopip.manage_addGopipForm,
-+                      nogopip.manage_addGopipIndex),
-+        icon='index.gif',
-+        visibility=None)
 +
+ class TestSection(SearchTestCase):
+     """The name of the class should be meaningful. This may be a class that
+     tests the installation of a particular product.
+@@ -142,6 +143,7 @@ def test_filter_with_plone3_query(self):
+         res = view.results(batch=False)
+         self.assertEqual([], [r for r in res])
  
- # Import PloneMessageFactory to create messages in the plone domain
- from zope.i18nmessageid import MessageFactory
++
+ def test_suite():
+     """This sets up a test suite that actually runs the tests in the class
+     above
 
 
