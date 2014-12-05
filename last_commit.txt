@@ -1,29 +1,49 @@
-Repository: plone.app.collection
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-12-05T01:18:48+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.collection/commit/94f412ab4ee63a6bc6b66c450d64652a5b1a11c9
+Date: 2014-12-05T08:32:37+01:00
+Author: Timo Stollenwerk () <contact@timostollenwerk.net>
+Commit: https://github.com/plone/Products.CMFPlone/commit/8773bfdb48185c8b556a123e858e721222ef205a
 
-better changelog entry
+Revert "fixes #313 GopipIndex registered twice"
+
+This reverts commit 28c30e5c80d3993f814003e5541f883a6a4a69db.
 
 Files changed:
 M CHANGES.rst
+M Products/CMFPlone/__init__.py
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 227ed74..169f9c9 100644
+index bc240d7..145b3c7 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -13,7 +13,10 @@ Changelog
- - Add a ``custom_query`` parameter to the ``Collection`` class' ``results`` and
-   ``queryCatalog`` methods, and pass it over to ``QueryField``. The
-   ``custom_query`` parameter allows for run time customization of the stored
--  query, e.g. by request parameters.
-+  query. This can be done for example by views using the ``contentFilter``
-+  dictionary, which can be build from request parameters.  custom_query as well
-+  as contentFilter are dictionaries of index names and their associated query
-+  values.
-   [thet]
+@@ -8,9 +8,6 @@ Changelog
+ 5.0b1 (unreleased)
+ ------------------
  
+-- Fix `GopipIndex registered twice <https://github.com/plone/Products.CMFPlone/issues/313>`_
+-  [jensens]
+-
+ - Added a link for the advanced 'Create a Plone site' screen to the Plone overview.
+   [jaroel]
  
+diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
+index 8c58ea6..5a27eba 100644
+--- a/Products/CMFPlone/__init__.py
++++ b/Products/CMFPlone/__init__.py
+@@ -178,6 +178,14 @@ def initialize(context):
+         constructors=(zmi_constructor, ),
+     )
+ 
++    from plone.app.folder import nogopip
++    context.registerClass(nogopip.GopipIndex,
++        permission='Add Pluggable Index',
++        constructors=(nogopip.manage_addGopipForm,
++                      nogopip.manage_addGopipIndex),
++        icon='index.gif',
++        visibility=None)
++
+ 
+ # Import PloneMessageFactory to create messages in the plone domain
+ from zope.i18nmessageid import MessageFactory
 
 
