@@ -1,33 +1,132 @@
-Repository: plone.app.search
+Repository: plone.app.jquerytools
 Branch: refs/heads/master
-Date: 2014-12-05T11:22:01+01:00
-Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/plone.app.search/commit/d1250ead078a8a8fab6b2cfbdbdf569468f88fb4
+Date: 2014-12-08T19:12:28Z
+Author: Daniel Jowett (djowett) <daniel@jowettenterprises.com>
+Commit: https://github.com/plone/plone.app.jquerytools/commit/335cba46157a3b5ae6ee579435a4aac9892be600
 
-Remove flickering test.
+Fix broken links in README.rst
+
+jquerytools.org has moved a long time ago - but we still link to it. :-/
 
 Files changed:
-M plone/app/search/tests/test_integration.py
+M README.rst
 
-diff --git a/plone/app/search/tests/test_integration.py b/plone/app/search/tests/test_integration.py
-index 8c1fee8..e4bed91 100644
---- a/plone/app/search/tests/test_integration.py
-+++ b/plone/app/search/tests/test_integration.py
-@@ -117,15 +117,6 @@ def test_filter_empty(self):
-         res = view.results(batch=False)
-         self.assertTrue('my-page1' in [r.getId() for r in res],
-                         'Test document is not found in the results.')
--        # filter_query() also succeeds if 1+ real index name is in the
--        # original query:
--        req = test_request()
--        view = getMultiAdapter((portal, req), name=u'search')
--        query = {'portal_type': 'Document'}
--        self.assertEqual(view.filter_query(query), query)
--        res = view.results(query)
--        self.assertTrue('my-page1' in [r.getId() for r in res],
--                        'Test document is not found in the results.')
+diff --git a/README.rst b/README.rst
+index f0fcb73..16fba22 100644
+--- a/README.rst
++++ b/README.rst
+@@ -339,25 +339,25 @@ jQuery Tools passes the event as a parameter when it calls the event handlers.
+ ``getTrigger()`` methods.
  
-     def test_filter_with_plone3_query(self):
-         """Filter should ignore obsolete query parameters, not error. """
+ 
+-.. _`jquery.tools`: http://jquerytools.org
+-.. _`overlay.js`: http://jquerytools.org/documentation/overlay/index.html
+-.. _`scrollable.js`: http://jquerytools.org/documentation/scrollable/index.html
+-.. _`tabs.js`: http://jquerytools.org/documentation/tabs/index.html
+-.. _`toolbox.history.js`: http://jquerytools.org/documentation/toolbox/history.html
+-.. _`toolbox.expose.js`: http://jquerytools.org/documentation/toolbox/expose.html
+-.. _`tooltip.js`: http://jquerytools.org/documentation/tooltip/index.html
+-.. _`overlay.apple.js`: http://jquerytools.org/documentation/overlay/apple.html
+-.. _`scrollable.autoscroll.js`: http://jquerytools.org/documentation/scrollable/autoscroll.html
+-.. _`scrollable.navigator.js`: http://jquerytools.org/documentation/scrollable/navigator.html
+-.. _`tabs.slideshow.js`: http://jquerytools.org/documentation/tabs/slideshow.html
+-.. _`toolbox.flashembed.js`: http://jquerytools.org/documentation/toolbox/flashembed.html
+-.. _`toolbox.mousewheel.js`: http://jquerytools.org/documentation/toolbox/mousewheel.html
+-.. _`tooltip.dynamic.js`: http://jquerytools.org/documentation/tooltip/dynamic.html
+-.. _`tooltip.slide.js`: http://jquerytools.org/documentation/tooltip/slide.html
+-.. _`jquerytools dateinput`: http://jquerytools.org/documentation/dateinput/index.html
+-.. _`first demo`: http://jquerytools.org/demos/dateinput/index.html
+-.. _`jquerytools rangeinput`: http://jquerytools.org/documentation/rangeinput/index.html
+-.. _`jquerytools validator`: http://jquerytools.org/documentation/validator/index.html
++.. _`jquery.tools`: http://jquerytools.github.io
++.. _`overlay.js`: http://jquerytools.github.io/documentation/overlay/index.html
++.. _`scrollable.js`: http://jquerytools.github.io/documentation/scrollable/index.html
++.. _`tabs.js`: http://jquerytools.github.io/documentation/tabs/index.html
++.. _`toolbox.history.js`: http://jquerytools.github.io/documentation/toolbox/history.html
++.. _`toolbox.expose.js`: http://jquerytools.github.io/documentation/toolbox/expose.html
++.. _`tooltip.js`: http://jquerytools.github.io/documentation/tooltip/index.html
++.. _`overlay.apple.js`: http://jquerytools.github.io/documentation/overlay/apple.html
++.. _`scrollable.autoscroll.js`: http://jquerytools.github.io/documentation/scrollable/autoscroll.html
++.. _`scrollable.navigator.js`: http://jquerytools.github.io/documentation/scrollable/navigator.html
++.. _`tabs.slideshow.js`: http://jquerytools.github.io/documentation/tabs/slideshow.html
++.. _`toolbox.flashembed.js`: http://jquerytools.github.io/documentation/toolbox/flashembed.html
++.. _`toolbox.mousewheel.js`: http://jquerytools.github.io/documentation/toolbox/mousewheel.html
++.. _`tooltip.dynamic.js`: http://jquerytools.github.io/documentation/tooltip/dynamic.html
++.. _`tooltip.slide.js`: http://jquerytools.github.io/documentation/tooltip/slide.html
++.. _`jquerytools dateinput`: http://jquerytools.github.io/documentation/dateinput/index.html
++.. _`first demo`: http://jquerytools.github.io/demos/dateinput/index.html
++.. _`jquerytools rangeinput`: http://jquerytools.github.io/documentation/rangeinput/index.html
++.. _`jquerytools validator`: http://jquerytools.github.io/documentation/validator/index.html
+ .. _`jquery form plugin`: http://malsup.com/jquery/form
+-.. _`overlay documentation`: http://jquerytools.org/documentation/overlay/#events
+-.. _`events documentation`: http://jquerytools.org/documentation/scripting.html#events
++.. _`overlay documentation`: http://jquerytools.github.io/documentation/overlay/#events
++.. _`events documentation`: http://jquerytools.github.io/documentation/scripting.html#events
+
+
+Repository: plone.app.jquerytools
+Branch: refs/heads/master
+Date: 2014-12-08T22:17:08+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.jquerytools/commit/9ee7caa8ed7be62ad51e320cb5ba98329b064b7b
+
+Merge pull request #9 from djowett/master
+
+Fix broken links in README.rst
+
+Files changed:
+M README.rst
+
+diff --git a/README.rst b/README.rst
+index f0fcb73..16fba22 100644
+--- a/README.rst
++++ b/README.rst
+@@ -339,25 +339,25 @@ jQuery Tools passes the event as a parameter when it calls the event handlers.
+ ``getTrigger()`` methods.
+ 
+ 
+-.. _`jquery.tools`: http://jquerytools.org
+-.. _`overlay.js`: http://jquerytools.org/documentation/overlay/index.html
+-.. _`scrollable.js`: http://jquerytools.org/documentation/scrollable/index.html
+-.. _`tabs.js`: http://jquerytools.org/documentation/tabs/index.html
+-.. _`toolbox.history.js`: http://jquerytools.org/documentation/toolbox/history.html
+-.. _`toolbox.expose.js`: http://jquerytools.org/documentation/toolbox/expose.html
+-.. _`tooltip.js`: http://jquerytools.org/documentation/tooltip/index.html
+-.. _`overlay.apple.js`: http://jquerytools.org/documentation/overlay/apple.html
+-.. _`scrollable.autoscroll.js`: http://jquerytools.org/documentation/scrollable/autoscroll.html
+-.. _`scrollable.navigator.js`: http://jquerytools.org/documentation/scrollable/navigator.html
+-.. _`tabs.slideshow.js`: http://jquerytools.org/documentation/tabs/slideshow.html
+-.. _`toolbox.flashembed.js`: http://jquerytools.org/documentation/toolbox/flashembed.html
+-.. _`toolbox.mousewheel.js`: http://jquerytools.org/documentation/toolbox/mousewheel.html
+-.. _`tooltip.dynamic.js`: http://jquerytools.org/documentation/tooltip/dynamic.html
+-.. _`tooltip.slide.js`: http://jquerytools.org/documentation/tooltip/slide.html
+-.. _`jquerytools dateinput`: http://jquerytools.org/documentation/dateinput/index.html
+-.. _`first demo`: http://jquerytools.org/demos/dateinput/index.html
+-.. _`jquerytools rangeinput`: http://jquerytools.org/documentation/rangeinput/index.html
+-.. _`jquerytools validator`: http://jquerytools.org/documentation/validator/index.html
++.. _`jquery.tools`: http://jquerytools.github.io
++.. _`overlay.js`: http://jquerytools.github.io/documentation/overlay/index.html
++.. _`scrollable.js`: http://jquerytools.github.io/documentation/scrollable/index.html
++.. _`tabs.js`: http://jquerytools.github.io/documentation/tabs/index.html
++.. _`toolbox.history.js`: http://jquerytools.github.io/documentation/toolbox/history.html
++.. _`toolbox.expose.js`: http://jquerytools.github.io/documentation/toolbox/expose.html
++.. _`tooltip.js`: http://jquerytools.github.io/documentation/tooltip/index.html
++.. _`overlay.apple.js`: http://jquerytools.github.io/documentation/overlay/apple.html
++.. _`scrollable.autoscroll.js`: http://jquerytools.github.io/documentation/scrollable/autoscroll.html
++.. _`scrollable.navigator.js`: http://jquerytools.github.io/documentation/scrollable/navigator.html
++.. _`tabs.slideshow.js`: http://jquerytools.github.io/documentation/tabs/slideshow.html
++.. _`toolbox.flashembed.js`: http://jquerytools.github.io/documentation/toolbox/flashembed.html
++.. _`toolbox.mousewheel.js`: http://jquerytools.github.io/documentation/toolbox/mousewheel.html
++.. _`tooltip.dynamic.js`: http://jquerytools.github.io/documentation/tooltip/dynamic.html
++.. _`tooltip.slide.js`: http://jquerytools.github.io/documentation/tooltip/slide.html
++.. _`jquerytools dateinput`: http://jquerytools.github.io/documentation/dateinput/index.html
++.. _`first demo`: http://jquerytools.github.io/demos/dateinput/index.html
++.. _`jquerytools rangeinput`: http://jquerytools.github.io/documentation/rangeinput/index.html
++.. _`jquerytools validator`: http://jquerytools.github.io/documentation/validator/index.html
+ .. _`jquery form plugin`: http://malsup.com/jquery/form
+-.. _`overlay documentation`: http://jquerytools.org/documentation/overlay/#events
+-.. _`events documentation`: http://jquerytools.org/documentation/scripting.html#events
++.. _`overlay documentation`: http://jquerytools.github.io/documentation/overlay/#events
++.. _`events documentation`: http://jquerytools.github.io/documentation/scripting.html#events
 
 
