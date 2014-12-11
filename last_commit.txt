@@ -1,132 +1,529 @@
-Repository: plone.app.jquerytools
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2014-12-08T19:12:28Z
-Author: Daniel Jowett (djowett) <daniel@jowettenterprises.com>
-Commit: https://github.com/plone/plone.app.jquerytools/commit/335cba46157a3b5ae6ee579435a4aac9892be600
+Date: 2014-12-11T12:37:40+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/7a1cf71ee090fe1cc9b2bc24ee605b69233767b5
 
-Fix broken links in README.rst
-
-jquerytools.org has moved a long time ago - but we still link to it. :-/
+remove optional folderish profile
 
 Files changed:
-M README.rst
+M docs/README.rst
+M plone/app/contenttypes/content.py
+M plone/app/contenttypes/profiles.zcml
+D plone/app/contenttypes/profiles/folderish/metadata.xml
+D plone/app/contenttypes/profiles/folderish/types.xml
+D plone/app/contenttypes/profiles/folderish/types/Collection.xml
+D plone/app/contenttypes/profiles/folderish/types/Document.xml
+D plone/app/contenttypes/profiles/folderish/types/Event.xml
+D plone/app/contenttypes/profiles/folderish/types/News_Item.xml
 
-diff --git a/README.rst b/README.rst
-index f0fcb73..16fba22 100644
---- a/README.rst
-+++ b/README.rst
-@@ -339,25 +339,25 @@ jQuery Tools passes the event as a parameter when it calls the event handlers.
- ``getTrigger()`` methods.
+diff --git a/docs/README.rst b/docs/README.rst
+index afbe256..883d030 100644
+--- a/docs/README.rst
++++ b/docs/README.rst
+@@ -218,32 +218,6 @@ Future versions of plone.app.contenttypes will have with a form that allows you
+ However if you'd like to migrate your content-types to Dexterity before this feature is completed you might want to have a look at the code of plone.app.contenttypes.migration.migration.NewsItemMigrator as a blueprint for a migration.
  
  
--.. _`jquery.tools`: http://jquerytools.org
--.. _`overlay.js`: http://jquerytools.org/documentation/overlay/index.html
--.. _`scrollable.js`: http://jquerytools.org/documentation/scrollable/index.html
--.. _`tabs.js`: http://jquerytools.org/documentation/tabs/index.html
--.. _`toolbox.history.js`: http://jquerytools.org/documentation/toolbox/history.html
--.. _`toolbox.expose.js`: http://jquerytools.org/documentation/toolbox/expose.html
--.. _`tooltip.js`: http://jquerytools.org/documentation/tooltip/index.html
--.. _`overlay.apple.js`: http://jquerytools.org/documentation/overlay/apple.html
--.. _`scrollable.autoscroll.js`: http://jquerytools.org/documentation/scrollable/autoscroll.html
--.. _`scrollable.navigator.js`: http://jquerytools.org/documentation/scrollable/navigator.html
--.. _`tabs.slideshow.js`: http://jquerytools.org/documentation/tabs/slideshow.html
--.. _`toolbox.flashembed.js`: http://jquerytools.org/documentation/toolbox/flashembed.html
--.. _`toolbox.mousewheel.js`: http://jquerytools.org/documentation/toolbox/mousewheel.html
--.. _`tooltip.dynamic.js`: http://jquerytools.org/documentation/tooltip/dynamic.html
--.. _`tooltip.slide.js`: http://jquerytools.org/documentation/tooltip/slide.html
--.. _`jquerytools dateinput`: http://jquerytools.org/documentation/dateinput/index.html
--.. _`first demo`: http://jquerytools.org/demos/dateinput/index.html
--.. _`jquerytools rangeinput`: http://jquerytools.org/documentation/rangeinput/index.html
--.. _`jquerytools validator`: http://jquerytools.org/documentation/validator/index.html
-+.. _`jquery.tools`: http://jquerytools.github.io
-+.. _`overlay.js`: http://jquerytools.github.io/documentation/overlay/index.html
-+.. _`scrollable.js`: http://jquerytools.github.io/documentation/scrollable/index.html
-+.. _`tabs.js`: http://jquerytools.github.io/documentation/tabs/index.html
-+.. _`toolbox.history.js`: http://jquerytools.github.io/documentation/toolbox/history.html
-+.. _`toolbox.expose.js`: http://jquerytools.github.io/documentation/toolbox/expose.html
-+.. _`tooltip.js`: http://jquerytools.github.io/documentation/tooltip/index.html
-+.. _`overlay.apple.js`: http://jquerytools.github.io/documentation/overlay/apple.html
-+.. _`scrollable.autoscroll.js`: http://jquerytools.github.io/documentation/scrollable/autoscroll.html
-+.. _`scrollable.navigator.js`: http://jquerytools.github.io/documentation/scrollable/navigator.html
-+.. _`tabs.slideshow.js`: http://jquerytools.github.io/documentation/tabs/slideshow.html
-+.. _`toolbox.flashembed.js`: http://jquerytools.github.io/documentation/toolbox/flashembed.html
-+.. _`toolbox.mousewheel.js`: http://jquerytools.github.io/documentation/toolbox/mousewheel.html
-+.. _`tooltip.dynamic.js`: http://jquerytools.github.io/documentation/tooltip/dynamic.html
-+.. _`tooltip.slide.js`: http://jquerytools.github.io/documentation/tooltip/slide.html
-+.. _`jquerytools dateinput`: http://jquerytools.github.io/documentation/dateinput/index.html
-+.. _`first demo`: http://jquerytools.github.io/demos/dateinput/index.html
-+.. _`jquerytools rangeinput`: http://jquerytools.github.io/documentation/rangeinput/index.html
-+.. _`jquerytools validator`: http://jquerytools.github.io/documentation/validator/index.html
- .. _`jquery form plugin`: http://malsup.com/jquery/form
--.. _`overlay documentation`: http://jquerytools.org/documentation/overlay/#events
--.. _`events documentation`: http://jquerytools.org/documentation/scripting.html#events
-+.. _`overlay documentation`: http://jquerytools.github.io/documentation/overlay/#events
-+.. _`events documentation`: http://jquerytools.github.io/documentation/scripting.html#events
+-Migrating to folderish objects or change base class for any dexterity type
+-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-
+-.. warning::
+-
+-   All types will probably be folderish in Plone 5 (see https://dev.plone.org/ticket/20144). The additional profile ``folderish`` will be removed soon. Use it at your own risk!
+-
+-Migration non folderish object to folderish has few steps.
+-
+-Step 1: Enable folderish types
+-++++++++++++++++++++++++++++++
+-
+-See `Using folderish types`_
+-
+-
+-Step 2: Update base class for existing objects
+-++++++++++++++++++++++++++++++++++++++++++++++
+-
+-If you changed the base-class of existing types you might also want to upgrade the base-class of existing objects. You can use the following form for this: `PORTAL_URL/@@base_class_migrator_form`.
+-
+-On this you will see checkboxes with class names and the amount of objects that are going to be updated. Select classes that you want to update and click on button `Update`.
+-
+-If the migration was successful you see the info box with number of successfully updated objects or a warning with the number of skipped objects.
+-
+-This form can be used to change the base-class of any dexterity-types instances.
+-
+ Widgets
+ -------
+ 
+@@ -322,28 +296,15 @@ If you use the profile ``default`` then the default-content in new sites will st
+ Using folderish types
+ ^^^^^^^^^^^^^^^^^^^^^
+ 
+-.. warning::
+-
+-   All types will probably be folderish in Plone 5 (see https://dev.plone.org/ticket/20144). The additional profile ``folderish`` will be removed soon. Use it at your own risk!
+-
+-If you want all types folderish you need to depend on the profile ``folderish`` in your own ``metadata.xml``.
+-
+-.. code:: xml
++At some point all default types will probably be folderish. If you want the default types to be folderish before that happens please look at https://pypi.python.org/pypi/collective.folderishtypes.
+ 
+-    <metadata>
+-      <version>1</version>
+-        <dependencies>
+-            <dependency>profile-plone.app.contenttypes:folderish</dependency>
+-        </dependencies>
+-    </metadata>
+ 
+-You can also enable this profile by hand by applying the `folderish` profile:
++Changing the base class for existing objects
++^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 
+-- Go to portal_setup->Import;
+-- Select `Plone default content-types (Folderish behavior) - dexterity`
+-- Click  `Import all steps`
++If you changed the base-class of existing types (e.g. because you changed them to be folderish) you also need to upgrade the base-class of existing objects. You can use the following form for this: ``@@base_class_migrator_form``.
+ 
+-You can also migrate your existing objects to folderish types. For details see `Step 2: Update base class for existing objects`_
++This form lets you select classes to be updated and shows the number of objects for each class. This form can be used to change the base-class of any dexterity-types instances. The migration will also transform itemish content to folderish content if the new class is folderish. You might want to use the method ``plone.app.contenttypes.migration.dxmigration.migrate_base_class_to_new_class`` in your own upgrade-steps.
+ 
+ 
+ Extending the types
+diff --git a/plone/app/contenttypes/content.py b/plone/app/contenttypes/content.py
+index 07b366d..cd56046 100644
+--- a/plone/app/contenttypes/content.py
++++ b/plone/app/contenttypes/content.py
+@@ -97,28 +97,3 @@ class NewsItem(Item):
+ class Event(Item):
+     """Convinience subclass for ``Event`` portal type
+     """
+-
+-# Folderish subclasses used by 'profile-plone.app.contenttypes:folderish'
+-
+-@implementer(ICollection)
+-class FolderishCollection(Container):
+-    """Folderish convinience subclass for ``Collection`` portal type
+-    """
+-
+-
+-@implementer(IDocument)
+-class FolderishDocument(Container):
+-    """Folderish convinience subclass for ``Document`` portal type
+-    """
+-
+-
+-@implementer(IEvent)
+-class FolderishEvent(Container):
+-    """Folderish convinience subclass for ``Event`` portal type
+-    """
+-
+-
+-@implementer(INewsItem)
+-class FolderishNewsItem(Container):
+-    """Folderish convinience subclass for ``News Item`` portal type
+-    """
+diff --git a/plone/app/contenttypes/profiles.zcml b/plone/app/contenttypes/profiles.zcml
+index b2a315e..886bd84 100644
+--- a/plone/app/contenttypes/profiles.zcml
++++ b/plone/app/contenttypes/profiles.zcml
+@@ -20,16 +20,6 @@
+     provides="Products.GenericSetup.interfaces.EXTENSION"
+     />
+ 
+-  <!-- All types, News Item, Document and Event folderish, no sample content,
+-       depends on default -->
+-  <gs:registerProfile
+-    name="folderish"
+-    title="Plone default content-types (Folderish behavior) - dexterity"
+-    directory="profiles/folderish"
+-    description="This provides Plones default types without adding example comntent"
+-    provides="Products.GenericSetup.interfaces.EXTENSION"
+-    />
+-
+   <!-- Uninstall -->
+   <gs:registerProfile
+     name="uninstall"
+diff --git a/plone/app/contenttypes/profiles/folderish/metadata.xml b/plone/app/contenttypes/profiles/folderish/metadata.xml
+deleted file mode 100644
+index 743d12c..0000000
+--- a/plone/app/contenttypes/profiles/folderish/metadata.xml
++++ /dev/null
+@@ -1,6 +0,0 @@
+-<metadata>
+- <version>1</version>
+- <dependencies>
+-  <dependency>profile-plone.app.contenttypes:default</dependency>
+- </dependencies>
+-</metadata>
+diff --git a/plone/app/contenttypes/profiles/folderish/types.xml b/plone/app/contenttypes/profiles/folderish/types.xml
+deleted file mode 100644
+index 740c1e8..0000000
+--- a/plone/app/contenttypes/profiles/folderish/types.xml
++++ /dev/null
+@@ -1,7 +0,0 @@
+-<?xml version="1.0"?>
+-<object meta_type="Plone Types Tool" name="portal_types">
+- <object meta_type="Dexterity FTI" name="Collection" />
+- <object meta_type="Dexterity FTI" name="Document" />
+- <object meta_type="Dexterity FTI" name="News Item" />
+- <object meta_type="Dexterity FTI" name="Event" />
+-</object>
+diff --git a/plone/app/contenttypes/profiles/folderish/types/Collection.xml b/plone/app/contenttypes/profiles/folderish/types/Collection.xml
+deleted file mode 100644
+index a396a48..0000000
+--- a/plone/app/contenttypes/profiles/folderish/types/Collection.xml
++++ /dev/null
+@@ -1,6 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="Collection" meta_type="Dexterity FTI" i18n:domain="plone"
+-   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+- <property name="filter_content_types">False</property>
+- <property name="klass">plone.app.contenttypes.content.FolderishCollection</property>
+-</object>
+diff --git a/plone/app/contenttypes/profiles/folderish/types/Document.xml b/plone/app/contenttypes/profiles/folderish/types/Document.xml
+deleted file mode 100644
+index 6c997f2..0000000
+--- a/plone/app/contenttypes/profiles/folderish/types/Document.xml
++++ /dev/null
+@@ -1,6 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="Document" meta_type="Dexterity FTI" i18n:domain="plone"
+-   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+- <property name="filter_content_types">False</property>
+- <property name="klass">plone.app.contenttypes.content.FolderishDocument</property>
+-</object>
+diff --git a/plone/app/contenttypes/profiles/folderish/types/Event.xml b/plone/app/contenttypes/profiles/folderish/types/Event.xml
+deleted file mode 100644
+index 710f9a9..0000000
+--- a/plone/app/contenttypes/profiles/folderish/types/Event.xml
++++ /dev/null
+@@ -1,6 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="Event" meta_type="Dexterity FTI" i18n:domain="plone"
+-   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+- <property name="filter_content_types">False</property>
+- <property name="klass">plone.app.contenttypes.content.FolderishEvent</property>
+-</object>
+diff --git a/plone/app/contenttypes/profiles/folderish/types/News_Item.xml b/plone/app/contenttypes/profiles/folderish/types/News_Item.xml
+deleted file mode 100644
+index c1a8a30..0000000
+--- a/plone/app/contenttypes/profiles/folderish/types/News_Item.xml
++++ /dev/null
+@@ -1,6 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="News Item" meta_type="Dexterity FTI" i18n:domain="plone"
+-   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+- <property name="filter_content_types">False</property>
+- <property name="klass">plone.app.contenttypes.content.FolderishNewsItem</property> 
+-</object>
 
 
-Repository: plone.app.jquerytools
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2014-12-08T22:17:08+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.jquerytools/commit/9ee7caa8ed7be62ad51e320cb5ba98329b064b7b
+Date: 2014-12-11T12:38:29+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/8d7f4c8614e3502394c0f5d5c9c202dbd336fc41
 
-Merge pull request #9 from djowett/master
-
-Fix broken links in README.rst
+check for IDexterityContent instead of meta_type
 
 Files changed:
-M README.rst
+M plone/app/contenttypes/tests/test_migration.py
 
-diff --git a/README.rst b/README.rst
-index f0fcb73..16fba22 100644
---- a/README.rst
-+++ b/README.rst
-@@ -339,25 +339,25 @@ jQuery Tools passes the event as a parameter when it calls the event handlers.
- ``getTrigger()`` methods.
+diff --git a/plone/app/contenttypes/tests/test_migration.py b/plone/app/contenttypes/tests/test_migration.py
+index 18ac6f8..3a34631 100644
+--- a/plone/app/contenttypes/tests/test_migration.py
++++ b/plone/app/contenttypes/tests/test_migration.py
+@@ -12,6 +12,7 @@
+ from plone.app.testing import SITE_OWNER_PASSWORD
+ from plone.app.testing import applyProfile
+ from plone.app.testing import login
++from plone.dexterity.interfaces import IDexterityContent
+ from plone.dexterity.content import Container
+ from plone.event.interfaces import IEventAccessor
+ from plone.testing.z2 import Browser
+@@ -1128,7 +1129,7 @@ def test_migrate_function(self):
+         applyProfile(self.portal, 'plone.app.contenttypes:default')
+         migrate(self.portal, DocumentMigrator)
+         dx_document = self.portal["document"]
+-        self.assertEqual(dx_document.meta_type, 'Dexterity Item')
++        self.assertTrue(IDexterityContent.providedBy(dx_document)
+ 
+     def test_migrate_xx_functions(self):
+         from Products.ATContentTypes.content.image import ATImage
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2014-12-11T12:38:42+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/02661d857d74d041eb11144850d50f0ec3b3854e
+
+use custom class for testing migration to wor around change to folderish
+
+Files changed:
+M plone/app/contenttypes/tests/oldtypes.py
+
+diff --git a/plone/app/contenttypes/tests/oldtypes.py b/plone/app/contenttypes/tests/oldtypes.py
+index 63e9c2c..d4e652c 100644
+--- a/plone/app/contenttypes/tests/oldtypes.py
++++ b/plone/app/contenttypes/tests/oldtypes.py
+@@ -1,5 +1,14 @@
+ # -*- coding: utf-8 -*-
+ from plone.dexterity.fti import DexterityFTI
++from plone.dexterity.content import Item
++from plone.app.contenttypes.interfaces import IEvent
++from zope.interface import implementer
++
++
++@implementer(IEvent)
++class Event(Item):
++    """Dummy subclass for old ``Event`` portal type
++    """
  
  
--.. _`jquery.tools`: http://jquerytools.org
--.. _`overlay.js`: http://jquerytools.org/documentation/overlay/index.html
--.. _`scrollable.js`: http://jquerytools.org/documentation/scrollable/index.html
--.. _`tabs.js`: http://jquerytools.org/documentation/tabs/index.html
--.. _`toolbox.history.js`: http://jquerytools.org/documentation/toolbox/history.html
--.. _`toolbox.expose.js`: http://jquerytools.org/documentation/toolbox/expose.html
--.. _`tooltip.js`: http://jquerytools.org/documentation/tooltip/index.html
--.. _`overlay.apple.js`: http://jquerytools.org/documentation/overlay/apple.html
--.. _`scrollable.autoscroll.js`: http://jquerytools.org/documentation/scrollable/autoscroll.html
--.. _`scrollable.navigator.js`: http://jquerytools.org/documentation/scrollable/navigator.html
--.. _`tabs.slideshow.js`: http://jquerytools.org/documentation/tabs/slideshow.html
--.. _`toolbox.flashembed.js`: http://jquerytools.org/documentation/toolbox/flashembed.html
--.. _`toolbox.mousewheel.js`: http://jquerytools.org/documentation/toolbox/mousewheel.html
--.. _`tooltip.dynamic.js`: http://jquerytools.org/documentation/tooltip/dynamic.html
--.. _`tooltip.slide.js`: http://jquerytools.org/documentation/tooltip/slide.html
--.. _`jquerytools dateinput`: http://jquerytools.org/documentation/dateinput/index.html
--.. _`first demo`: http://jquerytools.org/demos/dateinput/index.html
--.. _`jquerytools rangeinput`: http://jquerytools.org/documentation/rangeinput/index.html
--.. _`jquerytools validator`: http://jquerytools.org/documentation/validator/index.html
-+.. _`jquery.tools`: http://jquerytools.github.io
-+.. _`overlay.js`: http://jquerytools.github.io/documentation/overlay/index.html
-+.. _`scrollable.js`: http://jquerytools.github.io/documentation/scrollable/index.html
-+.. _`tabs.js`: http://jquerytools.github.io/documentation/tabs/index.html
-+.. _`toolbox.history.js`: http://jquerytools.github.io/documentation/toolbox/history.html
-+.. _`toolbox.expose.js`: http://jquerytools.github.io/documentation/toolbox/expose.html
-+.. _`tooltip.js`: http://jquerytools.github.io/documentation/tooltip/index.html
-+.. _`overlay.apple.js`: http://jquerytools.github.io/documentation/overlay/apple.html
-+.. _`scrollable.autoscroll.js`: http://jquerytools.github.io/documentation/scrollable/autoscroll.html
-+.. _`scrollable.navigator.js`: http://jquerytools.github.io/documentation/scrollable/navigator.html
-+.. _`tabs.slideshow.js`: http://jquerytools.github.io/documentation/tabs/slideshow.html
-+.. _`toolbox.flashembed.js`: http://jquerytools.github.io/documentation/toolbox/flashembed.html
-+.. _`toolbox.mousewheel.js`: http://jquerytools.github.io/documentation/toolbox/mousewheel.html
-+.. _`tooltip.dynamic.js`: http://jquerytools.github.io/documentation/tooltip/dynamic.html
-+.. _`tooltip.slide.js`: http://jquerytools.github.io/documentation/tooltip/slide.html
-+.. _`jquerytools dateinput`: http://jquerytools.github.io/documentation/dateinput/index.html
-+.. _`first demo`: http://jquerytools.github.io/demos/dateinput/index.html
-+.. _`jquerytools rangeinput`: http://jquerytools.github.io/documentation/rangeinput/index.html
-+.. _`jquerytools validator`: http://jquerytools.github.io/documentation/validator/index.html
- .. _`jquery form plugin`: http://malsup.com/jquery/form
--.. _`overlay documentation`: http://jquerytools.org/documentation/overlay/#events
--.. _`events documentation`: http://jquerytools.org/documentation/scripting.html#events
-+.. _`overlay documentation`: http://jquerytools.github.io/documentation/overlay/#events
-+.. _`events documentation`: http://jquerytools.github.io/documentation/scripting.html#events
+ def create1_0EventType(portal):
+@@ -20,7 +29,7 @@ def create1_0EventType(portal):
+     fti.view_methods = ("event_view", )
+     fti.default_view_fallback = False
+     fti.add_permission = "plone.app.contenttypes.addEvent"
+-    fti.klass = "plone.app.contenttypes.content.Event"
++    fti.klass = "plone.app.contenttypes.tests.oldtypes.Event"
+     fti.behaviors = (
+         "plone.app.contenttypes.interfaces.IEvent",
+         "plone.app.dexterity.behaviors.metadata.IDublinCore",
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2014-12-11T12:38:54+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/32aab94f61665caddb0570a324d8ae7c9a2bce94
+
+fix syntax
+
+Files changed:
+M plone/app/contenttypes/tests/test_migration.py
+
+diff --git a/plone/app/contenttypes/tests/test_migration.py b/plone/app/contenttypes/tests/test_migration.py
+index 3a34631..2392381 100644
+--- a/plone/app/contenttypes/tests/test_migration.py
++++ b/plone/app/contenttypes/tests/test_migration.py
+@@ -1129,7 +1129,7 @@ def test_migrate_function(self):
+         applyProfile(self.portal, 'plone.app.contenttypes:default')
+         migrate(self.portal, DocumentMigrator)
+         dx_document = self.portal["document"]
+-        self.assertTrue(IDexterityContent.providedBy(dx_document)
++        self.assertTrue(IDexterityContent.providedBy(dx_document))
+ 
+     def test_migrate_xx_functions(self):
+         from Products.ATContentTypes.content.image import ATImage
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2014-12-11T12:39:05+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/e230ca85883014218b01182417e19eb0132ef59c
+
+allow to pass the klass-names and allow migration with the same klass
+
+Files changed:
+M plone/app/contenttypes/migration/dxmigration.py
+
+diff --git a/plone/app/contenttypes/migration/dxmigration.py b/plone/app/contenttypes/migration/dxmigration.py
+index f96b0c4..c07e877 100644
+--- a/plone/app/contenttypes/migration/dxmigration.py
++++ b/plone/app/contenttypes/migration/dxmigration.py
+@@ -134,12 +134,13 @@ def migrate_base_class_to_new_class(obj,
+                                         'is_folderish',
+                                         'object_provides',
+                                     ],
++                                    old_class_name='',
++                                    new_class_name=''
+                                     ):
+-    new_class_name = get_portal_type_name_string(obj)
+-    current_class_name = get_old_class_name_string(obj)
+-
+-    if new_class_name == current_class_name:
+-        return False
++    if not old_class_name:
++        old_class_name = get_old_class_name_string(obj)
++    if not new_class_name:
++        new_class_name = get_portal_type_name_string(obj)
+ 
+     was_item = isinstance(obj, Item)
+     obj_id = obj.getId()
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2014-12-11T12:39:31+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/2b2213741d1fa179492a4451f968c843210fe64a
+
+Harden test for itemish/folderish. Allow to force folderish_migration by passing migrate_to_folderish=True
+
+Files changed:
+M plone/app/contenttypes/migration/dxmigration.py
+
+diff --git a/plone/app/contenttypes/migration/dxmigration.py b/plone/app/contenttypes/migration/dxmigration.py
+index c07e877..ec40e53 100644
+--- a/plone/app/contenttypes/migration/dxmigration.py
++++ b/plone/app/contenttypes/migration/dxmigration.py
+@@ -115,11 +115,12 @@ def migrate_schema_fields(self):
+ 
+ 
+ def get_old_class_name_string(obj):
+-    """Returns old class name string."""
++    """Returns the current class name string."""
+     return '{0}.{1}'.format(obj.__module__, obj.__class__.__name__)
+ 
+ 
+ def get_portal_type_name_string(obj):
++    """Returns the klass-attribute of the fti."""
+     portal = getSite()
+     types = getToolByName(portal, "portal_types")
+     portal_type = types.get(obj.portal_type)
+@@ -135,28 +136,30 @@ def migrate_base_class_to_new_class(obj,
+                                         'object_provides',
+                                     ],
+                                     old_class_name='',
+-                                    new_class_name=''
++                                    new_class_name='',
++                                    migrate_to_folderish=False,
+                                     ):
+     if not old_class_name:
+         old_class_name = get_old_class_name_string(obj)
+     if not new_class_name:
+         new_class_name = get_portal_type_name_string(obj)
+ 
+-    was_item = isinstance(obj, Item)
+-    obj_id = obj.getId()
+-    module_name, class_name = new_class_name.rsplit('.', 1)
+-    module = importlib.import_module(module_name)
+-    new_class = getattr(module, class_name)
++    was_item = not isinstance(obj, BTreeFolder2Base)
++    if old_class_name != new_class_name:
++        obj_id = obj.getId()
++        module_name, class_name = new_class_name.rsplit('.', 1)
++        module = importlib.import_module(module_name)
++        new_class = getattr(module, class_name)
+ 
+-    # update obj class
+-    parent = obj.__parent__
+-    parent._delOb(obj_id)
+-    obj.__class__ = new_class
+-    parent._setOb(obj_id, obj)
++        # update obj class
++        parent = obj.__parent__
++        parent._delOb(obj_id)
++        obj.__class__ = new_class
++        parent._setOb(obj_id, obj)
+ 
+-    is_container = isinstance(obj, Container)
++    is_container = isinstance(obj, BTreeFolder2Base)
+ 
+-    if was_item and is_container:
++    if was_item and is_container or migrate_to_folderish and is_container:
+         #  If Itemish becomes Folderish we have to update obj _tree
+         BTreeFolder2Base._initBTrees(obj)
+ 
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2014-12-11T12:40:50+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/ac6a24c180b8d68d8ccd5bdf829e6a2987035dd0
+
+allow to force migrate_to_folderish from the BaseClassMigratorForm
+
+Files changed:
+M plone/app/contenttypes/migration/browser.py
+M plone/app/contenttypes/migration/dxmigration.py
+
+diff --git a/plone/app/contenttypes/migration/browser.py b/plone/app/contenttypes/migration/browser.py
+index 112481f..f7e2bb4 100644
+--- a/plone/app/contenttypes/migration/browser.py
++++ b/plone/app/contenttypes/migration/browser.py
+@@ -373,6 +373,15 @@ class IBaseClassMigratorForm(Interface):
+         ),
+         required=True,
+     )
++    migrate_to_folderish = schema.Bool(
++        title=u"Migrate to folderish type?",
++        description=(
++            u"Select this option if you changed a type from being "
++            u"itemish to being folderish but the class of the type is still "
++            u"the same."
++        ),
++        default=False,
++    )
+ 
+ 
+ class BaseClassMigratorForm(form.Form):
+@@ -393,6 +402,7 @@ def handle_migrate(self, action):
+         if not changed_base_classes:
+             return
+ 
++        migrate_to_folderish = data.get('changed_base_classes', False)
+         catalog = getToolByName(self.context, "portal_catalog")
+         migrated = []
+         not_migrated = []
+@@ -400,7 +410,8 @@ def handle_migrate(self, action):
+             obj = brain.getObject()
+             old_class_name = dxmigration.get_old_class_name_string(obj)
+             if old_class_name in changed_base_classes:
+-                if dxmigration.migrate_base_class_to_new_class(obj):
++                if dxmigration.migrate_base_class_to_new_class(
++                        obj, migrate_to_folderish=migrate_to_folderish):
+                     migrated.append(obj)
+                 else:
+                     not_migrated.append(obj)
+diff --git a/plone/app/contenttypes/migration/dxmigration.py b/plone/app/contenttypes/migration/dxmigration.py
+index ec40e53..419b028 100644
+--- a/plone/app/contenttypes/migration/dxmigration.py
++++ b/plone/app/contenttypes/migration/dxmigration.py
+@@ -9,10 +9,12 @@
+ from plone.dexterity.content import Container
+ from plone.dexterity.content import Item
+ from plone.dexterity.interfaces import IDexterityContent
++from plone.dexterity.interfaces import IDexterityFTI
+ from plone.event.utils import default_timezone
+ from zExceptions import NotFound
+ from zope.annotation.interfaces import IAnnotations
+ from zope.component.hooks import getSite
++from zope.component import queryUtility
+ 
+ import importlib
+ import logging
+@@ -121,13 +123,10 @@ def get_old_class_name_string(obj):
+ 
+ def get_portal_type_name_string(obj):
+     """Returns the klass-attribute of the fti."""
+-    portal = getSite()
+-    types = getToolByName(portal, "portal_types")
+-    portal_type = types.get(obj.portal_type)
+-    if not portal_type:
+-        return
+-
+-    return portal_type.klass
++    fti = queryUtility(IDexterityFTI, name=obj.portal_type)
++    if not fti:
++        return False
++    return fti.klass
+ 
+ 
+ def migrate_base_class_to_new_class(obj,
+@@ -143,6 +142,10 @@ def migrate_base_class_to_new_class(obj,
+         old_class_name = get_old_class_name_string(obj)
+     if not new_class_name:
+         new_class_name = get_portal_type_name_string(obj)
++        if not new_class_name:
++            logger.warning(
++                'The type {0} has no fti!'.format(obj.portal_type))
++            return False
+ 
+     was_item = not isinstance(obj, BTreeFolder2Base)
+     if old_class_name != new_class_name:
 
 
