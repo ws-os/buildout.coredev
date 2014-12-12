@@ -1,529 +1,339 @@
-Repository: plone.app.contenttypes
+Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-12-11T12:37:40+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/7a1cf71ee090fe1cc9b2bc24ee605b69233767b5
+Date: 2014-11-19T16:17:44+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/c1bfb053a17c314b79031b661dd13454b31e17f4
 
-remove optional folderish profile
+Delete adapter and browser view registrations that already have been commented out.
 
 Files changed:
-M docs/README.rst
-M plone/app/contenttypes/content.py
-M plone/app/contenttypes/profiles.zcml
-D plone/app/contenttypes/profiles/folderish/metadata.xml
-D plone/app/contenttypes/profiles/folderish/types.xml
-D plone/app/contenttypes/profiles/folderish/types/Collection.xml
-D plone/app/contenttypes/profiles/folderish/types/Document.xml
-D plone/app/contenttypes/profiles/folderish/types/Event.xml
-D plone/app/contenttypes/profiles/folderish/types/News_Item.xml
+M plone/app/controlpanel/configure.zcml
 
-diff --git a/docs/README.rst b/docs/README.rst
-index afbe256..883d030 100644
---- a/docs/README.rst
-+++ b/docs/README.rst
-@@ -218,32 +218,6 @@ Future versions of plone.app.contenttypes will have with a form that allows you
- However if you'd like to migrate your content-types to Dexterity before this feature is completed you might want to have a look at the code of plone.app.contenttypes.migration.migration.NewsItemMigrator as a blueprint for a migration.
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index b74abd5..d6fb56e 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -7,40 +7,20 @@
  
+   <include file="permissions.zcml" />
  
--Migrating to folderish objects or change base class for any dexterity type
--^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-  <!--<adapter for="*"
+-           factory=".editing.EditingControlPanelAdapter" />-->
 -
--.. warning::
--
--   All types will probably be folderish in Plone 5 (see https://dev.plone.org/ticket/20144). The additional profile ``folderish`` will be removed soon. Use it at your own risk!
--
--Migration non folderish object to folderish has few steps.
--
--Step 1: Enable folderish types
--++++++++++++++++++++++++++++++
--
--See `Using folderish types`_
--
--
--Step 2: Update base class for existing objects
--++++++++++++++++++++++++++++++++++++++++++++++
--
--If you changed the base-class of existing types you might also want to upgrade the base-class of existing objects. You can use the following form for this: `PORTAL_URL/@@base_class_migrator_form`.
--
--On this you will see checkboxes with class names and the amount of objects that are going to be updated. Select classes that you want to update and click on button `Update`.
--
--If the migration was successful you see the info box with number of successfully updated objects or a warning with the number of skipped objects.
--
--This form can be used to change the base-class of any dexterity-types instances.
--
- Widgets
- -------
+   <adapter factory=".filter.FilterControlPanelAdapter" />
  
-@@ -322,28 +296,15 @@ If you use the profile ``default`` then the default-content in new sites will st
- Using folderish types
- ^^^^^^^^^^^^^^^^^^^^^
+   <adapter factory=".language.LanguageControlPanelAdapter" />
  
--.. warning::
+-  <!--<adapter factory=".navigation.NavigationControlPanelAdapter" />-->
 -
--   All types will probably be folderish in Plone 5 (see https://dev.plone.org/ticket/20144). The additional profile ``folderish`` will be removed soon. Use it at your own risk!
--
--If you want all types folderish you need to depend on the profile ``folderish`` in your own ``metadata.xml``.
--
--.. code:: xml
-+At some point all default types will probably be folderish. If you want the default types to be folderish before that happens please look at https://pypi.python.org/pypi/collective.folderishtypes.
+   <adapter factory=".mail.MailControlPanelAdapter" />
  
--    <metadata>
--      <version>1</version>
--        <dependencies>
--            <dependency>profile-plone.app.contenttypes:folderish</dependency>
--        </dependencies>
--    </metadata>
+-  <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
+-
+-  <!-- adapter factory=".markup.MarkupControlPanelAdapter" /-->
+-
+   <adapter factory=".ram.RAMCacheControlPanelAdapter" />
  
--You can also enable this profile by hand by applying the `folderish` profile:
-+Changing the base class for existing objects
-+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-  <!--<adapter factory=".search.SearchControlPanelAdapter" />-->
+-
+   <adapter factory=".security.SecurityControlPanelAdapter" />
  
--- Go to portal_setup->Import;
--- Select `Plone default content-types (Folderish behavior) - dexterity`
--- Click  `Import all steps`
-+If you changed the base-class of existing types (e.g. because you changed them to be folderish) you also need to upgrade the base-class of existing objects. You can use the following form for this: ``@@base_class_migrator_form``.
+-  <!--<adapter factory=".site.SiteControlPanelAdapter" />-->
+-
+   <adapter factory=".skins.SkinsControlPanelAdapter" />
  
--You can also migrate your existing objects to folderish types. For details see `Step 2: Update base class for existing objects`_
-+This form lets you select classes to be updated and shows the number of objects for each class. This form can be used to change the base-class of any dexterity-types instances. The migration will also transform itemish content to folderish content if the new class is folderish. You might want to use the method ``plone.app.contenttypes.migration.dxmigration.migrate_base_class_to_new_class`` in your own upgrade-steps.
+   <adapter factory=".usergroups.UserGroupsSettingsControlPanelAdapter" />
  
+-  <!--<browser:page
+-      name="editing-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".editing.EditingControlPanel"
+-      permission="plone.app.controlpanel.Editing"
+-      />-->
+-
+   <browser:page
+       name="filter-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+@@ -62,40 +42,6 @@
+       permission="plone.app.controlpanel.Mail"
+       />
  
- Extending the types
-diff --git a/plone/app/contenttypes/content.py b/plone/app/contenttypes/content.py
-index 07b366d..cd56046 100644
---- a/plone/app/contenttypes/content.py
-+++ b/plone/app/contenttypes/content.py
-@@ -97,28 +97,3 @@ class NewsItem(Item):
- class Event(Item):
-     """Convinience subclass for ``Event`` portal type
-     """
+-  <!-- browser:page
+-      name="markup-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".markup.MarkupControlPanel"
+-      permission="plone.app.controlpanel.Markup"
+-      /-->
 -
--# Folderish subclasses used by 'profile-plone.app.contenttypes:folderish'
+-  <!--
+-  <browser:page
+-      name="maintenance-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".maintenance.MaintenanceControlPanel"
+-      permission="cmf.ManagePortal"
+-      />
+-  -->
 -
--@implementer(ICollection)
--class FolderishCollection(Container):
--    """Folderish convinience subclass for ``Collection`` portal type
--    """
+-  <!--
+-  <browser:page
+-      name="navigation-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".navigation.NavigationControlPanel"
+-      permission="plone.app.controlpanel.Navigation"
+-      />
+-  -->
 -
+-  <!--
+-  <browser:page
+-      name="overview-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".overview.OverviewControlPanel"
+-      permission="plone.app.controlpanel.Overview"
+-      />
+-  -->
 -
--@implementer(IDocument)
--class FolderishDocument(Container):
--    """Folderish convinience subclass for ``Document`` portal type
--    """
--
--
--@implementer(IEvent)
--class FolderishEvent(Container):
--    """Folderish convinience subclass for ``Event`` portal type
--    """
--
--
--@implementer(INewsItem)
--class FolderishNewsItem(Container):
--    """Folderish convinience subclass for ``News Item`` portal type
--    """
-diff --git a/plone/app/contenttypes/profiles.zcml b/plone/app/contenttypes/profiles.zcml
-index b2a315e..886bd84 100644
---- a/plone/app/contenttypes/profiles.zcml
-+++ b/plone/app/contenttypes/profiles.zcml
-@@ -20,16 +20,6 @@
-     provides="Products.GenericSetup.interfaces.EXTENSION"
-     />
+   <browser:page
+       name="ramcache-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+@@ -103,15 +49,6 @@
+       permission="cmf.ManagePortal"
+       />
  
--  <!-- All types, News Item, Document and Event folderish, no sample content,
--       depends on default -->
--  <gs:registerProfile
--    name="folderish"
--    title="Plone default content-types (Folderish behavior) - dexterity"
--    directory="profiles/folderish"
--    description="This provides Plones default types without adding example comntent"
--    provides="Products.GenericSetup.interfaces.EXTENSION"
--    />
+-  <!--
+-  <browser:page
+-      name="search-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".search.SearchControlPanel"
+-      permission="plone.app.controlpanel.Search"
+-      />
+-  -->
 -
-   <!-- Uninstall -->
-   <gs:registerProfile
-     name="uninstall"
-diff --git a/plone/app/contenttypes/profiles/folderish/metadata.xml b/plone/app/contenttypes/profiles/folderish/metadata.xml
-deleted file mode 100644
-index 743d12c..0000000
---- a/plone/app/contenttypes/profiles/folderish/metadata.xml
-+++ /dev/null
-@@ -1,6 +0,0 @@
--<metadata>
-- <version>1</version>
-- <dependencies>
--  <dependency>profile-plone.app.contenttypes:default</dependency>
-- </dependencies>
--</metadata>
-diff --git a/plone/app/contenttypes/profiles/folderish/types.xml b/plone/app/contenttypes/profiles/folderish/types.xml
-deleted file mode 100644
-index 740c1e8..0000000
---- a/plone/app/contenttypes/profiles/folderish/types.xml
-+++ /dev/null
-@@ -1,7 +0,0 @@
--<?xml version="1.0"?>
--<object meta_type="Plone Types Tool" name="portal_types">
-- <object meta_type="Dexterity FTI" name="Collection" />
-- <object meta_type="Dexterity FTI" name="Document" />
-- <object meta_type="Dexterity FTI" name="News Item" />
-- <object meta_type="Dexterity FTI" name="Event" />
--</object>
-diff --git a/plone/app/contenttypes/profiles/folderish/types/Collection.xml b/plone/app/contenttypes/profiles/folderish/types/Collection.xml
-deleted file mode 100644
-index a396a48..0000000
---- a/plone/app/contenttypes/profiles/folderish/types/Collection.xml
-+++ /dev/null
-@@ -1,6 +0,0 @@
--<?xml version="1.0"?>
--<object name="Collection" meta_type="Dexterity FTI" i18n:domain="plone"
--   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
-- <property name="filter_content_types">False</property>
-- <property name="klass">plone.app.contenttypes.content.FolderishCollection</property>
--</object>
-diff --git a/plone/app/contenttypes/profiles/folderish/types/Document.xml b/plone/app/contenttypes/profiles/folderish/types/Document.xml
-deleted file mode 100644
-index 6c997f2..0000000
---- a/plone/app/contenttypes/profiles/folderish/types/Document.xml
-+++ /dev/null
-@@ -1,6 +0,0 @@
--<?xml version="1.0"?>
--<object name="Document" meta_type="Dexterity FTI" i18n:domain="plone"
--   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
-- <property name="filter_content_types">False</property>
-- <property name="klass">plone.app.contenttypes.content.FolderishDocument</property>
--</object>
-diff --git a/plone/app/contenttypes/profiles/folderish/types/Event.xml b/plone/app/contenttypes/profiles/folderish/types/Event.xml
-deleted file mode 100644
-index 710f9a9..0000000
---- a/plone/app/contenttypes/profiles/folderish/types/Event.xml
-+++ /dev/null
-@@ -1,6 +0,0 @@
--<?xml version="1.0"?>
--<object name="Event" meta_type="Dexterity FTI" i18n:domain="plone"
--   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
-- <property name="filter_content_types">False</property>
-- <property name="klass">plone.app.contenttypes.content.FolderishEvent</property>
--</object>
-diff --git a/plone/app/contenttypes/profiles/folderish/types/News_Item.xml b/plone/app/contenttypes/profiles/folderish/types/News_Item.xml
-deleted file mode 100644
-index c1a8a30..0000000
---- a/plone/app/contenttypes/profiles/folderish/types/News_Item.xml
-+++ /dev/null
-@@ -1,6 +0,0 @@
--<?xml version="1.0"?>
--<object name="News Item" meta_type="Dexterity FTI" i18n:domain="plone"
--   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
-- <property name="filter_content_types">False</property>
-- <property name="klass">plone.app.contenttypes.content.FolderishNewsItem</property> 
--</object>
+   <browser:page
+       name="security-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+@@ -119,15 +56,6 @@
+       permission="plone.app.controlpanel.Security"
+       />
+ 
+-  <!--
+-  <browser:page
+-      name="site-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".site.SiteControlPanel"
+-      permission="plone.app.controlpanel.Site"
+-      />
+-  -->
+-
+   <browser:page
+       name="skins-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+@@ -135,13 +63,6 @@
+       permission="plone.app.controlpanel.Themes"
+       />
+ 
+- <!--  <browser:page
+-      name="types-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".types.TypesControlPanel"
+-      permission="plone.app.controlpanel.Types"
+-      /> -->
+-
+   <browser:page
+       name="usergroup-userprefs"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
 
 
-Repository: plone.app.contenttypes
+Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-12-11T12:38:29+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/8d7f4c8614e3502394c0f5d5c9c202dbd336fc41
+Date: 2014-12-06T15:48:16+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/0199c2e17288115d98726ec41bcbacde8013da39
 
-check for IDexterityContent instead of meta_type
+Remove filter controlpanel and adpater.
 
 Files changed:
-M plone/app/contenttypes/tests/test_migration.py
+M plone/app/controlpanel/configure.zcml
 
-diff --git a/plone/app/contenttypes/tests/test_migration.py b/plone/app/contenttypes/tests/test_migration.py
-index 18ac6f8..3a34631 100644
---- a/plone/app/contenttypes/tests/test_migration.py
-+++ b/plone/app/contenttypes/tests/test_migration.py
-@@ -12,6 +12,7 @@
- from plone.app.testing import SITE_OWNER_PASSWORD
- from plone.app.testing import applyProfile
- from plone.app.testing import login
-+from plone.dexterity.interfaces import IDexterityContent
- from plone.dexterity.content import Container
- from plone.event.interfaces import IEventAccessor
- from plone.testing.z2 import Browser
-@@ -1128,7 +1129,7 @@ def test_migrate_function(self):
-         applyProfile(self.portal, 'plone.app.contenttypes:default')
-         migrate(self.portal, DocumentMigrator)
-         dx_document = self.portal["document"]
--        self.assertEqual(dx_document.meta_type, 'Dexterity Item')
-+        self.assertTrue(IDexterityContent.providedBy(dx_document)
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index d6fb56e..053ddb7 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -7,8 +7,6 @@
  
-     def test_migrate_xx_functions(self):
-         from Products.ATContentTypes.content.image import ATImage
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2014-12-11T12:38:42+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/02661d857d74d041eb11144850d50f0ec3b3854e
-
-use custom class for testing migration to wor around change to folderish
-
-Files changed:
-M plone/app/contenttypes/tests/oldtypes.py
-
-diff --git a/plone/app/contenttypes/tests/oldtypes.py b/plone/app/contenttypes/tests/oldtypes.py
-index 63e9c2c..d4e652c 100644
---- a/plone/app/contenttypes/tests/oldtypes.py
-+++ b/plone/app/contenttypes/tests/oldtypes.py
-@@ -1,5 +1,14 @@
- # -*- coding: utf-8 -*-
- from plone.dexterity.fti import DexterityFTI
-+from plone.dexterity.content import Item
-+from plone.app.contenttypes.interfaces import IEvent
-+from zope.interface import implementer
-+
-+
-+@implementer(IEvent)
-+class Event(Item):
-+    """Dummy subclass for old ``Event`` portal type
-+    """
+   <include file="permissions.zcml" />
  
- 
- def create1_0EventType(portal):
-@@ -20,7 +29,7 @@ def create1_0EventType(portal):
-     fti.view_methods = ("event_view", )
-     fti.default_view_fallback = False
-     fti.add_permission = "plone.app.contenttypes.addEvent"
--    fti.klass = "plone.app.contenttypes.content.Event"
-+    fti.klass = "plone.app.contenttypes.tests.oldtypes.Event"
-     fti.behaviors = (
-         "plone.app.contenttypes.interfaces.IEvent",
-         "plone.app.dexterity.behaviors.metadata.IDublinCore",
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2014-12-11T12:38:54+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/32aab94f61665caddb0570a324d8ae7c9a2bce94
-
-fix syntax
-
-Files changed:
-M plone/app/contenttypes/tests/test_migration.py
-
-diff --git a/plone/app/contenttypes/tests/test_migration.py b/plone/app/contenttypes/tests/test_migration.py
-index 3a34631..2392381 100644
---- a/plone/app/contenttypes/tests/test_migration.py
-+++ b/plone/app/contenttypes/tests/test_migration.py
-@@ -1129,7 +1129,7 @@ def test_migrate_function(self):
-         applyProfile(self.portal, 'plone.app.contenttypes:default')
-         migrate(self.portal, DocumentMigrator)
-         dx_document = self.portal["document"]
--        self.assertTrue(IDexterityContent.providedBy(dx_document)
-+        self.assertTrue(IDexterityContent.providedBy(dx_document))
- 
-     def test_migrate_xx_functions(self):
-         from Products.ATContentTypes.content.image import ATImage
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2014-12-11T12:39:05+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/e230ca85883014218b01182417e19eb0132ef59c
-
-allow to pass the klass-names and allow migration with the same klass
-
-Files changed:
-M plone/app/contenttypes/migration/dxmigration.py
-
-diff --git a/plone/app/contenttypes/migration/dxmigration.py b/plone/app/contenttypes/migration/dxmigration.py
-index f96b0c4..c07e877 100644
---- a/plone/app/contenttypes/migration/dxmigration.py
-+++ b/plone/app/contenttypes/migration/dxmigration.py
-@@ -134,12 +134,13 @@ def migrate_base_class_to_new_class(obj,
-                                         'is_folderish',
-                                         'object_provides',
-                                     ],
-+                                    old_class_name='',
-+                                    new_class_name=''
-                                     ):
--    new_class_name = get_portal_type_name_string(obj)
--    current_class_name = get_old_class_name_string(obj)
+-  <adapter factory=".filter.FilterControlPanelAdapter" />
 -
--    if new_class_name == current_class_name:
--        return False
-+    if not old_class_name:
-+        old_class_name = get_old_class_name_string(obj)
-+    if not new_class_name:
-+        new_class_name = get_portal_type_name_string(obj)
+   <adapter factory=".language.LanguageControlPanelAdapter" />
  
-     was_item = isinstance(obj, Item)
-     obj_id = obj.getId()
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2014-12-11T12:39:31+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/2b2213741d1fa179492a4451f968c843210fe64a
-
-Harden test for itemish/folderish. Allow to force folderish_migration by passing migrate_to_folderish=True
-
-Files changed:
-M plone/app/contenttypes/migration/dxmigration.py
-
-diff --git a/plone/app/contenttypes/migration/dxmigration.py b/plone/app/contenttypes/migration/dxmigration.py
-index c07e877..ec40e53 100644
---- a/plone/app/contenttypes/migration/dxmigration.py
-+++ b/plone/app/contenttypes/migration/dxmigration.py
-@@ -115,11 +115,12 @@ def migrate_schema_fields(self):
+   <adapter factory=".mail.MailControlPanelAdapter" />
+@@ -22,13 +20,6 @@
+   <adapter factory=".usergroups.UserGroupsSettingsControlPanelAdapter" />
  
- 
- def get_old_class_name_string(obj):
--    """Returns old class name string."""
-+    """Returns the current class name string."""
-     return '{0}.{1}'.format(obj.__module__, obj.__class__.__name__)
- 
- 
- def get_portal_type_name_string(obj):
-+    """Returns the klass-attribute of the fti."""
-     portal = getSite()
-     types = getToolByName(portal, "portal_types")
-     portal_type = types.get(obj.portal_type)
-@@ -135,28 +136,30 @@ def migrate_base_class_to_new_class(obj,
-                                         'object_provides',
-                                     ],
-                                     old_class_name='',
--                                    new_class_name=''
-+                                    new_class_name='',
-+                                    migrate_to_folderish=False,
-                                     ):
-     if not old_class_name:
-         old_class_name = get_old_class_name_string(obj)
-     if not new_class_name:
-         new_class_name = get_portal_type_name_string(obj)
- 
--    was_item = isinstance(obj, Item)
--    obj_id = obj.getId()
--    module_name, class_name = new_class_name.rsplit('.', 1)
--    module = importlib.import_module(module_name)
--    new_class = getattr(module, class_name)
-+    was_item = not isinstance(obj, BTreeFolder2Base)
-+    if old_class_name != new_class_name:
-+        obj_id = obj.getId()
-+        module_name, class_name = new_class_name.rsplit('.', 1)
-+        module = importlib.import_module(module_name)
-+        new_class = getattr(module, class_name)
- 
--    # update obj class
--    parent = obj.__parent__
--    parent._delOb(obj_id)
--    obj.__class__ = new_class
--    parent._setOb(obj_id, obj)
-+        # update obj class
-+        parent = obj.__parent__
-+        parent._delOb(obj_id)
-+        obj.__class__ = new_class
-+        parent._setOb(obj_id, obj)
- 
--    is_container = isinstance(obj, Container)
-+    is_container = isinstance(obj, BTreeFolder2Base)
- 
--    if was_item and is_container:
-+    if was_item and is_container or migrate_to_folderish and is_container:
-         #  If Itemish becomes Folderish we have to update obj _tree
-         BTreeFolder2Base._initBTrees(obj)
- 
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2014-12-11T12:40:50+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/ac6a24c180b8d68d8ccd5bdf829e6a2987035dd0
-
-allow to force migrate_to_folderish from the BaseClassMigratorForm
-
-Files changed:
-M plone/app/contenttypes/migration/browser.py
-M plone/app/contenttypes/migration/dxmigration.py
-
-diff --git a/plone/app/contenttypes/migration/browser.py b/plone/app/contenttypes/migration/browser.py
-index 112481f..f7e2bb4 100644
---- a/plone/app/contenttypes/migration/browser.py
-+++ b/plone/app/contenttypes/migration/browser.py
-@@ -373,6 +373,15 @@ class IBaseClassMigratorForm(Interface):
-         ),
-         required=True,
-     )
-+    migrate_to_folderish = schema.Bool(
-+        title=u"Migrate to folderish type?",
-+        description=(
-+            u"Select this option if you changed a type from being "
-+            u"itemish to being folderish but the class of the type is still "
-+            u"the same."
-+        ),
-+        default=False,
-+    )
- 
- 
- class BaseClassMigratorForm(form.Form):
-@@ -393,6 +402,7 @@ def handle_migrate(self, action):
-         if not changed_base_classes:
-             return
- 
-+        migrate_to_folderish = data.get('changed_base_classes', False)
-         catalog = getToolByName(self.context, "portal_catalog")
-         migrated = []
-         not_migrated = []
-@@ -400,7 +410,8 @@ def handle_migrate(self, action):
-             obj = brain.getObject()
-             old_class_name = dxmigration.get_old_class_name_string(obj)
-             if old_class_name in changed_base_classes:
--                if dxmigration.migrate_base_class_to_new_class(obj):
-+                if dxmigration.migrate_base_class_to_new_class(
-+                        obj, migrate_to_folderish=migrate_to_folderish):
-                     migrated.append(obj)
-                 else:
-                     not_migrated.append(obj)
-diff --git a/plone/app/contenttypes/migration/dxmigration.py b/plone/app/contenttypes/migration/dxmigration.py
-index ec40e53..419b028 100644
---- a/plone/app/contenttypes/migration/dxmigration.py
-+++ b/plone/app/contenttypes/migration/dxmigration.py
-@@ -9,10 +9,12 @@
- from plone.dexterity.content import Container
- from plone.dexterity.content import Item
- from plone.dexterity.interfaces import IDexterityContent
-+from plone.dexterity.interfaces import IDexterityFTI
- from plone.event.utils import default_timezone
- from zExceptions import NotFound
- from zope.annotation.interfaces import IAnnotations
- from zope.component.hooks import getSite
-+from zope.component import queryUtility
- 
- import importlib
- import logging
-@@ -121,13 +123,10 @@ def get_old_class_name_string(obj):
- 
- def get_portal_type_name_string(obj):
-     """Returns the klass-attribute of the fti."""
--    portal = getSite()
--    types = getToolByName(portal, "portal_types")
--    portal_type = types.get(obj.portal_type)
--    if not portal_type:
--        return
+   <browser:page
+-      name="filter-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".filter.FilterControlPanel"
+-      permission="plone.app.controlpanel.Filtering"
+-      />
 -
--    return portal_type.klass
-+    fti = queryUtility(IDexterityFTI, name=obj.portal_type)
-+    if not fti:
-+        return False
-+    return fti.klass
+-  <browser:page
+       name="language-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+       class=".language.LanguageControlPanel"
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2014-12-12T13:25:33+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/6a2fe04751aa442baf5534ce5dbed5b0ffd1f842
+
+Merge pull request #33 from plone/plip10359-filter-controlpanel
+
+Plip10359: Move filter controlpanel to z3cform
+
+Files changed:
+M plone/app/controlpanel/configure.zcml
+
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index b74abd5..053ddb7 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -7,47 +7,18 @@
  
+   <include file="permissions.zcml" />
  
- def migrate_base_class_to_new_class(obj,
-@@ -143,6 +142,10 @@ def migrate_base_class_to_new_class(obj,
-         old_class_name = get_old_class_name_string(obj)
-     if not new_class_name:
-         new_class_name = get_portal_type_name_string(obj)
-+        if not new_class_name:
-+            logger.warning(
-+                'The type {0} has no fti!'.format(obj.portal_type))
-+            return False
+-  <!--<adapter for="*"
+-           factory=".editing.EditingControlPanelAdapter" />-->
+-
+-  <adapter factory=".filter.FilterControlPanelAdapter" />
+-
+   <adapter factory=".language.LanguageControlPanelAdapter" />
  
-     was_item = not isinstance(obj, BTreeFolder2Base)
-     if old_class_name != new_class_name:
+-  <!--<adapter factory=".navigation.NavigationControlPanelAdapter" />-->
+-
+   <adapter factory=".mail.MailControlPanelAdapter" />
+ 
+-  <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
+-
+-  <!-- adapter factory=".markup.MarkupControlPanelAdapter" /-->
+-
+   <adapter factory=".ram.RAMCacheControlPanelAdapter" />
+ 
+-  <!--<adapter factory=".search.SearchControlPanelAdapter" />-->
+-
+   <adapter factory=".security.SecurityControlPanelAdapter" />
+ 
+-  <!--<adapter factory=".site.SiteControlPanelAdapter" />-->
+-
+   <adapter factory=".skins.SkinsControlPanelAdapter" />
+ 
+   <adapter factory=".usergroups.UserGroupsSettingsControlPanelAdapter" />
+ 
+-  <!--<browser:page
+-      name="editing-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".editing.EditingControlPanel"
+-      permission="plone.app.controlpanel.Editing"
+-      />-->
+-
+-  <browser:page
+-      name="filter-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".filter.FilterControlPanel"
+-      permission="plone.app.controlpanel.Filtering"
+-      />
+-
+   <browser:page
+       name="language-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+@@ -62,40 +33,6 @@
+       permission="plone.app.controlpanel.Mail"
+       />
+ 
+-  <!-- browser:page
+-      name="markup-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".markup.MarkupControlPanel"
+-      permission="plone.app.controlpanel.Markup"
+-      /-->
+-
+-  <!--
+-  <browser:page
+-      name="maintenance-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".maintenance.MaintenanceControlPanel"
+-      permission="cmf.ManagePortal"
+-      />
+-  -->
+-
+-  <!--
+-  <browser:page
+-      name="navigation-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".navigation.NavigationControlPanel"
+-      permission="plone.app.controlpanel.Navigation"
+-      />
+-  -->
+-
+-  <!--
+-  <browser:page
+-      name="overview-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".overview.OverviewControlPanel"
+-      permission="plone.app.controlpanel.Overview"
+-      />
+-  -->
+-
+   <browser:page
+       name="ramcache-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+@@ -103,15 +40,6 @@
+       permission="cmf.ManagePortal"
+       />
+ 
+-  <!--
+-  <browser:page
+-      name="search-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".search.SearchControlPanel"
+-      permission="plone.app.controlpanel.Search"
+-      />
+-  -->
+-
+   <browser:page
+       name="security-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+@@ -119,15 +47,6 @@
+       permission="plone.app.controlpanel.Security"
+       />
+ 
+-  <!--
+-  <browser:page
+-      name="site-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".site.SiteControlPanel"
+-      permission="plone.app.controlpanel.Site"
+-      />
+-  -->
+-
+   <browser:page
+       name="skins-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+@@ -135,13 +54,6 @@
+       permission="plone.app.controlpanel.Themes"
+       />
+ 
+- <!--  <browser:page
+-      name="types-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".types.TypesControlPanel"
+-      permission="plone.app.controlpanel.Types"
+-      /> -->
+-
+   <browser:page
+       name="usergroup-userprefs"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
 
 
