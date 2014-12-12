@@ -1,178 +1,246 @@
-Repository: plone.app.users
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2014-11-15T14:41:51+01:00
+Date: 2014-11-15T18:16:13+01:00
 Author: Kees Hink (khink) <keeshink@gmail.com>
-Commit: https://github.com/plone/plone.app.users/commit/2a1f19d699917ad04f448c8daf8bf168c6061e92
+Commit: https://github.com/plone/plone.app.upgrade/commit/c5f8e50937091811e4ad3792569ce3a64de13c1c
 
-Use email_from_address from registry (Plone 5) in tests.
+Add upgrade step for mail control panel. Refs PLIP 10359.
 
 Files changed:
 M CHANGES.rst
-M plone/app/users/tests/base.py
-M setup.py
+M plone/app/upgrade/v50/betas.py
+M plone/app/upgrade/v50/configure.zcml
+M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 495ba04..70bc016 100644
+index 66d69fd..eeb195f 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -1,10 +1,11 @@
- CHANGES
- =======
+@@ -4,6 +4,8 @@ Changelog
+ 1.3.9 (unreleased)
+ ------------------
  
--2.1.1 (unreleased)
--------------------
-+2.2 (unreleased)
-+----------------
++- Add upgrade step for mail control panel. Refs PLIP 10359.
++  [jcerjak, khink]
+ - Add upgrade steps for markup control panel.
+   [thet]
  
--- Nothing changed yet.
-+- Use email_from_address from registry (Plone 5) in tests.
-+  [khink]
- 
- 
- 2.1.0 (2014-10-23)
-diff --git a/plone/app/users/tests/base.py b/plone/app/users/tests/base.py
-index e7b7271..e26b284 100644
---- a/plone/app/users/tests/base.py
-+++ b/plone/app/users/tests/base.py
-@@ -8,6 +8,7 @@
- from AccessControl.SecurityInfo import ClassSecurityInfo
- from Acquisition import aq_base
- from Products.CMFCore.interfaces import ISiteRoot
-+from Products.CMFPlone.interfaces.controlpanel import IMailSchema
- from Products.CMFPlone.tests.utils import MockMailHost
- from Products.MailHost.interfaces import IMailHost
- from Products.PlonePAS.Extensions.Install import activatePluginInterfaces
-@@ -16,6 +17,7 @@
- from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
- from Products.PluggableAuthService.utils import classImplements
- from OFS.Cache import Cacheable
-+from plone.registry.interfaces import IRegistry
- from zope.component import getSiteManager
+diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
+index 0b8ae9f..a6d9225 100644
+--- a/plone/app/upgrade/v50/betas.py
++++ b/plone/app/upgrade/v50/betas.py
+@@ -1,8 +1,43 @@
+ # -*- coding: utf-8 -*-
+ from Products.CMFCore.utils import getToolByName
++from Products.CMFPlone.interfaces import IMailSchema
+ from Products.CMFPlone.interfaces import IMarkupSchema
+ from plone.registry.interfaces import IRegistry
  from zope.component import getUtility
- 
-@@ -82,12 +84,16 @@ def beforeTearDown(self):
-             pas_instance.manage_delObjects('test')
- 
-     def setMailHost(self):
--        self.portal.MailHost.smtp_host = 'localhost'
--        setattr(self.portal, 'email_from_address', 'admin@foo.com')
-+        registry = getUtility(IRegistry)
++from zope.component.hooks import getSite
++
++
++def upgrade_mail_controlpanel_settings(context):
++    registry = getUtility(IRegistry)
++    # XXX: Somehow this code is excecuted for old migration steps as well
++    # ( < Plone 4 ) and breaks because there is no registry. Looking up the
++    # registry interfaces with 'check=False' will not work, because it will
++    # return a settings object and then fail when we try to access the
++    # attributes.
++    try:
 +        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mail_settings.smtp_host = u'localhost'
-+        mail_settings.email_from_address = 'admin@foo.com'
++    except KeyError:
++        return
++    portal = getSite()
++    portal_properties = getToolByName(context, "portal_properties")
++
++    smtp_host = getattr(portal.MailHost, 'smtp_host', '')
++    mail_settings.smtp_host = unicode(smtp_host)
++
++    smtp_port = getattr(portal.MailHost, 'smtp_port', 25)
++    mail_settings.smtp_port = smtp_port
++
++    smtp_user_id = portal.MailHost.get('smtp_user_id')
++    mail_settings.smtp_user_id = smtp_user_id
++
++    smtp_pass = portal.MailHost.get('smtp_pass')
++    mail_settings.smtp_pass = smtp_pass
++
++    email_from_address = portal_properties.get('email_from_address')
++    mail_settings.email_from_address = email_from_address
++
++    email_from_name = portal_properties.get('email_from_name')
++    mail_settings.email_from_name = email_from_name
  
-     def unsetMailHost(self):
--        self.portal.MailHost.smtp_host = ''
--        setattr(self.portal, 'email_from_address', '')
-+        registry = getUtility(IRegistry)
-+        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mail_settings.smtp_host = u''
-+        mail_settings.email_from_address = ''
  
-     def test_nothing(self):
-         """Add a dummy test here, so the base class 'passes'."""
-diff --git a/setup.py b/setup.py
-index 217564a..554bc04 100644
---- a/setup.py
-+++ b/setup.py
-@@ -2,7 +2,7 @@
- from setuptools import find_packages
- from setuptools import setup
+ def upgrade_markup_controlpanel_settings(context):
+diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
+index b53fe05..cb79fd8 100644
+--- a/plone/app/upgrade/v50/configure.zcml
++++ b/plone/app/upgrade/v50/configure.zcml
+@@ -93,6 +93,12 @@
+            handler=".betas.upgrade_markup_controlpanel_settings"
+            />
  
--version = '2.1.1.dev0'
-+version = '2.2.dev0'
++       <gs:upgradeStep
++           title="Upgrade mail control panel settings"
++           description="Take portal properties and put them in IMailSettings registry"
++           handler=".betas.upgrade_mail_controlpanel_settings"
++           />
++
+     </gs:upgradeSteps>
  
- long_description = '{0}\n{1}'.format(open('README.rst').read(),
-                                      open('CHANGES.rst').read())
+ </configure>
+diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+index ae456b6..94c1214 100644
+--- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+@@ -4,6 +4,8 @@
+            prefix="plone" />
+   <records interface="Products.CMFPlone.interfaces.IMaintenanceSchema"
+            prefix="plone" />
++  <records interface="Products.CMFPlone.interfaces.IMailSchema"
++           prefix="plone" />
+   <records interface="Products.CMFPlone.interfaces.INavigationSchema"
+            prefix="plone" />
+   <records interface="Products.CMFPlone.interfaces.ISearchSchema"
+@@ -813,12 +815,12 @@
+ 
+   <records prefix="plone.resources/rjs"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">++plone++static/components/r.js/dist/r.js</value>           
++      <value key="js">++plone++static/components/r.js/dist/r.js</value>
+   </records>
+ 
+   <!-- legacy js -->
+ 
+-  
++
+   <records prefix="plone.resources/plone_javascript_variables"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">plone_javascript_variables.js</value>
 
 
-Repository: plone.app.users
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2014-12-12T13:55:03+01:00
+Date: 2014-12-12T16:53:00+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.users/commit/3aa016c2d10713f78e5c27975fa50ac2f445ef84
+Commit: https://github.com/plone/plone.app.upgrade/commit/9c799e2d5561f2b5116622566dcd190331d6f937
 
-Merge pull request #27 from plone/plip10359-mail-controlpanel
+Merge pull request #20 from plone/plip10359-mail-controlpanel
 
-Use email_from_address from registry (Plone 5) in tests.
+Add upgrade step for mail control panel. Refs PLIP 10359.
 
 Files changed:
 M CHANGES.rst
-M plone/app/users/tests/base.py
-M setup.py
+M plone/app/upgrade/v50/betas.py
+M plone/app/upgrade/v50/configure.zcml
+M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 495ba04..70bc016 100644
+index 66d69fd..eeb195f 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -1,10 +1,11 @@
- CHANGES
- =======
+@@ -4,6 +4,8 @@ Changelog
+ 1.3.9 (unreleased)
+ ------------------
  
--2.1.1 (unreleased)
--------------------
-+2.2 (unreleased)
-+----------------
++- Add upgrade step for mail control panel. Refs PLIP 10359.
++  [jcerjak, khink]
+ - Add upgrade steps for markup control panel.
+   [thet]
  
--- Nothing changed yet.
-+- Use email_from_address from registry (Plone 5) in tests.
-+  [khink]
- 
- 
- 2.1.0 (2014-10-23)
-diff --git a/plone/app/users/tests/base.py b/plone/app/users/tests/base.py
-index e7b7271..e26b284 100644
---- a/plone/app/users/tests/base.py
-+++ b/plone/app/users/tests/base.py
-@@ -8,6 +8,7 @@
- from AccessControl.SecurityInfo import ClassSecurityInfo
- from Acquisition import aq_base
- from Products.CMFCore.interfaces import ISiteRoot
-+from Products.CMFPlone.interfaces.controlpanel import IMailSchema
- from Products.CMFPlone.tests.utils import MockMailHost
- from Products.MailHost.interfaces import IMailHost
- from Products.PlonePAS.Extensions.Install import activatePluginInterfaces
-@@ -16,6 +17,7 @@
- from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
- from Products.PluggableAuthService.utils import classImplements
- from OFS.Cache import Cacheable
-+from plone.registry.interfaces import IRegistry
- from zope.component import getSiteManager
+diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
+index 0b8ae9f..a6d9225 100644
+--- a/plone/app/upgrade/v50/betas.py
++++ b/plone/app/upgrade/v50/betas.py
+@@ -1,8 +1,43 @@
+ # -*- coding: utf-8 -*-
+ from Products.CMFCore.utils import getToolByName
++from Products.CMFPlone.interfaces import IMailSchema
+ from Products.CMFPlone.interfaces import IMarkupSchema
+ from plone.registry.interfaces import IRegistry
  from zope.component import getUtility
- 
-@@ -82,12 +84,16 @@ def beforeTearDown(self):
-             pas_instance.manage_delObjects('test')
- 
-     def setMailHost(self):
--        self.portal.MailHost.smtp_host = 'localhost'
--        setattr(self.portal, 'email_from_address', 'admin@foo.com')
-+        registry = getUtility(IRegistry)
++from zope.component.hooks import getSite
++
++
++def upgrade_mail_controlpanel_settings(context):
++    registry = getUtility(IRegistry)
++    # XXX: Somehow this code is excecuted for old migration steps as well
++    # ( < Plone 4 ) and breaks because there is no registry. Looking up the
++    # registry interfaces with 'check=False' will not work, because it will
++    # return a settings object and then fail when we try to access the
++    # attributes.
++    try:
 +        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mail_settings.smtp_host = u'localhost'
-+        mail_settings.email_from_address = 'admin@foo.com'
++    except KeyError:
++        return
++    portal = getSite()
++    portal_properties = getToolByName(context, "portal_properties")
++
++    smtp_host = getattr(portal.MailHost, 'smtp_host', '')
++    mail_settings.smtp_host = unicode(smtp_host)
++
++    smtp_port = getattr(portal.MailHost, 'smtp_port', 25)
++    mail_settings.smtp_port = smtp_port
++
++    smtp_user_id = portal.MailHost.get('smtp_user_id')
++    mail_settings.smtp_user_id = smtp_user_id
++
++    smtp_pass = portal.MailHost.get('smtp_pass')
++    mail_settings.smtp_pass = smtp_pass
++
++    email_from_address = portal_properties.get('email_from_address')
++    mail_settings.email_from_address = email_from_address
++
++    email_from_name = portal_properties.get('email_from_name')
++    mail_settings.email_from_name = email_from_name
  
-     def unsetMailHost(self):
--        self.portal.MailHost.smtp_host = ''
--        setattr(self.portal, 'email_from_address', '')
-+        registry = getUtility(IRegistry)
-+        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mail_settings.smtp_host = u''
-+        mail_settings.email_from_address = ''
  
-     def test_nothing(self):
-         """Add a dummy test here, so the base class 'passes'."""
-diff --git a/setup.py b/setup.py
-index 217564a..554bc04 100644
---- a/setup.py
-+++ b/setup.py
-@@ -2,7 +2,7 @@
- from setuptools import find_packages
- from setuptools import setup
+ def upgrade_markup_controlpanel_settings(context):
+diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
+index b53fe05..cb79fd8 100644
+--- a/plone/app/upgrade/v50/configure.zcml
++++ b/plone/app/upgrade/v50/configure.zcml
+@@ -93,6 +93,12 @@
+            handler=".betas.upgrade_markup_controlpanel_settings"
+            />
  
--version = '2.1.1.dev0'
-+version = '2.2.dev0'
++       <gs:upgradeStep
++           title="Upgrade mail control panel settings"
++           description="Take portal properties and put them in IMailSettings registry"
++           handler=".betas.upgrade_mail_controlpanel_settings"
++           />
++
+     </gs:upgradeSteps>
  
- long_description = '{0}\n{1}'.format(open('README.rst').read(),
-                                      open('CHANGES.rst').read())
+ </configure>
+diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+index ae456b6..94c1214 100644
+--- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+@@ -4,6 +4,8 @@
+            prefix="plone" />
+   <records interface="Products.CMFPlone.interfaces.IMaintenanceSchema"
+            prefix="plone" />
++  <records interface="Products.CMFPlone.interfaces.IMailSchema"
++           prefix="plone" />
+   <records interface="Products.CMFPlone.interfaces.INavigationSchema"
+            prefix="plone" />
+   <records interface="Products.CMFPlone.interfaces.ISearchSchema"
+@@ -813,12 +815,12 @@
+ 
+   <records prefix="plone.resources/rjs"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">++plone++static/components/r.js/dist/r.js</value>           
++      <value key="js">++plone++static/components/r.js/dist/r.js</value>
+   </records>
+ 
+   <!-- legacy js -->
+ 
+-  
++
+   <records prefix="plone.resources/plone_javascript_variables"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">plone_javascript_variables.js</value>
 
 
