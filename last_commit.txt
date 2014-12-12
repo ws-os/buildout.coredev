@@ -1,306 +1,301 @@
 Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-12-12T13:35:19+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/9712ece05709f2efa09a15f359c2877c1c2cf8dc
+Date: 2014-11-02T13:34:58+01:00
+Author: MrTango (MrTango) <md@derico.de>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/c5c851a0adb964d35292e8ebfad14f515b56a947
 
-Revert "Plip10359: Move filter controlpanel to z3cform"
+deactivate old mail controlpanel registrations
 
 Files changed:
 M plone/app/controlpanel/configure.zcml
 
 diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
-index 053ddb7..b74abd5 100644
+index 33655e4..b6ec667 100644
 --- a/plone/app/controlpanel/configure.zcml
 +++ b/plone/app/controlpanel/configure.zcml
-@@ -7,18 +7,47 @@
+@@ -16,7 +16,7 @@
  
-   <include file="permissions.zcml" />
+   <!--<adapter factory=".navigation.NavigationControlPanelAdapter" />-->
  
-+  <!--<adapter for="*"
-+           factory=".editing.EditingControlPanelAdapter" />-->
-+
-+  <adapter factory=".filter.FilterControlPanelAdapter" />
-+
-   <adapter factory=".language.LanguageControlPanelAdapter" />
+-  <adapter factory=".mail.MailControlPanelAdapter" />
++  <!--<adapter factory=".mail.MailControlPanelAdapter" />-->
  
-+  <!--<adapter factory=".navigation.NavigationControlPanelAdapter" />-->
-+
-   <adapter factory=".mail.MailControlPanelAdapter" />
+   <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
  
-+  <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
-+
-+  <!-- adapter factory=".markup.MarkupControlPanelAdapter" /-->
-+
-   <adapter factory=".ram.RAMCacheControlPanelAdapter" />
- 
-+  <!--<adapter factory=".search.SearchControlPanelAdapter" />-->
-+
-   <adapter factory=".security.SecurityControlPanelAdapter" />
- 
-+  <!--<adapter factory=".site.SiteControlPanelAdapter" />-->
-+
-   <adapter factory=".skins.SkinsControlPanelAdapter" />
- 
-   <adapter factory=".usergroups.UserGroupsSettingsControlPanelAdapter" />
- 
-+  <!--<browser:page
-+      name="editing-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".editing.EditingControlPanel"
-+      permission="plone.app.controlpanel.Editing"
-+      />-->
-+
-+  <browser:page
-+      name="filter-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".filter.FilterControlPanel"
-+      permission="plone.app.controlpanel.Filtering"
-+      />
-+
+@@ -54,13 +54,14 @@
+       class=".language.LanguageControlPanel"
+       permission="plone.app.controlpanel.Language"
+       />
+-
++  <!--
    <browser:page
-       name="language-controlpanel"
+       name="mail-controlpanel"
        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-@@ -33,6 +62,40 @@
+       class=".mail.MailControlPanel"
        permission="plone.app.controlpanel.Mail"
        />
++  -->
  
-+  <!-- browser:page
-+      name="markup-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".markup.MarkupControlPanel"
-+      permission="plone.app.controlpanel.Markup"
-+      /-->
-+
-+  <!--
-+  <browser:page
-+      name="maintenance-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".maintenance.MaintenanceControlPanel"
-+      permission="cmf.ManagePortal"
-+      />
-+  -->
-+
-+  <!--
-+  <browser:page
-+      name="navigation-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".navigation.NavigationControlPanel"
-+      permission="plone.app.controlpanel.Navigation"
-+      />
-+  -->
-+
-+  <!--
-+  <browser:page
-+      name="overview-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".overview.OverviewControlPanel"
-+      permission="plone.app.controlpanel.Overview"
-+      />
-+  -->
-+
    <browser:page
-       name="ramcache-controlpanel"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-@@ -40,6 +103,15 @@
-       permission="cmf.ManagePortal"
-       />
- 
-+  <!--
-+  <browser:page
-+      name="search-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".search.SearchControlPanel"
-+      permission="plone.app.controlpanel.Search"
-+      />
-+  -->
-+
-   <browser:page
-       name="security-controlpanel"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-@@ -47,6 +119,15 @@
-       permission="plone.app.controlpanel.Security"
-       />
- 
-+  <!--
-+  <browser:page
-+      name="site-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".site.SiteControlPanel"
-+      permission="plone.app.controlpanel.Site"
-+      />
-+  -->
-+
-   <browser:page
-       name="skins-controlpanel"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-@@ -54,6 +135,13 @@
-       permission="plone.app.controlpanel.Themes"
-       />
- 
-+ <!--  <browser:page
-+      name="types-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".types.TypesControlPanel"
-+      permission="plone.app.controlpanel.Types"
-+      /> -->
-+
-   <browser:page
-       name="usergroup-userprefs"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+       name="markup-controlpanel"
 
 
 Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-12-12T13:35:30+01:00
+Date: 2014-11-15T13:14:54+01:00
+Author: Kees Hink (khink) <keeshink@gmail.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/26070ac20043a04488924b34e6d8b1f8215b1c4b
+
+Merge branch 'master' into plip10359-mail-controlpanel
+
+Files changed:
+M CHANGES.rst
+M plone/app/controlpanel/configure.zcml
+M plone/app/controlpanel/tests/test_doctests.py
+M setup.py
+D plone/app/controlpanel/tests/test_overview.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 960f038..2d36f21 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -1,10 +1,17 @@
+ Changelog
+ =========
+ 
+-2.4.7 (unreleased)
++3.0.0 (unreleased)
+ ------------------
+ 
+-- Nothing changed yet.
++- Remove the markup control panel, as it was moved to Products.CMFPlone.
++  [thet]
++
++- Remove the control panel overview (moved to Products.CMFPlone)
++  This breaks Plone 4 compatibility.
++  PLIP 10359 (https://dev.plone.org/ticket/10359)
++  https://github.com/plone/Products.CMFPlone/issues/290
++  [khink]
+ 
+ 
+ 2.4.6 (2014-11-01)
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index b6ec667..6df3b46 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -20,7 +20,7 @@
+ 
+   <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
+ 
+-  <adapter factory=".markup.MarkupControlPanelAdapter" />
++  <!-- adapter factory=".markup.MarkupControlPanelAdapter" /-->
+ 
+   <adapter factory=".ram.RAMCacheControlPanelAdapter" />
+ 
+@@ -63,12 +63,12 @@
+       />
+   -->
+ 
+-  <browser:page
++  <!-- browser:page
+       name="markup-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+       class=".markup.MarkupControlPanel"
+       permission="plone.app.controlpanel.Markup"
+-      />
++      /-->
+ 
+   <!--
+   <browser:page
+@@ -88,12 +88,14 @@
+       />
+   -->
+ 
++  <!--
+   <browser:page
+       name="overview-controlpanel"
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+       class=".overview.OverviewControlPanel"
+       permission="plone.app.controlpanel.Overview"
+       />
++  -->
+ 
+   <browser:page
+       name="ramcache-controlpanel"
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 2fd56bf..1eabf16 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -23,7 +23,7 @@ def test_suite():
+ #             'search.txt',
+ #             'site.txt',
+ #             'skins.txt',
+-             'markup.txt',
++#             'markup.txt',
+ #             'navigation.txt',
+              'types.txt',
+              'syndication.txt'
+diff --git a/plone/app/controlpanel/tests/test_overview.py b/plone/app/controlpanel/tests/test_overview.py
+deleted file mode 100644
+index ad5eade..0000000
+--- a/plone/app/controlpanel/tests/test_overview.py
++++ /dev/null
+@@ -1,60 +0,0 @@
+-from plone.app.testing import PLONE_INTEGRATION_TESTING
+-from plone.app.testing import TEST_USER_ID
+-from plone.app.testing import setRoles
+-
+-import mock
+-import unittest
+-
+-
+-def mock_getUtility1(iface):
+-    return {}
+-
+-
+-def mock_getUtility2(iface):
+-    return {'plone.portal_timezone': None}
+-
+-
+-def mock_getUtility3(iface):
+-    return {'plone.portal_timezone': 'Europe/Amsterdam'}
+-
+-
+-def mock_getUtility4(iface):
+-    return {'plone.app.event.portal_timezone': 'Europe/Amsterdam'}
+-
+-
+-class TestControlPanel(unittest.TestCase):
+-
+-    layer = PLONE_INTEGRATION_TESTING
+-
+-    def setUp(self):
+-        self.portal = self.layer['portal']
+-        self.request = self.layer['request']
+-        setRoles(self.portal, TEST_USER_ID, ['Manager'])
+-
+-    @mock.patch('plone.app.controlpanel.overview.getUtility',
+-                new=mock_getUtility1)
+-    def test_timezone_warning__noreg(self):
+-        # If no registry key is available, return True
+-        view = self.portal.restrictedTraverse('@@overview-controlpanel')
+-        self.assertTrue(view.timezone_warning())
+-
+-    @mock.patch('plone.app.controlpanel.overview.getUtility',
+-                new=mock_getUtility2)
+-    def test_timezone_warning__emptyreg(self):
+-        # If registry key value is empty, return True
+-        view = self.portal.restrictedTraverse('@@overview-controlpanel')
+-        self.assertTrue(view.timezone_warning())
+-
+-    @mock.patch('plone.app.controlpanel.overview.getUtility',
+-                new=mock_getUtility3)
+-    def test_timezone_warning__set(self):
+-        # If new plone.portal_timezone is set, return False
+-        view = self.portal.restrictedTraverse('@@overview-controlpanel')
+-        self.assertFalse(view.timezone_warning())
+-
+-    @mock.patch('plone.app.controlpanel.overview.getUtility',
+-                new=mock_getUtility4)
+-    def test_timezone_warning__paeset(self):
+-        # If old plone.app.event.portal_timezone is set, return False
+-        view = self.portal.restrictedTraverse('@@overview-controlpanel')
+-        self.assertFalse(view.timezone_warning())
+diff --git a/setup.py b/setup.py
+index bc1da0b..8726298 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,6 +1,6 @@
+ from setuptools import setup, find_packages
+ 
+-version = '2.4.7.dev0'
++version = '3.0.0.dev0'
+ 
+ setup(name='plone.app.controlpanel',
+       version=version,
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2014-12-12T13:23:46+01:00
+Author: Timo Stollenwerk () <contact@timostollenwerk.net>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/1665269450d476d7a0ea6bf2ba50b1932e810089
+
+Comment out mail doctest. Tests and code have been moved to P.CMFPlone.
+
+Files changed:
+M plone/app/controlpanel/tests/test_doctests.py
+
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 1eabf16..ea40fc0 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -17,7 +17,7 @@ def test_suite():
+     tests = [
+ #            'editing.txt',
+              'filter.txt',
+-             'mail.txt',
++#             'mail.txt',
+ #             'maintenance.txt',
+              'security_enable_user_folder.txt',
+ #             'search.txt',
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2014-12-12T13:35:58+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/a8a2ea413eb614abc57c132c847144b365e4f42c
+Commit: https://github.com/plone/plone.app.controlpanel/commit/4993ef9927e5aa90b18a8a6b7dbb31f8b0ebe6b4
 
-Merge pull request #34 from plone/revert-33-plip10359-filter-controlpanel
+Merge pull request #35 from plone/plip10359-mail-controlpanel
 
-Revert "Plip10359: Move filter controlpanel to z3cform"
+Plip10359 mail controlpanel
 
 Files changed:
 M plone/app/controlpanel/configure.zcml
+M plone/app/controlpanel/tests/test_doctests.py
 
 diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
-index 053ddb7..b74abd5 100644
+index b74abd5..6df3b46 100644
 --- a/plone/app/controlpanel/configure.zcml
 +++ b/plone/app/controlpanel/configure.zcml
-@@ -7,18 +7,47 @@
+@@ -16,7 +16,7 @@
  
-   <include file="permissions.zcml" />
+   <!--<adapter factory=".navigation.NavigationControlPanelAdapter" />-->
  
-+  <!--<adapter for="*"
-+           factory=".editing.EditingControlPanelAdapter" />-->
-+
-+  <adapter factory=".filter.FilterControlPanelAdapter" />
-+
-   <adapter factory=".language.LanguageControlPanelAdapter" />
+-  <adapter factory=".mail.MailControlPanelAdapter" />
++  <!--<adapter factory=".mail.MailControlPanelAdapter" />-->
  
-+  <!--<adapter factory=".navigation.NavigationControlPanelAdapter" />-->
-+
-   <adapter factory=".mail.MailControlPanelAdapter" />
+   <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
  
-+  <!--<adapter factory=".maintenance.MaintenanceControlPanelAdapter" />-->
-+
-+  <!-- adapter factory=".markup.MarkupControlPanelAdapter" /-->
-+
-   <adapter factory=".ram.RAMCacheControlPanelAdapter" />
- 
-+  <!--<adapter factory=".search.SearchControlPanelAdapter" />-->
-+
-   <adapter factory=".security.SecurityControlPanelAdapter" />
- 
-+  <!--<adapter factory=".site.SiteControlPanelAdapter" />-->
-+
-   <adapter factory=".skins.SkinsControlPanelAdapter" />
- 
-   <adapter factory=".usergroups.UserGroupsSettingsControlPanelAdapter" />
- 
-+  <!--<browser:page
-+      name="editing-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".editing.EditingControlPanel"
-+      permission="plone.app.controlpanel.Editing"
-+      />-->
-+
-+  <browser:page
-+      name="filter-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".filter.FilterControlPanel"
-+      permission="plone.app.controlpanel.Filtering"
-+      />
-+
+@@ -54,13 +54,14 @@
+       class=".language.LanguageControlPanel"
+       permission="plone.app.controlpanel.Language"
+       />
+-
++  <!--
    <browser:page
-       name="language-controlpanel"
+       name="mail-controlpanel"
        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-@@ -33,6 +62,40 @@
+       class=".mail.MailControlPanel"
        permission="plone.app.controlpanel.Mail"
        />
++  -->
  
-+  <!-- browser:page
-+      name="markup-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".markup.MarkupControlPanel"
-+      permission="plone.app.controlpanel.Markup"
-+      /-->
-+
-+  <!--
-+  <browser:page
-+      name="maintenance-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".maintenance.MaintenanceControlPanel"
-+      permission="cmf.ManagePortal"
-+      />
-+  -->
-+
-+  <!--
-+  <browser:page
-+      name="navigation-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".navigation.NavigationControlPanel"
-+      permission="plone.app.controlpanel.Navigation"
-+      />
-+  -->
-+
-+  <!--
-+  <browser:page
-+      name="overview-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".overview.OverviewControlPanel"
-+      permission="plone.app.controlpanel.Overview"
-+      />
-+  -->
-+
-   <browser:page
-       name="ramcache-controlpanel"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-@@ -40,6 +103,15 @@
-       permission="cmf.ManagePortal"
-       />
- 
-+  <!--
-+  <browser:page
-+      name="search-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".search.SearchControlPanel"
-+      permission="plone.app.controlpanel.Search"
-+      />
-+  -->
-+
-   <browser:page
-       name="security-controlpanel"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-@@ -47,6 +119,15 @@
-       permission="plone.app.controlpanel.Security"
-       />
- 
-+  <!--
-+  <browser:page
-+      name="site-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".site.SiteControlPanel"
-+      permission="plone.app.controlpanel.Site"
-+      />
-+  -->
-+
-   <browser:page
-       name="skins-controlpanel"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-@@ -54,6 +135,13 @@
-       permission="plone.app.controlpanel.Themes"
-       />
- 
-+ <!--  <browser:page
-+      name="types-controlpanel"
-+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+      class=".types.TypesControlPanel"
-+      permission="plone.app.controlpanel.Types"
-+      /> -->
-+
-   <browser:page
-       name="usergroup-userprefs"
-       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+   <!-- browser:page
+       name="markup-controlpanel"
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 1eabf16..ea40fc0 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -17,7 +17,7 @@ def test_suite():
+     tests = [
+ #            'editing.txt',
+              'filter.txt',
+-             'mail.txt',
++#             'mail.txt',
+ #             'maintenance.txt',
+              'security_enable_user_folder.txt',
+ #             'search.txt',
 
 
