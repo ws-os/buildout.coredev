@@ -1,25 +1,47 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-12-12T17:12:36+01:00
-Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/Products.CMFPlone/commit/6dede3b5d46e60bd134a5f3f298fd20e0edfc932
+Date: 2014-12-12T18:38:47+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/Products.CMFPlone/commit/22d1c539e35b96a749227824f50c2718e75ed12f
 
-Do not enable the mail_me checkbox because we do not want to test sending emails here. We just want to test the overlays.
+Remove ValidMailhostLayer to see if that fixes the deadlock on Jenkins.
 
 Files changed:
-M Products/CMFPlone/tests/robot/test_overlays.robot
+M Products/CMFPlone/testing.py
 
-diff --git a/Products/CMFPlone/tests/robot/test_overlays.robot b/Products/CMFPlone/tests/robot/test_overlays.robot
-index 2800cde..595002c 100644
---- a/Products/CMFPlone/tests/robot/test_overlays.robot
-+++ b/Products/CMFPlone/tests/robot/test_overlays.robot
-@@ -234,6 +234,7 @@ I enter valid user data
-     Input text for sure  form.widgets.email          my@email.eu
-     Input text for sure  form.widgets.password       123123
-     Input text for sure  form.widgets.password_ctl   123123
-+    Unselect Checkbox  form.widgets.mail_me:list
+diff --git a/Products/CMFPlone/testing.py b/Products/CMFPlone/testing.py
+index 6e7036f..75ca890 100644
+--- a/Products/CMFPlone/testing.py
++++ b/Products/CMFPlone/testing.py
+@@ -52,21 +52,8 @@ def tearDownPloneSite(self, portal):
+         portal.manage_delObjects(['test-folder'])
  
- I enter valid register user data
-     Wait until page contains element  name=form.widgets.username
+ 
+-# XXX: This should probably go into plone.app.robotframework (@tisto).
+-class ValidMailhostLayer(PloneSandboxLayer):
+-
+-    defaultBases = (PLONE_FIXTURE,)
+-
+-    def setUpPloneSite(self, portal):
+-        registry = getUtility(IRegistry)
+-        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
+-        mail_settings.smtp_host = u'localhost'
+-        mail_settings.email_from_address = 'john@doe.com'
+-
+-
+ PRODUCTS_CMFPLONE_FIXTURE = ProductsCMFPloneLayer()
+ 
+-PRODUCTS_CMFPLONE_VALID_MAILHOST_FIXTURE = ValidMailhostLayer()
+ PRODUCTS_CMFPLONE_INTEGRATION_TESTING = IntegrationTesting(
+     bases=(PRODUCTS_CMFPLONE_FIXTURE,),
+     name="CMFPloneLayer:Integration"
+@@ -87,7 +74,6 @@ def setUpPloneSite(self, portal):
+ PRODUCTS_CMFPLONE_ROBOT_TESTING = FunctionalTesting(
+     bases=(
+         PRODUCTS_CMFPLONE_FIXTURE,
+-        PRODUCTS_CMFPLONE_VALID_MAILHOST_FIXTURE,
+         PRODUCTS_CMFPLONE_ROBOT_REMOTE_LIBRARY_FIXTURE,
+         z2.ZSERVER_FIXTURE
+     ),
 
 
