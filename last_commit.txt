@@ -1,10 +1,61 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-12-12T18:38:47+01:00
+Date: 2014-12-12T21:38:51+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/22d1c539e35b96a749227824f50c2718e75ed12f
+Commit: https://github.com/plone/Products.CMFPlone/commit/7ecdcd2893644d4936c37fa6cf6d718dbe4d5dc3
 
-Remove ValidMailhostLayer to see if that fixes the deadlock on Jenkins.
+Revert "Remove ValidMailhostLayer to see if that fixes the deadlock on Jenkins."
+
+This reverts commit 22d1c539e35b96a749227824f50c2718e75ed12f.
+
+Files changed:
+M Products/CMFPlone/testing.py
+
+diff --git a/Products/CMFPlone/testing.py b/Products/CMFPlone/testing.py
+index 75ca890..6e7036f 100644
+--- a/Products/CMFPlone/testing.py
++++ b/Products/CMFPlone/testing.py
+@@ -52,8 +52,21 @@ def tearDownPloneSite(self, portal):
+         portal.manage_delObjects(['test-folder'])
+ 
+ 
++# XXX: This should probably go into plone.app.robotframework (@tisto).
++class ValidMailhostLayer(PloneSandboxLayer):
++
++    defaultBases = (PLONE_FIXTURE,)
++
++    def setUpPloneSite(self, portal):
++        registry = getUtility(IRegistry)
++        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++        mail_settings.smtp_host = u'localhost'
++        mail_settings.email_from_address = 'john@doe.com'
++
++
+ PRODUCTS_CMFPLONE_FIXTURE = ProductsCMFPloneLayer()
+ 
++PRODUCTS_CMFPLONE_VALID_MAILHOST_FIXTURE = ValidMailhostLayer()
+ PRODUCTS_CMFPLONE_INTEGRATION_TESTING = IntegrationTesting(
+     bases=(PRODUCTS_CMFPLONE_FIXTURE,),
+     name="CMFPloneLayer:Integration"
+@@ -74,6 +87,7 @@ def tearDownPloneSite(self, portal):
+ PRODUCTS_CMFPLONE_ROBOT_TESTING = FunctionalTesting(
+     bases=(
+         PRODUCTS_CMFPLONE_FIXTURE,
++        PRODUCTS_CMFPLONE_VALID_MAILHOST_FIXTURE,
+         PRODUCTS_CMFPLONE_ROBOT_REMOTE_LIBRARY_FIXTURE,
+         z2.ZSERVER_FIXTURE
+     ),
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2014-12-13T08:14:16+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/Products.CMFPlone/commit/db8af767da1e4d5301c28dabbd6547ba06b98e56
+
+Revert "Revert "Remove ValidMailhostLayer to see if that fixes the deadlock on Jenkins.""
+
+This reverts commit 7ecdcd2893644d4936c37fa6cf6d718dbe4d5dc3.
 
 Files changed:
 M Products/CMFPlone/testing.py
@@ -43,5 +94,66 @@ index 6e7036f..75ca890 100644
          PRODUCTS_CMFPLONE_ROBOT_REMOTE_LIBRARY_FIXTURE,
          z2.ZSERVER_FIXTURE
      ),
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2014-12-13T08:23:25+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/Products.CMFPlone/commit/11f9ee5ef056709ecf85ecb47d37eab548d9eef6
+
+Fix the the_mail_setup_configured robot keyword.
+
+Files changed:
+M Products/CMFPlone/tests/robot/robot_setup.py
+M Products/CMFPlone/tests/robot/test_overlays.robot
+
+diff --git a/Products/CMFPlone/tests/robot/robot_setup.py b/Products/CMFPlone/tests/robot/robot_setup.py
+index cfc47f6..dc7d554 100644
+--- a/Products/CMFPlone/tests/robot/robot_setup.py
++++ b/Products/CMFPlone/tests/robot/robot_setup.py
+@@ -2,7 +2,9 @@
+ from plone.app.robotframework.remote import RemoteLibrary
+ 
+ from zope.component.hooks import getSite
+-from Products.CMFCore.utils import getToolByName
++from zope.component import queryUtility
++from plone.registry.interfaces import IRegistry
++from Products.CMFPlone.interfaces import IMailSchema
+ 
+ 
+ class CMFPloneRemoteKeywords(RemoteLibrary):
+@@ -10,11 +12,14 @@ class CMFPloneRemoteKeywords(RemoteLibrary):
+     """
+ 
+     def the_mail_setup_configured(self):
+-        portal = getSite()
+-        mailhost = getToolByName(portal, 'MailHost')
+-        mailhost.smtp_host = 'localhost'
+-        portal.email_from_address = 'dummyme@dummy.com'
+-        portal.email_from_name = 'me'
++        registry = queryUtility(IRegistry)
++        if registry is None:
++            return
++        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++        if mail_settings is None:
++            return
++        mail_settings.smtp_host = u'localhost'
++        mail_settings.email_from_address = 'john@doe.com'
+ 
+     def the_self_registration_enabled(self):
+         portal = getSite()
+diff --git a/Products/CMFPlone/tests/robot/test_overlays.robot b/Products/CMFPlone/tests/robot/test_overlays.robot
+index 595002c..2800cde 100644
+--- a/Products/CMFPlone/tests/robot/test_overlays.robot
++++ b/Products/CMFPlone/tests/robot/test_overlays.robot
+@@ -234,7 +234,6 @@ I enter valid user data
+     Input text for sure  form.widgets.email          my@email.eu
+     Input text for sure  form.widgets.password       123123
+     Input text for sure  form.widgets.password_ctl   123123
+-    Unselect Checkbox  form.widgets.mail_me:list
+ 
+ I enter valid register user data
+     Wait until page contains element  name=form.widgets.username
 
 
