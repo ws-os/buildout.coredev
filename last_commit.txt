@@ -1,183 +1,203 @@
-Repository: plone.app.robotframework
+Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2014-12-13T09:44:55+02:00
-Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
-Commit: https://github.com/plone/plone.app.robotframework/commit/deffee8e02ea98a64a35444e7167da02765d88d7
+Date: 2014-12-13T16:20:08+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.discussion/commit/785bc7b890d077889cf2afe262fbe325bdf29122
 
-Configure Travis-CI to cache buildout eggs
+Read mail settings from new (Plone 5) registry.
 
 Files changed:
-M .travis.yml
-D travis.cfg
+M CHANGES.rst
+M plone/app/discussion/browser/controlpanel.py
+M plone/app/discussion/comment.py
+M plone/app/discussion/tests/test_notifications.py
 
-diff --git a/.travis.yml b/.travis.yml
-index 357cce1..a1609fa 100644
---- a/.travis.yml
-+++ b/.travis.yml
-@@ -1,14 +1,16 @@
- language: python
--python: "2.7"
-+python: 2.7
-+sudo: false
- addons:
-   sauce_connect:
-     username: $SAUCE_USERNAME
-     access_key: $SAUCE_ACCESS_KEY
-+cache:
-+  directory:
-+  - eggs
- install:
--- virtualenv buildout --no-setuptools
--- mkdir -p buildout-cache/downloads
--- buildout/bin/python bootstrap.py -c travis.cfg
--- bin/buildout -N -t 3 -c travis.cfg ${VERSIONS}
-+- python bootstrap.py
-+- bin/buildout -N -t 3 ${VERSIONS}
- before_script:
- - gem install --version 0.8.9 faraday
- - gem install travis-artifacts
-diff --git a/travis.cfg b/travis.cfg
-deleted file mode 100644
-index e3738a4..0000000
---- a/travis.cfg
-+++ /dev/null
-@@ -1,24 +0,0 @@
--[buildout]
--extends =
--    https://raw.github.com/collective/buildout.plonetest/master/travis-4.x.cfg
--    buildout.cfg
--parts =
--    download
--    install
--    robot
--    test
--    docs
+diff --git a/CHANGES.rst b/CHANGES.rst
+index a08c1a0..bc2ece8 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -7,6 +7,9 @@ Changelog
+ - Updated portuguese pt-br translation.
+   [jtmolon]
+ 
++- Read mail settings from new (Plone 5) registry.
++  [timo]
++
+ 
+ 2.3.3 (2014-10-23)
+ ------------------
+diff --git a/plone/app/discussion/browser/controlpanel.py b/plone/app/discussion/browser/controlpanel.py
+index 822ca2b..d90d8f1 100644
+--- a/plone/app/discussion/browser/controlpanel.py
++++ b/plone/app/discussion/browser/controlpanel.py
+@@ -1,10 +1,8 @@
+ # -*- coding: utf-8 -*-
 -
--package-name = plone.app.robotframework
--package-extras = [test,speak]
+-from Acquisition import aq_base, aq_inner
 -
--test-eggs = Pillow
++from zope.component import getUtility
+ from Products.CMFCore.utils import getToolByName
 -
--[versions]
--Plone = 4.3
+ from Products.CMFCore.interfaces._content import IDiscussionResponse
++from Products.CMFPlone.interfaces.controlpanel import IMailSchema
+ 
+ from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+ 
+@@ -152,12 +150,11 @@ def settings(self):
+     def mailhost_warning(self):
+         """Returns true if mailhost is not configured properly.
+         """
+-        # Copied from plone.app.controlpanel/plone/app/controlpanel/overview.py
+-        mailhost = getToolByName(aq_inner(self.context), 'MailHost', None)
+-        if mailhost is None:
+-            return True
+-        mailhost = getattr(aq_base(mailhost), 'smtp_host', None)
+-        email = getattr(aq_inner(self.context), 'email_from_address', None)
++        # Copied from Products.CMFPlone/controlpanel/browser/overview.py
++        registry = getUtility(IRegistry)
++        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++        mailhost = mail_settings.smtp_host
++        email = mail_settings.email_from_address
+         if mailhost and email:
+             return False
+         return True
+@@ -177,7 +174,7 @@ def custom_comment_workflow_warning(self):
+     def unmigrated_comments_warning(self):
+         """Returns true if site contains unmigrated comments.
+         """
+-        catalog = getToolByName(aq_inner(self.context), 'portal_catalog', None)
++        catalog = getToolByName(self.context, 'portal_catalog', None)
+         count_comments_old = catalog.searchResults(
+             object_provides=IDiscussionResponse.__identifier__)
+         if count_comments_old:
+diff --git a/plone/app/discussion/comment.py b/plone/app/discussion/comment.py
+index 193f30e..fb9c30e 100644
+--- a/plone/app/discussion/comment.py
++++ b/plone/app/discussion/comment.py
+@@ -9,6 +9,7 @@
+ from smtplib import SMTPException
+ 
+ from zope.annotation.interfaces import IAnnotatable
++from zope.component import getUtility
+ 
+ from zope.event import notify
+ from zope.component.factory import Factory
+@@ -31,8 +32,6 @@
+ 
+ from OFS.Traversable import Traversable
+ 
+-from plone.registry.interfaces import IRegistry
 -
--[robot]
--recipe = zc.recipe.egg
--eggs =
--    Pillow
--    plone.app.robotframework [test,ride,speak,reload]
-
-
-Repository: plone.app.robotframework
-Branch: refs/heads/master
-Date: 2014-12-13T09:56:05+02:00
-Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
-Commit: https://github.com/plone/plone.app.robotframework/commit/f10bbed9df2853930b461e8fccf4a156cfc50516
-
-Restore travis.cfg to optimize Travis-build
-
-Files changed:
-A travis.cfg
-M .travis.yml
-
-diff --git a/.travis.yml b/.travis.yml
-index a1609fa..b371ae8 100644
---- a/.travis.yml
-+++ b/.travis.yml
-@@ -6,11 +6,11 @@ addons:
-     username: $SAUCE_USERNAME
-     access_key: $SAUCE_ACCESS_KEY
- cache:
--  directory:
-+  directories:
-   - eggs
- install:
--- python bootstrap.py
--- bin/buildout -N -t 3 ${VERSIONS}
-+- python bootstrap.py -c travis.cfg
-+- bin/buildout -N -t 3 -c travis.cfg ${VERSIONS}
- before_script:
- - gem install --version 0.8.9 faraday
- - gem install travis-artifacts
-diff --git a/travis.cfg b/travis.cfg
-new file mode 100644
-index 0000000..21a30c8
---- /dev/null
-+++ b/travis.cfg
-@@ -0,0 +1,3 @@
-+[buildout]
-+extends = buildout.cfg
-+parts = docs test
-
-
-Repository: plone.app.robotframework
-Branch: refs/heads/master
-Date: 2014-12-13T16:30:59+02:00
-Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
-Commit: https://github.com/plone/plone.app.robotframework/commit/e74dd09df98bccb82b05acd8df488b380ee00d34
-
-Merge pull request #34 from plone/datakurre-travis-cache
-
-Configure Travis-CI to cache buildout eggs between builds
-
-Files changed:
-M .travis.yml
-M travis.cfg
-
-diff --git a/.travis.yml b/.travis.yml
-index 357cce1..b371ae8 100644
---- a/.travis.yml
-+++ b/.travis.yml
-@@ -1,13 +1,15 @@
- language: python
--python: "2.7"
-+python: 2.7
-+sudo: false
- addons:
-   sauce_connect:
-     username: $SAUCE_USERNAME
-     access_key: $SAUCE_ACCESS_KEY
-+cache:
-+  directories:
-+  - eggs
- install:
--- virtualenv buildout --no-setuptools
--- mkdir -p buildout-cache/downloads
--- buildout/bin/python bootstrap.py -c travis.cfg
-+- python bootstrap.py -c travis.cfg
- - bin/buildout -N -t 3 -c travis.cfg ${VERSIONS}
- before_script:
- - gem install --version 0.8.9 faraday
-diff --git a/travis.cfg b/travis.cfg
-index e3738a4..21a30c8 100644
---- a/travis.cfg
-+++ b/travis.cfg
-@@ -1,24 +1,3 @@
- [buildout]
--extends =
--    https://raw.github.com/collective/buildout.plonetest/master/travis-4.x.cfg
--    buildout.cfg
--parts =
--    download
--    install
--    robot
--    test
--    docs
+ from plone.app.discussion.events import CommentAddedEvent
+ from plone.app.discussion.events import CommentRemovedEvent
+ from plone.app.discussion.events import ReplyAddedEvent
+@@ -43,8 +42,11 @@
+ from plone.app.discussion.interfaces import IConversation
+ from plone.app.discussion.interfaces import IDiscussionSettings
+ 
++from plone.registry.interfaces import IRegistry
++
+ from Products.CMFCore.CMFCatalogAware import CatalogAware
+ from Products.CMFCore.CMFCatalogAware import WorkflowAware
++from Products.CMFPlone.interfaces.controlpanel import IMailSchema
+ 
+ from OFS.role import RoleManager
+ from AccessControl import ClassSecurityInfo
+@@ -329,9 +331,9 @@ def notify_user(obj, event):
+ 
+     # Get informations that are necessary to send an email
+     mail_host = getToolByName(obj, 'MailHost')
+-    portal_url = getToolByName(obj, 'portal_url')
+-    portal = portal_url.getPortalObject()
+-    sender = portal.getProperty('email_from_address')
++    registry = getUtility(IRegistry)
++    mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++    sender = mail_settings.email_from_address
+ 
+     # Check if a sender address is available
+     if not sender:
+@@ -403,9 +405,9 @@ def notify_moderator(obj, event):
+ 
+     # Get informations that are necessary to send an email
+     mail_host = getToolByName(obj, 'MailHost')
+-    portal_url = getToolByName(obj, 'portal_url')
+-    portal = portal_url.getPortalObject()
+-    sender = portal.getProperty('email_from_address')
++    registry = getUtility(IRegistry)
++    mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++    sender = mail_settings.email_from_address
+ 
+     if settings.moderator_email:
+         mto = settings.moderator_email
+diff --git a/plone/app/discussion/tests/test_notifications.py b/plone/app/discussion/tests/test_notifications.py
+index ab5c764..3b87f9b 100644
+--- a/plone/app/discussion/tests/test_notifications.py
++++ b/plone/app/discussion/tests/test_notifications.py
+@@ -7,11 +7,13 @@
+ from zope.component import createObject
+ from zope.component import getSiteManager
+ from zope.component import queryUtility
++from zope.component import getUtility
+ 
+ from plone.app.testing import TEST_USER_ID, setRoles
+ 
+ from Products.MailHost.interfaces import IMailHost
+ from Products.CMFPlone.tests.utils import MockMailHost
++from Products.CMFPlone.interfaces import IMailSchema
+ 
+ from plone.registry.interfaces import IRegistry
+ 
+@@ -34,7 +36,9 @@ def setUp(self):
+         sm.unregisterUtility(provided=IMailHost)
+         sm.registerUtility(mailhost, provided=IMailHost)
+         # We need to fake a valid mail setup
+-        self.portal.email_from_address = "portal@plone.test"
++        registry = getUtility(IRegistry)
++        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++        mail_settings.email_from_address = "portal@plone.test"
+         self.mailhost = self.portal.MailHost
+         # Enable user notification setting
+         registry = queryUtility(IRegistry)
+@@ -122,7 +126,9 @@ def test_do_not_notify_user_when_email_address_is_given(self):
+     def test_do_not_notify_user_when_no_sender_is_available(self):
+         # Set sender mail address to none and make sure no email is send to
+         # the moderator.
+-        self.portal.email_from_address = None
++        registry = getUtility(IRegistry)
++        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++        mail_settings.email_from_address = None
+         comment = createObject('plone.Comment')
+         comment.text = 'Comment text'
+         comment.user_notification = True
+@@ -132,7 +138,6 @@ def test_do_not_notify_user_when_no_sender_is_available(self):
+         comment.text = 'Comment text'
+ 
+         self.conversation.addComment(comment)
 -
--package-name = plone.app.robotframework
--package-extras = [test,speak]
--
--test-eggs = Pillow
--
--[versions]
--Plone = 4.3
--
--[robot]
--recipe = zc.recipe.egg
--eggs =
--    Pillow
--    plone.app.robotframework [test,ride,speak,reload]
-+extends = buildout.cfg
-+parts = docs test
+         self.assertEqual(len(self.mailhost.messages), 0)
+ 
+     def test_notify_only_once(self):
+@@ -172,7 +177,9 @@ def setUp(self):
+         sm.unregisterUtility(provided=IMailHost)
+         sm.registerUtility(mailhost, provided=IMailHost)
+         # We need to fake a valid mail setup
+-        self.portal.email_from_address = "portal@plone.test"
++        registry = getUtility(IRegistry)
++        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++        mail_settings.email_from_address = "portal@plone.test"
+         self.mailhost = self.portal.MailHost
+         # Enable comment moderation
+         self.portal.portal_types['Document'].allow_discussion = True
+@@ -255,7 +262,9 @@ def test_notify_moderator_specific_address(self):
+     def test_do_not_notify_moderator_when_no_sender_is_available(self):
+         # Set sender mail address to nonw and make sure no email is send to the
+         # moderator.
+-        self.portal.email_from_address = None
++        registry = getUtility(IRegistry)
++        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
++        mail_settings.email_from_address = None
+         comment = createObject('plone.Comment')
+         comment.text = 'Comment text'
+ 
 
 
