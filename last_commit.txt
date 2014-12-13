@@ -1,54 +1,183 @@
-Repository: plone.app.discussion
+Repository: plone.app.robotframework
 Branch: refs/heads/master
-Date: 2014-12-13T09:34:09+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/e11471a44ebf88ea268f154e006b3f6d7a2cb6d8
+Date: 2014-12-13T09:44:55+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/plone.app.robotframework/commit/deffee8e02ea98a64a35444e7167da02765d88d7
 
-Fix README.rst styles.
+Configure Travis-CI to cache buildout eggs
 
 Files changed:
-M CHANGES.rst
+M .travis.yml
+D travis.cfg
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 64f6396..a08c1a0 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 2.3.4 (unreleased)
- ------------------
- 
--- Updated portuguese pt-br translation [jtmolon]
-+- Updated portuguese pt-br translation.
-+  [jtmolon]
- 
- 
- 2.3.3 (2014-10-23)
-@@ -200,6 +201,7 @@ Changelog
- - Updated Ukrainian translation
-   [kroman0]
- 
-+
- 2.2.3 (2013-01-13)
- ------------------
- 
-@@ -207,6 +209,7 @@ Changelog
-   the email field on comment add form when anonymous.
-   [toutpt]
- 
-+
- 2.2.2 (2012-11-16)
- ------------------
- 
-@@ -218,8 +221,8 @@ Changelog
- 2.2.1 (2012-11-16)
- ------------------
- 
--- Make conversation view not break when comment-id cannot be converted to long.
--  Fixes #13327
-+- Make conversation view not break when comment-id cannot be converted to
-+  long. This fixes #13327
-   [khink]
- 
- - fix insufficient privileges when trying to view
+diff --git a/.travis.yml b/.travis.yml
+index 357cce1..a1609fa 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -1,14 +1,16 @@
+ language: python
+-python: "2.7"
++python: 2.7
++sudo: false
+ addons:
+   sauce_connect:
+     username: $SAUCE_USERNAME
+     access_key: $SAUCE_ACCESS_KEY
++cache:
++  directory:
++  - eggs
+ install:
+-- virtualenv buildout --no-setuptools
+-- mkdir -p buildout-cache/downloads
+-- buildout/bin/python bootstrap.py -c travis.cfg
+-- bin/buildout -N -t 3 -c travis.cfg ${VERSIONS}
++- python bootstrap.py
++- bin/buildout -N -t 3 ${VERSIONS}
+ before_script:
+ - gem install --version 0.8.9 faraday
+ - gem install travis-artifacts
+diff --git a/travis.cfg b/travis.cfg
+deleted file mode 100644
+index e3738a4..0000000
+--- a/travis.cfg
++++ /dev/null
+@@ -1,24 +0,0 @@
+-[buildout]
+-extends =
+-    https://raw.github.com/collective/buildout.plonetest/master/travis-4.x.cfg
+-    buildout.cfg
+-parts =
+-    download
+-    install
+-    robot
+-    test
+-    docs
+-
+-package-name = plone.app.robotframework
+-package-extras = [test,speak]
+-
+-test-eggs = Pillow
+-
+-[versions]
+-Plone = 4.3
+-
+-[robot]
+-recipe = zc.recipe.egg
+-eggs =
+-    Pillow
+-    plone.app.robotframework [test,ride,speak,reload]
+
+
+Repository: plone.app.robotframework
+Branch: refs/heads/master
+Date: 2014-12-13T09:56:05+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/plone.app.robotframework/commit/f10bbed9df2853930b461e8fccf4a156cfc50516
+
+Restore travis.cfg to optimize Travis-build
+
+Files changed:
+A travis.cfg
+M .travis.yml
+
+diff --git a/.travis.yml b/.travis.yml
+index a1609fa..b371ae8 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -6,11 +6,11 @@ addons:
+     username: $SAUCE_USERNAME
+     access_key: $SAUCE_ACCESS_KEY
+ cache:
+-  directory:
++  directories:
+   - eggs
+ install:
+-- python bootstrap.py
+-- bin/buildout -N -t 3 ${VERSIONS}
++- python bootstrap.py -c travis.cfg
++- bin/buildout -N -t 3 -c travis.cfg ${VERSIONS}
+ before_script:
+ - gem install --version 0.8.9 faraday
+ - gem install travis-artifacts
+diff --git a/travis.cfg b/travis.cfg
+new file mode 100644
+index 0000000..21a30c8
+--- /dev/null
++++ b/travis.cfg
+@@ -0,0 +1,3 @@
++[buildout]
++extends = buildout.cfg
++parts = docs test
+
+
+Repository: plone.app.robotframework
+Branch: refs/heads/master
+Date: 2014-12-13T16:30:59+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/plone.app.robotframework/commit/e74dd09df98bccb82b05acd8df488b380ee00d34
+
+Merge pull request #34 from plone/datakurre-travis-cache
+
+Configure Travis-CI to cache buildout eggs between builds
+
+Files changed:
+M .travis.yml
+M travis.cfg
+
+diff --git a/.travis.yml b/.travis.yml
+index 357cce1..b371ae8 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -1,13 +1,15 @@
+ language: python
+-python: "2.7"
++python: 2.7
++sudo: false
+ addons:
+   sauce_connect:
+     username: $SAUCE_USERNAME
+     access_key: $SAUCE_ACCESS_KEY
++cache:
++  directories:
++  - eggs
+ install:
+-- virtualenv buildout --no-setuptools
+-- mkdir -p buildout-cache/downloads
+-- buildout/bin/python bootstrap.py -c travis.cfg
++- python bootstrap.py -c travis.cfg
+ - bin/buildout -N -t 3 -c travis.cfg ${VERSIONS}
+ before_script:
+ - gem install --version 0.8.9 faraday
+diff --git a/travis.cfg b/travis.cfg
+index e3738a4..21a30c8 100644
+--- a/travis.cfg
++++ b/travis.cfg
+@@ -1,24 +1,3 @@
+ [buildout]
+-extends =
+-    https://raw.github.com/collective/buildout.plonetest/master/travis-4.x.cfg
+-    buildout.cfg
+-parts =
+-    download
+-    install
+-    robot
+-    test
+-    docs
+-
+-package-name = plone.app.robotframework
+-package-extras = [test,speak]
+-
+-test-eggs = Pillow
+-
+-[versions]
+-Plone = 4.3
+-
+-[robot]
+-recipe = zc.recipe.egg
+-eggs =
+-    Pillow
+-    plone.app.robotframework [test,ride,speak,reload]
++extends = buildout.cfg
++parts = docs test
 
 
