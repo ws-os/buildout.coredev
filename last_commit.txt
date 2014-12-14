@@ -1,33 +1,50 @@
-Repository: plone.app.controlpanel
+Repository: Products.PasswordResetTool
 Branch: refs/heads/master
-Date: 2014-12-14T19:55:33+01:00
+Date: 2014-12-14T20:51:50+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/472d5f56a615cd1dd05fc67ff3c90c96f79132bb
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/998b06f5f82150124104a4697659e9a7ef442275
 
-Comment out security.txt test since those test have been moved to CMFPlone/p.a.users.
+Amend tests to the new p.a.registry-based security controlpanel.
 
 Files changed:
-M plone/app/controlpanel/tests/test_doctests.py
+M CHANGES.txt
+M Products/PasswordResetTool/tests/browser.txt
 
-diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
-index 1a433ce..6ed5e00 100644
---- a/plone/app/controlpanel/tests/test_doctests.py
-+++ b/plone/app/controlpanel/tests/test_doctests.py
-@@ -42,10 +42,10 @@ def test_suite():
-         package="plone.app.controlpanel.tests",
-         test_class=UserGroupsControlPanelTestCase))
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 991d1da..4a3883f 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,7 +4,9 @@ Changelog
+ 2.1.2 (unreleased)
+ ------------------
  
--    suite.addTest(FunctionalDocFileSuite(
--        'security.txt',
--        optionflags=OPTIONFLAGS,
--        package="plone.app.controlpanel.tests",
--        test_class=EmailLoginSecurityControlPanelTestCase))
-+#    suite.addTest(FunctionalDocFileSuite(
-+#        'security.txt',
-+#        optionflags=OPTIONFLAGS,
-+#        package="plone.app.controlpanel.tests",
-+#        test_class=EmailLoginSecurityControlPanelTestCase))
+-- Nothing changed yet.
++- Amend browser.txt test to the new p.a.registry-based control panels
++  (Plone 5 only).
++  [timo]
  
-     return suite
+ 
+ 2.1.1 (2014-10-22)
+diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
+index 75f656a..b9a573e 100644
+--- a/Products/PasswordResetTool/tests/browser.txt
++++ b/Products/PasswordResetTool/tests/browser.txt
+@@ -82,11 +82,11 @@ Let's go directly to the security control panel:
+   >>> browser.addHeader('Authorization',
+   ...                   'Basic %s:%s' % (SITE_OWNER_NAME, SITE_OWNER_PASSWORD))
+   >>> browser.open('http://nohost/plone/@@security-controlpanel')
+-  >>> ctrl = browser.getControl(name="form.enable_self_reg")
+-  >>> ctrl.value = "on"
+-  >>> ctrl = browser.getControl(name="form.enable_user_pwd_choice")
+-  >>> ctrl.value = "on"
+-  >>> browser.getControl(name="form.actions.save").click()
++  >>> ctrl = browser.getControl(name="form.widgets.enable_self_reg:list")
++  >>> ctrl.value = ['selected']
++  >>> ctrl = browser.getControl(name="form.widgets.enable_user_pwd_choice:list")
++  >>> ctrl.value = ['selected']
++  >>> browser.getControl("Save").click()
+ 
+ Let's join as a new user. Plone's default settings won't let the user
+ type in his initial password, so we need to enable that:
 
 
