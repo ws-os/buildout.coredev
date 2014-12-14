@@ -1,203 +1,90 @@
-Repository: plone.app.discussion
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-12-13T16:20:08+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/785bc7b890d077889cf2afe262fbe325bdf29122
+Date: 2014-11-06T10:31:29+01:00
+Author: Martin Opstad Reistadbakk (martior) <martin@blaastolen.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/ffe10937bdbcdc8c74bf31cb2656c89de4566bad
 
-Read mail settings from new (Plone 5) registry.
+Use prefs_main_template for resource registry control panel and add link back to Site Setup
 
 Files changed:
-M CHANGES.rst
-M plone/app/discussion/browser/controlpanel.py
-M plone/app/discussion/comment.py
-M plone/app/discussion/tests/test_notifications.py
+M Products/CMFPlone/controlpanel/browser/resourceregistry.pt
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index a08c1a0..bc2ece8 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -7,6 +7,9 @@ Changelog
- - Updated portuguese pt-br translation.
-   [jtmolon]
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.pt b/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
+index 34492d4..a42dabd 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
+@@ -3,7 +3,7 @@
+       xmlns:metal="http://xml.zope.org/namespaces/metal"
+       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+       lang="en"
+-      metal:use-macro="context/main_template/macros/master"
++      metal:use-macro="context/prefs_main_template/macros/master"
+       i18n:domain="plone">
  
-+- Read mail settings from new (Plone 5) registry.
-+  [timo]
-+
  
- 2.3.3 (2014-10-23)
- ------------------
-diff --git a/plone/app/discussion/browser/controlpanel.py b/plone/app/discussion/browser/controlpanel.py
-index 822ca2b..d90d8f1 100644
---- a/plone/app/discussion/browser/controlpanel.py
-+++ b/plone/app/discussion/browser/controlpanel.py
-@@ -1,10 +1,8 @@
- # -*- coding: utf-8 -*-
--
--from Acquisition import aq_base, aq_inner
--
-+from zope.component import getUtility
- from Products.CMFCore.utils import getToolByName
--
- from Products.CMFCore.interfaces._content import IDiscussionResponse
-+from Products.CMFPlone.interfaces.controlpanel import IMailSchema
+@@ -17,8 +17,15 @@
+   </metal:block>
+ <body>
  
- from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+-<metal:content-core fill-slot="content-core">
+-    <metal:content-core define-macro="content-core">
++<metal:content-core fill-slot="prefs_configlet_main">
++    <metal:content-core define-macro="prefs_configlet_main">
++      <a href=""
++         id="setup-link"
++         tal:attributes="href string:$portal_url/plone_control_panel"
++         i18n:translate="">
++          Site Setup
++      </a>
++    
+       <span tal:replace="structure context/@@authenticator/authenticator"/>
+       <div class="pat-resourceregistry" tal:attributes="data-pat-resourceregistry view/config" />
+     </metal:content-core>
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2014-12-14T11:57:37+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/Products.CMFPlone/commit/ab5d056c8343235b93e421cb6a9fec2b6ff802ca
+
+Merge pull request #294 from martior/master
+
+Use prefs_main_template for resource registry control panel...
+
+Files changed:
+M Products/CMFPlone/controlpanel/browser/resourceregistry.pt
+
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.pt b/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
+index 34492d4..a42dabd 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
+@@ -3,7 +3,7 @@
+       xmlns:metal="http://xml.zope.org/namespaces/metal"
+       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+       lang="en"
+-      metal:use-macro="context/main_template/macros/master"
++      metal:use-macro="context/prefs_main_template/macros/master"
+       i18n:domain="plone">
  
-@@ -152,12 +150,11 @@ def settings(self):
-     def mailhost_warning(self):
-         """Returns true if mailhost is not configured properly.
-         """
--        # Copied from plone.app.controlpanel/plone/app/controlpanel/overview.py
--        mailhost = getToolByName(aq_inner(self.context), 'MailHost', None)
--        if mailhost is None:
--            return True
--        mailhost = getattr(aq_base(mailhost), 'smtp_host', None)
--        email = getattr(aq_inner(self.context), 'email_from_address', None)
-+        # Copied from Products.CMFPlone/controlpanel/browser/overview.py
-+        registry = getUtility(IRegistry)
-+        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mailhost = mail_settings.smtp_host
-+        email = mail_settings.email_from_address
-         if mailhost and email:
-             return False
-         return True
-@@ -177,7 +174,7 @@ def custom_comment_workflow_warning(self):
-     def unmigrated_comments_warning(self):
-         """Returns true if site contains unmigrated comments.
-         """
--        catalog = getToolByName(aq_inner(self.context), 'portal_catalog', None)
-+        catalog = getToolByName(self.context, 'portal_catalog', None)
-         count_comments_old = catalog.searchResults(
-             object_provides=IDiscussionResponse.__identifier__)
-         if count_comments_old:
-diff --git a/plone/app/discussion/comment.py b/plone/app/discussion/comment.py
-index 193f30e..fb9c30e 100644
---- a/plone/app/discussion/comment.py
-+++ b/plone/app/discussion/comment.py
-@@ -9,6 +9,7 @@
- from smtplib import SMTPException
  
- from zope.annotation.interfaces import IAnnotatable
-+from zope.component import getUtility
+@@ -17,8 +17,15 @@
+   </metal:block>
+ <body>
  
- from zope.event import notify
- from zope.component.factory import Factory
-@@ -31,8 +32,6 @@
- 
- from OFS.Traversable import Traversable
- 
--from plone.registry.interfaces import IRegistry
--
- from plone.app.discussion.events import CommentAddedEvent
- from plone.app.discussion.events import CommentRemovedEvent
- from plone.app.discussion.events import ReplyAddedEvent
-@@ -43,8 +42,11 @@
- from plone.app.discussion.interfaces import IConversation
- from plone.app.discussion.interfaces import IDiscussionSettings
- 
-+from plone.registry.interfaces import IRegistry
-+
- from Products.CMFCore.CMFCatalogAware import CatalogAware
- from Products.CMFCore.CMFCatalogAware import WorkflowAware
-+from Products.CMFPlone.interfaces.controlpanel import IMailSchema
- 
- from OFS.role import RoleManager
- from AccessControl import ClassSecurityInfo
-@@ -329,9 +331,9 @@ def notify_user(obj, event):
- 
-     # Get informations that are necessary to send an email
-     mail_host = getToolByName(obj, 'MailHost')
--    portal_url = getToolByName(obj, 'portal_url')
--    portal = portal_url.getPortalObject()
--    sender = portal.getProperty('email_from_address')
-+    registry = getUtility(IRegistry)
-+    mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+    sender = mail_settings.email_from_address
- 
-     # Check if a sender address is available
-     if not sender:
-@@ -403,9 +405,9 @@ def notify_moderator(obj, event):
- 
-     # Get informations that are necessary to send an email
-     mail_host = getToolByName(obj, 'MailHost')
--    portal_url = getToolByName(obj, 'portal_url')
--    portal = portal_url.getPortalObject()
--    sender = portal.getProperty('email_from_address')
-+    registry = getUtility(IRegistry)
-+    mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+    sender = mail_settings.email_from_address
- 
-     if settings.moderator_email:
-         mto = settings.moderator_email
-diff --git a/plone/app/discussion/tests/test_notifications.py b/plone/app/discussion/tests/test_notifications.py
-index ab5c764..3b87f9b 100644
---- a/plone/app/discussion/tests/test_notifications.py
-+++ b/plone/app/discussion/tests/test_notifications.py
-@@ -7,11 +7,13 @@
- from zope.component import createObject
- from zope.component import getSiteManager
- from zope.component import queryUtility
-+from zope.component import getUtility
- 
- from plone.app.testing import TEST_USER_ID, setRoles
- 
- from Products.MailHost.interfaces import IMailHost
- from Products.CMFPlone.tests.utils import MockMailHost
-+from Products.CMFPlone.interfaces import IMailSchema
- 
- from plone.registry.interfaces import IRegistry
- 
-@@ -34,7 +36,9 @@ def setUp(self):
-         sm.unregisterUtility(provided=IMailHost)
-         sm.registerUtility(mailhost, provided=IMailHost)
-         # We need to fake a valid mail setup
--        self.portal.email_from_address = "portal@plone.test"
-+        registry = getUtility(IRegistry)
-+        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mail_settings.email_from_address = "portal@plone.test"
-         self.mailhost = self.portal.MailHost
-         # Enable user notification setting
-         registry = queryUtility(IRegistry)
-@@ -122,7 +126,9 @@ def test_do_not_notify_user_when_email_address_is_given(self):
-     def test_do_not_notify_user_when_no_sender_is_available(self):
-         # Set sender mail address to none and make sure no email is send to
-         # the moderator.
--        self.portal.email_from_address = None
-+        registry = getUtility(IRegistry)
-+        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mail_settings.email_from_address = None
-         comment = createObject('plone.Comment')
-         comment.text = 'Comment text'
-         comment.user_notification = True
-@@ -132,7 +138,6 @@ def test_do_not_notify_user_when_no_sender_is_available(self):
-         comment.text = 'Comment text'
- 
-         self.conversation.addComment(comment)
--
-         self.assertEqual(len(self.mailhost.messages), 0)
- 
-     def test_notify_only_once(self):
-@@ -172,7 +177,9 @@ def setUp(self):
-         sm.unregisterUtility(provided=IMailHost)
-         sm.registerUtility(mailhost, provided=IMailHost)
-         # We need to fake a valid mail setup
--        self.portal.email_from_address = "portal@plone.test"
-+        registry = getUtility(IRegistry)
-+        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mail_settings.email_from_address = "portal@plone.test"
-         self.mailhost = self.portal.MailHost
-         # Enable comment moderation
-         self.portal.portal_types['Document'].allow_discussion = True
-@@ -255,7 +262,9 @@ def test_notify_moderator_specific_address(self):
-     def test_do_not_notify_moderator_when_no_sender_is_available(self):
-         # Set sender mail address to nonw and make sure no email is send to the
-         # moderator.
--        self.portal.email_from_address = None
-+        registry = getUtility(IRegistry)
-+        mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-+        mail_settings.email_from_address = None
-         comment = createObject('plone.Comment')
-         comment.text = 'Comment text'
- 
+-<metal:content-core fill-slot="content-core">
+-    <metal:content-core define-macro="content-core">
++<metal:content-core fill-slot="prefs_configlet_main">
++    <metal:content-core define-macro="prefs_configlet_main">
++      <a href=""
++         id="setup-link"
++         tal:attributes="href string:$portal_url/plone_control_panel"
++         i18n:translate="">
++          Site Setup
++      </a>
++    
+       <span tal:replace="structure context/@@authenticator/authenticator"/>
+       <div class="pat-resourceregistry" tal:attributes="data-pat-resourceregistry view/config" />
+     </metal:content-core>
 
 
