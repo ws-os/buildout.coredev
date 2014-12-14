@@ -1,90 +1,148 @@
-Repository: Products.CMFPlone
+Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-11-06T10:31:29+01:00
-Author: Martin Opstad Reistadbakk (martior) <martin@blaastolen.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/ffe10937bdbcdc8c74bf31cb2656c89de4566bad
-
-Use prefs_main_template for resource registry control panel and add link back to Site Setup
-
-Files changed:
-M Products/CMFPlone/controlpanel/browser/resourceregistry.pt
-
-diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.pt b/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
-index 34492d4..a42dabd 100644
---- a/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
-+++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
-@@ -3,7 +3,7 @@
-       xmlns:metal="http://xml.zope.org/namespaces/metal"
-       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
-       lang="en"
--      metal:use-macro="context/main_template/macros/master"
-+      metal:use-macro="context/prefs_main_template/macros/master"
-       i18n:domain="plone">
- 
- 
-@@ -17,8 +17,15 @@
-   </metal:block>
- <body>
- 
--<metal:content-core fill-slot="content-core">
--    <metal:content-core define-macro="content-core">
-+<metal:content-core fill-slot="prefs_configlet_main">
-+    <metal:content-core define-macro="prefs_configlet_main">
-+      <a href=""
-+         id="setup-link"
-+         tal:attributes="href string:$portal_url/plone_control_panel"
-+         i18n:translate="">
-+          Site Setup
-+      </a>
-+    
-       <span tal:replace="structure context/@@authenticator/authenticator"/>
-       <div class="pat-resourceregistry" tal:attributes="data-pat-resourceregistry view/config" />
-     </metal:content-core>
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2014-12-14T11:57:37+01:00
+Date: 2014-12-14T19:10:33+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/ab5d056c8343235b93e421cb6a9fec2b6ff802ca
+Commit: https://github.com/plone/plone.app.controlpanel/commit/5a9debc217e39a7a9daee7f4a12a84d3f0f30923
 
-Merge pull request #294 from martior/master
-
-Use prefs_main_template for resource registry control panel...
+Remove security-controlpanel and migrate-to-emaillogin view. Fix ISecuritySchema import which has been moved from p.a.controlpanel to CMFPlone.
 
 Files changed:
-M Products/CMFPlone/controlpanel/browser/resourceregistry.pt
+M plone/app/controlpanel/configure.zcml
+M plone/app/controlpanel/usergroups.py
 
-diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.pt b/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
-index 34492d4..a42dabd 100644
---- a/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
-+++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.pt
-@@ -3,7 +3,7 @@
-       xmlns:metal="http://xml.zope.org/namespaces/metal"
-       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
-       lang="en"
--      metal:use-macro="context/main_template/macros/master"
-+      metal:use-macro="context/prefs_main_template/macros/master"
-       i18n:domain="plone">
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index 6df3b46..71ee836 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -26,8 +26,6 @@
  
+   <!--<adapter factory=".search.SearchControlPanelAdapter" />-->
  
-@@ -17,8 +17,15 @@
-   </metal:block>
- <body>
+-  <adapter factory=".security.SecurityControlPanelAdapter" />
+-
+   <!--<adapter factory=".site.SiteControlPanelAdapter" />-->
  
--<metal:content-core fill-slot="content-core">
--    <metal:content-core define-macro="content-core">
-+<metal:content-core fill-slot="prefs_configlet_main">
-+    <metal:content-core define-macro="prefs_configlet_main">
-+      <a href=""
-+         id="setup-link"
-+         tal:attributes="href string:$portal_url/plone_control_panel"
-+         i18n:translate="">
-+          Site Setup
-+      </a>
-+    
-       <span tal:replace="structure context/@@authenticator/authenticator"/>
-       <div class="pat-resourceregistry" tal:attributes="data-pat-resourceregistry view/config" />
-     </metal:content-core>
+   <adapter factory=".skins.SkinsControlPanelAdapter" />
+@@ -113,13 +111,6 @@
+       />
+   -->
+ 
+-  <browser:page
+-      name="security-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".security.SecurityControlPanel"
+-      permission="plone.app.controlpanel.Security"
+-      />
+-
+   <!--
+   <browser:page
+       name="site-controlpanel"
+@@ -209,14 +200,6 @@
+ 
+   <browser:page
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      name="migrate-to-emaillogin"
+-      class=".security.EmailLogin"
+-      template="emaillogin.pt"
+-      permission="cmf.ManagePortal"
+-      />
+-
+-  <browser:page
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+       name="syndication-settings"
+       class=".syndication.SyndicationControlPanel"
+       permission="cmf.ManagePortal"
+diff --git a/plone/app/controlpanel/usergroups.py b/plone/app/controlpanel/usergroups.py
+index 1e89475..9efafe2 100644
+--- a/plone/app/controlpanel/usergroups.py
++++ b/plone/app/controlpanel/usergroups.py
+@@ -27,10 +27,11 @@
+ from Products.PluggableAuthService.interfaces.plugins import IRolesPlugin
+ 
+ from form import ControlPanelForm, ControlPanelView
+-from security import ISecuritySchema
++from Products.CMFPlone.interfaces import ISecuritySchema
+ 
+ logger = logging.getLogger('plone.app.controlpanel')
+ 
++
+ class IUserGroupsSettingsSchema(Interface):
+ 
+     many_groups = Bool(title=_(u'Many groups?'),
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2014-12-14T19:24:20+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/c7aa7ec85aef2267128dd7171d4ade189601a3f8
+
+Merge pull request #36 from plone/plip10359-security-controlpanel
+
+Remove security-controlpanel and migrate-to-emaillogin view. Fix ISecuri...
+
+Files changed:
+M plone/app/controlpanel/configure.zcml
+M plone/app/controlpanel/usergroups.py
+
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index 6df3b46..71ee836 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -26,8 +26,6 @@
+ 
+   <!--<adapter factory=".search.SearchControlPanelAdapter" />-->
+ 
+-  <adapter factory=".security.SecurityControlPanelAdapter" />
+-
+   <!--<adapter factory=".site.SiteControlPanelAdapter" />-->
+ 
+   <adapter factory=".skins.SkinsControlPanelAdapter" />
+@@ -113,13 +111,6 @@
+       />
+   -->
+ 
+-  <browser:page
+-      name="security-controlpanel"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      class=".security.SecurityControlPanel"
+-      permission="plone.app.controlpanel.Security"
+-      />
+-
+   <!--
+   <browser:page
+       name="site-controlpanel"
+@@ -209,14 +200,6 @@
+ 
+   <browser:page
+       for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      name="migrate-to-emaillogin"
+-      class=".security.EmailLogin"
+-      template="emaillogin.pt"
+-      permission="cmf.ManagePortal"
+-      />
+-
+-  <browser:page
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+       name="syndication-settings"
+       class=".syndication.SyndicationControlPanel"
+       permission="cmf.ManagePortal"
+diff --git a/plone/app/controlpanel/usergroups.py b/plone/app/controlpanel/usergroups.py
+index 1e89475..9efafe2 100644
+--- a/plone/app/controlpanel/usergroups.py
++++ b/plone/app/controlpanel/usergroups.py
+@@ -27,10 +27,11 @@
+ from Products.PluggableAuthService.interfaces.plugins import IRolesPlugin
+ 
+ from form import ControlPanelForm, ControlPanelView
+-from security import ISecuritySchema
++from Products.CMFPlone.interfaces import ISecuritySchema
+ 
+ logger = logging.getLogger('plone.app.controlpanel')
+ 
++
+ class IUserGroupsSettingsSchema(Interface):
+ 
+     many_groups = Bool(title=_(u'Many groups?'),
 
 
