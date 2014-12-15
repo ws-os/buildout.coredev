@@ -1,50 +1,54 @@
-Repository: Products.PasswordResetTool
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-12-14T20:51:50+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.PasswordResetTool/commit/998b06f5f82150124104a4697659e9a7ef442275
+Date: 2014-12-14T22:16:41+01:00
+Author: Fulvio Casali (fulv) <fulviocasali@gmail.com>
+Commit: https://github.com/plone/mockup/commit/00b28515867ffeb4cca593956427d0d1f998e739
 
-Amend tests to the new p.a.registry-based security controlpanel.
+Fix a one-letter typo.  Mostly making sure I can do the git workflow.
 
 Files changed:
-M CHANGES.txt
-M Products/PasswordResetTool/tests/browser.txt
+M mockup/js/bundles/docs.js
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 991d1da..4a3883f 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -4,7 +4,9 @@ Changelog
- 2.1.2 (unreleased)
- ------------------
- 
--- Nothing changed yet.
-+- Amend browser.txt test to the new p.a.registry-based control panels
-+  (Plone 5 only).
-+  [timo]
- 
- 
- 2.1.1 (2014-10-22)
-diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
-index 75f656a..b9a573e 100644
---- a/Products/PasswordResetTool/tests/browser.txt
-+++ b/Products/PasswordResetTool/tests/browser.txt
-@@ -82,11 +82,11 @@ Let's go directly to the security control panel:
-   >>> browser.addHeader('Authorization',
-   ...                   'Basic %s:%s' % (SITE_OWNER_NAME, SITE_OWNER_PASSWORD))
-   >>> browser.open('http://nohost/plone/@@security-controlpanel')
--  >>> ctrl = browser.getControl(name="form.enable_self_reg")
--  >>> ctrl.value = "on"
--  >>> ctrl = browser.getControl(name="form.enable_user_pwd_choice")
--  >>> ctrl.value = "on"
--  >>> browser.getControl(name="form.actions.save").click()
-+  >>> ctrl = browser.getControl(name="form.widgets.enable_self_reg:list")
-+  >>> ctrl.value = ['selected']
-+  >>> ctrl = browser.getControl(name="form.widgets.enable_user_pwd_choice:list")
-+  >>> ctrl.value = ['selected']
-+  >>> browser.getControl("Save").click()
- 
- Let's join as a new user. Plone's default settings won't let the user
- type in his initial password, so we need to enable that:
+diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
+index 2a5961a..84964bf 100644
+--- a/mockup/js/bundles/docs.js
++++ b/mockup/js/bundles/docs.js
+@@ -69,7 +69,7 @@ require([
+           },
+           { id: 'markspeciallinks',
+             title: 'Mark special links',
+-            description: 'Mark special links based on protocoll and optionally open in new window.',
++            description: 'Mark special links based on protocol and optionally open in new window.',
+             url: 'patterns/markspeciallinks/pattern.js'
+           },
+           { id: 'modal',
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2014-12-14T20:52:32-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/6c5d782fdc73d34c27cdb5db4ac62cd28e3f18cb
+
+Merge pull request #448 from plone/fulv-fixtypo
+
+Fix a one-letter typo.  Mostly making sure I can do the git workflow.
+
+Files changed:
+M mockup/js/bundles/docs.js
+
+diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
+index 2a5961a..84964bf 100644
+--- a/mockup/js/bundles/docs.js
++++ b/mockup/js/bundles/docs.js
+@@ -69,7 +69,7 @@ require([
+           },
+           { id: 'markspeciallinks',
+             title: 'Mark special links',
+-            description: 'Mark special links based on protocoll and optionally open in new window.',
++            description: 'Mark special links based on protocol and optionally open in new window.',
+             url: 'patterns/markspeciallinks/pattern.js'
+           },
+           { id: 'modal',
 
 
