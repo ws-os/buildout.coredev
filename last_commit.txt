@@ -1,83 +1,63 @@
-Repository: Products.CMFPlone
+Repository: plone.app.z3cform
 Branch: refs/heads/master
-Date: 2014-12-17T21:12:02+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/264f27370874ec86af667488bdd64a0207310cf9
+Date: 2014-12-17T14:33:24-06:00
+Author: Josh Birdwell (birdwell) <jbirdwell34@gmail.com>
+Commit: https://github.com/plone/plone.app.z3cform/commit/61092888fb858f81b91f62bbbcaf713dc27a8aae
 
-Add basic filter control panel robot test for nasty tags. More test will follow.
+Fix inline-validation warning error
 
 Files changed:
-A Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
+M CHANGES.rst
+M plone/app/z3cform/inline_validation.py
 
-diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-new file mode 100644
-index 0000000..942835d
---- /dev/null
-+++ b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-@@ -0,0 +1,64 @@
-+# ============================================================================
-+# Tests for the Plone Filter Control Panel
-+# ============================================================================
-+#
-+# $ bin/robot-server --reload-path src/Products.CMFPlone/Products/CMFPlone/ Products.CMFPlone.testing.PRODUCTS_CMFPLONE_ROBOT_TESTING
-+#
-+# $ bin/robot src/Products.CMFPlone/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-+#
-+# ============================================================================
+diff --git a/CHANGES.rst b/CHANGES.rst
+index fb665de..83dea0a 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,8 @@ Changelog
+ 1.0.2 (unreleased)
+ ------------------
+ 
+-- Nothing changed yet.
++- Fix inline-validation warning error
++  [jbirdwell]
+ 
+ 
+ 1.0.1 (2014-10-23)
+diff --git a/plone/app/z3cform/inline_validation.py b/plone/app/z3cform/inline_validation.py
+index 844d7f5..56c9025 100644
+--- a/plone/app/z3cform/inline_validation.py
++++ b/plone/app/z3cform/inline_validation.py
+@@ -12,6 +12,8 @@ class InlineValidationView(BrowserView):
+     """
+ 
+     def __call__(self, fname=None, fset=None):
++        self.request.response.setHeader('Content-Type', 'application/json')
 +
-+*** Settings ***
-+
-+Resource  plone/app/robotframework/keywords.robot
-+Resource  plone/app/robotframework/saucelabs.robot
-+
-+Library  Remote  ${PLONE_URL}/RobotRemote
-+
-+Resource  common.robot
-+
-+Test Setup  Open SauceLabs test browser
-+Test Teardown  Run keywords  Report test status  Close all browsers
-+
-+
-+*** Test Cases ***************************************************************
-+
-+Scenario: Enable self registration in the Security Control Panel
-+  Given a logged-in site administrator
-+    and the filter control panel
-+   When I add 'h1' to the nasty tags list
-+   Then the 'h1' tag is filtered out when a document is saved
-+
-+
-+*** Keywords *****************************************************************
-+
-+# --- GIVEN ------------------------------------------------------------------
-+
-+a logged-in site administrator
-+  Enable autologin as  Site Administrator
-+
-+the filter control panel
-+  Go to  ${PLONE_URL}/@@filter-controlpanel
-+
-+Input RichText
-+  [Arguments]  ${input}
-+  Wait until keyword succeeds  5s  1s  Execute Javascript  tinyMCE.activeEditor.setContent('${input}');
-+
-+# --- WHEN -------------------------------------------------------------------
-+
-+I add '${tag}' to the nasty tags list
-+  Click Button  Add Nasty tags
-+  Input Text  name=form.nasty_tags.6.  h1
-+  Click Button  Save
-+  Wait until page contains  Changes saved
-+
-+
-+# --- THEN -------------------------------------------------------------------
-+
-+the 'h1' tag is filtered out when a document is saved
-+  ${doc1_uid}=  Create content  id=doc1  title=Document 1  type=Document
-+  Go To  ${PLONE_URL}/doc1/edit
-+  Input RichText  <h1>h1 heading</h1><p>lorem ipsum</p>
-+  Click Button  Save
-+  Wait until page contains  Changes saved
-+  Page should not contain  heading
+         res = {'errmsg': ''}
+ 
+         if fname is None:
+@@ -21,13 +23,13 @@ def __call__(self, fname=None, fset=None):
+         if hasattr(aq_base(form), 'form_instance'):
+             form = form.form_instance
+         if not hasattr(form, 'update'):
+-            return
++            return json.dumps(res)
+         form.update()
+ 
+         if getattr(form, "extractData", None):
+             data, errors = form.extractData()
+         else:
+-            return
++            return json.dumps(res)
+ 
+         #if we validate a field in a group we operate on the group
+         if fset is not None:
+@@ -57,5 +59,4 @@ def __call__(self, fname=None, fset=None):
+             validationError = translate(validationError, context=self.request)
+ 
+         res['errmsg'] = validationError or ''
+-        self.request.response.setHeader('Content-Type', 'application/json')
+         return json.dumps(res)
 
 
