@@ -1,63 +1,65 @@
 Repository: plone.app.z3cform
 Branch: refs/heads/master
-Date: 2014-12-17T14:33:24-06:00
+Date: 2014-12-17T14:39:47-06:00
 Author: Josh Birdwell (birdwell) <jbirdwell34@gmail.com>
-Commit: https://github.com/plone/plone.app.z3cform/commit/61092888fb858f81b91f62bbbcaf713dc27a8aae
+Commit: https://github.com/plone/plone.app.z3cform/commit/31424292307b0613a93f7a82145f8c99176608e3
 
-Fix inline-validation warning error
+Revert "Fix inline-validation warning error" - Meant to create branch and create pull request
+
+This reverts commit 61092888fb858f81b91f62bbbcaf713dc27a8aae.
 
 Files changed:
 M CHANGES.rst
 M plone/app/z3cform/inline_validation.py
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index fb665de..83dea0a 100644
+index 83dea0a..fb665de 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
+@@ -4,8 +4,7 @@ Changelog
  1.0.2 (unreleased)
  ------------------
  
--- Nothing changed yet.
-+- Fix inline-validation warning error
-+  [jbirdwell]
+-- Fix inline-validation warning error
+-  [jbirdwell]
++- Nothing changed yet.
  
  
  1.0.1 (2014-10-23)
 diff --git a/plone/app/z3cform/inline_validation.py b/plone/app/z3cform/inline_validation.py
-index 844d7f5..56c9025 100644
+index 56c9025..844d7f5 100644
 --- a/plone/app/z3cform/inline_validation.py
 +++ b/plone/app/z3cform/inline_validation.py
-@@ -12,6 +12,8 @@ class InlineValidationView(BrowserView):
+@@ -12,8 +12,6 @@ class InlineValidationView(BrowserView):
      """
  
      def __call__(self, fname=None, fset=None):
-+        self.request.response.setHeader('Content-Type', 'application/json')
-+
+-        self.request.response.setHeader('Content-Type', 'application/json')
+-
          res = {'errmsg': ''}
  
          if fname is None:
-@@ -21,13 +23,13 @@ def __call__(self, fname=None, fset=None):
+@@ -23,13 +21,13 @@ def __call__(self, fname=None, fset=None):
          if hasattr(aq_base(form), 'form_instance'):
              form = form.form_instance
          if not hasattr(form, 'update'):
--            return
-+            return json.dumps(res)
+-            return json.dumps(res)
++            return
          form.update()
  
          if getattr(form, "extractData", None):
              data, errors = form.extractData()
          else:
--            return
-+            return json.dumps(res)
+-            return json.dumps(res)
++            return
  
          #if we validate a field in a group we operate on the group
          if fset is not None:
-@@ -57,5 +59,4 @@ def __call__(self, fname=None, fset=None):
+@@ -59,4 +57,5 @@ def __call__(self, fname=None, fset=None):
              validationError = translate(validationError, context=self.request)
  
          res['errmsg'] = validationError or ''
--        self.request.response.setHeader('Content-Type', 'application/json')
++        self.request.response.setHeader('Content-Type', 'application/json')
          return json.dumps(res)
 
 
