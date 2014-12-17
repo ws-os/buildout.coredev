@@ -1,54 +1,83 @@
-Repository: plone.app.testing
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-11-13T17:15:33+01:00
-Author: Harald Friessnegger (frisi) <harald@webmeisterei.com>
-Commit: https://github.com/plone/plone.app.testing/commit/cd573142366ef8c02eaefa12c8b4ec5b6bc542b6
-
-fix typo
-
-Files changed:
-M docs/source/README.rst
-
-diff --git a/docs/source/README.rst b/docs/source/README.rst
-index 3f55e74..7b68ca9 100644
---- a/docs/source/README.rst
-+++ b/docs/source/README.rst
-@@ -680,7 +680,7 @@ the package, i.e. ``my.product.testing``::
- 
- Here, ``MY_PRODUCT_FIXTURE`` is the "fixture" base layer. Other layers can
- use this as a base if they want to build on this fixture, but it would not
--be used in tests directly. For that, we have crated an ``IntegrationTesting``
-+be used in tests directly. For that, we have created an ``IntegrationTesting``
- instance, ``MY_PRODUCT_INTEGRATION_TESTING``.
- 
- Of course, we could have created a ``FunctionalTesting`` instance as
-
-
-Repository: plone.app.testing
-Branch: refs/heads/master
-Date: 2014-12-16T10:46:27+01:00
+Date: 2014-12-17T21:12:02+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.testing/commit/58c7b69ae9cc6f34afe3c8791134bb1fbdf204a3
+Commit: https://github.com/plone/Products.CMFPlone/commit/264f27370874ec86af667488bdd64a0207310cf9
 
-Merge pull request #10 from webmeisterei/master
-
-fix typo
+Add basic filter control panel robot test for nasty tags. More test will follow.
 
 Files changed:
-M docs/source/README.rst
+A Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
 
-diff --git a/docs/source/README.rst b/docs/source/README.rst
-index 3f55e74..7b68ca9 100644
---- a/docs/source/README.rst
-+++ b/docs/source/README.rst
-@@ -680,7 +680,7 @@ the package, i.e. ``my.product.testing``::
- 
- Here, ``MY_PRODUCT_FIXTURE`` is the "fixture" base layer. Other layers can
- use this as a base if they want to build on this fixture, but it would not
--be used in tests directly. For that, we have crated an ``IntegrationTesting``
-+be used in tests directly. For that, we have created an ``IntegrationTesting``
- instance, ``MY_PRODUCT_INTEGRATION_TESTING``.
- 
- Of course, we could have created a ``FunctionalTesting`` instance as
+diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
+new file mode 100644
+index 0000000..942835d
+--- /dev/null
++++ b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
+@@ -0,0 +1,64 @@
++# ============================================================================
++# Tests for the Plone Filter Control Panel
++# ============================================================================
++#
++# $ bin/robot-server --reload-path src/Products.CMFPlone/Products/CMFPlone/ Products.CMFPlone.testing.PRODUCTS_CMFPLONE_ROBOT_TESTING
++#
++# $ bin/robot src/Products.CMFPlone/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
++#
++# ============================================================================
++
++*** Settings ***
++
++Resource  plone/app/robotframework/keywords.robot
++Resource  plone/app/robotframework/saucelabs.robot
++
++Library  Remote  ${PLONE_URL}/RobotRemote
++
++Resource  common.robot
++
++Test Setup  Open SauceLabs test browser
++Test Teardown  Run keywords  Report test status  Close all browsers
++
++
++*** Test Cases ***************************************************************
++
++Scenario: Enable self registration in the Security Control Panel
++  Given a logged-in site administrator
++    and the filter control panel
++   When I add 'h1' to the nasty tags list
++   Then the 'h1' tag is filtered out when a document is saved
++
++
++*** Keywords *****************************************************************
++
++# --- GIVEN ------------------------------------------------------------------
++
++a logged-in site administrator
++  Enable autologin as  Site Administrator
++
++the filter control panel
++  Go to  ${PLONE_URL}/@@filter-controlpanel
++
++Input RichText
++  [Arguments]  ${input}
++  Wait until keyword succeeds  5s  1s  Execute Javascript  tinyMCE.activeEditor.setContent('${input}');
++
++# --- WHEN -------------------------------------------------------------------
++
++I add '${tag}' to the nasty tags list
++  Click Button  Add Nasty tags
++  Input Text  name=form.nasty_tags.6.  h1
++  Click Button  Save
++  Wait until page contains  Changes saved
++
++
++# --- THEN -------------------------------------------------------------------
++
++the 'h1' tag is filtered out when a document is saved
++  ${doc1_uid}=  Create content  id=doc1  title=Document 1  type=Document
++  Go To  ${PLONE_URL}/doc1/edit
++  Input RichText  <h1>h1 heading</h1><p>lorem ipsum</p>
++  Click Button  Save
++  Wait until page contains  Changes saved
++  Page should not contain  heading
 
 
