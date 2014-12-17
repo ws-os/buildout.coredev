@@ -1,26 +1,160 @@
-Repository: Products.CMFPlone
+Repository: plone.app.z3cform
 Branch: refs/heads/master
-Date: 2014-12-17T21:46:23+01:00
-Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/87c3e352cbd6d85a1af6ceedc3503d99135f2455
+Date: 2014-12-17T14:46:13-06:00
+Author: Josh Birdwell (birdwell) <jbirdwell34@gmail.com>
+Commit: https://github.com/plone/plone.app.z3cform/commit/e87133baad186bf51d9e408602c4ef7b6ecfd839
 
-table_sorter and unlockOnFormUnLoad is removed
+Fix inline-validation warning error
 
 Files changed:
-M Products/CMFPlone/profiles/dependencies/registry.xml
+M CHANGES.rst
+M plone/app/z3cform/inline_validation.py
 
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index 0d18929..9afe8c7 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -934,8 +934,6 @@
-             interface='Products.CMFPlone.interfaces.IBundleRegistry'>
-     <value key="resources" purge="false">
-       <element>plone_javascript_variables</element>
--      <element>unlockOnFormUnload</element>
--      <element>table_sorter</element>
-       <element>jquery-highlightsearchterms</element>
-     </value>
-     <value key="depends">plone</value>
+diff --git a/CHANGES.rst b/CHANGES.rst
+index fb665de..83dea0a 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,8 @@ Changelog
+ 1.0.2 (unreleased)
+ ------------------
+ 
+-- Nothing changed yet.
++- Fix inline-validation warning error
++  [jbirdwell]
+ 
+ 
+ 1.0.1 (2014-10-23)
+diff --git a/plone/app/z3cform/inline_validation.py b/plone/app/z3cform/inline_validation.py
+index 844d7f5..56c9025 100644
+--- a/plone/app/z3cform/inline_validation.py
++++ b/plone/app/z3cform/inline_validation.py
+@@ -12,6 +12,8 @@ class InlineValidationView(BrowserView):
+     """
+ 
+     def __call__(self, fname=None, fset=None):
++        self.request.response.setHeader('Content-Type', 'application/json')
++
+         res = {'errmsg': ''}
+ 
+         if fname is None:
+@@ -21,13 +23,13 @@ def __call__(self, fname=None, fset=None):
+         if hasattr(aq_base(form), 'form_instance'):
+             form = form.form_instance
+         if not hasattr(form, 'update'):
+-            return
++            return json.dumps(res)
+         form.update()
+ 
+         if getattr(form, "extractData", None):
+             data, errors = form.extractData()
+         else:
+-            return
++            return json.dumps(res)
+ 
+         #if we validate a field in a group we operate on the group
+         if fset is not None:
+@@ -57,5 +59,4 @@ def __call__(self, fname=None, fset=None):
+             validationError = translate(validationError, context=self.request)
+ 
+         res['errmsg'] = validationError or ''
+-        self.request.response.setHeader('Content-Type', 'application/json')
+         return json.dumps(res)
+
+
+Repository: plone.app.z3cform
+Branch: refs/heads/master
+Date: 2014-12-17T15:38:35-06:00
+Author: Josh Birdwell (birdwell) <jbirdwell34@gmail.com>
+Commit: https://github.com/plone/plone.app.z3cform/commit/3519fa71235420c223e45f465b96649f419083df
+
+Fix the test for forms embedded inside normal views to expect the correct return
+
+Files changed:
+M plone/app/z3cform/inline_validation.rst
+
+diff --git a/plone/app/z3cform/inline_validation.rst b/plone/app/z3cform/inline_validation.rst
+index 40d72b1..e1ab6bf 100644
+--- a/plone/app/z3cform/inline_validation.rst
++++ b/plone/app/z3cform/inline_validation.rst
+@@ -192,3 +192,4 @@ in this case no validation output should be returned.
+     >>> request = make_request(form={'form.widgets.age': 'Title'})
+     >>> z3cform_validate_field = getMultiAdapter((view, request), name=u"z3cform_validate_field")
+     >>> z3cform_validate_field(fname=u'form.widgets.age')
++    '{"errmsg": ""}'
+
+
+Repository: plone.app.z3cform
+Branch: refs/heads/master
+Date: 2014-12-17T13:57:35-08:00
+Author: David Glick (davisagli) <david.glick@plone.org>
+Commit: https://github.com/plone/plone.app.z3cform/commit/ba8f3b1e645f69f228d7cc812bfd4f55a7a32a1f
+
+Merge pull request #16 from plone/jbirdwell-fix-inline-validation-warning
+
+Fix inline-validation warning error
+
+Files changed:
+M CHANGES.rst
+M plone/app/z3cform/inline_validation.py
+M plone/app/z3cform/inline_validation.rst
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index fb665de..83dea0a 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,8 @@ Changelog
+ 1.0.2 (unreleased)
+ ------------------
+ 
+-- Nothing changed yet.
++- Fix inline-validation warning error
++  [jbirdwell]
+ 
+ 
+ 1.0.1 (2014-10-23)
+diff --git a/plone/app/z3cform/inline_validation.py b/plone/app/z3cform/inline_validation.py
+index 844d7f5..56c9025 100644
+--- a/plone/app/z3cform/inline_validation.py
++++ b/plone/app/z3cform/inline_validation.py
+@@ -12,6 +12,8 @@ class InlineValidationView(BrowserView):
+     """
+ 
+     def __call__(self, fname=None, fset=None):
++        self.request.response.setHeader('Content-Type', 'application/json')
++
+         res = {'errmsg': ''}
+ 
+         if fname is None:
+@@ -21,13 +23,13 @@ def __call__(self, fname=None, fset=None):
+         if hasattr(aq_base(form), 'form_instance'):
+             form = form.form_instance
+         if not hasattr(form, 'update'):
+-            return
++            return json.dumps(res)
+         form.update()
+ 
+         if getattr(form, "extractData", None):
+             data, errors = form.extractData()
+         else:
+-            return
++            return json.dumps(res)
+ 
+         #if we validate a field in a group we operate on the group
+         if fset is not None:
+@@ -57,5 +59,4 @@ def __call__(self, fname=None, fset=None):
+             validationError = translate(validationError, context=self.request)
+ 
+         res['errmsg'] = validationError or ''
+-        self.request.response.setHeader('Content-Type', 'application/json')
+         return json.dumps(res)
+diff --git a/plone/app/z3cform/inline_validation.rst b/plone/app/z3cform/inline_validation.rst
+index 40d72b1..e1ab6bf 100644
+--- a/plone/app/z3cform/inline_validation.rst
++++ b/plone/app/z3cform/inline_validation.rst
+@@ -192,3 +192,4 @@ in this case no validation output should be returned.
+     >>> request = make_request(form={'form.widgets.age': 'Title'})
+     >>> z3cform_validate_field = getMultiAdapter((view, request), name=u"z3cform_validate_field")
+     >>> z3cform_validate_field(fname=u'form.widgets.age')
++    '{"errmsg": ""}'
 
 
