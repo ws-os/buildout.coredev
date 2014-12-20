@@ -1,218 +1,638 @@
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-12-17T21:18:08+01:00
+Date: 2014-12-20T12:54:44+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/c19c230768640262e31fb19e3c2ba58cae0db1fc
+Commit: https://github.com/plone/mockup/commit/4b777fcbefc616ccbb9f063d5e5c2e1d3af846dc
 
-Fix scenario title.
+Revert "Make patterns more generic by loading the i18n catalog in a separate step."
 
 Files changed:
-M Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
+M mockup/js/config.js
+M mockup/patterns/formunloadalert/pattern.js
+M mockup/patterns/pickadate/pattern.js
+M mockup/patterns/preventdoublesubmit/pattern.js
+M mockup/patterns/querystring/pattern.js
+M mockup/patterns/relateditems/pattern.js
+M mockup/patterns/structure/pattern.js
+M mockup/patterns/tinymce/pattern.js
+M mockup/patterns/upload/pattern.js
+D mockup/js/i18n-wrapper.js
 
-diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-index 942835d..c48b0ed 100644
---- a/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-+++ b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-@@ -23,7 +23,7 @@ Test Teardown  Run keywords  Report test status  Close all browsers
- 
- *** Test Cases ***************************************************************
- 
--Scenario: Enable self registration in the Security Control Panel
-+Scenario: Configure Filter Control Panel to filter out nasty tags
-   Given a logged-in site administrator
-     and the filter control panel
-    When I add 'h1' to the nasty tags list
-@@ -44,6 +44,7 @@ Input RichText
-   [Arguments]  ${input}
-   Wait until keyword succeeds  5s  1s  Execute Javascript  tinyMCE.activeEditor.setContent('${input}');
- 
-+
- # --- WHEN -------------------------------------------------------------------
- 
- I add '${tag}' to the nasty tags list
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2014-12-20T07:49:54+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/b3da351a9b8d75fbf840cdf08d044424eeeee18e
-
-Merge branch 'master' of git://github.com/plone/Products.CMFPlone
-
-Files changed:
-M Products/CMFPlone/profiles/dependencies/registry.xml
-D Products/CMFPlone/profiles/dependencies/jsregistry.xml
-
-diff --git a/Products/CMFPlone/profiles/dependencies/jsregistry.xml b/Products/CMFPlone/profiles/dependencies/jsregistry.xml
+diff --git a/mockup/js/config.js b/mockup/js/config.js
+index f4224c2..bd58bf7 100644
+--- a/mockup/js/config.js
++++ b/mockup/js/config.js
+@@ -44,7 +44,6 @@
+       'jquery.event.drag': 'lib/jquery.event.drag',
+       'jquery.event.drop': 'lib/jquery.event.drop',
+       'jquery.form': 'bower_components/jquery-form/jquery.form',
+-      'translate': 'js/i18n-wrapper',
+       'marked': 'bower_components/marked/lib/marked',
+       'mockup-bundles-docs': 'js/bundles/docs',
+       'mockup-bundles-filemanager': 'js/bundles/filemanager',
+diff --git a/mockup/js/i18n-wrapper.js b/mockup/js/i18n-wrapper.js
 deleted file mode 100644
-index be011d4..0000000
---- a/Products/CMFPlone/profiles/dependencies/jsregistry.xml
+index 72c174b..0000000
+--- a/mockup/js/i18n-wrapper.js
 +++ /dev/null
-@@ -1,21 +0,0 @@
--<?xml version="1.0"?>
--<object name="portal_javascripts" meta_type="JavaScripts Registry">
+@@ -1,16 +0,0 @@
+-/* i18n integration.
+- *
+- * This is a singleton.
+- * Configuration is done on the body tag data-i18ncatalogurl attribute
+- *     <body data-i18ncatalogurl="/jsi18n">
+- *
+- *  Or, it'll default to "/jsi18n"
+- */
 -
--
--
-- <!-- Libraries -->
--
--
--
-- <!-- Old needs to be moved -->
--
--
-- <!-- Plone main js -->
--
--
-- <!-- BBB Plone main js -->
--
-- <!-- Only for logged-in users -->
-- <javascript id="table_sorter.js" authenticated="True" />
-- <javascript id="unlockOnFormUnload.js" authenticated="True" />
--</object>
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index 0d18929..8d3bbff 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -624,6 +624,10 @@
-       <value key="js">++resource++mockupjs/i18n.js</value>
-   </records>
+-define([
+-  'mockup-i18n'
+-], function(i18n) {
+-  'use strict';
+-  i18n.loadCatalog('widgets');
+-  return i18n.MessageFactory('widgets');
+-});
+diff --git a/mockup/patterns/formunloadalert/pattern.js b/mockup/patterns/formunloadalert/pattern.js
+index 12c66ba..b48a67d 100644
+--- a/mockup/patterns/formunloadalert/pattern.js
++++ b/mockup/patterns/formunloadalert/pattern.js
+@@ -30,10 +30,13 @@
+ define([
+   'jquery',
+   'mockup-patterns-base',
+-  'translate'
+-], function ($, Base, _t) {
++  'mockup-i18n'
++], function ($, Base, i18n) {
+   'use strict';
  
-+  <records prefix="plone.resources/translate"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++mockupjs/i18n-wrapper.js</value>
-+  </records>
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var FormUnloadAlert = Base.extend({
+     name: 'formunloadalert',
+     _changed : false,       // Stores a listing of raised changes by their key
+diff --git a/mockup/patterns/pickadate/pattern.js b/mockup/patterns/pickadate/pattern.js
+index c756e88..699ed51 100644
+--- a/mockup/patterns/pickadate/pattern.js
++++ b/mockup/patterns/pickadate/pattern.js
+@@ -89,10 +89,13 @@ define([
+   'picker.date',
+   'picker.time',
+   'mockup-patterns-select2',
+-  'translate'
+-], function($, Base, Picker, PickerDate, PickerTime, Select2, _t) {
++  'mockup-i18n'
++], function($, Base, Picker, PickerDate, PickerTime, Select2, i18n) {
+   'use strict';
  
-  <!-- Patterns -->
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var PickADate = Base.extend({
+     name: 'pickadate',
+     defaults: {
+diff --git a/mockup/patterns/preventdoublesubmit/pattern.js b/mockup/patterns/preventdoublesubmit/pattern.js
+index fb80ef0..9997380 100644
+--- a/mockup/patterns/preventdoublesubmit/pattern.js
++++ b/mockup/patterns/preventdoublesubmit/pattern.js
+@@ -23,10 +23,13 @@
+ define([
+   'jquery',
+   'mockup-patterns-base',
+-  'translate'
+-], function($, Base, _t) {
++  'mockup-i18n'
++], function($, Base, i18n) {
+   'use strict';
  
-@@ -835,14 +839,6 @@
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">jquery.highlightsearchterms.js</value>
-   </records>
--  <records prefix="plone.resources/table_sorter"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">table_sorter.js</value>
--  </records>
--  <records prefix="plone.resources/unlockOnFormUnload"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">unlockOnFormUnload.js</value>
--  </records>
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var PreventDoubleSubmit = Base.extend({
+     name: 'preventdoublesubmit',
+     defaults: {
+diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
+index 34cbd53..ffd3f3f 100644
+--- a/mockup/patterns/querystring/pattern.js
++++ b/mockup/patterns/querystring/pattern.js
+@@ -49,10 +49,13 @@ define([
+   'mockup-patterns-select2',
+   'mockup-patterns-pickadate',
+   'select2',
+-  'translate'
+-], function($, Base, Select2, PickADate, undefined, _t) {
++  'mockup-i18n'
++], function($, Base, Select2, PickADate, undefined, i18n) {
+   'use strict';
  
-   <!-- disabled -->
-   <records prefix="plone.resources/mark_special_links"
-@@ -934,8 +930,6 @@
-             interface='Products.CMFPlone.interfaces.IBundleRegistry'>
-     <value key="resources" purge="false">
-       <element>plone_javascript_variables</element>
--      <element>unlockOnFormUnload</element>
--      <element>table_sorter</element>
-       <element>jquery-highlightsearchterms</element>
-     </value>
-     <value key="depends">plone</value>
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var Criteria = function() { this.init.apply(this, arguments); };
+   Criteria.prototype = {
+     defaults: {
+diff --git a/mockup/patterns/relateditems/pattern.js b/mockup/patterns/relateditems/pattern.js
+index fed64eb..72e3b41 100644
+--- a/mockup/patterns/relateditems/pattern.js
++++ b/mockup/patterns/relateditems/pattern.js
+@@ -77,10 +77,13 @@ define([
+   'mockup-patterns-select2',
+   'mockup-utils',
+   'mockup-patterns-tree',
+-  'translate'
+-], function($, _, Base, Select2, utils, Tree, _t) {
++  'mockup-i18n'
++], function($, _, Base, Select2, utils, Tree, i18n) {
+   'use strict';
+ 
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var RelatedItems = Base.extend({
+     name: 'relateditems',
+     browsing: false,
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index ea9fe66..0073c9c 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -32,15 +32,18 @@ define([
+   'mockup-patterns-base',
+   'mockup-utils',
+   'mockup-patterns-structure-url/js/views/app',
+-  'translate',
++  'mockup-i18n',
+   'text!mockup-patterns-structure-url/templates/paging.xml',
+   'text!mockup-patterns-structure-url/templates/selection_item.xml',
+   'text!mockup-patterns-structure-url/templates/tablerow.xml',
+   'text!mockup-patterns-structure-url/templates/table.xml',
+   'text!mockup-ui-url/templates/popover.xml',
+-], function($, Base, utils, AppView, _t) {
++], function($, Base, utils, AppView, i18n) {
+   'use strict';
+ 
++  i18n.loadCatalog('widgets');
++  var _ = i18n.MessageFactory('widgets');
++
+   var Structure = Base.extend({
+     name: 'structure',
+     defaults: {
+@@ -63,26 +66,26 @@ define([
+         'review_state'
+       ],
+       availableColumns: {
+-        'ModificationDate': _t('Last modified'),
+-        'EffectiveDate': _t('Published'),
+-        'CreationDate': _t('Created'),
+-        'review_state': _t('Review state'),
+-        'Subject': _t('Tags'),
+-        'Type': _t('Type'),
+-        'is_folderish': _t('Folder'),
+-        'exclude_from_nav': _t('Excluded from nav'),
+-        'getObjSize': _t('Object Size'),
+-        'last_comment_date': _t('Last comment date'),
+-        'total_comments': _t('Total comments')
++        'ModificationDate': _('Last modified'),
++        'EffectiveDate': _('Published'),
++        'CreationDate': _('Created'),
++        'review_state': _('Review state'),
++        'Subject': _('Tags'),
++        'Type': _('Type'),
++        'is_folderish': _('Folder'),
++        'exclude_from_nav': _('Excluded from nav'),
++        'getObjSize': _('Object Size'),
++        'last_comment_date': _('Last comment date'),
++        'total_comments': _('Total comments')
+       },
+       rearrange: {
+         properties: {
+-          'id': _t('ID'),
+-          'sortable_title': _t('Title'),
+-          'modified': _t('Last Modified'),
+-          'created': _t('Created on'),
+-          'effective': _t('Publication Date'),
+-          'Type': _t('Type')
++          'id': _('ID'),
++          'sortable_title': _('Title'),
++          'modified': _('Last Modified'),
++          'created': _('Created on'),
++          'effective': _('Publication Date'),
++          'Type': _('Type')
+         },
+         url: '/rearrange'
+       },
+@@ -93,31 +96,31 @@ define([
+        */
+       buttonGroups: {
+         primary: [{
+-          title: _t('Cut'),
++          title: _('Cut'),
+           url: '/cut'
+         },{
+-          title: _t('Copy'),
++          title: _('Copy'),
+           url: '/copy'
+         },{
+-          title: _t('Paste'),
++          title: _('Paste'),
+           url: '/paste'
+         },{
+-          title: _t('Delete'),
++          title: _('Delete'),
+           url: '/delete',
+           context: 'danger',
+           icon: 'trash'
+         }],
+         secondary: [{
+-          title: _t('Workflow'),
++          title: _('Workflow'),
+           url: '/workflow'
+         },{
+-          title: _t('Tags'),
++          title: _('Tags'),
+           url: '/tags'
+         },{
+-          title: _t('Properties'),
++          title: _('Properties'),
+           url: '/properties'
+         },{
+-          title: _t('Rename'),
++          title: _('Rename'),
+           url: '/rename'
+         }]
+       },
+diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
+index 42e4df0..34e1998 100644
+--- a/mockup/patterns/tinymce/pattern.js
++++ b/mockup/patterns/tinymce/pattern.js
+@@ -58,7 +58,7 @@ define([
+   'text!mockup-patterns-tinymce-url/templates/selection.xml',
+   'mockup-utils',
+   'mockup-patterns-tinymce-url/js/links',
+-  'translate',
++  'mockup-i18n',
+   'tinymce-modern-theme', 'tinymce-advlist', 'tinymce-anchor', 'tinymce-autolink',
+   'tinymce-autoresize', 'tinymce-autosave', 'tinymce-bbcode', 'tinymce-charmap',
+   'tinymce-code', 'tinymce-colorpicker', 'tinymce-contextmenu', 'tinymce-directionality',
+@@ -73,9 +73,14 @@ define([
+ ], function($, _,
+             Base, RelatedItems, Modal, tinymce,
+             AutoTOC, ResultTemplate, SelectionTemplate,
+-            utils, LinkModal, _t) {
++            utils, LinkModal, i18n) {
+   'use strict';
+ 
++
++
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var TinyMCE = Base.extend({
+     name: 'tinymce',
+     defaults: {
+diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
+index 1f84094..634afe5 100644
+--- a/mockup/patterns/upload/pattern.js
++++ b/mockup/patterns/upload/pattern.js
+@@ -48,14 +48,17 @@ define([
+   'dropzone',
+   'text!mockup-patterns-upload-url/templates/upload.xml',
+   'text!mockup-patterns-upload-url/templates/preview.xml',
+-  'translate'
++  'mockup-i18n'
+ ], function($, _, Base, RelatedItems, Dropzone,
+-            UploadTemplate, PreviewTemplate, _t) {
++            UploadTemplate, PreviewTemplate, i18n) {
+   'use strict';
+ 
+   /* we do not want this plugin to auto discover */
+   Dropzone.autoDiscover = false;
+ 
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var UploadPattern = Base.extend({
+     name: 'upload',
+     defaults: {
 
 
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-12-20T07:50:37+01:00
+Date: 2014-12-20T13:14:29+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/ddf64ee7b1b4b196408d114720d35a7738a4365a
+Commit: https://github.com/plone/mockup/commit/4c7b323b9610122f9d630ceb1bee4f2943ccc365
 
-Revert "missing .js"
+Merge pull request #453 from plone/revert-452-i18n-wrapper
 
-This reverts commit d49b33a4b03f25f5cbbdfd1bc494ec84b81d7bb3.
+Revert "Make patterns more generic by loading the i18n catalog in a sepa...
 
 Files changed:
-M Products/CMFPlone/profiles/dependencies/registry.xml
+M mockup/js/config.js
+M mockup/patterns/formunloadalert/pattern.js
+M mockup/patterns/pickadate/pattern.js
+M mockup/patterns/preventdoublesubmit/pattern.js
+M mockup/patterns/querystring/pattern.js
+M mockup/patterns/relateditems/pattern.js
+M mockup/patterns/structure/pattern.js
+M mockup/patterns/tinymce/pattern.js
+M mockup/patterns/upload/pattern.js
+D mockup/js/i18n-wrapper.js
 
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index 8d3bbff..0c8f477 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -626,7 +626,7 @@
+diff --git a/mockup/js/config.js b/mockup/js/config.js
+index f4224c2..bd58bf7 100644
+--- a/mockup/js/config.js
++++ b/mockup/js/config.js
+@@ -44,7 +44,6 @@
+       'jquery.event.drag': 'lib/jquery.event.drag',
+       'jquery.event.drop': 'lib/jquery.event.drop',
+       'jquery.form': 'bower_components/jquery-form/jquery.form',
+-      'translate': 'js/i18n-wrapper',
+       'marked': 'bower_components/marked/lib/marked',
+       'mockup-bundles-docs': 'js/bundles/docs',
+       'mockup-bundles-filemanager': 'js/bundles/filemanager',
+diff --git a/mockup/js/i18n-wrapper.js b/mockup/js/i18n-wrapper.js
+deleted file mode 100644
+index 72c174b..0000000
+--- a/mockup/js/i18n-wrapper.js
++++ /dev/null
+@@ -1,16 +0,0 @@
+-/* i18n integration.
+- *
+- * This is a singleton.
+- * Configuration is done on the body tag data-i18ncatalogurl attribute
+- *     <body data-i18ncatalogurl="/jsi18n">
+- *
+- *  Or, it'll default to "/jsi18n"
+- */
+-
+-define([
+-  'mockup-i18n'
+-], function(i18n) {
+-  'use strict';
+-  i18n.loadCatalog('widgets');
+-  return i18n.MessageFactory('widgets');
+-});
+diff --git a/mockup/patterns/formunloadalert/pattern.js b/mockup/patterns/formunloadalert/pattern.js
+index 12c66ba..b48a67d 100644
+--- a/mockup/patterns/formunloadalert/pattern.js
++++ b/mockup/patterns/formunloadalert/pattern.js
+@@ -30,10 +30,13 @@
+ define([
+   'jquery',
+   'mockup-patterns-base',
+-  'translate'
+-], function ($, Base, _t) {
++  'mockup-i18n'
++], function ($, Base, i18n) {
+   'use strict';
  
-   <records prefix="plone.resources/translate"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++resource++mockupjs/i18n-wrapper.js</value>
-+      <value key="js">++resource++mockupjs/i18n-wrapper</value>
-   </records>
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var FormUnloadAlert = Base.extend({
+     name: 'formunloadalert',
+     _changed : false,       // Stores a listing of raised changes by their key
+diff --git a/mockup/patterns/pickadate/pattern.js b/mockup/patterns/pickadate/pattern.js
+index c756e88..699ed51 100644
+--- a/mockup/patterns/pickadate/pattern.js
++++ b/mockup/patterns/pickadate/pattern.js
+@@ -89,10 +89,13 @@ define([
+   'picker.date',
+   'picker.time',
+   'mockup-patterns-select2',
+-  'translate'
+-], function($, Base, Picker, PickerDate, PickerTime, Select2, _t) {
++  'mockup-i18n'
++], function($, Base, Picker, PickerDate, PickerTime, Select2, i18n) {
+   'use strict';
  
-  <!-- Patterns -->
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2014-12-20T07:50:58+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/c74f0d06d3613281428cbd3516189626562a6ff8
-
-Revert "Removing all jsregistry file, not more usefull"
-
-This reverts commit 2bc1834137fa8f09bb2eb97d0feba3fb43fa48e0.
-
-Files changed:
-A Products/CMFPlone/profiles/dependencies/jsregistry.xml
-
-diff --git a/Products/CMFPlone/profiles/dependencies/jsregistry.xml b/Products/CMFPlone/profiles/dependencies/jsregistry.xml
-new file mode 100644
-index 0000000..be011d4
---- /dev/null
-+++ b/Products/CMFPlone/profiles/dependencies/jsregistry.xml
-@@ -0,0 +1,21 @@
-+<?xml version="1.0"?>
-+<object name="portal_javascripts" meta_type="JavaScripts Registry">
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
 +
-+
-+
-+ <!-- Libraries -->
-+
-+
-+
-+ <!-- Old needs to be moved -->
-+
-+
-+ <!-- Plone main js -->
-+
-+
-+ <!-- BBB Plone main js -->
-+
-+ <!-- Only for logged-in users -->
-+ <javascript id="table_sorter.js" authenticated="True" />
-+ <javascript id="unlockOnFormUnload.js" authenticated="True" />
-+</object>
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2014-12-20T07:51:14+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/427def02005a7e57db0e5d9ad955f0c6bcae6b93
-
-Revert "remove also the registries of the removed legacy js"
-
-This reverts commit 6612dc92c3ef940ae8de508e81ffac46130fc978.
-
-Files changed:
-M Products/CMFPlone/profiles/dependencies/registry.xml
-
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index 0c8f477..b44ca4f 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -839,6 +839,14 @@
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">jquery.highlightsearchterms.js</value>
-   </records>
-+  <records prefix="plone.resources/table_sorter"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">table_sorter.js</value>
-+  </records>
-+  <records prefix="plone.resources/unlockOnFormUnload"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">unlockOnFormUnload.js</value>
-+  </records>
+   var PickADate = Base.extend({
+     name: 'pickadate',
+     defaults: {
+diff --git a/mockup/patterns/preventdoublesubmit/pattern.js b/mockup/patterns/preventdoublesubmit/pattern.js
+index fb80ef0..9997380 100644
+--- a/mockup/patterns/preventdoublesubmit/pattern.js
++++ b/mockup/patterns/preventdoublesubmit/pattern.js
+@@ -23,10 +23,13 @@
+ define([
+   'jquery',
+   'mockup-patterns-base',
+-  'translate'
+-], function($, Base, _t) {
++  'mockup-i18n'
++], function($, Base, i18n) {
+   'use strict';
  
-   <!-- disabled -->
-   <records prefix="plone.resources/mark_special_links"
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var PreventDoubleSubmit = Base.extend({
+     name: 'preventdoublesubmit',
+     defaults: {
+diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
+index 34cbd53..ffd3f3f 100644
+--- a/mockup/patterns/querystring/pattern.js
++++ b/mockup/patterns/querystring/pattern.js
+@@ -49,10 +49,13 @@ define([
+   'mockup-patterns-select2',
+   'mockup-patterns-pickadate',
+   'select2',
+-  'translate'
+-], function($, Base, Select2, PickADate, undefined, _t) {
++  'mockup-i18n'
++], function($, Base, Select2, PickADate, undefined, i18n) {
+   'use strict';
+ 
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var Criteria = function() { this.init.apply(this, arguments); };
+   Criteria.prototype = {
+     defaults: {
+diff --git a/mockup/patterns/relateditems/pattern.js b/mockup/patterns/relateditems/pattern.js
+index fed64eb..72e3b41 100644
+--- a/mockup/patterns/relateditems/pattern.js
++++ b/mockup/patterns/relateditems/pattern.js
+@@ -77,10 +77,13 @@ define([
+   'mockup-patterns-select2',
+   'mockup-utils',
+   'mockup-patterns-tree',
+-  'translate'
+-], function($, _, Base, Select2, utils, Tree, _t) {
++  'mockup-i18n'
++], function($, _, Base, Select2, utils, Tree, i18n) {
+   'use strict';
+ 
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var RelatedItems = Base.extend({
+     name: 'relateditems',
+     browsing: false,
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index ea9fe66..0073c9c 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -32,15 +32,18 @@ define([
+   'mockup-patterns-base',
+   'mockup-utils',
+   'mockup-patterns-structure-url/js/views/app',
+-  'translate',
++  'mockup-i18n',
+   'text!mockup-patterns-structure-url/templates/paging.xml',
+   'text!mockup-patterns-structure-url/templates/selection_item.xml',
+   'text!mockup-patterns-structure-url/templates/tablerow.xml',
+   'text!mockup-patterns-structure-url/templates/table.xml',
+   'text!mockup-ui-url/templates/popover.xml',
+-], function($, Base, utils, AppView, _t) {
++], function($, Base, utils, AppView, i18n) {
+   'use strict';
+ 
++  i18n.loadCatalog('widgets');
++  var _ = i18n.MessageFactory('widgets');
++
+   var Structure = Base.extend({
+     name: 'structure',
+     defaults: {
+@@ -63,26 +66,26 @@ define([
+         'review_state'
+       ],
+       availableColumns: {
+-        'ModificationDate': _t('Last modified'),
+-        'EffectiveDate': _t('Published'),
+-        'CreationDate': _t('Created'),
+-        'review_state': _t('Review state'),
+-        'Subject': _t('Tags'),
+-        'Type': _t('Type'),
+-        'is_folderish': _t('Folder'),
+-        'exclude_from_nav': _t('Excluded from nav'),
+-        'getObjSize': _t('Object Size'),
+-        'last_comment_date': _t('Last comment date'),
+-        'total_comments': _t('Total comments')
++        'ModificationDate': _('Last modified'),
++        'EffectiveDate': _('Published'),
++        'CreationDate': _('Created'),
++        'review_state': _('Review state'),
++        'Subject': _('Tags'),
++        'Type': _('Type'),
++        'is_folderish': _('Folder'),
++        'exclude_from_nav': _('Excluded from nav'),
++        'getObjSize': _('Object Size'),
++        'last_comment_date': _('Last comment date'),
++        'total_comments': _('Total comments')
+       },
+       rearrange: {
+         properties: {
+-          'id': _t('ID'),
+-          'sortable_title': _t('Title'),
+-          'modified': _t('Last Modified'),
+-          'created': _t('Created on'),
+-          'effective': _t('Publication Date'),
+-          'Type': _t('Type')
++          'id': _('ID'),
++          'sortable_title': _('Title'),
++          'modified': _('Last Modified'),
++          'created': _('Created on'),
++          'effective': _('Publication Date'),
++          'Type': _('Type')
+         },
+         url: '/rearrange'
+       },
+@@ -93,31 +96,31 @@ define([
+        */
+       buttonGroups: {
+         primary: [{
+-          title: _t('Cut'),
++          title: _('Cut'),
+           url: '/cut'
+         },{
+-          title: _t('Copy'),
++          title: _('Copy'),
+           url: '/copy'
+         },{
+-          title: _t('Paste'),
++          title: _('Paste'),
+           url: '/paste'
+         },{
+-          title: _t('Delete'),
++          title: _('Delete'),
+           url: '/delete',
+           context: 'danger',
+           icon: 'trash'
+         }],
+         secondary: [{
+-          title: _t('Workflow'),
++          title: _('Workflow'),
+           url: '/workflow'
+         },{
+-          title: _t('Tags'),
++          title: _('Tags'),
+           url: '/tags'
+         },{
+-          title: _t('Properties'),
++          title: _('Properties'),
+           url: '/properties'
+         },{
+-          title: _t('Rename'),
++          title: _('Rename'),
+           url: '/rename'
+         }]
+       },
+diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
+index 42e4df0..34e1998 100644
+--- a/mockup/patterns/tinymce/pattern.js
++++ b/mockup/patterns/tinymce/pattern.js
+@@ -58,7 +58,7 @@ define([
+   'text!mockup-patterns-tinymce-url/templates/selection.xml',
+   'mockup-utils',
+   'mockup-patterns-tinymce-url/js/links',
+-  'translate',
++  'mockup-i18n',
+   'tinymce-modern-theme', 'tinymce-advlist', 'tinymce-anchor', 'tinymce-autolink',
+   'tinymce-autoresize', 'tinymce-autosave', 'tinymce-bbcode', 'tinymce-charmap',
+   'tinymce-code', 'tinymce-colorpicker', 'tinymce-contextmenu', 'tinymce-directionality',
+@@ -73,9 +73,14 @@ define([
+ ], function($, _,
+             Base, RelatedItems, Modal, tinymce,
+             AutoTOC, ResultTemplate, SelectionTemplate,
+-            utils, LinkModal, _t) {
++            utils, LinkModal, i18n) {
+   'use strict';
+ 
++
++
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var TinyMCE = Base.extend({
+     name: 'tinymce',
+     defaults: {
+diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
+index 1f84094..634afe5 100644
+--- a/mockup/patterns/upload/pattern.js
++++ b/mockup/patterns/upload/pattern.js
+@@ -48,14 +48,17 @@ define([
+   'dropzone',
+   'text!mockup-patterns-upload-url/templates/upload.xml',
+   'text!mockup-patterns-upload-url/templates/preview.xml',
+-  'translate'
++  'mockup-i18n'
+ ], function($, _, Base, RelatedItems, Dropzone,
+-            UploadTemplate, PreviewTemplate, _t) {
++            UploadTemplate, PreviewTemplate, i18n) {
+   'use strict';
+ 
+   /* we do not want this plugin to auto discover */
+   Dropzone.autoDiscover = false;
+ 
++  i18n.loadCatalog('widgets');
++  var _t = i18n.MessageFactory('widgets');
++
+   var UploadPattern = Base.extend({
+     name: 'upload',
+     defaults: {
 
 
