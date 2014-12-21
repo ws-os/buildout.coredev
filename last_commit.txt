@@ -1,638 +1,399 @@
-Repository: mockup
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2014-12-20T12:54:44+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/mockup/commit/4b777fcbefc616ccbb9f063d5e5c2e1d3af846dc
+Date: 2014-12-21T11:57:13+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/plone.app.upgrade/commit/5d41407ae6f9cd7893ffd982cf9898236f3946ea
 
-Revert "Make patterns more generic by loading the i18n catalog in a separate step."
+add upgrade step to copy security panel settings into the registry
 
 Files changed:
-M mockup/js/config.js
-M mockup/patterns/formunloadalert/pattern.js
-M mockup/patterns/pickadate/pattern.js
-M mockup/patterns/preventdoublesubmit/pattern.js
-M mockup/patterns/querystring/pattern.js
-M mockup/patterns/relateditems/pattern.js
-M mockup/patterns/structure/pattern.js
-M mockup/patterns/tinymce/pattern.js
-M mockup/patterns/upload/pattern.js
-D mockup/js/i18n-wrapper.js
+A plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+M CHANGES.rst
+M plone/app/upgrade/v50/betas.py
+M plone/app/upgrade/v50/configure.zcml
+M plone/app/upgrade/v50/profiles.zcml
 
-diff --git a/mockup/js/config.js b/mockup/js/config.js
-index f4224c2..bd58bf7 100644
---- a/mockup/js/config.js
-+++ b/mockup/js/config.js
-@@ -44,7 +44,6 @@
-       'jquery.event.drag': 'lib/jquery.event.drag',
-       'jquery.event.drop': 'lib/jquery.event.drop',
-       'jquery.form': 'bower_components/jquery-form/jquery.form',
--      'translate': 'js/i18n-wrapper',
-       'marked': 'bower_components/marked/lib/marked',
-       'mockup-bundles-docs': 'js/bundles/docs',
-       'mockup-bundles-filemanager': 'js/bundles/filemanager',
-diff --git a/mockup/js/i18n-wrapper.js b/mockup/js/i18n-wrapper.js
-deleted file mode 100644
-index 72c174b..0000000
---- a/mockup/js/i18n-wrapper.js
-+++ /dev/null
-@@ -1,16 +0,0 @@
--/* i18n integration.
-- *
-- * This is a singleton.
-- * Configuration is done on the body tag data-i18ncatalogurl attribute
-- *     <body data-i18ncatalogurl="/jsi18n">
-- *
-- *  Or, it'll default to "/jsi18n"
-- */
--
--define([
--  'mockup-i18n'
--], function(i18n) {
--  'use strict';
--  i18n.loadCatalog('widgets');
--  return i18n.MessageFactory('widgets');
--});
-diff --git a/mockup/patterns/formunloadalert/pattern.js b/mockup/patterns/formunloadalert/pattern.js
-index 12c66ba..b48a67d 100644
---- a/mockup/patterns/formunloadalert/pattern.js
-+++ b/mockup/patterns/formunloadalert/pattern.js
-@@ -30,10 +30,13 @@
- define([
-   'jquery',
-   'mockup-patterns-base',
--  'translate'
--], function ($, Base, _t) {
-+  'mockup-i18n'
-+], function ($, Base, i18n) {
-   'use strict';
+diff --git a/CHANGES.rst b/CHANGES.rst
+index eeb195f..1bf846a 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,8 +4,12 @@ Changelog
+ 1.3.9 (unreleased)
+ ------------------
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
++- Add upgrade step for the security control panel.
++  [jcerjak]
 +
-   var FormUnloadAlert = Base.extend({
-     name: 'formunloadalert',
-     _changed : false,       // Stores a listing of raised changes by their key
-diff --git a/mockup/patterns/pickadate/pattern.js b/mockup/patterns/pickadate/pattern.js
-index c756e88..699ed51 100644
---- a/mockup/patterns/pickadate/pattern.js
-+++ b/mockup/patterns/pickadate/pattern.js
-@@ -89,10 +89,13 @@ define([
-   'picker.date',
-   'picker.time',
-   'mockup-patterns-select2',
--  'translate'
--], function($, Base, Picker, PickerDate, PickerTime, Select2, _t) {
-+  'mockup-i18n'
-+], function($, Base, Picker, PickerDate, PickerTime, Select2, i18n) {
-   'use strict';
+ - Add upgrade step for mail control panel. Refs PLIP 10359.
+   [jcerjak, khink]
++
+ - Add upgrade steps for markup control panel.
+   [thet]
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
+diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
+index a6d9225..db48320 100644
+--- a/plone/app/upgrade/v50/betas.py
++++ b/plone/app/upgrade/v50/betas.py
+@@ -2,6 +2,7 @@
+ from Products.CMFCore.utils import getToolByName
+ from Products.CMFPlone.interfaces import IMailSchema
+ from Products.CMFPlone.interfaces import IMarkupSchema
++from Products.CMFPlone.interfaces import ISecuritySchema
+ from plone.registry.interfaces import IRegistry
+ from zope.component import getUtility
+ from zope.component.hooks import getSite
+@@ -75,3 +76,50 @@ def upgrade_markup_controlpanel_settings(context):
+             if _type not in forbidden_types
+             and _type not in 'text/x-plone-outputfilters-html'  # removed, as in plone.app.vocabularies.types  # noqa
+         ])
 +
-   var PickADate = Base.extend({
-     name: 'pickadate',
-     defaults: {
-diff --git a/mockup/patterns/preventdoublesubmit/pattern.js b/mockup/patterns/preventdoublesubmit/pattern.js
-index fb80ef0..9997380 100644
---- a/mockup/patterns/preventdoublesubmit/pattern.js
-+++ b/mockup/patterns/preventdoublesubmit/pattern.js
-@@ -23,10 +23,13 @@
- define([
-   'jquery',
-   'mockup-patterns-base',
--  'translate'
--], function($, Base, _t) {
-+  'mockup-i18n'
-+], function($, Base, i18n) {
-   'use strict';
++
++def upgrade_security_controlpanel_settings(context):
++    """Copy security control panel settings from portal properties and various
++    other locations into the new registry.
++    """
++    def _get_enable_self_reg():
++        app_perms = portal.rolesOfPermission(permission='Add portal member')
++        for appperm in app_perms:
++            if appperm['name'] == 'Anonymous' and \
++               appperm['selected'] == 'SELECTED':
++                return True
++        return False
++
++    # get the old site properties
++    portal_url = getToolByName(context, 'portal_url')
++    portal = portal_url.getPortalObject()
++    portal_properties = getToolByName(portal, "portal_properties")
++    site_properties = portal_properties.site_properties
++
++    # get the new registry
++    registry = getUtility(IRegistry)
++
++    # XXX: Somehow this code is excecuted for old migration steps as well
++    # ( < Plone 4 ) and breaks because there is no registry. Looking up the
++    # registry interfaces with 'check=False' will not work, because it will
++    # return a settings object and then fail when we try to access the
++    # attributes.
++    try:
++        settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
++    except KeyError:
++        settings = False
++    if settings:
++        settings.enable_self_reg = _get_enable_self_reg()
++        settings.enable_user_pwd_choice = portal.getProperty(
++            'validate_email', True)
++        pmembership = getToolByName(portal, 'portal_membership')
++        settings.enable_user_folders = pmembership.getMemberareaCreationFlag()
++        settings.allow_anon_views_about = site_properties.getProperty(
++            'allowAnonymousViewAbout', False)
++        settings.use_email_as_login = site_properties.getProperty(
++            'use_email_as_login', False)
++        settings.use_uuid_as_userid = site_properties.getProperty(
++            'use_uuid_as_userid', False)
+diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
+index cb79fd8..47ff249 100644
+--- a/plone/app/upgrade/v50/configure.zcml
++++ b/plone/app/upgrade/v50/configure.zcml
+@@ -99,6 +99,12 @@
+            handler=".betas.upgrade_mail_controlpanel_settings"
+            />
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
++       <gs:upgradeStep
++           title="Upgrade security control panel settings"
++           description=""
++           handler=".betas.upgrade_security_controlpanel_settings"
++           />
 +
-   var PreventDoubleSubmit = Base.extend({
-     name: 'preventdoublesubmit',
-     defaults: {
-diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
-index 34cbd53..ffd3f3f 100644
---- a/mockup/patterns/querystring/pattern.js
-+++ b/mockup/patterns/querystring/pattern.js
-@@ -49,10 +49,13 @@ define([
-   'mockup-patterns-select2',
-   'mockup-patterns-pickadate',
-   'select2',
--  'translate'
--], function($, Base, Select2, PickADate, undefined, _t) {
-+  'mockup-i18n'
-+], function($, Base, Select2, PickADate, undefined, i18n) {
-   'use strict';
+     </gs:upgradeSteps>
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
-+
-   var Criteria = function() { this.init.apply(this, arguments); };
-   Criteria.prototype = {
-     defaults: {
-diff --git a/mockup/patterns/relateditems/pattern.js b/mockup/patterns/relateditems/pattern.js
-index fed64eb..72e3b41 100644
---- a/mockup/patterns/relateditems/pattern.js
-+++ b/mockup/patterns/relateditems/pattern.js
-@@ -77,10 +77,13 @@ define([
-   'mockup-patterns-select2',
-   'mockup-utils',
-   'mockup-patterns-tree',
--  'translate'
--], function($, _, Base, Select2, utils, Tree, _t) {
-+  'mockup-i18n'
-+], function($, _, Base, Select2, utils, Tree, i18n) {
-   'use strict';
+ </configure>
+diff --git a/plone/app/upgrade/v50/profiles.zcml b/plone/app/upgrade/v50/profiles.zcml
+index 271af6b..7655975 100644
+--- a/plone/app/upgrade/v50/profiles.zcml
++++ b/plone/app/upgrade/v50/profiles.zcml
+@@ -21,4 +21,13 @@
+       provides="Products.GenericSetup.interfaces.EXTENSION"
+       />
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
++  <genericsetup:registerProfile
++      name="to50beta1"
++      title="Upgrade profile for Plone 5003 to Plone 5.0beta1"
++      description=""
++      directory="profiles/to_beta1"
++      for="Products.CMFPlone.interfaces.IMigratingPloneSiteRoot"
++      provides="Products.GenericSetup.interfaces.EXTENSION"
++      />
 +
-   var RelatedItems = Base.extend({
-     name: 'relateditems',
-     browsing: false,
-diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
-index ea9fe66..0073c9c 100644
---- a/mockup/patterns/structure/pattern.js
-+++ b/mockup/patterns/structure/pattern.js
-@@ -32,15 +32,18 @@ define([
-   'mockup-patterns-base',
-   'mockup-utils',
-   'mockup-patterns-structure-url/js/views/app',
--  'translate',
-+  'mockup-i18n',
-   'text!mockup-patterns-structure-url/templates/paging.xml',
-   'text!mockup-patterns-structure-url/templates/selection_item.xml',
-   'text!mockup-patterns-structure-url/templates/tablerow.xml',
-   'text!mockup-patterns-structure-url/templates/table.xml',
-   'text!mockup-ui-url/templates/popover.xml',
--], function($, Base, utils, AppView, _t) {
-+], function($, Base, utils, AppView, i18n) {
-   'use strict';
- 
-+  i18n.loadCatalog('widgets');
-+  var _ = i18n.MessageFactory('widgets');
-+
-   var Structure = Base.extend({
-     name: 'structure',
-     defaults: {
-@@ -63,26 +66,26 @@ define([
-         'review_state'
-       ],
-       availableColumns: {
--        'ModificationDate': _t('Last modified'),
--        'EffectiveDate': _t('Published'),
--        'CreationDate': _t('Created'),
--        'review_state': _t('Review state'),
--        'Subject': _t('Tags'),
--        'Type': _t('Type'),
--        'is_folderish': _t('Folder'),
--        'exclude_from_nav': _t('Excluded from nav'),
--        'getObjSize': _t('Object Size'),
--        'last_comment_date': _t('Last comment date'),
--        'total_comments': _t('Total comments')
-+        'ModificationDate': _('Last modified'),
-+        'EffectiveDate': _('Published'),
-+        'CreationDate': _('Created'),
-+        'review_state': _('Review state'),
-+        'Subject': _('Tags'),
-+        'Type': _('Type'),
-+        'is_folderish': _('Folder'),
-+        'exclude_from_nav': _('Excluded from nav'),
-+        'getObjSize': _('Object Size'),
-+        'last_comment_date': _('Last comment date'),
-+        'total_comments': _('Total comments')
-       },
-       rearrange: {
-         properties: {
--          'id': _t('ID'),
--          'sortable_title': _t('Title'),
--          'modified': _t('Last Modified'),
--          'created': _t('Created on'),
--          'effective': _t('Publication Date'),
--          'Type': _t('Type')
-+          'id': _('ID'),
-+          'sortable_title': _('Title'),
-+          'modified': _('Last Modified'),
-+          'created': _('Created on'),
-+          'effective': _('Publication Date'),
-+          'Type': _('Type')
-         },
-         url: '/rearrange'
-       },
-@@ -93,31 +96,31 @@ define([
-        */
-       buttonGroups: {
-         primary: [{
--          title: _t('Cut'),
-+          title: _('Cut'),
-           url: '/cut'
-         },{
--          title: _t('Copy'),
-+          title: _('Copy'),
-           url: '/copy'
-         },{
--          title: _t('Paste'),
-+          title: _('Paste'),
-           url: '/paste'
-         },{
--          title: _t('Delete'),
-+          title: _('Delete'),
-           url: '/delete',
-           context: 'danger',
-           icon: 'trash'
-         }],
-         secondary: [{
--          title: _t('Workflow'),
-+          title: _('Workflow'),
-           url: '/workflow'
-         },{
--          title: _t('Tags'),
-+          title: _('Tags'),
-           url: '/tags'
-         },{
--          title: _t('Properties'),
-+          title: _('Properties'),
-           url: '/properties'
-         },{
--          title: _t('Rename'),
-+          title: _('Rename'),
-           url: '/rename'
-         }]
-       },
-diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
-index 42e4df0..34e1998 100644
---- a/mockup/patterns/tinymce/pattern.js
-+++ b/mockup/patterns/tinymce/pattern.js
-@@ -58,7 +58,7 @@ define([
-   'text!mockup-patterns-tinymce-url/templates/selection.xml',
-   'mockup-utils',
-   'mockup-patterns-tinymce-url/js/links',
--  'translate',
-+  'mockup-i18n',
-   'tinymce-modern-theme', 'tinymce-advlist', 'tinymce-anchor', 'tinymce-autolink',
-   'tinymce-autoresize', 'tinymce-autosave', 'tinymce-bbcode', 'tinymce-charmap',
-   'tinymce-code', 'tinymce-colorpicker', 'tinymce-contextmenu', 'tinymce-directionality',
-@@ -73,9 +73,14 @@ define([
- ], function($, _,
-             Base, RelatedItems, Modal, tinymce,
-             AutoTOC, ResultTemplate, SelectionTemplate,
--            utils, LinkModal, _t) {
-+            utils, LinkModal, i18n) {
-   'use strict';
- 
-+
-+
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
-+
-   var TinyMCE = Base.extend({
-     name: 'tinymce',
-     defaults: {
-diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
-index 1f84094..634afe5 100644
---- a/mockup/patterns/upload/pattern.js
-+++ b/mockup/patterns/upload/pattern.js
-@@ -48,14 +48,17 @@ define([
-   'dropzone',
-   'text!mockup-patterns-upload-url/templates/upload.xml',
-   'text!mockup-patterns-upload-url/templates/preview.xml',
--  'translate'
-+  'mockup-i18n'
- ], function($, _, Base, RelatedItems, Dropzone,
--            UploadTemplate, PreviewTemplate, _t) {
-+            UploadTemplate, PreviewTemplate, i18n) {
-   'use strict';
- 
-   /* we do not want this plugin to auto discover */
-   Dropzone.autoDiscover = false;
- 
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
-+
-   var UploadPattern = Base.extend({
-     name: 'upload',
-     defaults: {
+ </configure>
+diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+new file mode 100644
+index 0000000..fd89c49
+--- /dev/null
++++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0"?>
++<registry>
++  <records interface="Products.CMFPlone.interfaces.ISecuritySchema"
++           prefix="plone" />
++</registry>
 
 
-Repository: mockup
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2014-12-20T13:14:29+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/mockup/commit/4c7b323b9610122f9d630ceb1bee4f2943ccc365
+Date: 2014-12-21T15:02:33+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/plone.app.upgrade/commit/02074684bc4a683532ce1db47d70dab589553c35
 
-Merge pull request #453 from plone/revert-452-i18n-wrapper
-
-Revert "Make patterns more generic by loading the i18n catalog in a sepa...
+run upgrade profile so that security settings are properly registered
 
 Files changed:
-M mockup/js/config.js
-M mockup/patterns/formunloadalert/pattern.js
-M mockup/patterns/pickadate/pattern.js
-M mockup/patterns/preventdoublesubmit/pattern.js
-M mockup/patterns/querystring/pattern.js
-M mockup/patterns/relateditems/pattern.js
-M mockup/patterns/structure/pattern.js
-M mockup/patterns/tinymce/pattern.js
-M mockup/patterns/upload/pattern.js
-D mockup/js/i18n-wrapper.js
+M plone/app/upgrade/v50/betas.py
+M plone/app/upgrade/v50/configure.zcml
 
-diff --git a/mockup/js/config.js b/mockup/js/config.js
-index f4224c2..bd58bf7 100644
---- a/mockup/js/config.js
-+++ b/mockup/js/config.js
-@@ -44,7 +44,6 @@
-       'jquery.event.drag': 'lib/jquery.event.drag',
-       'jquery.event.drop': 'lib/jquery.event.drop',
-       'jquery.form': 'bower_components/jquery-form/jquery.form',
--      'translate': 'js/i18n-wrapper',
-       'marked': 'bower_components/marked/lib/marked',
-       'mockup-bundles-docs': 'js/bundles/docs',
-       'mockup-bundles-filemanager': 'js/bundles/filemanager',
-diff --git a/mockup/js/i18n-wrapper.js b/mockup/js/i18n-wrapper.js
-deleted file mode 100644
-index 72c174b..0000000
---- a/mockup/js/i18n-wrapper.js
-+++ /dev/null
-@@ -1,16 +0,0 @@
--/* i18n integration.
-- *
-- * This is a singleton.
-- * Configuration is done on the body tag data-i18ncatalogurl attribute
-- *     <body data-i18ncatalogurl="/jsi18n">
-- *
-- *  Or, it'll default to "/jsi18n"
-- */
--
--define([
--  'mockup-i18n'
--], function(i18n) {
--  'use strict';
--  i18n.loadCatalog('widgets');
--  return i18n.MessageFactory('widgets');
--});
-diff --git a/mockup/patterns/formunloadalert/pattern.js b/mockup/patterns/formunloadalert/pattern.js
-index 12c66ba..b48a67d 100644
---- a/mockup/patterns/formunloadalert/pattern.js
-+++ b/mockup/patterns/formunloadalert/pattern.js
-@@ -30,10 +30,13 @@
- define([
-   'jquery',
-   'mockup-patterns-base',
--  'translate'
--], function ($, Base, _t) {
-+  'mockup-i18n'
-+], function ($, Base, i18n) {
-   'use strict';
+diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
+index db48320..d1276fc 100644
+--- a/plone/app/upgrade/v50/betas.py
++++ b/plone/app/upgrade/v50/betas.py
+@@ -3,11 +3,17 @@
+ from Products.CMFPlone.interfaces import IMailSchema
+ from Products.CMFPlone.interfaces import IMarkupSchema
+ from Products.CMFPlone.interfaces import ISecuritySchema
++from plone.app.upgrade.utils import loadMigrationProfile
+ from plone.registry.interfaces import IRegistry
+ from zope.component import getUtility
+ from zope.component.hooks import getSite
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
-+
-   var FormUnloadAlert = Base.extend({
-     name: 'formunloadalert',
-     _changed : false,       // Stores a listing of raised changes by their key
-diff --git a/mockup/patterns/pickadate/pattern.js b/mockup/patterns/pickadate/pattern.js
-index c756e88..699ed51 100644
---- a/mockup/patterns/pickadate/pattern.js
-+++ b/mockup/patterns/pickadate/pattern.js
-@@ -89,10 +89,13 @@ define([
-   'picker.date',
-   'picker.time',
-   'mockup-patterns-select2',
--  'translate'
--], function($, Base, Picker, PickerDate, PickerTime, Select2, _t) {
-+  'mockup-i18n'
-+], function($, Base, Picker, PickerDate, PickerTime, Select2, i18n) {
-   'use strict';
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
++def to50beta1(context):
++    """5.0alpha3 -> 5.0beta1"""
++    loadMigrationProfile(context, 'profile-plone.app.upgrade.v50:to50beta1')
 +
-   var PickADate = Base.extend({
-     name: 'pickadate',
-     defaults: {
-diff --git a/mockup/patterns/preventdoublesubmit/pattern.js b/mockup/patterns/preventdoublesubmit/pattern.js
-index fb80ef0..9997380 100644
---- a/mockup/patterns/preventdoublesubmit/pattern.js
-+++ b/mockup/patterns/preventdoublesubmit/pattern.js
-@@ -23,10 +23,13 @@
- define([
-   'jquery',
-   'mockup-patterns-base',
--  'translate'
--], function($, Base, _t) {
-+  'mockup-i18n'
-+], function($, Base, i18n) {
-   'use strict';
++
+ def upgrade_mail_controlpanel_settings(context):
+     registry = getUtility(IRegistry)
+     # XXX: Somehow this code is excecuted for old migration steps as well
+diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
+index 47ff249..01dd8e9 100644
+--- a/plone/app/upgrade/v50/configure.zcml
++++ b/plone/app/upgrade/v50/configure.zcml
+@@ -88,6 +88,12 @@
+         profile="Products.CMFPlone:plone">
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
+        <gs:upgradeStep
++           title="Run to50beta1 upgrade profile"
++           description=""
++           handler=".betas.to50beta1"
++           />
 +
-   var PreventDoubleSubmit = Base.extend({
-     name: 'preventdoublesubmit',
-     defaults: {
-diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
-index 34cbd53..ffd3f3f 100644
---- a/mockup/patterns/querystring/pattern.js
-+++ b/mockup/patterns/querystring/pattern.js
-@@ -49,10 +49,13 @@ define([
-   'mockup-patterns-select2',
-   'mockup-patterns-pickadate',
-   'select2',
--  'translate'
--], function($, Base, Select2, PickADate, undefined, _t) {
-+  'mockup-i18n'
-+], function($, Base, Select2, PickADate, undefined, i18n) {
-   'use strict';
++       <gs:upgradeStep
+            title="Upgrade markup control panel settings"
+            description=""
+            handler=".betas.upgrade_markup_controlpanel_settings"
+
+
+Repository: plone.app.upgrade
+Branch: refs/heads/master
+Date: 2014-12-21T15:25:08+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/plone.app.upgrade/commit/1640720250969ee816747d9c76c217ea1380b0f2
+
+properly set enable_user_pwd_choice
+
+Files changed:
+M plone/app/upgrade/v50/betas.py
+
+diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
+index d1276fc..c8dd907 100644
+--- a/plone/app/upgrade/v50/betas.py
++++ b/plone/app/upgrade/v50/betas.py
+@@ -119,8 +119,11 @@ def _get_enable_self_reg():
+         settings = False
+     if settings:
+         settings.enable_self_reg = _get_enable_self_reg()
+-        settings.enable_user_pwd_choice = portal.getProperty(
+-            'validate_email', True)
++        validate_email = portal.getProperty('validate_email', True)
++        if validate_email:
++            settings.enable_user_pwd_choice = False
++        else:
++            settings.enable_user_pwd_choice = True
+         pmembership = getToolByName(portal, 'portal_membership')
+         settings.enable_user_folders = pmembership.getMemberareaCreationFlag()
+         settings.allow_anon_views_about = site_properties.getProperty(
+
+
+Repository: plone.app.upgrade
+Branch: refs/heads/master
+Date: 2014-12-21T19:45:34+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.upgrade/commit/cd7359c1f21e1433936befc5f4a24f0929c80a66
+
+Merge pull request #21 from jcerjak/plip10359-security-controlpanel
+
+Add upgrade step for the security control panel
+
+Files changed:
+A plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+M CHANGES.rst
+M plone/app/upgrade/v50/betas.py
+M plone/app/upgrade/v50/configure.zcml
+M plone/app/upgrade/v50/profiles.zcml
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index eeb195f..1bf846a 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,8 +4,12 @@ Changelog
+ 1.3.9 (unreleased)
+ ------------------
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
++- Add upgrade step for the security control panel.
++  [jcerjak]
 +
-   var Criteria = function() { this.init.apply(this, arguments); };
-   Criteria.prototype = {
-     defaults: {
-diff --git a/mockup/patterns/relateditems/pattern.js b/mockup/patterns/relateditems/pattern.js
-index fed64eb..72e3b41 100644
---- a/mockup/patterns/relateditems/pattern.js
-+++ b/mockup/patterns/relateditems/pattern.js
-@@ -77,10 +77,13 @@ define([
-   'mockup-patterns-select2',
-   'mockup-utils',
-   'mockup-patterns-tree',
--  'translate'
--], function($, _, Base, Select2, utils, Tree, _t) {
-+  'mockup-i18n'
-+], function($, _, Base, Select2, utils, Tree, i18n) {
-   'use strict';
+ - Add upgrade step for mail control panel. Refs PLIP 10359.
+   [jcerjak, khink]
++
+ - Add upgrade steps for markup control panel.
+   [thet]
  
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
-+
-   var RelatedItems = Base.extend({
-     name: 'relateditems',
-     browsing: false,
-diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
-index ea9fe66..0073c9c 100644
---- a/mockup/patterns/structure/pattern.js
-+++ b/mockup/patterns/structure/pattern.js
-@@ -32,15 +32,18 @@ define([
-   'mockup-patterns-base',
-   'mockup-utils',
-   'mockup-patterns-structure-url/js/views/app',
--  'translate',
-+  'mockup-i18n',
-   'text!mockup-patterns-structure-url/templates/paging.xml',
-   'text!mockup-patterns-structure-url/templates/selection_item.xml',
-   'text!mockup-patterns-structure-url/templates/tablerow.xml',
-   'text!mockup-patterns-structure-url/templates/table.xml',
-   'text!mockup-ui-url/templates/popover.xml',
--], function($, Base, utils, AppView, _t) {
-+], function($, Base, utils, AppView, i18n) {
-   'use strict';
+diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
+index a6d9225..c8dd907 100644
+--- a/plone/app/upgrade/v50/betas.py
++++ b/plone/app/upgrade/v50/betas.py
+@@ -2,11 +2,18 @@
+ from Products.CMFCore.utils import getToolByName
+ from Products.CMFPlone.interfaces import IMailSchema
+ from Products.CMFPlone.interfaces import IMarkupSchema
++from Products.CMFPlone.interfaces import ISecuritySchema
++from plone.app.upgrade.utils import loadMigrationProfile
+ from plone.registry.interfaces import IRegistry
+ from zope.component import getUtility
+ from zope.component.hooks import getSite
  
-+  i18n.loadCatalog('widgets');
-+  var _ = i18n.MessageFactory('widgets');
-+
-   var Structure = Base.extend({
-     name: 'structure',
-     defaults: {
-@@ -63,26 +66,26 @@ define([
-         'review_state'
-       ],
-       availableColumns: {
--        'ModificationDate': _t('Last modified'),
--        'EffectiveDate': _t('Published'),
--        'CreationDate': _t('Created'),
--        'review_state': _t('Review state'),
--        'Subject': _t('Tags'),
--        'Type': _t('Type'),
--        'is_folderish': _t('Folder'),
--        'exclude_from_nav': _t('Excluded from nav'),
--        'getObjSize': _t('Object Size'),
--        'last_comment_date': _t('Last comment date'),
--        'total_comments': _t('Total comments')
-+        'ModificationDate': _('Last modified'),
-+        'EffectiveDate': _('Published'),
-+        'CreationDate': _('Created'),
-+        'review_state': _('Review state'),
-+        'Subject': _('Tags'),
-+        'Type': _('Type'),
-+        'is_folderish': _('Folder'),
-+        'exclude_from_nav': _('Excluded from nav'),
-+        'getObjSize': _('Object Size'),
-+        'last_comment_date': _('Last comment date'),
-+        'total_comments': _('Total comments')
-       },
-       rearrange: {
-         properties: {
--          'id': _t('ID'),
--          'sortable_title': _t('Title'),
--          'modified': _t('Last Modified'),
--          'created': _t('Created on'),
--          'effective': _t('Publication Date'),
--          'Type': _t('Type')
-+          'id': _('ID'),
-+          'sortable_title': _('Title'),
-+          'modified': _('Last Modified'),
-+          'created': _('Created on'),
-+          'effective': _('Publication Date'),
-+          'Type': _('Type')
-         },
-         url: '/rearrange'
-       },
-@@ -93,31 +96,31 @@ define([
-        */
-       buttonGroups: {
-         primary: [{
--          title: _t('Cut'),
-+          title: _('Cut'),
-           url: '/cut'
-         },{
--          title: _t('Copy'),
-+          title: _('Copy'),
-           url: '/copy'
-         },{
--          title: _t('Paste'),
-+          title: _('Paste'),
-           url: '/paste'
-         },{
--          title: _t('Delete'),
-+          title: _('Delete'),
-           url: '/delete',
-           context: 'danger',
-           icon: 'trash'
-         }],
-         secondary: [{
--          title: _t('Workflow'),
-+          title: _('Workflow'),
-           url: '/workflow'
-         },{
--          title: _t('Tags'),
-+          title: _('Tags'),
-           url: '/tags'
-         },{
--          title: _t('Properties'),
-+          title: _('Properties'),
-           url: '/properties'
-         },{
--          title: _t('Rename'),
-+          title: _('Rename'),
-           url: '/rename'
-         }]
-       },
-diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
-index 42e4df0..34e1998 100644
---- a/mockup/patterns/tinymce/pattern.js
-+++ b/mockup/patterns/tinymce/pattern.js
-@@ -58,7 +58,7 @@ define([
-   'text!mockup-patterns-tinymce-url/templates/selection.xml',
-   'mockup-utils',
-   'mockup-patterns-tinymce-url/js/links',
--  'translate',
-+  'mockup-i18n',
-   'tinymce-modern-theme', 'tinymce-advlist', 'tinymce-anchor', 'tinymce-autolink',
-   'tinymce-autoresize', 'tinymce-autosave', 'tinymce-bbcode', 'tinymce-charmap',
-   'tinymce-code', 'tinymce-colorpicker', 'tinymce-contextmenu', 'tinymce-directionality',
-@@ -73,9 +73,14 @@ define([
- ], function($, _,
-             Base, RelatedItems, Modal, tinymce,
-             AutoTOC, ResultTemplate, SelectionTemplate,
--            utils, LinkModal, _t) {
-+            utils, LinkModal, i18n) {
-   'use strict';
  
++def to50beta1(context):
++    """5.0alpha3 -> 5.0beta1"""
++    loadMigrationProfile(context, 'profile-plone.app.upgrade.v50:to50beta1')
 +
 +
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
+ def upgrade_mail_controlpanel_settings(context):
+     registry = getUtility(IRegistry)
+     # XXX: Somehow this code is excecuted for old migration steps as well
+@@ -75,3 +82,53 @@ def upgrade_markup_controlpanel_settings(context):
+             if _type not in forbidden_types
+             and _type not in 'text/x-plone-outputfilters-html'  # removed, as in plone.app.vocabularies.types  # noqa
+         ])
 +
-   var TinyMCE = Base.extend({
-     name: 'tinymce',
-     defaults: {
-diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
-index 1f84094..634afe5 100644
---- a/mockup/patterns/upload/pattern.js
-+++ b/mockup/patterns/upload/pattern.js
-@@ -48,14 +48,17 @@ define([
-   'dropzone',
-   'text!mockup-patterns-upload-url/templates/upload.xml',
-   'text!mockup-patterns-upload-url/templates/preview.xml',
--  'translate'
-+  'mockup-i18n'
- ], function($, _, Base, RelatedItems, Dropzone,
--            UploadTemplate, PreviewTemplate, _t) {
-+            UploadTemplate, PreviewTemplate, i18n) {
-   'use strict';
++
++def upgrade_security_controlpanel_settings(context):
++    """Copy security control panel settings from portal properties and various
++    other locations into the new registry.
++    """
++    def _get_enable_self_reg():
++        app_perms = portal.rolesOfPermission(permission='Add portal member')
++        for appperm in app_perms:
++            if appperm['name'] == 'Anonymous' and \
++               appperm['selected'] == 'SELECTED':
++                return True
++        return False
++
++    # get the old site properties
++    portal_url = getToolByName(context, 'portal_url')
++    portal = portal_url.getPortalObject()
++    portal_properties = getToolByName(portal, "portal_properties")
++    site_properties = portal_properties.site_properties
++
++    # get the new registry
++    registry = getUtility(IRegistry)
++
++    # XXX: Somehow this code is excecuted for old migration steps as well
++    # ( < Plone 4 ) and breaks because there is no registry. Looking up the
++    # registry interfaces with 'check=False' will not work, because it will
++    # return a settings object and then fail when we try to access the
++    # attributes.
++    try:
++        settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
++    except KeyError:
++        settings = False
++    if settings:
++        settings.enable_self_reg = _get_enable_self_reg()
++        validate_email = portal.getProperty('validate_email', True)
++        if validate_email:
++            settings.enable_user_pwd_choice = False
++        else:
++            settings.enable_user_pwd_choice = True
++        pmembership = getToolByName(portal, 'portal_membership')
++        settings.enable_user_folders = pmembership.getMemberareaCreationFlag()
++        settings.allow_anon_views_about = site_properties.getProperty(
++            'allowAnonymousViewAbout', False)
++        settings.use_email_as_login = site_properties.getProperty(
++            'use_email_as_login', False)
++        settings.use_uuid_as_userid = site_properties.getProperty(
++            'use_uuid_as_userid', False)
+diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
+index cb79fd8..01dd8e9 100644
+--- a/plone/app/upgrade/v50/configure.zcml
++++ b/plone/app/upgrade/v50/configure.zcml
+@@ -88,6 +88,12 @@
+         profile="Products.CMFPlone:plone">
  
-   /* we do not want this plugin to auto discover */
-   Dropzone.autoDiscover = false;
- 
-+  i18n.loadCatalog('widgets');
-+  var _t = i18n.MessageFactory('widgets');
+        <gs:upgradeStep
++           title="Run to50beta1 upgrade profile"
++           description=""
++           handler=".betas.to50beta1"
++           />
 +
-   var UploadPattern = Base.extend({
-     name: 'upload',
-     defaults: {
++       <gs:upgradeStep
+            title="Upgrade markup control panel settings"
+            description=""
+            handler=".betas.upgrade_markup_controlpanel_settings"
+@@ -99,6 +105,12 @@
+            handler=".betas.upgrade_mail_controlpanel_settings"
+            />
+ 
++       <gs:upgradeStep
++           title="Upgrade security control panel settings"
++           description=""
++           handler=".betas.upgrade_security_controlpanel_settings"
++           />
++
+     </gs:upgradeSteps>
+ 
+ </configure>
+diff --git a/plone/app/upgrade/v50/profiles.zcml b/plone/app/upgrade/v50/profiles.zcml
+index 271af6b..7655975 100644
+--- a/plone/app/upgrade/v50/profiles.zcml
++++ b/plone/app/upgrade/v50/profiles.zcml
+@@ -21,4 +21,13 @@
+       provides="Products.GenericSetup.interfaces.EXTENSION"
+       />
+ 
++  <genericsetup:registerProfile
++      name="to50beta1"
++      title="Upgrade profile for Plone 5003 to Plone 5.0beta1"
++      description=""
++      directory="profiles/to_beta1"
++      for="Products.CMFPlone.interfaces.IMigratingPloneSiteRoot"
++      provides="Products.GenericSetup.interfaces.EXTENSION"
++      />
++
+ </configure>
+diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+new file mode 100644
+index 0000000..fd89c49
+--- /dev/null
++++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0"?>
++<registry>
++  <records interface="Products.CMFPlone.interfaces.ISecuritySchema"
++           prefix="plone" />
++</registry>
 
 
