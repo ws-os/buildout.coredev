@@ -1,605 +1,136 @@
 Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-12-22T11:30:38+01:00
+Date: 2014-12-22T11:38:57+01:00
 Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/689095d59b4fc5cef431d366ba1b11d7b250825e
+Commit: https://github.com/plone/plone.app.controlpanel/commit/84c79603b32fe346af606e4cf668017f46fff4e9
 
-Update changes.
+Remove the quickinstaller (moved to Products.CMFPlone).
 
 Files changed:
 M CHANGES.rst
+M plone/app/controlpanel/configure.zcml
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 2e55a15..b36b600 100644
+index b36b600..3fc1415 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -7,6 +7,9 @@ Changelog
+@@ -4,6 +4,9 @@ Changelog
+ 3.0.0 (unreleased)
+ ------------------
+ 
++- Remove the quickinstaller (moved to Products.CMFPlone).
++  [timo]
++
  - Remove the users/groups control panel (moved to Products.CMFPlone).
    [timo]
  
-+- Remove the navigation control panel (moved to Products.CMFPlone).
-+  [timo]
-+
- - Remove the markup control panel, as it was moved to Products.CMFPlone.
-   [thet]
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index c53cde4..3be14a4 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -67,34 +67,4 @@
+       permission="cmf.ManagePortal"
+       />
  
+-  <!-- quickinstaller related -->
+-  <browser:page
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-    name="prefs_install_products_form"
+-    class=".qi.ManageProductsView"
+-    permission="cmf.ManagePortal"
+-    template="qi.pt"
+-    />
+-
+- <browser:page
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-    name="upgrade_products"
+-    class=".qi.UpgradeProductsView"
+-    permission="cmf.ManagePortal"
+-    />
+-
+- <browser:page
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-    name="install_products"
+-    class=".qi.InstallProductsView"
+-    permission="cmf.ManagePortal"
+-    />
+-
+- <browser:page
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-    name="uninstall_products"
+-    class=".qi.UninstallProductsView"
+-    permission="cmf.ManagePortal"
+-    />
+-
+ </configure>
 
 
 Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-12-22T11:31:33+01:00
-Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/a58f5ce62aee9682c9d3badabf0b0c5c4af35c34
+Date: 2014-12-22T12:01:15+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/bc5be63776afff7787fd89d0fd63187feb454b05
 
-Remove unused emaillogin.pt; Replace old code in editing/mail/navigation with imports from the new location (CMFPlone).
+Merge pull request #38 from plone/plip10359-quickinstaller
+
+Remove the quickinstaller (moved to Products.CMFPlone).
 
 Files changed:
-M plone/app/controlpanel/editing.py
-M plone/app/controlpanel/mail.py
-M plone/app/controlpanel/navigation.py
-D plone/app/controlpanel/emaillogin.pt
+M CHANGES.rst
+M plone/app/controlpanel/configure.zcml
 
-diff --git a/plone/app/controlpanel/editing.py b/plone/app/controlpanel/editing.py
-index 28c8615..9d0aeee 100644
---- a/plone/app/controlpanel/editing.py
-+++ b/plone/app/controlpanel/editing.py
-@@ -1,103 +1,5 @@
--from zope.formlib import form
--from zope.interface import implements
--from zope.schema import Bool
--from zope.schema import Choice
--from zope.site.hooks import getSite
--
--from plone.locking.interfaces import ILockSettings
--
--from Products.CMFCore.utils import getToolByName
--from Products.CMFDefault.formlib.schema import ProxyFieldProperty
--from Products.CMFDefault.formlib.schema import SchemaAdapterBase
--from Products.CMFPlone import PloneMessageFactory as _
--
--from form import ControlPanelForm
--
--try:
--    import plone.app.kss
--except ImportError:
--    HAS_KSS = False
--else:
--    HAS_KSS = True
--
--
--class IEditingSchema(ILockSettings):
--
--    visible_ids = Bool(title=_(u"Show 'Short Name' on content?"),
--                       description=_(u"Display and allow users to edit the "
--                           "'Short name' content identifiers, which form the "
--                           "URL part of a content item's address. Once "
--                           "enabled, users will then be able to enable this "
--                           "option in their preferences."),
--                       default=False,
--                       required=False)
--
--    default_editor = Choice(title=_(u'Default editor'),
--                            description=_(u"Select the default wysiwyg editor. "
--                                "Users will be able to choose their own or "
--                                "select to use the site default."),
--                            default=u'TinyMCE',
--                            missing_value=set(),
--                            vocabulary="plone.app.vocabularies.AvailableEditors",
--                            required=False)
--
--    ext_editor = Bool(title=_(u'Enable External Editor feature'),
--                          description=_(u"Determines if the external editor "
--                              "feature is enabled. This feature requires a "
--                              "special client-side application installed. The "
--                              "users also have to enable this in their "
--                              "preferences."),
--                          default=False,
--                          required=False)
--
--    enable_inline_editing = Bool(title=_(u"Enable inline editing"),
--                                 description=_(u"Check this to enable "
--                                                "inline editing on the site."),
--                                 default=True,
--                                 required=False)
--
--    enable_link_integrity_checks = Bool(title=_(u"Enable link integrity "
--                                                 "checks"),
--                          description=_(u"Determines if the users should get "
--                              "warnings when they delete or move content that "
--                              "is linked from inside the site."),
--                          default=True,
--                          required=False)
--
--    lock_on_ttw_edit = Bool(title=_(u"Enable locking for through-the-web edits"),
--                          description=_(u"Disabling locking here will only "
--                                "affect users editing content through the "
--                                "Plone web UI.  Content edited via WebDAV "
--                                "clients will still be subject to locking."),
--                          default=True,
--                          required=False)
--
--
--class EditingControlPanelAdapter(SchemaAdapterBase):
--
--    implements(IEditingSchema)
--
--    def __init__(self, context):
--        super(EditingControlPanelAdapter, self).__init__(context)
--        self.portal = getSite()
--        pprop = getToolByName(self.portal, 'portal_properties')
--        self.context = pprop.site_properties
--        self.encoding = pprop.site_properties.default_charset
--
--    visible_ids = ProxyFieldProperty(IEditingSchema['visible_ids'])
--    enable_inline_editing = ProxyFieldProperty(IEditingSchema['enable_inline_editing'])
--    enable_link_integrity_checks = ProxyFieldProperty(IEditingSchema['enable_link_integrity_checks'])
--    ext_editor = ProxyFieldProperty(IEditingSchema['ext_editor'])
--    default_editor = ProxyFieldProperty(IEditingSchema['default_editor'])
--    lock_on_ttw_edit = ProxyFieldProperty(IEditingSchema['lock_on_ttw_edit'])
--
--
--class EditingControlPanel(ControlPanelForm):
--
--    form_fields = form.FormFields(IEditingSchema)
--    if not HAS_KSS:
--        form_fields = form_fields.omit('enable_inline_editing')
--
--    label = _("Editing settings")
--    description = _("General editing settings.")
--    form_name = _("Editing settings")
-+# Control panels for Plone 5 have been moved to CMFPlone. We keep those imports
-+# for backwards compatibility.
-+from Products.CMFPlone.interfaces import IEditingSchema  # noqa
-+from Products.CMFPlone.controlpanel.editing import EditingControlPanel  # noqa
-+from Products.CMFPlone.controlpanel.bbb.editing import EditingControlPanelAdapter  # noqa
-diff --git a/plone/app/controlpanel/emaillogin.pt b/plone/app/controlpanel/emaillogin.pt
-deleted file mode 100644
-index 16c3949..0000000
---- a/plone/app/controlpanel/emaillogin.pt
-+++ /dev/null
-@@ -1,67 +0,0 @@
--<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
--      xmlns:tal="http://xml.zope.org/namespaces/tal"
--      xmlns:metal="http://xml.zope.org/namespaces/metal"
--      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
--      metal:use-macro="context/prefs_main_template/macros/master"
--      i18n:domain="plone">
--
--<body>
--
--  <metal:main metal:fill-slot="prefs_configlet_content">
--    <h1 class="documentFirstHeading"
--        i18n:translate="heading_find_duplicate_login_names">
--      Find duplicate login names
--    </h1>
--
--    <p i18n:translate="help_duplicate_login_names">
--      Switching the email login setting in the
--      <a i18n:name="link"
--         tal:attributes="href string:${context/portal_url}/@@security-controlpanel"
--         i18n:translate="">Security settings</a>
--      on or off automatically changes the login name for existing users.
--      This may fail when there are duplicates.
--      On this page you can search for duplicates.
--    </p>
--
--    <div tal:condition="request/form/submitted|nothing">
--      <div tal:condition="view/duplicates">
--        <p i18n:translate="msg_login_duplicates_found">
--          The following login names would be used by more than one account:
--        </p>
--        <ul>
--          <ol tal:repeat="dup view/duplicates">
--            <span tal:content="python:dup[0]" />:
--            <span tal:repeat="account python:dup[1]" tal:content="account" />
--          </ol>
--        </ul>
--      </div>
--      <div tal:condition="not:view/duplicates">
--        <p i18n:translate="msg_no_login_duplicates_found">
--          No login names found that are used by more than one account.
--        </p>
--      </div>
--    </div>
--
--    <form action=""
--          name="emaillogin-migrate"
--          method="post"
--          class="enableUnloadProtection enableAutoFocus">
--      <div class="formControls">
--        <input type="hidden" name="submitted" value="submitted" id="submitted" />
--        <input class="context"
--               type="submit"
--               name="check_email"
--               value="Check for duplicate emails"
--               i18n:attributes="value label_check_duplicate_emails" />
--        <br />
--        <input class="context"
--               type="submit"
--               name="check_userid"
--               value="Check for duplicate lower case user ids"
--               i18n:attributes="value label_check_duplicate_user_ids" />
--      </div>
--    </form>
--
--  </metal:main>
--</body>
--</html>
-diff --git a/plone/app/controlpanel/mail.py b/plone/app/controlpanel/mail.py
-index 05a71ab..cf54e61 100644
---- a/plone/app/controlpanel/mail.py
-+++ b/plone/app/controlpanel/mail.py
-@@ -1,221 +1,5 @@
--from logging import getLogger
--import smtplib
--import socket
--import sys
--
--from zope.interface import Interface
--from zope.component import adapts
--from zope.component import getUtility
--from zope.formlib import form
--from zope.interface import implements
--from zope.i18n import translate
--from zope.schema import Int
--from zope.schema import Password
--from zope.schema import TextLine
--from zope.schema import ASCII
--from zope.formlib.widget import CustomWidgetFactory
--from zope.formlib.textwidgets import ASCIIWidget
--from zope.formlib.textwidgets import PasswordWidget
--from zope.formlib.textwidgets import TextWidget
--
--from Products.CMFCore.interfaces import ISiteRoot
--from Products.CMFCore.utils import getToolByName
--from Products.CMFDefault.formlib.schema import ProxyFieldProperty
--from Products.CMFDefault.formlib.schema import SchemaAdapterBase
--from Products.CMFPlone import PloneMessageFactory as _
--from Products.CMFPlone.interfaces import IPloneSiteRoot
--from Products.CMFPlone.utils import safe_hasattr
--from Products.MailHost.MailHost import MailHostError
--from Products.statusmessages.interfaces import IStatusMessage
--
--from form import ControlPanelForm
--
--log = getLogger('Plone')
--
--class IMailSchema(Interface):
--    """Combined schema for the adapter lookup.
--    """
--
--    smtp_host = TextLine(title=_(u'label_smtp_server',
--                                 default=u'SMTP server'),
--                         description=_(u"help_smtp_server",
--                                       default=u"The address of your local "
--                                       "SMTP (outgoing e-mail) server. Usually "
--                                       "'localhost', unless you use an "
--                                       "external server to send e-mail."),
--                         default=u'localhost',
--                         required=True)
--
--    smtp_port = Int(title=_(u'label_smtp_port',
--                            default=u'SMTP port'),
--                    description=_(u"help_smtp_port",
--                                  default=u"The port of your local SMTP "
--                                  "(outgoing e-mail) server. Usually '587' or '25'."),
--                    default=25,
--                    required=True)
--
--    smtp_userid = TextLine(title=_(u'label_smtp_userid',
--                                   default=u'ESMTP username'),
--                           description=_(u"help_smtp_userid",
--                                         default=u"Username for authentication "
--                                         "to your e-mail server. Not required "
--                                         "unless you are using ESMTP."),
--                           default=None,
--                           required=False)
--
--    smtp_pass = Password(title=_(u'label_smtp_pass',
--                                 default=u'ESMTP password'),
--                         description=_(u"help_smtp_pass",
--                                       default=u"The password for the ESMTP "
--                                       "user account."),
--                         default=None,
--                         required=False)
--
--    email_from_name = TextLine(title=_(u"Site 'From' name"),
--                               description=_(u"Plone generates e-mail using "
--                                              "this name as the e-mail "
--                                              "sender."),
--                               default=None,
--                               required=True)
--
--    email_from_address = ASCII(title=_(u"Site 'From' address"),
--                               description=_(u"Plone generates e-mail using "
--                                              "this address as the e-mail "
--                                              "return address. It is also "
--                                              "used as the destination "
--                                              "address for the site-wide "
--                                              "contact form and the 'Send test "
--                                              "e-mail' feature."),
--                               default=None,
--                               required=True)
--
--
--class MailControlPanelAdapter(SchemaAdapterBase):
--
--    adapts(IPloneSiteRoot)
--    implements(IMailSchema)
--
--    def __init__(self, context):
--        super(MailControlPanelAdapter, self).__init__(context)
--        self.context = getToolByName(context, 'MailHost')
--
--    smtp_host = ProxyFieldProperty(IMailSchema['smtp_host'])
--    smtp_port = ProxyFieldProperty(IMailSchema['smtp_port'])
--
--    def get_smtp_userid(self):
--        return getattr(self.context, 'smtp_userid',
--                       getattr(self.context, 'smtp_uid', None))
--
--    def set_smtp_userid(self, value):
--        if safe_hasattr(self.context, 'smtp_userid'):
--            self.context.smtp_userid = value
--            #SecureMailhost 1.x also uses this:
--            if safe_hasattr(self.context, '_smtp_userid'):
--                self.context._smtp_userid = value
--        elif safe_hasattr(self.context, 'smtp_uid'):
--            self.context.smtp_uid = value
--
--    smtp_userid = property(get_smtp_userid, set_smtp_userid)
--
--    def get_smtp_pass(self):
--        return getattr(self.context, 'smtp_pass',
--                       getattr(self.context, 'smtp_pwd', None))
--
--    def set_smtp_pass(self, value):
--        # Don't update the value, if we don't get a new one
--        if value is not None:
--            if safe_hasattr(self.context, 'smtp_pass'):
--                self.context.smtp_pass = value
--                #SecureMailhost 1.x also uses this:
--                if safe_hasattr(self.context, '_smtp_pass'):
--                    self.context._smtp_pass = value
--            elif safe_hasattr(self.context, 'smtp_pwd'):
--                self.context.smtp_pwd = value
--
--    smtp_pass = property(get_smtp_pass, set_smtp_pass)
--
--    def get_email_from_name(self):
--        email_from_name = getUtility(ISiteRoot).email_from_name
--        if type(email_from_name) == str:
--            email_from_name = email_from_name.decode('utf-8')
--        return email_from_name
--
--    def set_email_from_name(self, value):
--        getUtility(ISiteRoot).email_from_name = value
--
--    email_from_name = property(get_email_from_name, set_email_from_name)
--
--    def get_email_from_address(self):
--        return getUtility(ISiteRoot).email_from_address
--
--    def set_email_from_address(self, value):
--        getUtility(ISiteRoot).email_from_address = value
--
--    email_from_address = property(get_email_from_address,
--                                  set_email_from_address)
--
--
--class MailControlPanel(ControlPanelForm):
--
--    form_fields = form.FormFields(IMailSchema)
--    form_fields['email_from_address'].custom_widget = ASCIIWidget
--    userid_widget = CustomWidgetFactory(TextWidget, extra='autocomplete="off"')
--    form_fields['smtp_userid'].custom_widget = userid_widget
--    pass_widget = CustomWidgetFactory(PasswordWidget, extra='autocomplete="off"')
--    form_fields['smtp_pass'].custom_widget = pass_widget
--    label = _("Mail settings")
--    description = _("Mail settings for this site.")
--    form_name = _("Mail settings")
--
--    actions = ControlPanelForm.actions.copy()
--
--    # 'Send test e-mail' form button
--    @form.action(_(u'label_smtp_test', default=u'Save and send test e-mail'), name=u'test')
--    def handle_test_action(self, action, data):
--        # Save data first
--        self.handle_edit_action.success(data)
--        mailhost = getToolByName(self.context, 'MailHost')
--
--        # XXX Will self.context always be the Plone site?
--        fromaddr = self.context.getProperty('email_from_address')
--        fromname = self.context.getProperty('email_from_name')
--
--        message = _(u"text_testmailbody",
--                   default = u"Hi,\n\nThis is a test message sent from the Plone 'Mail settings' control panel. "
--                   "Your receipt of this message (at the address specified in the "
--                   "Site 'From' address field) "
--                   "indicates that your e-mail server is working!\n\n"
--                   "Have a nice day.\n\n"
--                   "Love,\n\nPlone")
--        message = translate(message, context=self.request)
--        email_charset = self.context.getProperty('email_charset')
--        email_recipient, source = fromaddr, fromaddr
--        subject = _(u"Test e-mail from Plone")
--        subject = translate(subject, context=self.request)
--
--        # Make the timeout incredibly short. This is enough time for most mail
--        # servers, wherever they may be in the world, to respond to the
--        # connection request. Make sure we save the current value
--        # and restore it afterward.
--        timeout = socket.getdefaulttimeout()
--        try:
--            socket.setdefaulttimeout(3)
--            try:
--                mailhost.send(message, email_recipient, source,
--                              subject=subject,
--                              charset=email_charset,
--                              immediate=True)
--
--            except (socket.error, MailHostError, smtplib.SMTPException):
--                # Connection refused or timeout.
--                log.exception('Unable to send test e-mail.')
--                value = sys.exc_info()[1]
--                msg = _(u'Unable to send test e-mail ${error}.', mapping={'error': unicode(value)})
--                IStatusMessage(self.request).addStatusMessage(msg, type='error')
--            else:
--                IStatusMessage(self.request).addStatusMessage(
--                    _(u'Success! Check your mailbox for the test message.'),
--                    type='info')
--        finally:
--            # Restore timeout to default value
--            socket.setdefaulttimeout(timeout)
-+# Control panels for Plone 5 have been moved to CMFPlone. We keep those imports
-+# for backwards compatibility.
-+from Products.CMFPlone.interfaces import IMailSchema  # noqa
-+from Products.CMFPlone.controlpanel.mail import MailControlPanel  # noqa
-+from Products.CMFPlone.controlpanel.bbb.mail import MailControlPanelAdapter  # noqa
-diff --git a/plone/app/controlpanel/navigation.py b/plone/app/controlpanel/navigation.py
-index 90d7895..63cd130 100644
---- a/plone/app/controlpanel/navigation.py
-+++ b/plone/app/controlpanel/navigation.py
-@@ -1,135 +1,5 @@
--from zope.interface import Interface
--from zope.interface import implements
--from zope.component import adapts
--from zope.formlib import form
--from zope.schema import Bool
--from zope.schema import Choice
--from zope.schema import Tuple
--
--from Products.CMFCore.utils import getToolByName
--from Products.CMFDefault.formlib.schema import SchemaAdapterBase
--from Products.CMFPlone import PloneMessageFactory as _
--from Products.CMFPlone.interfaces import IPloneSiteRoot
--
--from form import ControlPanelForm
--from widgets import MultiCheckBoxThreeColumnWidget
--from widgets import MultiCheckBoxVocabularyWidget
--
--from plone.app.vocabularies.types import BAD_TYPES
--
--class INavigationSchema(Interface):
--    """Fields for the navigation control panel."""
--    generate_tabs = Bool(title=_(u"Automatically generate tabs"),
--                       description=_(u"By default, all items created at the root level will add to the global section navigation. You can turn this off if you prefer manually constructing this part of the navigation."),
--                       default=True,
--                       required=False)
--
--    nonfolderish_tabs = Bool(title=_(u"Generate tabs for items other than folders."),
--                         description=_(u"By default, any content item in the root of the portal will be shown as a global section. If you turn this option off, only folders will be shown. This only has an effect if 'Automatically generate tabs' is enabled."),
--                         default=True,
--                         required=False)
--
--    displayed_types = Tuple(
--        title=_(u"Displayed content types"),
--        description=_(u"The content types that should be shown in the navigation and site map."),
--        required=False,
--        missing_value=tuple(),
--        value_type=Choice(
--            vocabulary="plone.app.vocabularies.ReallyUserFriendlyTypes")
--        )
--
--    filter_on_workflow = Bool(
--        title=_(u"Filter on workflow state"),
--        description=_(u"The workflow states that should be shown in the navigation tree and the site map."),
--        default=False,
--        required=False)
--
--    workflow_states_to_show = Tuple(
--        required=False,
--        missing_value=tuple(),
--        value_type=Choice(
--            vocabulary="plone.app.vocabularies.WorkflowStates")
--        )
--
--    show_excluded_items = Bool(title=_(u"Show items normally excluded from navigation if viewing their children."),
--                               description=_(u"If an item has been excluded from navigation should it be shown in navigation when viewing content contained within it or within a subfolder."),
--                               default=True,
--                               required=False)
--
--
--class NavigationControlPanelAdapter(SchemaAdapterBase):
--
--    adapts(IPloneSiteRoot)
--    implements(INavigationSchema)
--
--    def __init__(self, context):
--        super(NavigationControlPanelAdapter, self).__init__(context)
--        pprop = getToolByName(context, 'portal_properties')
--        self.siteProps = pprop.site_properties
--        self.navProps = pprop.navtree_properties
--        self.ttool = getToolByName(context, 'portal_types')
--
--    def get_generate_tabs(self):
--        return not self.siteProps.getProperty('disable_folder_sections')
--
--    def set_generate_tabs(self, value):
--        self.siteProps._updateProperty('disable_folder_sections', not value)
--
--    generate_tabs = property(get_generate_tabs, set_generate_tabs)
--
--    def get_nonfolderish_tabs(self):
--        return not self.siteProps.getProperty('disable_nonfolderish_sections')
--
--    def set_nonfolderish_tabs(self, value):
--        self.siteProps._updateProperty('disable_nonfolderish_sections', not value)
--
--    nonfolderish_tabs = property(get_nonfolderish_tabs, set_nonfolderish_tabs)
--
--    def get_show_excluded_items(self):
--        return self.navProps.getProperty('showAllParents')
--
--    def set_show_excluded_items(self, value):
--        self.navProps._updateProperty('showAllParents', value)
--
--    show_excluded_items = property(get_show_excluded_items, set_show_excluded_items)
--
--    def get_displayed_types(self):
--        allTypes = self.ttool.listContentTypes()
--        blacklist = self.navProps.metaTypesNotToList
--        return [t for t in allTypes if t not in blacklist
--                                    and t not in BAD_TYPES]
--
--    def set_displayed_types(self, value):
--        # The menu pretends to be a whitelist, but we are storing a blacklist so that
--        # new types are searchable by default. Inverse the list.
--        allTypes = self.ttool.listContentTypes()
--        blacklistedTypes = [t for t in allTypes if t not in value
--                                                or t in BAD_TYPES]
--        self.navProps._updateProperty('metaTypesNotToList', blacklistedTypes)
--
--    displayed_types = property(get_displayed_types, set_displayed_types)
--
--    def get_filter_on_workflow(self):
--        return self.navProps.getProperty('enable_wf_state_filtering')
--
--    def set_filter_on_workflow(self, value):
--        self.navProps._updateProperty('enable_wf_state_filtering', value)
--
--    filter_on_workflow = property(get_filter_on_workflow, set_filter_on_workflow)
--
--    def get_workflow_states_to_show(self):
--        return self.navProps.getProperty('wf_states_to_show')
--
--    def set_workflow_states_to_show(self, value):
--        self.navProps._updateProperty('wf_states_to_show', value)
--
--    workflow_states_to_show = property(get_workflow_states_to_show, set_workflow_states_to_show)
--
--class NavigationControlPanel(ControlPanelForm):
--
--    label = _("Navigation settings")
--    description = _("""Lets you control how navigation is constructed in your site. Note that to control how the navigation tree is displayed, you should go to 'Manage portlets' at the root of the site (or wherever a navigation tree portlet has been added) and change its settings directly.""")
--    form_name = _("Navigation details")
--    form_fields = form.FormFields(INavigationSchema)
--    form_fields['displayed_types'].custom_widget = MultiCheckBoxThreeColumnWidget
--    form_fields['workflow_states_to_show'].custom_widget = MultiCheckBoxVocabularyWidget
-+# Control panels for Plone 5 have been moved to CMFPlone. We keep those imports
-+# for backwards compatibility.
-+from Products.CMFPlone.interfaces import INavigationSchema  # noqa
-+from Products.CMFPlone.controlpanel.navigation import NavigationControlPanel  # noqa
-+from Products.CMFPlone.controlpanel.bbb.navigation import NavigationControlPanelAdapter  # noqa
+diff --git a/CHANGES.rst b/CHANGES.rst
+index b36b600..3fc1415 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ Changelog
+ 3.0.0 (unreleased)
+ ------------------
+ 
++- Remove the quickinstaller (moved to Products.CMFPlone).
++  [timo]
++
+ - Remove the users/groups control panel (moved to Products.CMFPlone).
+   [timo]
+ 
+diff --git a/plone/app/controlpanel/configure.zcml b/plone/app/controlpanel/configure.zcml
+index c53cde4..3be14a4 100644
+--- a/plone/app/controlpanel/configure.zcml
++++ b/plone/app/controlpanel/configure.zcml
+@@ -67,34 +67,4 @@
+       permission="cmf.ManagePortal"
+       />
+ 
+-  <!-- quickinstaller related -->
+-  <browser:page
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-    name="prefs_install_products_form"
+-    class=".qi.ManageProductsView"
+-    permission="cmf.ManagePortal"
+-    template="qi.pt"
+-    />
+-
+- <browser:page
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-    name="upgrade_products"
+-    class=".qi.UpgradeProductsView"
+-    permission="cmf.ManagePortal"
+-    />
+-
+- <browser:page
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-    name="install_products"
+-    class=".qi.InstallProductsView"
+-    permission="cmf.ManagePortal"
+-    />
+-
+- <browser:page
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-    name="uninstall_products"
+-    class=".qi.UninstallProductsView"
+-    permission="cmf.ManagePortal"
+-    />
+-
+ </configure>
 
 
