@@ -1,399 +1,308 @@
-Repository: plone.app.upgrade
+Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2014-12-21T11:57:13+01:00
-Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/plone.app.upgrade/commit/5d41407ae6f9cd7893ffd982cf9898236f3946ea
+Date: 2014-12-22T09:16:54+01:00
+Author: Timo Stollenwerk () <contact@timostollenwerk.net>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/707b9b45ea59e8f5a0a21d023ebed5f7cebf4461
 
-add upgrade step to copy security panel settings into the registry
+Remove overview control panel view. This has already been moved to CMFPlone.
 
 Files changed:
-A plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-M CHANGES.rst
-M plone/app/upgrade/v50/betas.py
-M plone/app/upgrade/v50/configure.zcml
-M plone/app/upgrade/v50/profiles.zcml
+D plone/app/controlpanel/overview.pt
+D plone/app/controlpanel/overview.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index eeb195f..1bf846a 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,8 +4,12 @@ Changelog
- 1.3.9 (unreleased)
- ------------------
- 
-+- Add upgrade step for the security control panel.
-+  [jcerjak]
-+
- - Add upgrade step for mail control panel. Refs PLIP 10359.
-   [jcerjak, khink]
-+
- - Add upgrade steps for markup control panel.
-   [thet]
- 
-diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
-index a6d9225..db48320 100644
---- a/plone/app/upgrade/v50/betas.py
-+++ b/plone/app/upgrade/v50/betas.py
-@@ -2,6 +2,7 @@
- from Products.CMFCore.utils import getToolByName
- from Products.CMFPlone.interfaces import IMailSchema
- from Products.CMFPlone.interfaces import IMarkupSchema
-+from Products.CMFPlone.interfaces import ISecuritySchema
- from plone.registry.interfaces import IRegistry
- from zope.component import getUtility
- from zope.component.hooks import getSite
-@@ -75,3 +76,50 @@ def upgrade_markup_controlpanel_settings(context):
-             if _type not in forbidden_types
-             and _type not in 'text/x-plone-outputfilters-html'  # removed, as in plone.app.vocabularies.types  # noqa
-         ])
-+
-+
-+def upgrade_security_controlpanel_settings(context):
-+    """Copy security control panel settings from portal properties and various
-+    other locations into the new registry.
-+    """
-+    def _get_enable_self_reg():
-+        app_perms = portal.rolesOfPermission(permission='Add portal member')
-+        for appperm in app_perms:
-+            if appperm['name'] == 'Anonymous' and \
-+               appperm['selected'] == 'SELECTED':
-+                return True
-+        return False
-+
-+    # get the old site properties
-+    portal_url = getToolByName(context, 'portal_url')
-+    portal = portal_url.getPortalObject()
-+    portal_properties = getToolByName(portal, "portal_properties")
-+    site_properties = portal_properties.site_properties
-+
-+    # get the new registry
-+    registry = getUtility(IRegistry)
-+
-+    # XXX: Somehow this code is excecuted for old migration steps as well
-+    # ( < Plone 4 ) and breaks because there is no registry. Looking up the
-+    # registry interfaces with 'check=False' will not work, because it will
-+    # return a settings object and then fail when we try to access the
-+    # attributes.
-+    try:
-+        settings = registry.forInterface(
-+            ISecuritySchema,
-+            prefix='plone',
-+        )
-+    except KeyError:
-+        settings = False
-+    if settings:
-+        settings.enable_self_reg = _get_enable_self_reg()
-+        settings.enable_user_pwd_choice = portal.getProperty(
-+            'validate_email', True)
-+        pmembership = getToolByName(portal, 'portal_membership')
-+        settings.enable_user_folders = pmembership.getMemberareaCreationFlag()
-+        settings.allow_anon_views_about = site_properties.getProperty(
-+            'allowAnonymousViewAbout', False)
-+        settings.use_email_as_login = site_properties.getProperty(
-+            'use_email_as_login', False)
-+        settings.use_uuid_as_userid = site_properties.getProperty(
-+            'use_uuid_as_userid', False)
-diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
-index cb79fd8..47ff249 100644
---- a/plone/app/upgrade/v50/configure.zcml
-+++ b/plone/app/upgrade/v50/configure.zcml
-@@ -99,6 +99,12 @@
-            handler=".betas.upgrade_mail_controlpanel_settings"
-            />
- 
-+       <gs:upgradeStep
-+           title="Upgrade security control panel settings"
-+           description=""
-+           handler=".betas.upgrade_security_controlpanel_settings"
-+           />
-+
-     </gs:upgradeSteps>
- 
- </configure>
-diff --git a/plone/app/upgrade/v50/profiles.zcml b/plone/app/upgrade/v50/profiles.zcml
-index 271af6b..7655975 100644
---- a/plone/app/upgrade/v50/profiles.zcml
-+++ b/plone/app/upgrade/v50/profiles.zcml
-@@ -21,4 +21,13 @@
-       provides="Products.GenericSetup.interfaces.EXTENSION"
-       />
- 
-+  <genericsetup:registerProfile
-+      name="to50beta1"
-+      title="Upgrade profile for Plone 5003 to Plone 5.0beta1"
-+      description=""
-+      directory="profiles/to_beta1"
-+      for="Products.CMFPlone.interfaces.IMigratingPloneSiteRoot"
-+      provides="Products.GenericSetup.interfaces.EXTENSION"
-+      />
-+
- </configure>
-diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-new file mode 100644
-index 0000000..fd89c49
---- /dev/null
-+++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-@@ -0,0 +1,5 @@
-+<?xml version="1.0"?>
-+<registry>
-+  <records interface="Products.CMFPlone.interfaces.ISecuritySchema"
-+           prefix="plone" />
-+</registry>
-
-
-Repository: plone.app.upgrade
-Branch: refs/heads/master
-Date: 2014-12-21T15:02:33+01:00
-Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/plone.app.upgrade/commit/02074684bc4a683532ce1db47d70dab589553c35
-
-run upgrade profile so that security settings are properly registered
-
-Files changed:
-M plone/app/upgrade/v50/betas.py
-M plone/app/upgrade/v50/configure.zcml
-
-diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
-index db48320..d1276fc 100644
---- a/plone/app/upgrade/v50/betas.py
-+++ b/plone/app/upgrade/v50/betas.py
-@@ -3,11 +3,17 @@
- from Products.CMFPlone.interfaces import IMailSchema
- from Products.CMFPlone.interfaces import IMarkupSchema
- from Products.CMFPlone.interfaces import ISecuritySchema
-+from plone.app.upgrade.utils import loadMigrationProfile
- from plone.registry.interfaces import IRegistry
- from zope.component import getUtility
- from zope.component.hooks import getSite
- 
- 
-+def to50beta1(context):
-+    """5.0alpha3 -> 5.0beta1"""
-+    loadMigrationProfile(context, 'profile-plone.app.upgrade.v50:to50beta1')
-+
-+
- def upgrade_mail_controlpanel_settings(context):
-     registry = getUtility(IRegistry)
-     # XXX: Somehow this code is excecuted for old migration steps as well
-diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
-index 47ff249..01dd8e9 100644
---- a/plone/app/upgrade/v50/configure.zcml
-+++ b/plone/app/upgrade/v50/configure.zcml
-@@ -88,6 +88,12 @@
-         profile="Products.CMFPlone:plone">
- 
-        <gs:upgradeStep
-+           title="Run to50beta1 upgrade profile"
-+           description=""
-+           handler=".betas.to50beta1"
-+           />
-+
-+       <gs:upgradeStep
-            title="Upgrade markup control panel settings"
-            description=""
-            handler=".betas.upgrade_markup_controlpanel_settings"
-
-
-Repository: plone.app.upgrade
-Branch: refs/heads/master
-Date: 2014-12-21T15:25:08+01:00
-Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/plone.app.upgrade/commit/1640720250969ee816747d9c76c217ea1380b0f2
-
-properly set enable_user_pwd_choice
-
-Files changed:
-M plone/app/upgrade/v50/betas.py
-
-diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
-index d1276fc..c8dd907 100644
---- a/plone/app/upgrade/v50/betas.py
-+++ b/plone/app/upgrade/v50/betas.py
-@@ -119,8 +119,11 @@ def _get_enable_self_reg():
-         settings = False
-     if settings:
-         settings.enable_self_reg = _get_enable_self_reg()
--        settings.enable_user_pwd_choice = portal.getProperty(
--            'validate_email', True)
-+        validate_email = portal.getProperty('validate_email', True)
-+        if validate_email:
-+            settings.enable_user_pwd_choice = False
-+        else:
-+            settings.enable_user_pwd_choice = True
-         pmembership = getToolByName(portal, 'portal_membership')
-         settings.enable_user_folders = pmembership.getMemberareaCreationFlag()
-         settings.allow_anon_views_about = site_properties.getProperty(
-
-
-Repository: plone.app.upgrade
-Branch: refs/heads/master
-Date: 2014-12-21T19:45:34+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.upgrade/commit/cd7359c1f21e1433936befc5f4a24f0929c80a66
-
-Merge pull request #21 from jcerjak/plip10359-security-controlpanel
-
-Add upgrade step for the security control panel
-
-Files changed:
-A plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-M CHANGES.rst
-M plone/app/upgrade/v50/betas.py
-M plone/app/upgrade/v50/configure.zcml
-M plone/app/upgrade/v50/profiles.zcml
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index eeb195f..1bf846a 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,8 +4,12 @@ Changelog
- 1.3.9 (unreleased)
- ------------------
- 
-+- Add upgrade step for the security control panel.
-+  [jcerjak]
-+
- - Add upgrade step for mail control panel. Refs PLIP 10359.
-   [jcerjak, khink]
-+
- - Add upgrade steps for markup control panel.
-   [thet]
- 
-diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
-index a6d9225..c8dd907 100644
---- a/plone/app/upgrade/v50/betas.py
-+++ b/plone/app/upgrade/v50/betas.py
-@@ -2,11 +2,18 @@
- from Products.CMFCore.utils import getToolByName
- from Products.CMFPlone.interfaces import IMailSchema
- from Products.CMFPlone.interfaces import IMarkupSchema
-+from Products.CMFPlone.interfaces import ISecuritySchema
-+from plone.app.upgrade.utils import loadMigrationProfile
- from plone.registry.interfaces import IRegistry
- from zope.component import getUtility
- from zope.component.hooks import getSite
- 
- 
-+def to50beta1(context):
-+    """5.0alpha3 -> 5.0beta1"""
-+    loadMigrationProfile(context, 'profile-plone.app.upgrade.v50:to50beta1')
-+
-+
- def upgrade_mail_controlpanel_settings(context):
-     registry = getUtility(IRegistry)
-     # XXX: Somehow this code is excecuted for old migration steps as well
-@@ -75,3 +82,53 @@ def upgrade_markup_controlpanel_settings(context):
-             if _type not in forbidden_types
-             and _type not in 'text/x-plone-outputfilters-html'  # removed, as in plone.app.vocabularies.types  # noqa
-         ])
-+
-+
-+def upgrade_security_controlpanel_settings(context):
-+    """Copy security control panel settings from portal properties and various
-+    other locations into the new registry.
-+    """
-+    def _get_enable_self_reg():
-+        app_perms = portal.rolesOfPermission(permission='Add portal member')
-+        for appperm in app_perms:
-+            if appperm['name'] == 'Anonymous' and \
-+               appperm['selected'] == 'SELECTED':
-+                return True
-+        return False
-+
-+    # get the old site properties
-+    portal_url = getToolByName(context, 'portal_url')
-+    portal = portal_url.getPortalObject()
-+    portal_properties = getToolByName(portal, "portal_properties")
-+    site_properties = portal_properties.site_properties
-+
-+    # get the new registry
-+    registry = getUtility(IRegistry)
-+
-+    # XXX: Somehow this code is excecuted for old migration steps as well
-+    # ( < Plone 4 ) and breaks because there is no registry. Looking up the
-+    # registry interfaces with 'check=False' will not work, because it will
-+    # return a settings object and then fail when we try to access the
-+    # attributes.
-+    try:
-+        settings = registry.forInterface(
-+            ISecuritySchema,
-+            prefix='plone',
-+        )
-+    except KeyError:
-+        settings = False
-+    if settings:
-+        settings.enable_self_reg = _get_enable_self_reg()
-+        validate_email = portal.getProperty('validate_email', True)
-+        if validate_email:
-+            settings.enable_user_pwd_choice = False
-+        else:
-+            settings.enable_user_pwd_choice = True
-+        pmembership = getToolByName(portal, 'portal_membership')
-+        settings.enable_user_folders = pmembership.getMemberareaCreationFlag()
-+        settings.allow_anon_views_about = site_properties.getProperty(
-+            'allowAnonymousViewAbout', False)
-+        settings.use_email_as_login = site_properties.getProperty(
-+            'use_email_as_login', False)
-+        settings.use_uuid_as_userid = site_properties.getProperty(
-+            'use_uuid_as_userid', False)
-diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
-index cb79fd8..01dd8e9 100644
---- a/plone/app/upgrade/v50/configure.zcml
-+++ b/plone/app/upgrade/v50/configure.zcml
-@@ -88,6 +88,12 @@
-         profile="Products.CMFPlone:plone">
- 
-        <gs:upgradeStep
-+           title="Run to50beta1 upgrade profile"
-+           description=""
-+           handler=".betas.to50beta1"
-+           />
-+
-+       <gs:upgradeStep
-            title="Upgrade markup control panel settings"
-            description=""
-            handler=".betas.upgrade_markup_controlpanel_settings"
-@@ -99,6 +105,12 @@
-            handler=".betas.upgrade_mail_controlpanel_settings"
-            />
- 
-+       <gs:upgradeStep
-+           title="Upgrade security control panel settings"
-+           description=""
-+           handler=".betas.upgrade_security_controlpanel_settings"
-+           />
-+
-     </gs:upgradeSteps>
- 
- </configure>
-diff --git a/plone/app/upgrade/v50/profiles.zcml b/plone/app/upgrade/v50/profiles.zcml
-index 271af6b..7655975 100644
---- a/plone/app/upgrade/v50/profiles.zcml
-+++ b/plone/app/upgrade/v50/profiles.zcml
-@@ -21,4 +21,13 @@
-       provides="Products.GenericSetup.interfaces.EXTENSION"
-       />
- 
-+  <genericsetup:registerProfile
-+      name="to50beta1"
-+      title="Upgrade profile for Plone 5003 to Plone 5.0beta1"
-+      description=""
-+      directory="profiles/to_beta1"
-+      for="Products.CMFPlone.interfaces.IMigratingPloneSiteRoot"
-+      provides="Products.GenericSetup.interfaces.EXTENSION"
-+      />
-+
- </configure>
-diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-new file mode 100644
-index 0000000..fd89c49
---- /dev/null
-+++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-@@ -0,0 +1,5 @@
-+<?xml version="1.0"?>
-+<registry>
-+  <records interface="Products.CMFPlone.interfaces.ISecuritySchema"
-+           prefix="plone" />
-+</registry>
+diff --git a/plone/app/controlpanel/overview.pt b/plone/app/controlpanel/overview.pt
+deleted file mode 100644
+index fd4979e..0000000
+--- a/plone/app/controlpanel/overview.pt
++++ /dev/null
+@@ -1,170 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="here/prefs_main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:override fill-slot="top_slot"
+-                tal:define="disable_column_one python:request.set('disable_plone.leftcolumn',1);
+-                            disable_column_two python:request.set('disable_plone.rightcolumn',1);"/>
+-
+-<div metal:fill-slot="prefs_configlet_main">
+-
+-    <h1 class="documentFirstHeading"
+-        i18n:translate="">Site Setup</h1>
+-
+-    <p class="documentDescription" i18n:translate="description_control_panel">
+-        Configuration area for Plone and add-on Products.
+-    </p>
+-
+-    <div class="portalMessage warning"
+-        tal:condition="view/upgrade_warning">
+-        <strong i18n:translate="">
+-            Warning
+-        </strong>
+-        <span tal:omit-tag="" i18n:translate="">
+-            The site configuration is outdated and needs to be
+-            upgraded. Please
+-            <a href="#"
+-               tal:attributes="href string:${context/portal_url}/@@plone-upgrade"
+-               title="Go to the upgrade page"
+-               i18n:attributes="title;"
+-               i18n:name="link_continue_with_the_upgrade"
+-               i18n:translate="">
+-              continue with the upgrade
+-            </a>.
+-        </span>
+-    </div>
+-
+-    <div class="portalMessage warning"
+-        tal:condition="view/mailhost_warning">
+-        <strong i18n:translate="">
+-            Warning
+-        </strong>
+-        <span tal:omit-tag="" i18n:translate="text_no_mailhost_configured">
+-            You have not configured a mail host or a site 'From'
+-            address, various features including contact forms, email
+-            notification and password reset will not work. Go to the
+-            <tal:link i18n:name="label_mail_control_panel_link">
+-                <a href=""
+-                   i18n:translate="text_no_mailhost_configured_control_panel_link"
+-                   tal:attributes="href string:${portal_url}/@@mail-controlpanel"
+-                >Mail control panel</a>
+-            </tal:link>
+-            to fix this.
+-        </span>
+-    </div>
+-
+-    <div class="portalMessage warning"
+-        tal:condition="view/timezone_warning">
+-        <strong i18n:translate="">
+-            Warning
+-        </strong>
+-        <span tal:omit-tag="" i18n:translate="text_no_timezone_configured">
+-
+-            You have not set the portal timezone. Date/Time handling will not
+-            work properly for timezone aware date/time values.
+-            Go to the
+-            <tal:link i18n:name="label_mail_event_settings_link">
+-                <a href=""
+-                   i18n:translate="text_no_timezone_configured_control_panel_link"
+-                   tal:attributes="href string:${portal_url}/@@dateandtime-controlpanel"
+-                >Date and Time settings control panel</a>
+-            </tal:link>
+-            to fix this.
+-        </span>
+-    </div>
+-
+-    <div class="portalMessage warning"
+-        tal:condition="not:view/pil">
+-        <strong i18n:translate="">
+-            Warning
+-        </strong>
+-        <span tal:omit-tag="" i18n:translate="text_no_pil_installed">
+-            PIL is not installed properly, image scaling will not work.
+-        </span>
+-    </div>
+-
+-    <tal:category tal:repeat="category view/categories">
+-
+-        <section class="portlet portletNavigationTree portletSiteSetup" tal:define="sublist python:view.sublists(category.get('id'))">
+-          <header class="portletHeader hiddenStructure" tal:content="category/title"
+-            i18n:translate="">Category</header>
+-
+-          <nav class="portletContent" tal:condition="sublist">
+-
+-            <ul class="configlets"
+-                tal:condition="sublist">
+-              <tal:actions tal:repeat="action sublist">
+-                      <li tal:condition="action/visible">
+-                          <a href=""
+-                             tal:define="icon action/icon"
+-                             tal:attributes="href action/url">
+-                              <img src="" alt=""
+-                                   tal:condition="not:icon"
+-                                   tal:attributes="src string:${portal_url}/maintenance_icon.png" />
+-                              <img src="" alt=""
+-                                   tal:condition="icon"
+-                                   tal:attributes="src icon;
+-                                                   alt action/title;"
+-                                   i18n:attributes="alt" />
+-                              <tal:title tal:content="action/title"
+-                                         i18n:translate="">
+-                                  Title
+-                              </tal:title>
+-                          </a>
+-                      </li>
+-                  </tal:actions>
+-                </ul>
+-            </nav>
+-
+-            <div class="discreet"
+-                 tal:condition="not:sublist"
+-                 i18n:translate="label_no_prefs_panels_available">
+-                No preference panels available.
+-            </div>
+-
+-        </section>
+-
+-    </tal:category>
+-
+-    <div class="visualClear"><!-- --></div>
+-
+-    <h2 i18n:translate="heading_version_overview">Version Overview</h2>
+-    <ul>
+-      <tal:list-versions repeat="version view/version_overview">
+-        <li tal:content="version">Version</li>
+-      </tal:list-versions>
+-    </ul>
+-
+-    <p tal:condition="not:view/is_dev_mode"
+-       class="discreet"
+-       i18n:translate="description_production_mode">
+-      You are running in "production mode". This is the preferred mode of
+-      operation for a live Plone site, but means that some
+-      configuration changes will not take effect until your server is
+-      restarted or a product refreshed. If this is a development instance,
+-      and you want to enable debug mode, stop the server, set 'debug-mode=on'
+-      in your buildout.cfg, re-run bin/buildout and then restart the server
+-      process.
+-    </p>
+-
+-    <p tal:condition="view/is_dev_mode"
+-       class="discreet"
+-       i18n:translate="description_debug_mode">
+-      You are running in "debug mode". This mode is intended for sites that
+-      are under development. This allows many configuration changes to be
+-      immediately visible, but will make your site run more slowly. To turn
+-      off debug mode, stop the server, set 'debug-mode=off' in your
+-      buildout.cfg, re-run bin/buildout and then restart the server
+-      process.
+-    </p>
+-
+-</div>
+-
+-</body>
+-</html>
+diff --git a/plone/app/controlpanel/overview.py b/plone/app/controlpanel/overview.py
+deleted file mode 100644
+index 7810564..0000000
+--- a/plone/app/controlpanel/overview.py
++++ /dev/null
+@@ -1,112 +0,0 @@
+-from AccessControl import getSecurityManager
+-from Acquisition import aq_base
+-from Acquisition import aq_inner
+-from Products.CMFCore.permissions import ManagePortal
+-from Products.CMFCore.utils import getToolByName
+-from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+-from plone.app.controlpanel.form import ControlPanelView
+-from plone.memoize.instance import memoize
+-from plone.registry.interfaces import IRegistry
+-from zope.component import getUtility
+-
+-try:
+-    import plone.app.event  # nopep8
+-    HAS_PAE = True
+-except ImportError:
+-    HAS_PAE = False
+-
+-
+-class OverviewControlPanel(ControlPanelView):
+-
+-    template = ViewPageTemplateFile('overview.pt')
+-
+-    base_category = 'controlpanel'
+-    ignored_categories = ('controlpanel_user')
+-
+-    def __call__(self):
+-        self.request.set('disable_border', 1)
+-        return self.template()
+-
+-    @memoize
+-    def cptool(self):
+-        return getToolByName(aq_inner(self.context), 'portal_controlpanel')
+-
+-    @memoize
+-    def migration(self):
+-        return getToolByName(aq_inner(self.context), 'portal_migration')
+-
+-    @memoize
+-    def core_versions(self):
+-        return self.migration().coreVersions()
+-
+-    def pil(self):
+-        return 'PIL' in self.core_versions()
+-
+-    def version_overview(self):
+-
+-        core_versions = self.core_versions()
+-        versions = [
+-            'Plone %s (%s)' % (core_versions['Plone'],
+-                               core_versions['Plone Instance'])]
+-
+-        for v in ('CMF', 'Zope', 'Python'):
+-            versions.append(v + ' ' + core_versions.get(v))
+-        pil = core_versions.get('PIL', None)
+-        if pil is not None:
+-            versions.append('PIL ' + pil)
+-        return versions
+-
+-    @memoize
+-    def is_dev_mode(self):
+-        qi = getToolByName(aq_inner(self.context), 'portal_quickinstaller')
+-        return qi.isDevelopmentMode()
+-
+-    def upgrade_warning(self):
+-        mt = getToolByName(aq_inner(self.context), 'portal_migration')
+-        if mt.needUpgrading():
+-            # if the user can't run the upgrade, no sense in displaying the
+-            # message
+-            sm = getSecurityManager()
+-            if sm.checkPermission(ManagePortal, self.context):
+-                return True
+-        return False
+-
+-    def mailhost_warning(self):
+-        mailhost = getToolByName(aq_inner(self.context), 'MailHost', None)
+-        if mailhost is None:
+-            return True
+-        mailhost = getattr(aq_base(mailhost), 'smtp_host', None)
+-        email = getattr(aq_inner(self.context), 'email_from_address', None)
+-        if mailhost and email:
+-            return False
+-        return True
+-
+-    def timezone_warning(self):
+-        """Returns true, if the portal_timezone is not set in the registry.
+-        """
+-        if not HAS_PAE:
+-            # No point of having a portal timezone configured without
+-            # plone.app.event installed.
+-            # TODO: Above applies to situation at time of writing. If other
+-            # datetimes outside plone.app.event use proper timezones too, the
+-            # HAS_PAE should be removed.
+-            return False
+-        # check if 'plone.portal_timezone' is in registry
+-        registry = getUtility(IRegistry)
+-        reg_key = "plone.portal_timezone"
+-        if reg_key not in registry:
+-            # else use 'plone.app.event.portal_timezone'
+-            # < Plone 5
+-            reg_key = 'plone.app.event.portal_timezone'
+-        if reg_key not in registry:
+-            return True
+-        portal_timezone = registry[reg_key]
+-        if portal_timezone:
+-            return False
+-        return True  # No portal_timezone found.
+-
+-    def categories(self):
+-        return self.cptool().getGroups()
+-
+-    def sublists(self, category):
+-        return self.cptool().enumConfiglets(group=category)
 
 
