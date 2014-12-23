@@ -1,38 +1,135 @@
-Repository: plone.app.upgrade
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2014-12-22T13:48:26+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.upgrade/commit/0c8c87515985628fa33d16a188854ed6ee3520aa
+Date: 2014-12-23T19:29:30+01:00
+Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/9ca5867997be7b4c9984e66501b7eb3a0ee0de2c
 
-email_form_name and email_from_address are stored directly on the portal.
+Cleaning js and jquery as default on production
 
 Files changed:
-M plone/app/upgrade/v50/betas.py
+M Products/CMFPlone/profiles/dependencies/registry.xml
+M Products/CMFPlone/resources/browser/scripts.py
+M Products/CMFPlone/static/plone.less
+M Products/CMFPlone/tests/testCSSandJSRegistry.py
+D Products/CMFPlone/profiles/dependencies/jsregistry.xml
 
-diff --git a/plone/app/upgrade/v50/betas.py b/plone/app/upgrade/v50/betas.py
-index c8dd907..2d44444 100644
---- a/plone/app/upgrade/v50/betas.py
-+++ b/plone/app/upgrade/v50/betas.py
-@@ -26,7 +26,6 @@ def upgrade_mail_controlpanel_settings(context):
-     except KeyError:
-         return
-     portal = getSite()
--    portal_properties = getToolByName(context, "portal_properties")
+diff --git a/Products/CMFPlone/profiles/dependencies/jsregistry.xml b/Products/CMFPlone/profiles/dependencies/jsregistry.xml
+deleted file mode 100644
+index be011d4..0000000
+--- a/Products/CMFPlone/profiles/dependencies/jsregistry.xml
++++ /dev/null
+@@ -1,21 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="portal_javascripts" meta_type="JavaScripts Registry">
+-
+-
+-
+- <!-- Libraries -->
+-
+-
+-
+- <!-- Old needs to be moved -->
+-
+-
+- <!-- Plone main js -->
+-
+-
+- <!-- BBB Plone main js -->
+-
+- <!-- Only for logged-in users -->
+- <javascript id="table_sorter.js" authenticated="True" />
+- <javascript id="unlockOnFormUnload.js" authenticated="True" />
+-</object>
+diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
+index 771e113..15c81ef 100644
+--- a/Products/CMFPlone/profiles/dependencies/registry.xml
++++ b/Products/CMFPlone/profiles/dependencies/registry.xml
+@@ -628,7 +628,7 @@
  
-     smtp_host = getattr(portal.MailHost, 'smtp_host', '')
-     mail_settings.smtp_host = unicode(smtp_host)
-@@ -40,10 +39,10 @@ def upgrade_mail_controlpanel_settings(context):
-     smtp_pass = portal.MailHost.get('smtp_pass')
-     mail_settings.smtp_pass = smtp_pass
+   <records prefix="plone.resources/translate"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">++resource++mockupjs/i18n-wrapper</value>
++      <value key="js">++resource++mockupjs/i18n-wrapper.js</value>
+   </records>
  
--    email_from_address = portal_properties.get('email_from_address')
-+    email_from_address = portal.get('email_from_address')
-     mail_settings.email_from_address = email_from_address
+  <!-- Patterns -->
+@@ -841,14 +841,6 @@
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">jquery.highlightsearchterms.js</value>
+   </records>
+-  <records prefix="plone.resources/table_sorter"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">table_sorter.js</value>
+-  </records>
+-  <records prefix="plone.resources/unlockOnFormUnload"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">unlockOnFormUnload.js</value>
+-  </records>
  
--    email_from_name = portal_properties.get('email_from_name')
-+    email_from_name = portal.get('email_from_name')
-     mail_settings.email_from_name = email_from_name
+   <!-- disabled -->
+   <records prefix="plone.resources/mark_special_links"
+diff --git a/Products/CMFPlone/resources/browser/scripts.py b/Products/CMFPlone/resources/browser/scripts.py
+index 6a5ea59..8ebda22 100644
+--- a/Products/CMFPlone/resources/browser/scripts.py
++++ b/Products/CMFPlone/resources/browser/scripts.py
+@@ -48,18 +48,18 @@ def scripts(self):
+         """
+         result = []
+         # We always add jquery resource
++        result.append({
++            'src': '%s/%s' % (
++                self.portal_url,
++                self.registry.records['plone.resources/jquery.js'].value),
++            'conditionalcomment': None,
++            'bundle': 'basic'
++        })
+         if self.development:
+             # We need to add require.js and config.js
+             result.append({
+                 'src': '%s/%s' % (
+                     self.portal_url,
+-                    self.registry.records['plone.resources/jquery.js'].value),
+-                'conditionalcomment': None,
+-                'bundle': 'basic'
+-            })
+-            result.append({
+-                'src': '%s/%s' % (
+-                    self.portal_url,
+                     self.registry.records['plone.resources.less-variables'].value),  # noqa
+                 'conditionalcomment': None,
+                 'bundle': 'basic'
+diff --git a/Products/CMFPlone/static/plone.less b/Products/CMFPlone/static/plone.less
+index 0eba0b2..091f64b 100644
+--- a/Products/CMFPlone/static/plone.less
++++ b/Products/CMFPlone/static/plone.less
+@@ -1,4 +1,16 @@
+ @fontsPrefix: './fonts/';
++@bowerPath: './components/';
++@mockup-patterns-select2: '.';
++@mockup-patterns-pickadate: '.';
++@mockup-patterns-relateditems: '.';
++@mockup-patterns-querystring: '.';
++@mockup-patterns-autotoc: '.';
++@mockup-patterns-modal: '.';
++@mockup-patterns-structure: '.';
++@mockup-patterns-upload: '.';
++@plone-patterns-toolbar: '.';
++@mockup-patterns-tinymce: '.';
++
  
- 
+ @import url("@{mockup-patterns-select2}");
+ @import url("@{mockup-patterns-pickadate}");
+diff --git a/Products/CMFPlone/tests/testCSSandJSRegistry.py b/Products/CMFPlone/tests/testCSSandJSRegistry.py
+index f7c5386..9984aea 100644
+--- a/Products/CMFPlone/tests/testCSSandJSRegistry.py
++++ b/Products/CMFPlone/tests/testCSSandJSRegistry.py
+@@ -55,7 +55,6 @@ def testDefaultJSIsInstalled(self):
+             '++resource++plone.js',
+             'jquery.highlightsearchterms.js',
+             'mark_special_links.js',
+-            'table_sorter.js',
+             'plone_javascript_variables.js',
+             ]
+         js_files = [x.js for x in installedResources.values()]
 
 
