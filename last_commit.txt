@@ -1,135 +1,45 @@
-Repository: Products.CMFPlone
+Repository: plone.app.robotframework
 Branch: refs/heads/master
-Date: 2014-12-23T19:29:30+01:00
-Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/9ca5867997be7b4c9984e66501b7eb3a0ee0de2c
+Date: 2014-12-24T09:53:22+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/plone.app.robotframework/commit/d2228f947323da1980a1dba39ccbbf3cec368e03
 
-Cleaning js and jquery as default on production
+Upgrade sphinxcontrib-robotframework = 0.5.0
 
 Files changed:
-M Products/CMFPlone/profiles/dependencies/registry.xml
-M Products/CMFPlone/resources/browser/scripts.py
-M Products/CMFPlone/static/plone.less
-M Products/CMFPlone/tests/testCSSandJSRegistry.py
-D Products/CMFPlone/profiles/dependencies/jsregistry.xml
+M README.rst
+M versions.cfg
 
-diff --git a/Products/CMFPlone/profiles/dependencies/jsregistry.xml b/Products/CMFPlone/profiles/dependencies/jsregistry.xml
-deleted file mode 100644
-index be011d4..0000000
---- a/Products/CMFPlone/profiles/dependencies/jsregistry.xml
-+++ /dev/null
-@@ -1,21 +0,0 @@
--<?xml version="1.0"?>
--<object name="portal_javascripts" meta_type="JavaScripts Registry">
--
--
--
-- <!-- Libraries -->
--
--
--
-- <!-- Old needs to be moved -->
--
--
-- <!-- Plone main js -->
--
--
-- <!-- BBB Plone main js -->
--
-- <!-- Only for logged-in users -->
-- <javascript id="table_sorter.js" authenticated="True" />
-- <javascript id="unlockOnFormUnload.js" authenticated="True" />
--</object>
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index 771e113..15c81ef 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -628,7 +628,7 @@
+diff --git a/README.rst b/README.rst
+index a379fdb..d1df40a 100644
+--- a/README.rst
++++ b/README.rst
+@@ -21,7 +21,7 @@ Please read the full documentation at `Plone Developer Documentation
+ Known good versions
+ -------------------
  
-   <records prefix="plone.resources/translate"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++resource++mockupjs/i18n-wrapper</value>
-+      <value key="js">++resource++mockupjs/i18n-wrapper.js</value>
-   </records>
+-Updated: 2014-11-11
++Updated: 2014-12-24
  
-  <!-- Patterns -->
-@@ -841,14 +841,6 @@
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">jquery.highlightsearchterms.js</value>
-   </records>
--  <records prefix="plone.resources/table_sorter"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">table_sorter.js</value>
--  </records>
--  <records prefix="plone.resources/unlockOnFormUnload"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">unlockOnFormUnload.js</value>
--  </records>
+ This is the latest known good versions for **plone.app.robotframework** and
+ packages related to it.
+@@ -36,6 +36,6 @@ packages related to it.
+    robotframework-selenium2screenshots = 0.4.0
+    robotsuite = 1.6.1
+    selenium = 2.44.0
+-   sphinxcontrib-robotframework = 0.4.3
++   sphinxcontrib-robotframework = 0.5.0
  
-   <!-- disabled -->
-   <records prefix="plone.resources/mark_special_links"
-diff --git a/Products/CMFPlone/resources/browser/scripts.py b/Products/CMFPlone/resources/browser/scripts.py
-index 6a5ea59..8ebda22 100644
---- a/Products/CMFPlone/resources/browser/scripts.py
-+++ b/Products/CMFPlone/resources/browser/scripts.py
-@@ -48,18 +48,18 @@ def scripts(self):
-         """
-         result = []
-         # We always add jquery resource
-+        result.append({
-+            'src': '%s/%s' % (
-+                self.portal_url,
-+                self.registry.records['plone.resources/jquery.js'].value),
-+            'conditionalcomment': None,
-+            'bundle': 'basic'
-+        })
-         if self.development:
-             # We need to add require.js and config.js
-             result.append({
-                 'src': '%s/%s' % (
-                     self.portal_url,
--                    self.registry.records['plone.resources/jquery.js'].value),
--                'conditionalcomment': None,
--                'bundle': 'basic'
--            })
--            result.append({
--                'src': '%s/%s' % (
--                    self.portal_url,
-                     self.registry.records['plone.resources.less-variables'].value),  # noqa
-                 'conditionalcomment': None,
-                 'bundle': 'basic'
-diff --git a/Products/CMFPlone/static/plone.less b/Products/CMFPlone/static/plone.less
-index 0eba0b2..091f64b 100644
---- a/Products/CMFPlone/static/plone.less
-+++ b/Products/CMFPlone/static/plone.less
-@@ -1,4 +1,16 @@
- @fontsPrefix: './fonts/';
-+@bowerPath: './components/';
-+@mockup-patterns-select2: '.';
-+@mockup-patterns-pickadate: '.';
-+@mockup-patterns-relateditems: '.';
-+@mockup-patterns-querystring: '.';
-+@mockup-patterns-autotoc: '.';
-+@mockup-patterns-modal: '.';
-+@mockup-patterns-structure: '.';
-+@mockup-patterns-upload: '.';
-+@plone-patterns-toolbar: '.';
-+@mockup-patterns-tinymce: '.';
-+
- 
- @import url("@{mockup-patterns-select2}");
- @import url("@{mockup-patterns-pickadate}");
-diff --git a/Products/CMFPlone/tests/testCSSandJSRegistry.py b/Products/CMFPlone/tests/testCSSandJSRegistry.py
-index f7c5386..9984aea 100644
---- a/Products/CMFPlone/tests/testCSSandJSRegistry.py
-+++ b/Products/CMFPlone/tests/testCSSandJSRegistry.py
-@@ -55,7 +55,6 @@ def testDefaultJSIsInstalled(self):
-             '++resource++plone.js',
-             'jquery.highlightsearchterms.js',
-             'mark_special_links.js',
--            'table_sorter.js',
-             'plone_javascript_variables.js',
-             ]
-         js_files = [x.js for x in installedResources.values()]
+ .. Remember to update also versions.cfg!
+diff --git a/versions.cfg b/versions.cfg
+index 056160b..8a37fe1 100644
+--- a/versions.cfg
++++ b/versions.cfg
+@@ -7,4 +7,4 @@ robotframework-selenium2library = 1.5.0
+ robotframework-selenium2screenshots = 0.5.0
+ robotsuite = 1.6.1
+ selenium = 2.44.0
+-sphinxcontrib-robotframework = 0.4.3
++sphinxcontrib-robotframework = 0.5.0
 
 
