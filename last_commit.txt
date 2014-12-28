@@ -1,332 +1,638 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2014-12-26T18:03:11+01:00
-Author: Fulvio Casali (fulv) <fulviocasali@gmail.com>
-Commit: https://github.com/plone/mockup/commit/8f3fd50e0c6d226f62a6150231933dc4ff51ede2
+Date: 2014-12-28T09:22:24+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/mockup/commit/19574066ec008a8d14b412ab0e3f54fc86715970
 
-Proposed fix for issue #454, pat-markspeciallinks
+Revert "Revert "Make patterns more generic by loading the i18n catalog in a sepa..."
 
 Files changed:
-M mockup/patterns/markspeciallinks/pattern.js
-M mockup/tests/pattern-markspeciallinks-test.js
+A mockup/js/i18n-wrapper.js
+M mockup/js/config.js
+M mockup/patterns/formunloadalert/pattern.js
+M mockup/patterns/pickadate/pattern.js
+M mockup/patterns/preventdoublesubmit/pattern.js
+M mockup/patterns/querystring/pattern.js
+M mockup/patterns/relateditems/pattern.js
+M mockup/patterns/structure/pattern.js
+M mockup/patterns/tinymce/pattern.js
+M mockup/patterns/upload/pattern.js
 
-diff --git a/mockup/patterns/markspeciallinks/pattern.js b/mockup/patterns/markspeciallinks/pattern.js
-index 473a19e..e6db336 100644
---- a/mockup/patterns/markspeciallinks/pattern.js
-+++ b/mockup/patterns/markspeciallinks/pattern.js
-@@ -2,6 +2,7 @@
-  *
-  * Options:
-  *    external_links_open_new_window(boolean): Open external links in a new window. (false)
-+ *    mark_special_links(boolean): Marks external or special protocl links with class. (true)
-  *
-  * Documentation:
-  *   # General
-@@ -20,10 +21,14 @@
-  *
-  *   {{ example-2 }}
-  *
-- *   # List of all protocol icons
-+ *   # Open external link in new window, without icons
-  *
-  *   {{ example-3 }}
-  *
-+ *   # List of all protocol icons
+diff --git a/mockup/js/config.js b/mockup/js/config.js
+index bd58bf7..f4224c2 100644
+--- a/mockup/js/config.js
++++ b/mockup/js/config.js
+@@ -44,6 +44,7 @@
+       'jquery.event.drag': 'lib/jquery.event.drag',
+       'jquery.event.drop': 'lib/jquery.event.drop',
+       'jquery.form': 'bower_components/jquery-form/jquery.form',
++      'translate': 'js/i18n-wrapper',
+       'marked': 'bower_components/marked/lib/marked',
+       'mockup-bundles-docs': 'js/bundles/docs',
+       'mockup-bundles-filemanager': 'js/bundles/filemanager',
+diff --git a/mockup/js/i18n-wrapper.js b/mockup/js/i18n-wrapper.js
+new file mode 100644
+index 0000000..72c174b
+--- /dev/null
++++ b/mockup/js/i18n-wrapper.js
+@@ -0,0 +1,16 @@
++/* i18n integration.
 + *
-+ *   {{ example-4 }}
++ * This is a singleton.
++ * Configuration is done on the body tag data-i18ncatalogurl attribute
++ *     <body data-i18ncatalogurl="/jsi18n">
 + *
-  * Example: example-1
-  *    <div class="pat-markspeciallinks">
-  *      <ul>
-@@ -45,6 +50,16 @@
-  *    </div>
-  *
-  * Example: example-3
-+ *    <div class="pat-markspeciallinks" data-pat-markspeciallinks='{"external_links_open_new_window": "true", "mark_special_links": "false"}'>
-+ *      <ul>
-+ *        <li>Find out What's new in <a href="http://www.plone.org">Plone</a>.</li>
-+ *        <li>Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.</li>
-+ *        <li>Plone builds on <a href="http://zope.org">Zope</a>.</li>
-+ *        <li>Plone uses <a href="/">Mockup</a>.</li>
-+ *      </ul>
-+ *    </div>
-+ *
-+ * Example: example-4
-  *    <div class="pat-markspeciallinks">
-  *        <ul>
-  *          <li><a href="http://www.plone.org">http</a></li>
-@@ -72,14 +87,16 @@ define([
-   var MarkSpecialLinks = Base.extend({
-     name: 'markspeciallinks',
-     defaults: {
--      external_links_open_new_window: false
-+      external_links_open_new_window: false,
-+      mark_special_links: true
-     },
-     init: function () {
-       var self = this, $el = self.$el;
- 
-       // first make external links open in a new window, afterwards do the
-       // normal plone link wrapping in only the content area
--      var elonw,
-+      var elonw = false,
-+          msl = true,
-           url,
-           protocols,
-           contentarea,
-@@ -87,8 +104,10 @@ define([
- 
-       if (typeof self.options.external_links_open_new_window === 'string') {
-           elonw = self.options.external_links_open_new_window.toLowerCase() === 'true';
--      } else {
--          elonw = false;
-+      }
++ *  Or, it'll default to "/jsi18n"
++ */
 +
-+      if (typeof self.options.mark_special_links === 'string') {
-+          msl = self.options.mark_special_links.toLowerCase() === 'true';
-       }
++define([
++  'mockup-i18n'
++], function(i18n) {
++  'use strict';
++  i18n.loadCatalog('widgets');
++  return i18n.MessageFactory('widgets');
++});
+diff --git a/mockup/patterns/formunloadalert/pattern.js b/mockup/patterns/formunloadalert/pattern.js
+index b48a67d..12c66ba 100644
+--- a/mockup/patterns/formunloadalert/pattern.js
++++ b/mockup/patterns/formunloadalert/pattern.js
+@@ -30,13 +30,10 @@
+ define([
+   'jquery',
+   'mockup-patterns-base',
+-  'mockup-i18n'
+-], function ($, Base, i18n) {
++  'translate'
++], function ($, Base, _t) {
+   'use strict';
  
-       url = window.location.protocol + '//' + window.location.host;
-@@ -101,25 +120,27 @@ define([
-                      .attr('target', '_blank');
-       }
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var FormUnloadAlert = Base.extend({
+     name: 'formunloadalert',
+     _changed : false,       // Stores a listing of raised changes by their key
+diff --git a/mockup/patterns/pickadate/pattern.js b/mockup/patterns/pickadate/pattern.js
+index 699ed51..c756e88 100644
+--- a/mockup/patterns/pickadate/pattern.js
++++ b/mockup/patterns/pickadate/pattern.js
+@@ -89,13 +89,10 @@ define([
+   'picker.date',
+   'picker.time',
+   'mockup-patterns-select2',
+-  'mockup-i18n'
+-], function($, Base, Picker, PickerDate, PickerTime, Select2, i18n) {
++  'translate'
++], function($, Base, Picker, PickerDate, PickerTime, Select2, _t) {
+   'use strict';
  
--      // All links with an http href (without the link-plain class), not within this site,
--      // and no img children should be wrapped in a link-external span
--      contentarea.find(
--          'a[href^="http:"]:not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
--          .before('<i class="glyphicon link-external"></i>');
--      // All links without an http href (without the link-plain class), not within this site,
--      // and no img children should be wrapped in a link-[protocol] span
--      contentarea.find(
--          'a[href]:not([href^="http:"]):not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
--          .each(function() {
--              // those without a http link may have another interesting protocol
--              // wrap these in a link-[protocol] span
--              res = protocols.exec(this.href);
--              if (res) {
--                  var iconclass = 'glyphicon link-' + res[0];
--                  jQuery(this).before('<i class="' + iconclass + '"></i>');
--              }
--          }
--      );
-+      if (msl) {
-+        // All links with an http href (without the link-plain class), not within this site,
-+        // and no img children should be wrapped in a link-external span
-+        contentarea.find(
-+            'a[href^="http:"]:not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
-+            .before('<i class="glyphicon link-external"></i>');
-+        // All links without an http href (without the link-plain class), not within this site,
-+        // and no img children should be wrapped in a link-[protocol] span
-+        contentarea.find(
-+            'a[href]:not([href^="http:"]):not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
-+            .each(function() {
-+                // those without a http link may have another interesting protocol
-+                // wrap these in a link-[protocol] span
-+                res = protocols.exec(this.href);
-+                if (res) {
-+                    var iconclass = 'glyphicon link-' + res[0];
-+                    jQuery(this).before('<i class="' + iconclass + '"></i>');
-+                }
-+            }
-+        );
-+      }
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var PickADate = Base.extend({
+     name: 'pickadate',
+     defaults: {
+diff --git a/mockup/patterns/preventdoublesubmit/pattern.js b/mockup/patterns/preventdoublesubmit/pattern.js
+index 9997380..fb80ef0 100644
+--- a/mockup/patterns/preventdoublesubmit/pattern.js
++++ b/mockup/patterns/preventdoublesubmit/pattern.js
+@@ -23,13 +23,10 @@
+ define([
+   'jquery',
+   'mockup-patterns-base',
+-  'mockup-i18n'
+-], function($, Base, i18n) {
++  'translate'
++], function($, Base, _t) {
+   'use strict';
  
-     }
-   });
-diff --git a/mockup/tests/pattern-markspeciallinks-test.js b/mockup/tests/pattern-markspeciallinks-test.js
-index 6569eac..a2a2e5f 100644
---- a/mockup/tests/pattern-markspeciallinks-test.js
-+++ b/mockup/tests/pattern-markspeciallinks-test.js
-@@ -26,6 +26,11 @@ define([
-         '     Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.' +
-         '  </p>' +
-         '</div>' +
-+        '<div class="pat-markspeciallinks" data-pat-markspeciallinks="mark_special_links: false">' +
-+        '  <p>Find out What&#39s new in <a href="http://www.plone.org">Plone</a>.<br>' +
-+        '     Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.' +
-+        '  </p>' +
-+        '</div>' +
-         '<div class="icons pat-markspeciallinks">' +
-         '    <ul>' +
-         '      <li><a href="http://www.plone.org">http</a></li>' +
-@@ -51,6 +56,10 @@ define([
-       expect(link.eq(1).attr("target")===undefined).to.be.equal(true);
-       expect(link.eq(2).attr("target")).to.be.equal("_blank");
-       expect(link.eq(3).attr("target")===undefined).to.be.equal(true);
-+      expect(link.eq(0).parent("i").length).to.be.equal(1);
-+      expect(link.eq(1).parent("i").length).to.be.equal(0);
-+      expect(link.eq(4).parent("i").length).to.be.equal(0);
-+      expect(link.eq(5).parent("i").length).to.be.equal(0);
-     });
-     it('check for correct icon classes per protocol', function() {
-       registry.scan(this.$el);
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var PreventDoubleSubmit = Base.extend({
+     name: 'preventdoublesubmit',
+     defaults: {
+diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
+index ffd3f3f..34cbd53 100644
+--- a/mockup/patterns/querystring/pattern.js
++++ b/mockup/patterns/querystring/pattern.js
+@@ -49,13 +49,10 @@ define([
+   'mockup-patterns-select2',
+   'mockup-patterns-pickadate',
+   'select2',
+-  'mockup-i18n'
+-], function($, Base, Select2, PickADate, undefined, i18n) {
++  'translate'
++], function($, Base, Select2, PickADate, undefined, _t) {
+   'use strict';
+ 
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var Criteria = function() { this.init.apply(this, arguments); };
+   Criteria.prototype = {
+     defaults: {
+diff --git a/mockup/patterns/relateditems/pattern.js b/mockup/patterns/relateditems/pattern.js
+index 72e3b41..fed64eb 100644
+--- a/mockup/patterns/relateditems/pattern.js
++++ b/mockup/patterns/relateditems/pattern.js
+@@ -77,13 +77,10 @@ define([
+   'mockup-patterns-select2',
+   'mockup-utils',
+   'mockup-patterns-tree',
+-  'mockup-i18n'
+-], function($, _, Base, Select2, utils, Tree, i18n) {
++  'translate'
++], function($, _, Base, Select2, utils, Tree, _t) {
+   'use strict';
+ 
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var RelatedItems = Base.extend({
+     name: 'relateditems',
+     browsing: false,
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index 0073c9c..ea9fe66 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -32,18 +32,15 @@ define([
+   'mockup-patterns-base',
+   'mockup-utils',
+   'mockup-patterns-structure-url/js/views/app',
+-  'mockup-i18n',
++  'translate',
+   'text!mockup-patterns-structure-url/templates/paging.xml',
+   'text!mockup-patterns-structure-url/templates/selection_item.xml',
+   'text!mockup-patterns-structure-url/templates/tablerow.xml',
+   'text!mockup-patterns-structure-url/templates/table.xml',
+   'text!mockup-ui-url/templates/popover.xml',
+-], function($, Base, utils, AppView, i18n) {
++], function($, Base, utils, AppView, _t) {
+   'use strict';
+ 
+-  i18n.loadCatalog('widgets');
+-  var _ = i18n.MessageFactory('widgets');
+-
+   var Structure = Base.extend({
+     name: 'structure',
+     defaults: {
+@@ -66,26 +63,26 @@ define([
+         'review_state'
+       ],
+       availableColumns: {
+-        'ModificationDate': _('Last modified'),
+-        'EffectiveDate': _('Published'),
+-        'CreationDate': _('Created'),
+-        'review_state': _('Review state'),
+-        'Subject': _('Tags'),
+-        'Type': _('Type'),
+-        'is_folderish': _('Folder'),
+-        'exclude_from_nav': _('Excluded from nav'),
+-        'getObjSize': _('Object Size'),
+-        'last_comment_date': _('Last comment date'),
+-        'total_comments': _('Total comments')
++        'ModificationDate': _t('Last modified'),
++        'EffectiveDate': _t('Published'),
++        'CreationDate': _t('Created'),
++        'review_state': _t('Review state'),
++        'Subject': _t('Tags'),
++        'Type': _t('Type'),
++        'is_folderish': _t('Folder'),
++        'exclude_from_nav': _t('Excluded from nav'),
++        'getObjSize': _t('Object Size'),
++        'last_comment_date': _t('Last comment date'),
++        'total_comments': _t('Total comments')
+       },
+       rearrange: {
+         properties: {
+-          'id': _('ID'),
+-          'sortable_title': _('Title'),
+-          'modified': _('Last Modified'),
+-          'created': _('Created on'),
+-          'effective': _('Publication Date'),
+-          'Type': _('Type')
++          'id': _t('ID'),
++          'sortable_title': _t('Title'),
++          'modified': _t('Last Modified'),
++          'created': _t('Created on'),
++          'effective': _t('Publication Date'),
++          'Type': _t('Type')
+         },
+         url: '/rearrange'
+       },
+@@ -96,31 +93,31 @@ define([
+        */
+       buttonGroups: {
+         primary: [{
+-          title: _('Cut'),
++          title: _t('Cut'),
+           url: '/cut'
+         },{
+-          title: _('Copy'),
++          title: _t('Copy'),
+           url: '/copy'
+         },{
+-          title: _('Paste'),
++          title: _t('Paste'),
+           url: '/paste'
+         },{
+-          title: _('Delete'),
++          title: _t('Delete'),
+           url: '/delete',
+           context: 'danger',
+           icon: 'trash'
+         }],
+         secondary: [{
+-          title: _('Workflow'),
++          title: _t('Workflow'),
+           url: '/workflow'
+         },{
+-          title: _('Tags'),
++          title: _t('Tags'),
+           url: '/tags'
+         },{
+-          title: _('Properties'),
++          title: _t('Properties'),
+           url: '/properties'
+         },{
+-          title: _('Rename'),
++          title: _t('Rename'),
+           url: '/rename'
+         }]
+       },
+diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
+index 34e1998..42e4df0 100644
+--- a/mockup/patterns/tinymce/pattern.js
++++ b/mockup/patterns/tinymce/pattern.js
+@@ -58,7 +58,7 @@ define([
+   'text!mockup-patterns-tinymce-url/templates/selection.xml',
+   'mockup-utils',
+   'mockup-patterns-tinymce-url/js/links',
+-  'mockup-i18n',
++  'translate',
+   'tinymce-modern-theme', 'tinymce-advlist', 'tinymce-anchor', 'tinymce-autolink',
+   'tinymce-autoresize', 'tinymce-autosave', 'tinymce-bbcode', 'tinymce-charmap',
+   'tinymce-code', 'tinymce-colorpicker', 'tinymce-contextmenu', 'tinymce-directionality',
+@@ -73,14 +73,9 @@ define([
+ ], function($, _,
+             Base, RelatedItems, Modal, tinymce,
+             AutoTOC, ResultTemplate, SelectionTemplate,
+-            utils, LinkModal, i18n) {
++            utils, LinkModal, _t) {
+   'use strict';
+ 
+-
+-
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var TinyMCE = Base.extend({
+     name: 'tinymce',
+     defaults: {
+diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
+index 634afe5..1f84094 100644
+--- a/mockup/patterns/upload/pattern.js
++++ b/mockup/patterns/upload/pattern.js
+@@ -48,17 +48,14 @@ define([
+   'dropzone',
+   'text!mockup-patterns-upload-url/templates/upload.xml',
+   'text!mockup-patterns-upload-url/templates/preview.xml',
+-  'mockup-i18n'
++  'translate'
+ ], function($, _, Base, RelatedItems, Dropzone,
+-            UploadTemplate, PreviewTemplate, i18n) {
++            UploadTemplate, PreviewTemplate, _t) {
+   'use strict';
+ 
+   /* we do not want this plugin to auto discover */
+   Dropzone.autoDiscover = false;
+ 
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var UploadPattern = Base.extend({
+     name: 'upload',
+     defaults: {
 
 
 Repository: mockup
 Branch: refs/heads/master
-Date: 2014-12-28T00:04:01-06:00
-Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/08827ddd0dce530899a119d26808149c078b7325
+Date: 2014-12-28T09:22:32+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/mockup/commit/73fd203c6c300ac8f282a07a20fe5628350b7526
 
-Merge pull request #455 from plone/issue-454
+Merge pull request #456 from plone/revert-453-revert-452-i18n-wrapper
 
-Proposed fix for issue #454, pat-markspeciallinks
+Revert "Revert "Make patterns more generic by loading the i18n catalog i...
 
 Files changed:
-M mockup/patterns/markspeciallinks/pattern.js
-M mockup/tests/pattern-markspeciallinks-test.js
+A mockup/js/i18n-wrapper.js
+M mockup/js/config.js
+M mockup/patterns/formunloadalert/pattern.js
+M mockup/patterns/pickadate/pattern.js
+M mockup/patterns/preventdoublesubmit/pattern.js
+M mockup/patterns/querystring/pattern.js
+M mockup/patterns/relateditems/pattern.js
+M mockup/patterns/structure/pattern.js
+M mockup/patterns/tinymce/pattern.js
+M mockup/patterns/upload/pattern.js
 
-diff --git a/mockup/patterns/markspeciallinks/pattern.js b/mockup/patterns/markspeciallinks/pattern.js
-index 473a19e..e6db336 100644
---- a/mockup/patterns/markspeciallinks/pattern.js
-+++ b/mockup/patterns/markspeciallinks/pattern.js
-@@ -2,6 +2,7 @@
-  *
-  * Options:
-  *    external_links_open_new_window(boolean): Open external links in a new window. (false)
-+ *    mark_special_links(boolean): Marks external or special protocl links with class. (true)
-  *
-  * Documentation:
-  *   # General
-@@ -20,10 +21,14 @@
-  *
-  *   {{ example-2 }}
-  *
-- *   # List of all protocol icons
-+ *   # Open external link in new window, without icons
-  *
-  *   {{ example-3 }}
-  *
-+ *   # List of all protocol icons
+diff --git a/mockup/js/config.js b/mockup/js/config.js
+index bd58bf7..f4224c2 100644
+--- a/mockup/js/config.js
++++ b/mockup/js/config.js
+@@ -44,6 +44,7 @@
+       'jquery.event.drag': 'lib/jquery.event.drag',
+       'jquery.event.drop': 'lib/jquery.event.drop',
+       'jquery.form': 'bower_components/jquery-form/jquery.form',
++      'translate': 'js/i18n-wrapper',
+       'marked': 'bower_components/marked/lib/marked',
+       'mockup-bundles-docs': 'js/bundles/docs',
+       'mockup-bundles-filemanager': 'js/bundles/filemanager',
+diff --git a/mockup/js/i18n-wrapper.js b/mockup/js/i18n-wrapper.js
+new file mode 100644
+index 0000000..72c174b
+--- /dev/null
++++ b/mockup/js/i18n-wrapper.js
+@@ -0,0 +1,16 @@
++/* i18n integration.
 + *
-+ *   {{ example-4 }}
++ * This is a singleton.
++ * Configuration is done on the body tag data-i18ncatalogurl attribute
++ *     <body data-i18ncatalogurl="/jsi18n">
 + *
-  * Example: example-1
-  *    <div class="pat-markspeciallinks">
-  *      <ul>
-@@ -45,6 +50,16 @@
-  *    </div>
-  *
-  * Example: example-3
-+ *    <div class="pat-markspeciallinks" data-pat-markspeciallinks='{"external_links_open_new_window": "true", "mark_special_links": "false"}'>
-+ *      <ul>
-+ *        <li>Find out What's new in <a href="http://www.plone.org">Plone</a>.</li>
-+ *        <li>Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.</li>
-+ *        <li>Plone builds on <a href="http://zope.org">Zope</a>.</li>
-+ *        <li>Plone uses <a href="/">Mockup</a>.</li>
-+ *      </ul>
-+ *    </div>
-+ *
-+ * Example: example-4
-  *    <div class="pat-markspeciallinks">
-  *        <ul>
-  *          <li><a href="http://www.plone.org">http</a></li>
-@@ -72,14 +87,16 @@ define([
-   var MarkSpecialLinks = Base.extend({
-     name: 'markspeciallinks',
-     defaults: {
--      external_links_open_new_window: false
-+      external_links_open_new_window: false,
-+      mark_special_links: true
-     },
-     init: function () {
-       var self = this, $el = self.$el;
- 
-       // first make external links open in a new window, afterwards do the
-       // normal plone link wrapping in only the content area
--      var elonw,
-+      var elonw = false,
-+          msl = true,
-           url,
-           protocols,
-           contentarea,
-@@ -87,8 +104,10 @@ define([
- 
-       if (typeof self.options.external_links_open_new_window === 'string') {
-           elonw = self.options.external_links_open_new_window.toLowerCase() === 'true';
--      } else {
--          elonw = false;
-+      }
++ *  Or, it'll default to "/jsi18n"
++ */
 +
-+      if (typeof self.options.mark_special_links === 'string') {
-+          msl = self.options.mark_special_links.toLowerCase() === 'true';
-       }
++define([
++  'mockup-i18n'
++], function(i18n) {
++  'use strict';
++  i18n.loadCatalog('widgets');
++  return i18n.MessageFactory('widgets');
++});
+diff --git a/mockup/patterns/formunloadalert/pattern.js b/mockup/patterns/formunloadalert/pattern.js
+index b48a67d..12c66ba 100644
+--- a/mockup/patterns/formunloadalert/pattern.js
++++ b/mockup/patterns/formunloadalert/pattern.js
+@@ -30,13 +30,10 @@
+ define([
+   'jquery',
+   'mockup-patterns-base',
+-  'mockup-i18n'
+-], function ($, Base, i18n) {
++  'translate'
++], function ($, Base, _t) {
+   'use strict';
  
-       url = window.location.protocol + '//' + window.location.host;
-@@ -101,25 +120,27 @@ define([
-                      .attr('target', '_blank');
-       }
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var FormUnloadAlert = Base.extend({
+     name: 'formunloadalert',
+     _changed : false,       // Stores a listing of raised changes by their key
+diff --git a/mockup/patterns/pickadate/pattern.js b/mockup/patterns/pickadate/pattern.js
+index 699ed51..c756e88 100644
+--- a/mockup/patterns/pickadate/pattern.js
++++ b/mockup/patterns/pickadate/pattern.js
+@@ -89,13 +89,10 @@ define([
+   'picker.date',
+   'picker.time',
+   'mockup-patterns-select2',
+-  'mockup-i18n'
+-], function($, Base, Picker, PickerDate, PickerTime, Select2, i18n) {
++  'translate'
++], function($, Base, Picker, PickerDate, PickerTime, Select2, _t) {
+   'use strict';
  
--      // All links with an http href (without the link-plain class), not within this site,
--      // and no img children should be wrapped in a link-external span
--      contentarea.find(
--          'a[href^="http:"]:not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
--          .before('<i class="glyphicon link-external"></i>');
--      // All links without an http href (without the link-plain class), not within this site,
--      // and no img children should be wrapped in a link-[protocol] span
--      contentarea.find(
--          'a[href]:not([href^="http:"]):not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
--          .each(function() {
--              // those without a http link may have another interesting protocol
--              // wrap these in a link-[protocol] span
--              res = protocols.exec(this.href);
--              if (res) {
--                  var iconclass = 'glyphicon link-' + res[0];
--                  jQuery(this).before('<i class="' + iconclass + '"></i>');
--              }
--          }
--      );
-+      if (msl) {
-+        // All links with an http href (without the link-plain class), not within this site,
-+        // and no img children should be wrapped in a link-external span
-+        contentarea.find(
-+            'a[href^="http:"]:not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
-+            .before('<i class="glyphicon link-external"></i>');
-+        // All links without an http href (without the link-plain class), not within this site,
-+        // and no img children should be wrapped in a link-[protocol] span
-+        contentarea.find(
-+            'a[href]:not([href^="http:"]):not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
-+            .each(function() {
-+                // those without a http link may have another interesting protocol
-+                // wrap these in a link-[protocol] span
-+                res = protocols.exec(this.href);
-+                if (res) {
-+                    var iconclass = 'glyphicon link-' + res[0];
-+                    jQuery(this).before('<i class="' + iconclass + '"></i>');
-+                }
-+            }
-+        );
-+      }
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var PickADate = Base.extend({
+     name: 'pickadate',
+     defaults: {
+diff --git a/mockup/patterns/preventdoublesubmit/pattern.js b/mockup/patterns/preventdoublesubmit/pattern.js
+index 9997380..fb80ef0 100644
+--- a/mockup/patterns/preventdoublesubmit/pattern.js
++++ b/mockup/patterns/preventdoublesubmit/pattern.js
+@@ -23,13 +23,10 @@
+ define([
+   'jquery',
+   'mockup-patterns-base',
+-  'mockup-i18n'
+-], function($, Base, i18n) {
++  'translate'
++], function($, Base, _t) {
+   'use strict';
  
-     }
-   });
-diff --git a/mockup/tests/pattern-markspeciallinks-test.js b/mockup/tests/pattern-markspeciallinks-test.js
-index 6569eac..a2a2e5f 100644
---- a/mockup/tests/pattern-markspeciallinks-test.js
-+++ b/mockup/tests/pattern-markspeciallinks-test.js
-@@ -26,6 +26,11 @@ define([
-         '     Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.' +
-         '  </p>' +
-         '</div>' +
-+        '<div class="pat-markspeciallinks" data-pat-markspeciallinks="mark_special_links: false">' +
-+        '  <p>Find out What&#39s new in <a href="http://www.plone.org">Plone</a>.<br>' +
-+        '     Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.' +
-+        '  </p>' +
-+        '</div>' +
-         '<div class="icons pat-markspeciallinks">' +
-         '    <ul>' +
-         '      <li><a href="http://www.plone.org">http</a></li>' +
-@@ -51,6 +56,10 @@ define([
-       expect(link.eq(1).attr("target")===undefined).to.be.equal(true);
-       expect(link.eq(2).attr("target")).to.be.equal("_blank");
-       expect(link.eq(3).attr("target")===undefined).to.be.equal(true);
-+      expect(link.eq(0).parent("i").length).to.be.equal(1);
-+      expect(link.eq(1).parent("i").length).to.be.equal(0);
-+      expect(link.eq(4).parent("i").length).to.be.equal(0);
-+      expect(link.eq(5).parent("i").length).to.be.equal(0);
-     });
-     it('check for correct icon classes per protocol', function() {
-       registry.scan(this.$el);
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var PreventDoubleSubmit = Base.extend({
+     name: 'preventdoublesubmit',
+     defaults: {
+diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
+index ffd3f3f..34cbd53 100644
+--- a/mockup/patterns/querystring/pattern.js
++++ b/mockup/patterns/querystring/pattern.js
+@@ -49,13 +49,10 @@ define([
+   'mockup-patterns-select2',
+   'mockup-patterns-pickadate',
+   'select2',
+-  'mockup-i18n'
+-], function($, Base, Select2, PickADate, undefined, i18n) {
++  'translate'
++], function($, Base, Select2, PickADate, undefined, _t) {
+   'use strict';
+ 
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var Criteria = function() { this.init.apply(this, arguments); };
+   Criteria.prototype = {
+     defaults: {
+diff --git a/mockup/patterns/relateditems/pattern.js b/mockup/patterns/relateditems/pattern.js
+index 72e3b41..fed64eb 100644
+--- a/mockup/patterns/relateditems/pattern.js
++++ b/mockup/patterns/relateditems/pattern.js
+@@ -77,13 +77,10 @@ define([
+   'mockup-patterns-select2',
+   'mockup-utils',
+   'mockup-patterns-tree',
+-  'mockup-i18n'
+-], function($, _, Base, Select2, utils, Tree, i18n) {
++  'translate'
++], function($, _, Base, Select2, utils, Tree, _t) {
+   'use strict';
+ 
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var RelatedItems = Base.extend({
+     name: 'relateditems',
+     browsing: false,
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index 0073c9c..ea9fe66 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -32,18 +32,15 @@ define([
+   'mockup-patterns-base',
+   'mockup-utils',
+   'mockup-patterns-structure-url/js/views/app',
+-  'mockup-i18n',
++  'translate',
+   'text!mockup-patterns-structure-url/templates/paging.xml',
+   'text!mockup-patterns-structure-url/templates/selection_item.xml',
+   'text!mockup-patterns-structure-url/templates/tablerow.xml',
+   'text!mockup-patterns-structure-url/templates/table.xml',
+   'text!mockup-ui-url/templates/popover.xml',
+-], function($, Base, utils, AppView, i18n) {
++], function($, Base, utils, AppView, _t) {
+   'use strict';
+ 
+-  i18n.loadCatalog('widgets');
+-  var _ = i18n.MessageFactory('widgets');
+-
+   var Structure = Base.extend({
+     name: 'structure',
+     defaults: {
+@@ -66,26 +63,26 @@ define([
+         'review_state'
+       ],
+       availableColumns: {
+-        'ModificationDate': _('Last modified'),
+-        'EffectiveDate': _('Published'),
+-        'CreationDate': _('Created'),
+-        'review_state': _('Review state'),
+-        'Subject': _('Tags'),
+-        'Type': _('Type'),
+-        'is_folderish': _('Folder'),
+-        'exclude_from_nav': _('Excluded from nav'),
+-        'getObjSize': _('Object Size'),
+-        'last_comment_date': _('Last comment date'),
+-        'total_comments': _('Total comments')
++        'ModificationDate': _t('Last modified'),
++        'EffectiveDate': _t('Published'),
++        'CreationDate': _t('Created'),
++        'review_state': _t('Review state'),
++        'Subject': _t('Tags'),
++        'Type': _t('Type'),
++        'is_folderish': _t('Folder'),
++        'exclude_from_nav': _t('Excluded from nav'),
++        'getObjSize': _t('Object Size'),
++        'last_comment_date': _t('Last comment date'),
++        'total_comments': _t('Total comments')
+       },
+       rearrange: {
+         properties: {
+-          'id': _('ID'),
+-          'sortable_title': _('Title'),
+-          'modified': _('Last Modified'),
+-          'created': _('Created on'),
+-          'effective': _('Publication Date'),
+-          'Type': _('Type')
++          'id': _t('ID'),
++          'sortable_title': _t('Title'),
++          'modified': _t('Last Modified'),
++          'created': _t('Created on'),
++          'effective': _t('Publication Date'),
++          'Type': _t('Type')
+         },
+         url: '/rearrange'
+       },
+@@ -96,31 +93,31 @@ define([
+        */
+       buttonGroups: {
+         primary: [{
+-          title: _('Cut'),
++          title: _t('Cut'),
+           url: '/cut'
+         },{
+-          title: _('Copy'),
++          title: _t('Copy'),
+           url: '/copy'
+         },{
+-          title: _('Paste'),
++          title: _t('Paste'),
+           url: '/paste'
+         },{
+-          title: _('Delete'),
++          title: _t('Delete'),
+           url: '/delete',
+           context: 'danger',
+           icon: 'trash'
+         }],
+         secondary: [{
+-          title: _('Workflow'),
++          title: _t('Workflow'),
+           url: '/workflow'
+         },{
+-          title: _('Tags'),
++          title: _t('Tags'),
+           url: '/tags'
+         },{
+-          title: _('Properties'),
++          title: _t('Properties'),
+           url: '/properties'
+         },{
+-          title: _('Rename'),
++          title: _t('Rename'),
+           url: '/rename'
+         }]
+       },
+diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
+index 34e1998..42e4df0 100644
+--- a/mockup/patterns/tinymce/pattern.js
++++ b/mockup/patterns/tinymce/pattern.js
+@@ -58,7 +58,7 @@ define([
+   'text!mockup-patterns-tinymce-url/templates/selection.xml',
+   'mockup-utils',
+   'mockup-patterns-tinymce-url/js/links',
+-  'mockup-i18n',
++  'translate',
+   'tinymce-modern-theme', 'tinymce-advlist', 'tinymce-anchor', 'tinymce-autolink',
+   'tinymce-autoresize', 'tinymce-autosave', 'tinymce-bbcode', 'tinymce-charmap',
+   'tinymce-code', 'tinymce-colorpicker', 'tinymce-contextmenu', 'tinymce-directionality',
+@@ -73,14 +73,9 @@ define([
+ ], function($, _,
+             Base, RelatedItems, Modal, tinymce,
+             AutoTOC, ResultTemplate, SelectionTemplate,
+-            utils, LinkModal, i18n) {
++            utils, LinkModal, _t) {
+   'use strict';
+ 
+-
+-
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var TinyMCE = Base.extend({
+     name: 'tinymce',
+     defaults: {
+diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
+index 634afe5..1f84094 100644
+--- a/mockup/patterns/upload/pattern.js
++++ b/mockup/patterns/upload/pattern.js
+@@ -48,17 +48,14 @@ define([
+   'dropzone',
+   'text!mockup-patterns-upload-url/templates/upload.xml',
+   'text!mockup-patterns-upload-url/templates/preview.xml',
+-  'mockup-i18n'
++  'translate'
+ ], function($, _, Base, RelatedItems, Dropzone,
+-            UploadTemplate, PreviewTemplate, i18n) {
++            UploadTemplate, PreviewTemplate, _t) {
+   'use strict';
+ 
+   /* we do not want this plugin to auto discover */
+   Dropzone.autoDiscover = false;
+ 
+-  i18n.loadCatalog('widgets');
+-  var _t = i18n.MessageFactory('widgets');
+-
+   var UploadPattern = Base.extend({
+     name: 'upload',
+     defaults: {
 
 
