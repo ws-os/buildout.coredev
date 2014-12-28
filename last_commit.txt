@@ -1,34 +1,332 @@
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2014-12-27T10:49:45+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/337054f3eebd9f7a144be768785b10ec17aacf72
+Date: 2014-12-26T18:03:11+01:00
+Author: Fulvio Casali (fulv) <fulviocasali@gmail.com>
+Commit: https://github.com/plone/mockup/commit/8f3fd50e0c6d226f62a6150231933dc4ff51ede2
 
-Filter custom tags functionality is broken.
+Proposed fix for issue #454, pat-markspeciallinks
 
 Files changed:
-M Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
+M mockup/patterns/markspeciallinks/pattern.js
+M mockup/tests/pattern-markspeciallinks-test.js
 
-diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-index 4b3150f..e3d77f6 100644
---- a/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-+++ b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
-@@ -37,11 +37,11 @@ Scenario: Configure Filter Control Panel to strip out tags
+diff --git a/mockup/patterns/markspeciallinks/pattern.js b/mockup/patterns/markspeciallinks/pattern.js
+index 473a19e..e6db336 100644
+--- a/mockup/patterns/markspeciallinks/pattern.js
++++ b/mockup/patterns/markspeciallinks/pattern.js
+@@ -2,6 +2,7 @@
+  *
+  * Options:
+  *    external_links_open_new_window(boolean): Open external links in a new window. (false)
++ *    mark_special_links(boolean): Marks external or special protocl links with class. (true)
+  *
+  * Documentation:
+  *   # General
+@@ -20,10 +21,14 @@
+  *
+  *   {{ example-2 }}
+  *
+- *   # List of all protocol icons
++ *   # Open external link in new window, without icons
+  *
+  *   {{ example-3 }}
+  *
++ *   # List of all protocol icons
++ *
++ *   {{ example-4 }}
++ *
+  * Example: example-1
+  *    <div class="pat-markspeciallinks">
+  *      <ul>
+@@ -45,6 +50,16 @@
+  *    </div>
+  *
+  * Example: example-3
++ *    <div class="pat-markspeciallinks" data-pat-markspeciallinks='{"external_links_open_new_window": "true", "mark_special_links": "false"}'>
++ *      <ul>
++ *        <li>Find out What's new in <a href="http://www.plone.org">Plone</a>.</li>
++ *        <li>Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.</li>
++ *        <li>Plone builds on <a href="http://zope.org">Zope</a>.</li>
++ *        <li>Plone uses <a href="/">Mockup</a>.</li>
++ *      </ul>
++ *    </div>
++ *
++ * Example: example-4
+  *    <div class="pat-markspeciallinks">
+  *        <ul>
+  *          <li><a href="http://www.plone.org">http</a></li>
+@@ -72,14 +87,16 @@ define([
+   var MarkSpecialLinks = Base.extend({
+     name: 'markspeciallinks',
+     defaults: {
+-      external_links_open_new_window: false
++      external_links_open_new_window: false,
++      mark_special_links: true
+     },
+     init: function () {
+       var self = this, $el = self.$el;
  
- # XXX: This test currently fails because TinyMCE filters out the marquee tag
- # and ignores the filter control panel settings.
--Scenario: Configure Filter Control Panel to allow custom tags
--  Given a logged-in site administrator
--    and the filter control panel
--   When I add 'marquee' to the custom tags list
--   Then the 'marquee' tag is preserved when a document is saved
-+#Scenario: Configure Filter Control Panel to allow custom tags
-+#  Given a logged-in site administrator
-+#    and the filter control panel
-+#   When I add 'marquee' to the custom tags list
-+#   Then the 'marquee' tag is preserved when a document is saved
+       // first make external links open in a new window, afterwards do the
+       // normal plone link wrapping in only the content area
+-      var elonw,
++      var elonw = false,
++          msl = true,
+           url,
+           protocols,
+           contentarea,
+@@ -87,8 +104,10 @@ define([
  
- #Scenario: Configure Filter Control Panel to strip out attributes
+       if (typeof self.options.external_links_open_new_window === 'string') {
+           elonw = self.options.external_links_open_new_window.toLowerCase() === 'true';
+-      } else {
+-          elonw = false;
++      }
++
++      if (typeof self.options.mark_special_links === 'string') {
++          msl = self.options.mark_special_links.toLowerCase() === 'true';
+       }
  
+       url = window.location.protocol + '//' + window.location.host;
+@@ -101,25 +120,27 @@ define([
+                      .attr('target', '_blank');
+       }
+ 
+-      // All links with an http href (without the link-plain class), not within this site,
+-      // and no img children should be wrapped in a link-external span
+-      contentarea.find(
+-          'a[href^="http:"]:not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
+-          .before('<i class="glyphicon link-external"></i>');
+-      // All links without an http href (without the link-plain class), not within this site,
+-      // and no img children should be wrapped in a link-[protocol] span
+-      contentarea.find(
+-          'a[href]:not([href^="http:"]):not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
+-          .each(function() {
+-              // those without a http link may have another interesting protocol
+-              // wrap these in a link-[protocol] span
+-              res = protocols.exec(this.href);
+-              if (res) {
+-                  var iconclass = 'glyphicon link-' + res[0];
+-                  jQuery(this).before('<i class="' + iconclass + '"></i>');
+-              }
+-          }
+-      );
++      if (msl) {
++        // All links with an http href (without the link-plain class), not within this site,
++        // and no img children should be wrapped in a link-external span
++        contentarea.find(
++            'a[href^="http:"]:not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
++            .before('<i class="glyphicon link-external"></i>');
++        // All links without an http href (without the link-plain class), not within this site,
++        // and no img children should be wrapped in a link-[protocol] span
++        contentarea.find(
++            'a[href]:not([href^="http:"]):not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
++            .each(function() {
++                // those without a http link may have another interesting protocol
++                // wrap these in a link-[protocol] span
++                res = protocols.exec(this.href);
++                if (res) {
++                    var iconclass = 'glyphicon link-' + res[0];
++                    jQuery(this).before('<i class="' + iconclass + '"></i>');
++                }
++            }
++        );
++      }
+ 
+     }
+   });
+diff --git a/mockup/tests/pattern-markspeciallinks-test.js b/mockup/tests/pattern-markspeciallinks-test.js
+index 6569eac..a2a2e5f 100644
+--- a/mockup/tests/pattern-markspeciallinks-test.js
++++ b/mockup/tests/pattern-markspeciallinks-test.js
+@@ -26,6 +26,11 @@ define([
+         '     Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.' +
+         '  </p>' +
+         '</div>' +
++        '<div class="pat-markspeciallinks" data-pat-markspeciallinks="mark_special_links: false">' +
++        '  <p>Find out What&#39s new in <a href="http://www.plone.org">Plone</a>.<br>' +
++        '     Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.' +
++        '  </p>' +
++        '</div>' +
+         '<div class="icons pat-markspeciallinks">' +
+         '    <ul>' +
+         '      <li><a href="http://www.plone.org">http</a></li>' +
+@@ -51,6 +56,10 @@ define([
+       expect(link.eq(1).attr("target")===undefined).to.be.equal(true);
+       expect(link.eq(2).attr("target")).to.be.equal("_blank");
+       expect(link.eq(3).attr("target")===undefined).to.be.equal(true);
++      expect(link.eq(0).parent("i").length).to.be.equal(1);
++      expect(link.eq(1).parent("i").length).to.be.equal(0);
++      expect(link.eq(4).parent("i").length).to.be.equal(0);
++      expect(link.eq(5).parent("i").length).to.be.equal(0);
+     });
+     it('check for correct icon classes per protocol', function() {
+       registry.scan(this.$el);
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2014-12-28T00:04:01-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/08827ddd0dce530899a119d26808149c078b7325
+
+Merge pull request #455 from plone/issue-454
+
+Proposed fix for issue #454, pat-markspeciallinks
+
+Files changed:
+M mockup/patterns/markspeciallinks/pattern.js
+M mockup/tests/pattern-markspeciallinks-test.js
+
+diff --git a/mockup/patterns/markspeciallinks/pattern.js b/mockup/patterns/markspeciallinks/pattern.js
+index 473a19e..e6db336 100644
+--- a/mockup/patterns/markspeciallinks/pattern.js
++++ b/mockup/patterns/markspeciallinks/pattern.js
+@@ -2,6 +2,7 @@
+  *
+  * Options:
+  *    external_links_open_new_window(boolean): Open external links in a new window. (false)
++ *    mark_special_links(boolean): Marks external or special protocl links with class. (true)
+  *
+  * Documentation:
+  *   # General
+@@ -20,10 +21,14 @@
+  *
+  *   {{ example-2 }}
+  *
+- *   # List of all protocol icons
++ *   # Open external link in new window, without icons
+  *
+  *   {{ example-3 }}
+  *
++ *   # List of all protocol icons
++ *
++ *   {{ example-4 }}
++ *
+  * Example: example-1
+  *    <div class="pat-markspeciallinks">
+  *      <ul>
+@@ -45,6 +50,16 @@
+  *    </div>
+  *
+  * Example: example-3
++ *    <div class="pat-markspeciallinks" data-pat-markspeciallinks='{"external_links_open_new_window": "true", "mark_special_links": "false"}'>
++ *      <ul>
++ *        <li>Find out What's new in <a href="http://www.plone.org">Plone</a>.</li>
++ *        <li>Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.</li>
++ *        <li>Plone builds on <a href="http://zope.org">Zope</a>.</li>
++ *        <li>Plone uses <a href="/">Mockup</a>.</li>
++ *      </ul>
++ *    </div>
++ *
++ * Example: example-4
+  *    <div class="pat-markspeciallinks">
+  *        <ul>
+  *          <li><a href="http://www.plone.org">http</a></li>
+@@ -72,14 +87,16 @@ define([
+   var MarkSpecialLinks = Base.extend({
+     name: 'markspeciallinks',
+     defaults: {
+-      external_links_open_new_window: false
++      external_links_open_new_window: false,
++      mark_special_links: true
+     },
+     init: function () {
+       var self = this, $el = self.$el;
+ 
+       // first make external links open in a new window, afterwards do the
+       // normal plone link wrapping in only the content area
+-      var elonw,
++      var elonw = false,
++          msl = true,
+           url,
+           protocols,
+           contentarea,
+@@ -87,8 +104,10 @@ define([
+ 
+       if (typeof self.options.external_links_open_new_window === 'string') {
+           elonw = self.options.external_links_open_new_window.toLowerCase() === 'true';
+-      } else {
+-          elonw = false;
++      }
++
++      if (typeof self.options.mark_special_links === 'string') {
++          msl = self.options.mark_special_links.toLowerCase() === 'true';
+       }
+ 
+       url = window.location.protocol + '//' + window.location.host;
+@@ -101,25 +120,27 @@ define([
+                      .attr('target', '_blank');
+       }
+ 
+-      // All links with an http href (without the link-plain class), not within this site,
+-      // and no img children should be wrapped in a link-external span
+-      contentarea.find(
+-          'a[href^="http:"]:not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
+-          .before('<i class="glyphicon link-external"></i>');
+-      // All links without an http href (without the link-plain class), not within this site,
+-      // and no img children should be wrapped in a link-[protocol] span
+-      contentarea.find(
+-          'a[href]:not([href^="http:"]):not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
+-          .each(function() {
+-              // those without a http link may have another interesting protocol
+-              // wrap these in a link-[protocol] span
+-              res = protocols.exec(this.href);
+-              if (res) {
+-                  var iconclass = 'glyphicon link-' + res[0];
+-                  jQuery(this).before('<i class="' + iconclass + '"></i>');
+-              }
+-          }
+-      );
++      if (msl) {
++        // All links with an http href (without the link-plain class), not within this site,
++        // and no img children should be wrapped in a link-external span
++        contentarea.find(
++            'a[href^="http:"]:not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
++            .before('<i class="glyphicon link-external"></i>');
++        // All links without an http href (without the link-plain class), not within this site,
++        // and no img children should be wrapped in a link-[protocol] span
++        contentarea.find(
++            'a[href]:not([href^="http:"]):not(.link-plain):not([href^="' + url + '"]):not(:has(img))')
++            .each(function() {
++                // those without a http link may have another interesting protocol
++                // wrap these in a link-[protocol] span
++                res = protocols.exec(this.href);
++                if (res) {
++                    var iconclass = 'glyphicon link-' + res[0];
++                    jQuery(this).before('<i class="' + iconclass + '"></i>');
++                }
++            }
++        );
++      }
+ 
+     }
+   });
+diff --git a/mockup/tests/pattern-markspeciallinks-test.js b/mockup/tests/pattern-markspeciallinks-test.js
+index 6569eac..a2a2e5f 100644
+--- a/mockup/tests/pattern-markspeciallinks-test.js
++++ b/mockup/tests/pattern-markspeciallinks-test.js
+@@ -26,6 +26,11 @@ define([
+         '     Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.' +
+         '  </p>' +
+         '</div>' +
++        '<div class="pat-markspeciallinks" data-pat-markspeciallinks="mark_special_links: false">' +
++        '  <p>Find out What&#39s new in <a href="http://www.plone.org">Plone</a>.<br>' +
++        '     Plone is written in <a class="link-plain" href="http://www.python.org">Python</a>.' +
++        '  </p>' +
++        '</div>' +
+         '<div class="icons pat-markspeciallinks">' +
+         '    <ul>' +
+         '      <li><a href="http://www.plone.org">http</a></li>' +
+@@ -51,6 +56,10 @@ define([
+       expect(link.eq(1).attr("target")===undefined).to.be.equal(true);
+       expect(link.eq(2).attr("target")).to.be.equal("_blank");
+       expect(link.eq(3).attr("target")===undefined).to.be.equal(true);
++      expect(link.eq(0).parent("i").length).to.be.equal(1);
++      expect(link.eq(1).parent("i").length).to.be.equal(0);
++      expect(link.eq(4).parent("i").length).to.be.equal(0);
++      expect(link.eq(5).parent("i").length).to.be.equal(0);
+     });
+     it('check for correct icon classes per protocol', function() {
+       registry.scan(this.$el);
 
 
