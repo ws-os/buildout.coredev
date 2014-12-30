@@ -1,155 +1,93 @@
-Repository: plone.app.content
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2014-12-30T11:36:13+01:00
+Date: 2014-12-30T13:49:18+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.content/commit/0647f9e867b1c3bc93cc2f5b15b2064533ab7805
+Commit: https://github.com/plone/plone.app.layout/commit/794f119eda3b057617ca1a712437cda08a425c85
 
-use view defined in main_template instead of redefining them
+Fix relateditems viewlet (tal:repeat is executed after tal:define).
 
 Files changed:
-M plone/app/content/browser/reviewlist.py
-M plone/app/content/browser/templates/content_status_history.pt
-M plone/app/content/browser/templates/select_default_page.pt
+M CHANGES.rst
+M plone/app/layout/viewlets/document_relateditems.pt
 
-diff --git a/plone/app/content/browser/reviewlist.py b/plone/app/content/browser/reviewlist.py
-index 7bab97c..eb17ec7 100644
---- a/plone/app/content/browser/reviewlist.py
-+++ b/plone/app/content/browser/reviewlist.py
-@@ -46,6 +46,8 @@ def items(self):
-         portal_url = getToolByName(self.context, 'portal_url')
-         plone_view = getMultiAdapter((self.context, self.request),
-                                      name=u'plone')
-+        plone_layout = getMultiAdapter((self.context, self.request),
-+                                       name=u'plone_layout')
-         portal_workflow = getToolByName(self.context, 'portal_workflow')
-         portal_properties = getToolByName(self.context, 'portal_properties')
-         portal_types = getToolByName(self.context, 'portal_types')
-@@ -64,7 +66,7 @@ def items(self):
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 86a4941..842a1f1 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,8 @@ Changelog
+ 2.5.4 (unreleased)
+ ------------------
  
-             url = obj.absolute_url()
-             path = '/'.join(obj.getPhysicalPath())
--            icon = plone_view.getIcon(obj)
-+            icon = plone_layout.getIcon(obj)
+-- Nothing changed yet.
++- Fix relateditems viewlet (tal:repeat is executed after tal:define).
++  [pbauer]
  
-             type_class = 'contenttype-' + plone_utils.normalizeString(
-                 obj.portal_type)
-diff --git a/plone/app/content/browser/templates/content_status_history.pt b/plone/app/content/browser/templates/content_status_history.pt
-index 86a65e1..c0b0bb3 100644
---- a/plone/app/content/browser/templates/content_status_history.pt
-+++ b/plone/app/content/browser/templates/content_status_history.pt
-@@ -13,19 +13,19 @@
  
-   <metal:calendar fill-slot="javascript_head_slot">
-     <style type="text/css" media="all"
--            tal:content="string:@import url(${context/portal_url}/jscalendar/calendar-system.css);"></style>
-+            tal:content="string:@import url(${portal_url}/jscalendar/calendar-system.css);"></style>
-     <script type="text/javascript"
--            tal:attributes="src string:${context/portal_url}/jscalendar/calendar_stripped.js"></script>
-+            tal:attributes="src string:${portal_url}/jscalendar/calendar_stripped.js"></script>
-     <script type="text/javascript" charset="iso-8859-1"
-             tal:condition="exists: context/jscalendar/calendar-en.js"
--            tal:attributes="src string:${context/portal_url}/jscalendar/calendar-en.js"></script>
-+            tal:attributes="src string:${portal_url}/jscalendar/calendar-en.js"></script>
-   </metal:calendar>
- 
-   <body>
- 
-     <tal:comment tal:condition="nothing">
-       <div class="portalMessage info">
--        <strong>Note</strong> 
-+        <strong>Note</strong>
-         <span>This form is used in two different ways - from folder_contents,
-         allowing you to publish several things at once, and from the state
-         drop-down. In the first case, the 'paths' request parameter is set;
-@@ -37,7 +37,7 @@
- 
-       <metal:main fill-slot="main"
-            tal:define="errors view/errors;
--                       review_state context/@@plone_context_state/workflow_state;
-+                       review_state context_state/workflow_state;
-                        paths python:request.get('paths', ['/'.join(context.getPhysicalPath())]);
-                        batch python:context.getObjectsFromPathList(paths, batch=False);
-                        folders_in_publishing python:[o.getId for o in batch if o.isPrincipiaFolderish];
-@@ -65,7 +65,7 @@
-                 name="edit_form"
-                 method="post"
-                 action="content_status_modify"
--                tal:attributes="action string:${context/@@plone_context_state/object_url}/${view/__name__}"
-+                tal:attributes="action string:${context_state/object_url}/${view/__name__}"
-                 tal:condition="not:python:paths and not batch">
- 
-               <div class="field" tal:condition="batch"
-@@ -85,11 +85,9 @@
-                           <th class="nosort">
-                               <input class="noborder"
-                                      type="checkbox"
--                                     src="select_all_icon.gif"
-                                      name="selectButton"
-                                      title="Select all items"
-                                      onClick="toggleSelect(this,'paths:list');"
--                                     tal:attributes="src string:$portal_url/select_all_icon.gif"
-                                      alt="Select all items"
-                                      i18n:attributes="title label_select_all_items; alt label_select_all_items;"
-                           />
-@@ -111,10 +109,12 @@
-                     </thead>
- 
-                     <metal:block tal:condition="batch|nothing">
--                    <tbody tal:define="portal context/@@plone_portal_state/portal;
--                                       getRelativeContentURL nocall:context/portal_url/getRelativeContentURL;
--                                       normalizeString nocall:context/@@plone/normalizeString;
-+                    <tbody tal:define="portal portal_state/portal;
-+                                       url_tool context/@@plone_tools/url;
-+                                       getRelativeContentURL nocall:url_tool/getRelativeContentURL;
-+                                       normalizeString nocall:plone_view/normalizeString;
-                                        wtool portal/portal_workflow;
-+                                       getIcon nocall:plone_layout/getIcon;
-                                        ">
-                         <tal:items tal:repeat="item batch">
-                            <tr tal:define="oddrow               repeat/item/odd;
-@@ -126,7 +126,7 @@
-                                            item_type            item/portal_type;
-                                            item_size            item/getObjSize;
-                                            item_modified        item/ModificationDate;
--                                           item_icon            python:plone_view.getIcon(item);
-+                                           item_icon            python:getIcon(item);
-                                            item_type_class      python:'contenttype-' + normalizeString(item_type);
-                                            item_wf_state        item/review_state|python: wtool.getInfoFor(item, 'review_state', '');
-                                            item_state_title     python:wtool.getTitleForStateOnType(item_wf_state, item_type);
-@@ -181,7 +181,7 @@
-                                     tal:content="item_size"
-                                     tal:attributes="class item_wf_state_class"> size </span>
-                             </td>
--                            <td tal:define="toLocalizedTime nocall:context/@@plone/toLocalizedTime;"
-+                            <td tal:define="toLocalizedTime nocall:plone_view/toLocalizedTime;"
-                                 tal:content="python:toLocalizedTime(item_modified, long_format=1)"
-                                 tal:attributes="class item_wf_state_class">
-                                 08/19/2001 03:01 AM
-diff --git a/plone/app/content/browser/templates/select_default_page.pt b/plone/app/content/browser/templates/select_default_page.pt
-index 34c1032..9f98454 100644
---- a/plone/app/content/browser/templates/select_default_page.pt
-+++ b/plone/app/content/browser/templates/select_default_page.pt
-@@ -27,17 +27,16 @@
-             <input type="hidden" name="form.submitted" value="1"/>
- 
-             <tal:items define="items view/get_selectable_items;
--                               cur_page context/getDefaultPage|nothing;
--                               ploneview nocall:context/@@plone">
-+                               cur_page context/getDefaultPage|nothing;">
-             <tal:hasItems condition="items"
-                           define="n_items python:len(items);
--                          member context/@@plone_portal_state/member;
-+                          member portal_state/member;
-                           portal_visible_ids context/portal_properties/site_properties/visible_ids|nothing;
-                           member_visible_ids python:member.getProperty('visible_ids', context.portal_memberdata.getProperty('visible_ids'))">
-                 <dl>
-                     <tal:item repeat="item items">
--                        <dt tal:define="normalized_type python:ploneview.normalizeString(item.portal_type);
--                                        item_icon python:ploneview.getIcon(item);
-+                        <dt tal:define="normalized_type python:plone_view.normalizeString(item.portal_type);
-+                                        item_icon python:plone_layout.getIcon(item);
-                                         item_id python:'(%s)' % item.getId if (portal_visible_ids and member_visible_ids) else ''">
-                             <input type="radio" name="objectId" value=""
-                                 tal:attributes="value item/getId;
+ 2.5.3 (2014-11-01)
+diff --git a/plone/app/layout/viewlets/document_relateditems.pt b/plone/app/layout/viewlets/document_relateditems.pt
+index 917b711..c01dd27 100644
+--- a/plone/app/layout/viewlets/document_relateditems.pt
++++ b/plone/app/layout/viewlets/document_relateditems.pt
+@@ -4,36 +4,34 @@
+      tal:condition="related">
+     <div class="visualClear" id="clear-space-before-relatedItemBox"><!-- --></div>
+     <div id="relatedItemBox"
+-              tal:define="ploneview nocall:context/@@plone;
+-                          normalizeString nocall:ploneview/normalizeString;
+-                          tools nocall:context/@@plone_tools;
+-                          wf_tool tools/workflow;
+-                          getInfoFor python:wf_tool.getInfoFor;
++              tal:define="plone_view nocall:context/@@plone;
++                          plone_layout nocall:context/@@plone_layout;
++                          normalizeString nocall:plone_view/normalizeString;
++                          context_state nocall:context/@@plone_context_state;
+                           site_properties context/portal_properties/site_properties;
+                           use_view_action site_properties/typesUseViewActionInListings|python:();">
+         <header i18n:translate="label_related_items">Related content</header>
+         <ul>
+-        <li repeat="item related"
+-            tal:define="
+-                    desc                item/Description;
+-                    item_icon           python:ploneview.getIcon(item);
+-                    item_type           item/portal_type;
+-                    item_type_class     python:'contenttype-' + normalizeString(item_type);
+-                    item_wf_state       item/review_state|python: getInfoFor(item, 'review_state', '');
+-                    item_wf_state_class python: 'state-' + normalizeString(item_wf_state);
+-                    item_url            item/getURL|item/absolute_url;
+-                    item_url            python:(item_type in use_view_action) and item_url+'/view' or item_url">
+-                <span tal:attributes="class item_type_class">
+-                    <img tal:replace="structure item_icon/html_tag" />
+-                    <a href="" class=""
+-                       tal:attributes="href  item_url;
+-                                       title desc;
+-                                       class string:$item_wf_state_class"
+-                       tal:content="item/pretty_title_or_id">
+-                        Related Item
+-                    </a>
+-                </span>
+-        </li>
++          <li tal:repeat="item related">
++            <span tal:define="desc                item/Description;
++                              item_icon           python:plone_layout.getIcon(item);
++                              item_type           item/portal_type;
++                              item_type_class     python:'contenttype-' + normalizeString(item_type);
++                              item_wf_state       item/review_state|python: context_state.workflow_state();
++                              item_wf_state_class python: 'state-' + normalizeString(item_wf_state);
++                              item_url            item/getURL|item/absolute_url;
++                              item_url            python:(item_type in use_view_action) and item_url+'/view' or item_url"
++                  tal:attributes="class item_type_class">
++              <img tal:replace="structure item_icon/html_tag" />
++              <a href="" class=""
++                 tal:attributes="href  item_url;
++                                 title desc;
++                                 class string:$item_wf_state_class"
++                 tal:content="item/pretty_title_or_id">
++                  Related Item
++              </a>
++            </span>
++          </li>
+         </ul>
+     </div>
+ </div>
 
 
