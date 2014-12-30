@@ -1,82 +1,115 @@
 Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2014-12-30T11:08:40+01:00
+Date: 2014-12-30T11:11:36+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/199a19e96528231e7fd770a1edc64ad720f7e8e3
+Commit: https://github.com/plone/plone.app.contenttypes/commit/b2e005b59c95d8655c28ebc0594a6ac609ad2036
 
-use folder_full_view_item and allow overriding
+do not redefine views that are already defined in main_template
 
 Files changed:
-M plone/app/contenttypes/browser/configure.zcml
-M plone/app/contenttypes/browser/templates/folder_full_view.pt
-M plone/app/contenttypes/browser/templates/folder_full_view_item.pt
+M plone/app/contenttypes/browser/templates/folder_listing.pt
+M plone/app/contenttypes/browser/templates/link.pt
+M plone/app/contenttypes/browser/templates/standard_view.pt
+M plone/app/contenttypes/migration/atct_migrator.pt
+M plone/app/contenttypes/migration/atct_migrator_results.pt
 
-diff --git a/plone/app/contenttypes/browser/configure.zcml b/plone/app/contenttypes/browser/configure.zcml
-index 13730b4..44c0d62 100644
---- a/plone/app/contenttypes/browser/configure.zcml
-+++ b/plone/app/contenttypes/browser/configure.zcml
-@@ -154,6 +154,14 @@
-     />
+diff --git a/plone/app/contenttypes/browser/templates/folder_listing.pt b/plone/app/contenttypes/browser/templates/folder_listing.pt
+index 39d3d28..96a368d 100644
+--- a/plone/app/contenttypes/browser/templates/folder_listing.pt
++++ b/plone/app/contenttypes/browser/templates/folder_listing.pt
+@@ -29,7 +29,7 @@
+                         limit_display python:limit_display and int(limit_display) or None;
+                         more_url more_url|request/more_url|string:folder_contents;
+                         is_a_topic python:context.portal_type=='Topic';
+-                        friendly_types context/@@plone_portal_state/friendly_types;
++                        friendly_types portal_state/friendly_types;
+                         dummy python:not is_a_topic and contentFilter.setdefault('portal_type', friendly_types);
+                         folderContents folderContents|nothing; folderContents python:folderContents or is_a_topic and context.queryCatalog(batch=True, **contentFilter) or context.getFolderContents(contentFilter, batch=True, b_size=limit_display or 100);
+                         site_properties context/portal_properties/site_properties;
+@@ -37,13 +37,12 @@
+                         Batch python:modules['Products.CMFPlone'].Batch;
+                         b_start python:request.get('b_start', 0);
+                         batch python:isinstance(folderContents, Batch) and folderContents or Batch(folderContents, limit_display or 100, int(b_start), orphan=1);
+-                        isAnon context/@@plone_portal_state/anonymous;
++                        isAnon portal_state/anonymous;
+                         normalizeString nocall: context/plone_utils/normalizeString;
+-                        toLocalizedTime nocall: context/@@plone/toLocalizedTime;
++                        toLocalizedTime nocall: plone_view/toLocalizedTime;
+                         show_about python:not isAnon or site_properties.allowAnonymousViewAbout;
+-                        navigation_root_url context/@@plone_portal_state/navigation_root_url;
+-                        pas_member context/@@pas_member;
+-                        plone_view context/@@plone;">
++                        navigation_root_url portal_state/navigation_root_url;
++                        pas_member context/@@pas_member;">
+     <tal:listing condition="batch">
  
-   <browser:page
-+    name="folder_full_view_item"
-+    for="Products.CMFCore.interfaces._content.IContentish"
-+    layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
-+    template="templates/folder_full_view_item.pt"
-+    permission="zope2.View"
-+    />
-+
-+  <browser:page
-     name="folder_summary_view"
-     for="plone.dexterity.interfaces.IDexterityContainer"
-     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
-diff --git a/plone/app/contenttypes/browser/templates/folder_full_view.pt b/plone/app/contenttypes/browser/templates/folder_full_view.pt
-index 3971b0f..cb2671b 100644
---- a/plone/app/contenttypes/browser/templates/folder_full_view.pt
-+++ b/plone/app/contenttypes/browser/templates/folder_full_view.pt
-@@ -14,7 +14,8 @@
-             <metal:entries fill-slot="entries">
-                 <metal:block use-macro="context/folder_listing/macros/entries">
-                     <metal:entry fill-slot="entry">
--                        <div tal:replace="structure python:item.getObject().folder_full_view_item()" />
-+                        <div tal:define="obj_view python:item.getObject().restrictedTraverse('folder_full_view_item')"
-+                             tal:replace="structure python:obj_view()" />
-                     </metal:entry>
-                 </metal:block>
-             </metal:entries>
-diff --git a/plone/app/contenttypes/browser/templates/folder_full_view_item.pt b/plone/app/contenttypes/browser/templates/folder_full_view_item.pt
-index 6268a68..55e3477 100644
---- a/plone/app/contenttypes/browser/templates/folder_full_view_item.pt
-+++ b/plone/app/contenttypes/browser/templates/folder_full_view_item.pt
-@@ -12,9 +12,10 @@
-          tal:define="portal_state context/@@plone_portal_state;
-                      context_state context/@@plone_context_state;
-                      plone_view context/@@plone;
-+                     plone_layout context/@@plone_layout;
-                      lang portal_state/language;
-                      view nocall:view | nocall: plone_view;
--                     dummy python: plone_view.mark_view(view);
-+                     dummy python: plone_layout.mark_view(view);
-                      portal_url portal_state/portal_url;
-                      checkPermission nocall: context/portal_membership/checkPermission;
-                      site_properties context/portal_properties/site_properties;
-@@ -34,7 +35,7 @@
+         <ul metal:define-slot="entries">
+@@ -56,7 +55,7 @@
+                                    item_type_title item/Type;
+                                    item_modified item/ModificationDate;
+                                    item_created item/CreationDate;
+-                                   item_icon python:plone_view.getIcon(item);
++                                   item_icon python:plone_layout.getIcon(item);
+                                    item_type_class python:'contenttype-' + normalizeString(item_type);
+                                    item_wf_state item/review_state|python: context.portal_workflow.getInfoFor(item, 'review_state', '');
+                                    item_wf_state_class python:'state-' + normalizeString(item_wf_state);
+diff --git a/plone/app/contenttypes/browser/templates/link.pt b/plone/app/contenttypes/browser/templates/link.pt
+index b3fa2e1..4aa7290 100644
+--- a/plone/app/contenttypes/browser/templates/link.pt
++++ b/plone/app/contenttypes/browser/templates/link.pt
+@@ -23,8 +23,8 @@
  
-         <h2 class="headline">
-             <a href="#" class="summary url" tal:content="context/Title"
--               tal:attributes="href python:test(item_type in use_view_action, item_url+'/view', item_url);">
-+               tal:attributes="href python:item_url+'/view' if item_type in use_view_action else item_url;">
-                Title or id
-              </a>
-         </h2>
-@@ -65,7 +66,7 @@
+     <metal:content-core fill-slot="content-core">
+         <metal:block define-macro="content-core">
+-        <p tal:define="portal_url context/@@plone_portal_state/portal_url;
+-                       navigation_root_url context/@@plone_portal_state/navigation_root_url;
++        <p tal:define="portal_url portal_state/portal_url;
++                       navigation_root_url portal_state/navigation_root_url;
+                        url view/absolute_target_url">
+             <span i18n:translate="link_address">The link address is:</span>
+             <a href="#" tal:attributes="href url"
+diff --git a/plone/app/contenttypes/browser/templates/standard_view.pt b/plone/app/contenttypes/browser/templates/standard_view.pt
+index 5865930..0664273 100644
+--- a/plone/app/contenttypes/browser/templates/standard_view.pt
++++ b/plone/app/contenttypes/browser/templates/standard_view.pt
+@@ -26,11 +26,11 @@
+                              batch python:view.results(b_start=b_start);
+                              site_properties context/portal_properties/site_properties;
+                              use_view_action site_properties/typesUseViewActionInListings|python:();
+-                             isAnon context/@@plone_portal_state/anonymous;
++                             isAnon portal_state/anonymous;
+                              normalizeString nocall: context/plone_utils/normalizeString;
+-                             toLocalizedTime nocall: context/@@plone/toLocalizedTime;
++                             toLocalizedTime nocall: plone_view/toLocalizedTime;
+                              show_about python:not isAnon or site_properties.allowAnonymousViewAbout;
+-                             navigation_root_url context/@@plone_portal_state/navigation_root_url;
++                             navigation_root_url portal_state/navigation_root_url;
+                              pas_member context/@@pas_member;">
+         <tal:listing condition="batch">
  
-         <p class="more" tal:condition="python:not(item_macro) or rendering_error">
-             <a href=""
--               tal:attributes="href python: item_type in use_view_action and  item_url+'/view' or item_url;"
-+               tal:attributes="href python: item_url+'/view' if item_type in use_view_action else item_url;"
-                i18n:translate="read_more">
-                 Read More&hellip;
-             </a>
+diff --git a/plone/app/contenttypes/migration/atct_migrator.pt b/plone/app/contenttypes/migration/atct_migrator.pt
+index 02528bf..dbcf427 100644
+--- a/plone/app/contenttypes/migration/atct_migrator.pt
++++ b/plone/app/contenttypes/migration/atct_migrator.pt
+@@ -10,7 +10,6 @@
+     tal:define="dummy python:request.set('disable_border', 1);
+                 disable_column_two python:request.set('disable_plone.rightcolumn', 1);
+                 disable_column_two python:request.set('disable_plone.leftcolumn', 1);
+-                portal_state context/@@plone_portal_state;
+                 portal_url portal_state/portal_url">
+   <link rel="stylesheet" type="text/css" href="" media="screen" tal:attributes="href string:${portal_url}/++resource++pac_migrator.css">
+ </metal:block>
+diff --git a/plone/app/contenttypes/migration/atct_migrator_results.pt b/plone/app/contenttypes/migration/atct_migrator_results.pt
+index 74a7422..470dc3e 100644
+--- a/plone/app/contenttypes/migration/atct_migrator_results.pt
++++ b/plone/app/contenttypes/migration/atct_migrator_results.pt
+@@ -10,7 +10,6 @@
+     tal:define="dummy python:request.set('disable_border', 1);
+                 disable_column_two python:request.set('disable_plone.rightcolumn', 1);
+                 disable_column_two python:request.set('disable_plone.leftcolumn', 1);
+-                portal_state context/@@plone_portal_state;
+                 portal_url portal_state/portal_url">
+   <link rel="stylesheet" type="text/css" href="" media="screen" tal:attributes="href string:${portal_url}/++resource++pac_migrator.css">
+ </metal:block>
 
 
