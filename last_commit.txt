@@ -1,93 +1,57 @@
-Repository: plone.app.layout
+Repository: plone.schemaeditor
 Branch: refs/heads/master
-Date: 2014-12-30T13:49:18+01:00
+Date: 2014-12-30T15:14:24+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.layout/commit/794f119eda3b057617ca1a712437cda08a425c85
+Commit: https://github.com/plone/plone.schemaeditor/commit/bb6fc5117996ddb3a78bef65d8c4830be2f97500
 
-Fix relateditems viewlet (tal:repeat is executed after tal:define).
+fix test (not sure why there are no more ObjectModifiedEvents)
 
 Files changed:
-M CHANGES.rst
-M plone/app/layout/viewlets/document_relateditems.pt
+M plone/schemaeditor/tests/editing.txt
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 86a4941..842a1f1 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 2.5.4 (unreleased)
- ------------------
- 
--- Nothing changed yet.
-+- Fix relateditems viewlet (tal:repeat is executed after tal:define).
-+  [pbauer]
- 
- 
- 2.5.3 (2014-11-01)
-diff --git a/plone/app/layout/viewlets/document_relateditems.pt b/plone/app/layout/viewlets/document_relateditems.pt
-index 917b711..c01dd27 100644
---- a/plone/app/layout/viewlets/document_relateditems.pt
-+++ b/plone/app/layout/viewlets/document_relateditems.pt
-@@ -4,36 +4,34 @@
-      tal:condition="related">
-     <div class="visualClear" id="clear-space-before-relatedItemBox"><!-- --></div>
-     <div id="relatedItemBox"
--              tal:define="ploneview nocall:context/@@plone;
--                          normalizeString nocall:ploneview/normalizeString;
--                          tools nocall:context/@@plone_tools;
--                          wf_tool tools/workflow;
--                          getInfoFor python:wf_tool.getInfoFor;
-+              tal:define="plone_view nocall:context/@@plone;
-+                          plone_layout nocall:context/@@plone_layout;
-+                          normalizeString nocall:plone_view/normalizeString;
-+                          context_state nocall:context/@@plone_context_state;
-                           site_properties context/portal_properties/site_properties;
-                           use_view_action site_properties/typesUseViewActionInListings|python:();">
-         <header i18n:translate="label_related_items">Related content</header>
-         <ul>
--        <li repeat="item related"
--            tal:define="
--                    desc                item/Description;
--                    item_icon           python:ploneview.getIcon(item);
--                    item_type           item/portal_type;
--                    item_type_class     python:'contenttype-' + normalizeString(item_type);
--                    item_wf_state       item/review_state|python: getInfoFor(item, 'review_state', '');
--                    item_wf_state_class python: 'state-' + normalizeString(item_wf_state);
--                    item_url            item/getURL|item/absolute_url;
--                    item_url            python:(item_type in use_view_action) and item_url+'/view' or item_url">
--                <span tal:attributes="class item_type_class">
--                    <img tal:replace="structure item_icon/html_tag" />
--                    <a href="" class=""
--                       tal:attributes="href  item_url;
--                                       title desc;
--                                       class string:$item_wf_state_class"
--                       tal:content="item/pretty_title_or_id">
--                        Related Item
--                    </a>
--                </span>
--        </li>
-+          <li tal:repeat="item related">
-+            <span tal:define="desc                item/Description;
-+                              item_icon           python:plone_layout.getIcon(item);
-+                              item_type           item/portal_type;
-+                              item_type_class     python:'contenttype-' + normalizeString(item_type);
-+                              item_wf_state       item/review_state|python: context_state.workflow_state();
-+                              item_wf_state_class python: 'state-' + normalizeString(item_wf_state);
-+                              item_url            item/getURL|item/absolute_url;
-+                              item_url            python:(item_type in use_view_action) and item_url+'/view' or item_url"
-+                  tal:attributes="class item_type_class">
-+              <img tal:replace="structure item_icon/html_tag" />
-+              <a href="" class=""
-+                 tal:attributes="href  item_url;
-+                                 title desc;
-+                                 class string:$item_wf_state_class"
-+                 tal:content="item/pretty_title_or_id">
-+                  Related Item
-+              </a>
-+            </span>
-+          </li>
-         </ul>
-     </div>
- </div>
+diff --git a/plone/schemaeditor/tests/editing.txt b/plone/schemaeditor/tests/editing.txt
+index f643159..f0af712 100644
+--- a/plone/schemaeditor/tests/editing.txt
++++ b/plone/schemaeditor/tests/editing.txt
+@@ -330,23 +330,18 @@ and saved.
+     ...     browser.getControl('Save').click()
+     [event: ObjectAddedEvent on Bool]
+     [event: FieldAddedEvent on DummySchemaContext]
+-    [event: ObjectModifiedEvent on Bool]
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on Int]
+     [event: FieldAddedEvent on DummySchemaContext]
+-    [event: ObjectModifiedEvent on Int]
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on Password]
+     [event: FieldAddedEvent on DummySchemaContext]
+-    [event: ObjectModifiedEvent on Password]
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on Text]
+     [event: FieldAddedEvent on DummySchemaContext]
+-    [event: ObjectModifiedEvent on Text]
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on TextLine]
+     [event: FieldAddedEvent on DummySchemaContext]
+-    [event: ObjectModifiedEvent on TextLine]
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on Choice]
+     [event: FieldAddedEvent on DummySchemaContext]
+@@ -354,15 +349,12 @@ and saved.
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on Date]
+     [event: FieldAddedEvent on DummySchemaContext]
+-    [event: ObjectModifiedEvent on Date]
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on Datetime]
+     [event: FieldAddedEvent on DummySchemaContext]
+-    [event: ObjectModifiedEvent on Datetime]
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on Float]
+     [event: FieldAddedEvent on DummySchemaContext]
+-    [event: ObjectModifiedEvent on Float]
+     [event: SchemaModifiedEvent on DummySchemaContext]
+     [event: ObjectAddedEvent on Set]
+     [event: FieldAddedEvent on DummySchemaContext]
 
 
