@@ -1,121 +1,26 @@
-Repository: Products.CMFPlone
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2014-12-31T09:17:00+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/d3ccc6f1d3a0cf02839d47d51ef3550e4e10babd
+Date: 2014-12-31T10:49:56+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/23fc4eef6057dc2a21943ec69e1f7616a7af238b
 
-Make sure the add group form is fully loaded before we interact with it.
+fix html in migration-form
 
 Files changed:
-M Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot
+M plone/app/contenttypes/migration/atct_migrator.pt
 
-diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot b/Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot
-index 4f8cd1f..acf1eff 100644
---- a/Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot
-+++ b/Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot
-@@ -76,6 +76,7 @@ I click show all groups
- 
- I create new group
-   Click button  Add New Group
-+  Wait until page contains element  name=addname
-   Input Text  name=addname  my-new-group
-   Input Text  name=title:string  My New Group
-   Input Text  name=description:text  This is my new group
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2014-12-31T09:30:41+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/2eb5bba246344d14f71169922315c04370416645
-
-Merge branch 'master' of git://github.com/plone/Products.CMFPlone
-
-Files changed:
-M CHANGES.rst
-M Products/CMFPlone/browser/navtree.py
-M Products/CMFPlone/skins/plone_content/folder_listing.pt
-M Products/CMFPlone/skins/plone_scripts/livesearch_reply.py
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 1022984..b3d615b 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,6 +8,9 @@ Changelog
- 5.0b1 (unreleased)
- ------------------
- 
-+- Get icon from layout_view instead of plone_view.
-+  [pbauer]
-+
- - Rename syndication-settings to syndication-controlpanel. Keep the old view registration for backwards compatibility.
-   [timo]
- 
-diff --git a/Products/CMFPlone/browser/navtree.py b/Products/CMFPlone/browser/navtree.py
-index a131abc..3420cae 100644
---- a/Products/CMFPlone/browser/navtree.py
-+++ b/Products/CMFPlone/browser/navtree.py
-@@ -170,7 +170,7 @@ def decoratorFactory(self, node):
-                 (portalType is None or portalType not in self.parentTypesNQ):
-             showChildren = True
- 
--        ploneview = getMultiAdapter((context, request), name=u'plone')
-+        layout_view = getMultiAdapter((context, request), name=u'plone_layout')
- 
-         newNode['Title'] = utils.pretty_title_or_id(context, item)
-         newNode['id'] = item.getId
-@@ -178,7 +178,7 @@ def decoratorFactory(self, node):
-         newNode['absolute_url'] = itemUrl
-         newNode['getURL'] = itemUrl
-         newNode['path'] = item.getPath()
--        newNode['item_icon'] = ploneview.getIcon(item)
-+        newNode['item_icon'] = layout_view.getIcon(item)
-         newNode['Creator'] = getattr(item, 'Creator', None)
-         newNode['creation_date'] = getattr(item, 'CreationDate', None)
-         newNode['portal_type'] = portalType
-diff --git a/Products/CMFPlone/skins/plone_content/folder_listing.pt b/Products/CMFPlone/skins/plone_content/folder_listing.pt
-index 72d66b7..2fc85a9 100644
---- a/Products/CMFPlone/skins/plone_content/folder_listing.pt
-+++ b/Products/CMFPlone/skins/plone_content/folder_listing.pt
-@@ -41,7 +41,7 @@
-                         show_about python:not isAnon or site_properties.allowAnonymousViewAbout;
-                         navigation_root_url context/@@plone_portal_state/navigation_root_url;
-                         pas_member context/@@pas_member;
--                        plone_view context/@@plone;">
-+                        layout_view context/@@plone_layout;">
-     <tal:listing condition="batch">
- 
-         <div metal:define-slot="entries">
-@@ -54,7 +54,7 @@
-                                    item_type_title item/Type;
-                                    item_modified item/ModificationDate;
-                                    item_created item/CreationDate;
--                                   item_icon python:plone_view.getIcon(item);
-+                                   item_icon python:layout_view.getIcon(item);
-                                    item_type_class python:'contenttype-' + normalizeString(item_type);
-                                    item_wf_state item/review_state|python: context.portal_workflow.getInfoFor(item, 'review_state', '');
-                                    item_wf_state_class python:'state-' + normalizeString(item_wf_state);
-diff --git a/Products/CMFPlone/skins/plone_scripts/livesearch_reply.py b/Products/CMFPlone/skins/plone_scripts/livesearch_reply.py
-index 03f0b56..c85c23e 100644
---- a/Products/CMFPlone/skins/plone_scripts/livesearch_reply.py
-+++ b/Products/CMFPlone/skins/plone_scripts/livesearch_reply.py
-@@ -17,7 +17,7 @@
- ploneUtils = getToolByName(context, 'plone_utils')
- portal_url = getToolByName(context, 'portal_url')()
- pretty_title_or_id = ploneUtils.pretty_title_or_id
--plone_view = context.restrictedTraverse('@@plone')
-+layout_view = context.restrictedTraverse('@@plone_layout')
- portal_state = context.restrictedTraverse('@@plone_portal_state')
- 
- portalProperties = getToolByName(context, 'portal_properties')
-@@ -130,7 +130,7 @@ def write(s):
-     write('''<div class="LSIEFix">''')
-     write('''<ul class="LSTable">''')
-     for result in results[:limit]:
--        icon = plone_view.getIcon(result)
-+        icon = layout_view.getIcon(result)
-         itemUrl = result.getURL()
-         if result.portal_type in useViewAction:
-             itemUrl += '/view'
+diff --git a/plone/app/contenttypes/migration/atct_migrator.pt b/plone/app/contenttypes/migration/atct_migrator.pt
+index dbcf427..9b21679 100644
+--- a/plone/app/contenttypes/migration/atct_migrator.pt
++++ b/plone/app/contenttypes/migration/atct_migrator.pt
+@@ -84,7 +84,7 @@
+         <p><a i18n:translate="" href="https://pypi.python.org/pypi/plone.app.contenttypes#migration">See here for details.</a></p>
+         <p i18n:translate="">Your subtopics:</p>
+         <ul>
+-          <li tal:repeat="subtopic subtopics"><a href="" target="_new" tal:attributes="href subtopic" tal:content="subtopic"></li>
++          <li tal:repeat="subtopic subtopics"><a href="" target="_new" tal:attributes="href subtopic" tal:content="subtopic"></a></li>
+         </ul>
+       </div>
+     </tal:block>
 
 
