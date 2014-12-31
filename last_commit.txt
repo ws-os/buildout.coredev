@@ -1,26 +1,53 @@
 Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2014-12-31T10:49:56+01:00
+Date: 2014-12-31T16:20:33+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/23fc4eef6057dc2a21943ec69e1f7616a7af238b
+Commit: https://github.com/plone/plone.app.contenttypes/commit/16db5e5a5c3a5257b12ec07dd74b4098f56b45c5
 
-fix html in migration-form
+add documentation on features that are not migrated and on pac_installer
 
 Files changed:
-M plone/app/contenttypes/migration/atct_migrator.pt
+M docs/README.rst
 
-diff --git a/plone/app/contenttypes/migration/atct_migrator.pt b/plone/app/contenttypes/migration/atct_migrator.pt
-index dbcf427..9b21679 100644
---- a/plone/app/contenttypes/migration/atct_migrator.pt
-+++ b/plone/app/contenttypes/migration/atct_migrator.pt
-@@ -84,7 +84,7 @@
-         <p><a i18n:translate="" href="https://pypi.python.org/pypi/plone.app.contenttypes#migration">See here for details.</a></p>
-         <p i18n:translate="">Your subtopics:</p>
-         <ul>
--          <li tal:repeat="subtopic subtopics"><a href="" target="_new" tal:attributes="href subtopic" tal:content="subtopic"></li>
-+          <li tal:repeat="subtopic subtopics"><a href="" target="_new" tal:attributes="href subtopic" tal:content="subtopic"></a></li>
-         </ul>
-       </div>
-     </tal:block>
+diff --git a/docs/README.rst b/docs/README.rst
+index 0a9bddc..09dcd92 100644
+--- a/docs/README.rst
++++ b/docs/README.rst
+@@ -137,14 +137,14 @@ Plone-versions before 4.3.3 need to pinn more packages:
+     plone.app.event = 1.1b1
+     plone.app.portlets = 2.5.1
+ 
++For migrations to work you need at least ``Products.contentmigration = 2.1.9`` and ``plone.app.intid`` (part of Plone since Plone 4.1.0).
++
+ 
+ Migration
+ ---------
+ 
+ To migrate your existing content from Archetypes to Dexterity use the form at ``/@@atct_migrator``.
+ 
+-For migrations to work you need at least ``Products.contentmigration = 2.1.9`` and ``plone.app.intid`` (part of Plone since Plone 4.1.0).
+-
+ 
+ Migrating Archetypes-based content to plone.app.contenttypes
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@@ -169,6 +169,18 @@ The following non-default types will also be migrated:
+ * News Items with blobs (provoded by https://github.com/plone/plone.app.blob/pull/2)
+ * Files and Images without blobs
+ 
++The migration tries to keep most features (including portlets, comments and local roles). The following features are **not** migrated:
++
++* **Content-rules:** Rules assigned to content are not migrated. Rules assigned at the site itself are kept.
++* **Local workflows:** Workflows-assignments to content using CMFPlacefulWorkflow are not migrated.
++* **Versions:** During migration you will lose all old revisions.
++
++
++Migrating only certain types
++^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++
++There is also a view ``/@@pac_installer`` that allows you to install plone.app.contenttypes without replacing those archetypes-types with the dexterity-types of which there are existing objects in the site. Afterwards it redirects to the migration-form and only the types that you chose to migrate are installed. This allows you to keep certain types as archetypes while migrating others to dexterity (for example if you did heavy customizations of these types and do not have the time to reimplement these features in dexterity.
++
+ 
+ Migrating Topics
+ ^^^^^^^^^^^^^^^^
 
 
