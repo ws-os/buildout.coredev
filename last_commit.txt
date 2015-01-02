@@ -1,31 +1,43 @@
-Repository: Products.PlonePAS
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-02T10:41:14-08:00
-Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.PlonePAS/commit/50729d34091f48f5593f64b7264d64c654ba0695
+Date: 2015-01-02T16:09:20-03:00
+Author: Franco Pellegrini (frapell) <frapell@gmail.com>
+Commit: https://github.com/plone/mockup/commit/7be8e860f2dbbc7c437849642078d173f4ceec38
 
-fix scale_image test (newer Pillow has a more verbose exception)
+Init vars could already be boolean. Also, always pull the value from the options
 
 Files changed:
-M Products/PlonePAS/utils.py
+M mockup/patterns/markspeciallinks/pattern.js
 
-diff --git a/Products/PlonePAS/utils.py b/Products/PlonePAS/utils.py
-index 91d6410..57c6799 100644
---- a/Products/PlonePAS/utils.py
-+++ b/Products/PlonePAS/utils.py
-@@ -73,11 +73,11 @@ def scale_image(image_file, max_size=None, default_format=None):
-         >>> scale_image(invalid, (50, 50))
-         Traceback (most recent call last):
-         ...
--        IOError: cannot identify image file
-+        IOError: cannot identify image file...
-         >>> scale_image(sneaky, (50, 50))
-         Traceback (most recent call last):
-         ...
--        IOError: cannot identify image file
-+        IOError: cannot identify image file...
+diff --git a/mockup/patterns/markspeciallinks/pattern.js b/mockup/patterns/markspeciallinks/pattern.js
+index e6db336..73f8eff 100644
+--- a/mockup/patterns/markspeciallinks/pattern.js
++++ b/mockup/patterns/markspeciallinks/pattern.js
+@@ -95,8 +95,8 @@ define([
  
-     Now that that's out of the way we check on our real images to make
-     sure the format and mode are preserved, that they are scaled, and that they
+       // first make external links open in a new window, afterwards do the
+       // normal plone link wrapping in only the content area
+-      var elonw = false,
+-          msl = true,
++      var elonw,
++          msl,
+           url,
+           protocols,
+           contentarea,
+@@ -104,10 +104,14 @@ define([
+ 
+       if (typeof self.options.external_links_open_new_window === 'string') {
+           elonw = self.options.external_links_open_new_window.toLowerCase() === 'true';
++      } else if (typeof self.options.external_links_open_new_window === 'boolean') {
++          elonw = self.options.external_links_open_new_window;
+       }
+ 
+       if (typeof self.options.mark_special_links === 'string') {
+           msl = self.options.mark_special_links.toLowerCase() === 'true';
++      } else if (typeof self.options.mark_special_links === 'boolean') {
++          msl = self.options.mark_special_links;
+       }
+ 
+       url = window.location.protocol + '//' + window.location.host;
 
 
