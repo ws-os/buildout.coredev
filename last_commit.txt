@@ -1,218 +1,38 @@
-Repository: plone.app.layout
+Repository: Products.PlonePAS
 Branch: refs/heads/master
-Date: 2014-12-15T22:05:00+01:00
-Author: Fulvio Casali (fulv) <fulviocasali@gmail.com>
-Commit: https://github.com/plone/plone.app.layout/commit/96ced8856c92ed6ea393a2a5a0ac223b1cb5aebd
+Date: 2015-01-02T11:29:39-08:00
+Author: David Glick (davisagli) <david@glicksoftware.com>
+Commit: https://github.com/plone/Products.PlonePAS/commit/100bf8d976487d7bb4c0b5396a7709de25d335e2
 
-Add pat-markspeciallinks to bodyClass based on settings in @@theming-controlpanel.  Refs plone/Products.CMFPlone#286
+fix test
 
 Files changed:
-M plone/app/layout/globals/layout.py
+M Products/PlonePAS/tests/test_doctests.py
 
-diff --git a/plone/app/layout/globals/layout.py b/plone/app/layout/globals/layout.py
-index 3a516e7..87064ac 100644
---- a/plone/app/layout/globals/layout.py
-+++ b/plone/app/layout/globals/layout.py
-@@ -126,6 +126,7 @@ def bodyClass(self, template, view):
-         - section structure
-             - a class for every container in the tree
-         - hide icons: icons-on
-+        - markspeciallinks: pat-markspeciallinks
-         """
-         context = self.context
-         portal_state = getMultiAdapter(
-@@ -206,4 +207,14 @@ def bodyClass(self, template, view):
-                     body_class += ' plone-toolbar-compressed'
-             else:
-                 body_class += ' plone-toolbar-left-default'
-+
-+        # class for markspeciallinks pattern
-+        properties = getToolByName(context, "portal_properties")
-+        props = getattr(properties, 'site_properties')
-+
-+        msl = props.getProperty('mark_special_links', 'false')
-+        elonw = props.getProperty('external_links_open_new_window', 'false')
-+        if msl == 'true' or elonw == 'true':
-+            body_class += ' pat-markspeciallinks'
-+
-         return body_class
-
-
-Repository: plone.app.layout
-Branch: refs/heads/master
-Date: 2014-12-15T22:09:08+01:00
-Author: Fulvio Casali (fulv) <fulviocasali@gmail.com>
-Commit: https://github.com/plone/plone.app.layout/commit/cf08dce95beb3be61e013755d8f309c9222dae2d
-
-Add entry to changelog.
-
-Files changed:
-M CHANGES.rst
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 86a4941..c84553e 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 2.5.4 (unreleased)
- ------------------
- 
--- Nothing changed yet.
-+- Add pat-markspeciallinks to bodyClass depending on settings in @@theming-controlpanel.
-+  [fulv]
+diff --git a/Products/PlonePAS/tests/test_doctests.py b/Products/PlonePAS/tests/test_doctests.py
+index a85b8d5..0e5bb77 100644
+--- a/Products/PlonePAS/tests/test_doctests.py
++++ b/Products/PlonePAS/tests/test_doctests.py
+@@ -1,10 +1,7 @@
+-import unittest
+-import doctest
+-
+-from Products.PlonePAS.tests import base
+-
+-from plone.testing import layered
+ from plone.app.testing.bbb import PTC_FUNCTIONAL_TESTING
++from plone.testing import layered
++import doctest
++import unittest
  
  
- 2.5.3 (2014-11-01)
-
-
-Repository: plone.app.layout
-Branch: refs/heads/master
-Date: 2015-01-02T16:11:33-03:00
-Author: Franco Pellegrini (frapell) <frapell@gmail.com>
-Commit: https://github.com/plone/plone.app.layout/commit/384c3d7112b7eec4d001135dd59053b0d49044bf
-
-Merge branch 'master' into fulv-CMFPlone-issue-286
-
-Conflicts:
-	CHANGES.rst
-
-Files changed:
-M CHANGES.rst
-M plone/app/layout/viewlets/document_relateditems.pt
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index c84553e..064b08c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -7,6 +7,9 @@ Changelog
- - Add pat-markspeciallinks to bodyClass depending on settings in @@theming-controlpanel.
-   [fulv]
- 
-+- Fix relateditems viewlet (tal:repeat is executed after tal:define).
-+  [pbauer]
-+
- 
- 2.5.3 (2014-11-01)
- ------------------
-diff --git a/plone/app/layout/viewlets/document_relateditems.pt b/plone/app/layout/viewlets/document_relateditems.pt
-index 917b711..c01dd27 100644
---- a/plone/app/layout/viewlets/document_relateditems.pt
-+++ b/plone/app/layout/viewlets/document_relateditems.pt
-@@ -4,36 +4,34 @@
-      tal:condition="related">
-     <div class="visualClear" id="clear-space-before-relatedItemBox"><!-- --></div>
-     <div id="relatedItemBox"
--              tal:define="ploneview nocall:context/@@plone;
--                          normalizeString nocall:ploneview/normalizeString;
--                          tools nocall:context/@@plone_tools;
--                          wf_tool tools/workflow;
--                          getInfoFor python:wf_tool.getInfoFor;
-+              tal:define="plone_view nocall:context/@@plone;
-+                          plone_layout nocall:context/@@plone_layout;
-+                          normalizeString nocall:plone_view/normalizeString;
-+                          context_state nocall:context/@@plone_context_state;
-                           site_properties context/portal_properties/site_properties;
-                           use_view_action site_properties/typesUseViewActionInListings|python:();">
-         <header i18n:translate="label_related_items">Related content</header>
-         <ul>
--        <li repeat="item related"
--            tal:define="
--                    desc                item/Description;
--                    item_icon           python:ploneview.getIcon(item);
--                    item_type           item/portal_type;
--                    item_type_class     python:'contenttype-' + normalizeString(item_type);
--                    item_wf_state       item/review_state|python: getInfoFor(item, 'review_state', '');
--                    item_wf_state_class python: 'state-' + normalizeString(item_wf_state);
--                    item_url            item/getURL|item/absolute_url;
--                    item_url            python:(item_type in use_view_action) and item_url+'/view' or item_url">
--                <span tal:attributes="class item_type_class">
--                    <img tal:replace="structure item_icon/html_tag" />
--                    <a href="" class=""
--                       tal:attributes="href  item_url;
--                                       title desc;
--                                       class string:$item_wf_state_class"
--                       tal:content="item/pretty_title_or_id">
--                        Related Item
--                    </a>
--                </span>
--        </li>
-+          <li tal:repeat="item related">
-+            <span tal:define="desc                item/Description;
-+                              item_icon           python:plone_layout.getIcon(item);
-+                              item_type           item/portal_type;
-+                              item_type_class     python:'contenttype-' + normalizeString(item_type);
-+                              item_wf_state       item/review_state|python: context_state.workflow_state();
-+                              item_wf_state_class python: 'state-' + normalizeString(item_wf_state);
-+                              item_url            item/getURL|item/absolute_url;
-+                              item_url            python:(item_type in use_view_action) and item_url+'/view' or item_url"
-+                  tal:attributes="class item_type_class">
-+              <img tal:replace="structure item_icon/html_tag" />
-+              <a href="" class=""
-+                 tal:attributes="href  item_url;
-+                                 title desc;
-+                                 class string:$item_wf_state_class"
-+                 tal:content="item/pretty_title_or_id">
-+                  Related Item
-+              </a>
-+            </span>
-+          </li>
-         </ul>
-     </div>
- </div>
-
-
-Repository: plone.app.layout
-Branch: refs/heads/master
-Date: 2015-01-02T16:11:57-03:00
-Author: Franco Pellegrini (frapell) <frapell@gmail.com>
-Commit: https://github.com/plone/plone.app.layout/commit/2b4177ddb550e87b7cc2dbd7ac7a31137f727c9d
-
-Merge branch 'fulv-CMFPlone-issue-286'
-
-Files changed:
-M CHANGES.rst
-M plone/app/layout/globals/layout.py
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 842a1f1..064b08c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 2.5.4 (unreleased)
- ------------------
- 
-+- Add pat-markspeciallinks to bodyClass depending on settings in @@theming-controlpanel.
-+  [fulv]
-+
- - Fix relateditems viewlet (tal:repeat is executed after tal:define).
-   [pbauer]
- 
-diff --git a/plone/app/layout/globals/layout.py b/plone/app/layout/globals/layout.py
-index 3a516e7..87064ac 100644
---- a/plone/app/layout/globals/layout.py
-+++ b/plone/app/layout/globals/layout.py
-@@ -126,6 +126,7 @@ def bodyClass(self, template, view):
-         - section structure
-             - a class for every container in the tree
-         - hide icons: icons-on
-+        - markspeciallinks: pat-markspeciallinks
-         """
-         context = self.context
-         portal_state = getMultiAdapter(
-@@ -206,4 +207,14 @@ def bodyClass(self, template, view):
-                     body_class += ' plone-toolbar-compressed'
-             else:
-                 body_class += ' plone-toolbar-left-default'
-+
-+        # class for markspeciallinks pattern
-+        properties = getToolByName(context, "portal_properties")
-+        props = getattr(properties, 'site_properties')
-+
-+        msl = props.getProperty('mark_special_links', 'false')
-+        elonw = props.getProperty('external_links_open_new_window', 'false')
-+        if msl == 'true' or elonw == 'true':
-+            body_class += ' pat-markspeciallinks'
-+
-         return body_class
+ def test_suite():
+@@ -13,5 +10,5 @@ def test_suite():
+         doctest.DocFileSuite('cookie_auth.txt', package='Products.PlonePAS.tests',
+                              optionflags=doctest.ELLIPSIS),
+         layer=PTC_FUNCTIONAL_TESTING))
+-    suite.addTest(doctest.DocTestSuite('Products.PlonePAS.utils')),
++    suite.addTest(doctest.DocTestSuite('Products.PlonePAS.utils', optionflags=doctest.ELLIPSIS)),
+     return suite
 
 
