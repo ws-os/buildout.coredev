@@ -1,124 +1,25 @@
-Repository: plone.app.contenttypes
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-01-01T21:23:18+01:00
+Date: 2015-01-02T09:45:03+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/96d3d0635f39160454abd1bce93185bafc32c7de
+Commit: https://github.com/plone/plone.app.widgets/commit/97fe47c9fb56d6ea19b211ece6aef10f477112fc
 
-add migration for contentrules
+add note to test if it only fails on 1.1.
 
 Files changed:
-M docs/README.rst
-M plone/app/contenttypes/migration/migration.py
-M plone/app/contenttypes/migration/utils.py
+M plone/app/widgets/tests/test_dx.py
 
-diff --git a/docs/README.rst b/docs/README.rst
-index 6c4c98d..56b4bdb 100644
---- a/docs/README.rst
-+++ b/docs/README.rst
-@@ -169,10 +169,9 @@ The following non-default types will also be migrated:
- * News Items with blobs (provoded by https://github.com/plone/plone.app.blob/pull/2)
- * Files and Images without blobs
+diff --git a/plone/app/widgets/tests/test_dx.py b/plone/app/widgets/tests/test_dx.py
+index a467184..e263ac8 100644
+--- a/plone/app/widgets/tests/test_dx.py
++++ b/plone/app/widgets/tests/test_dx.py
+@@ -116,6 +116,7 @@ def setUp(self):
+         self.widget.pattern_options = {'date': {'firstDay': 0}}
  
--The migration tries to keep most features (including portlets, comments, local roles and local workflows). The following features are **not** migrated:
-+The migration tries to keep most features (including portlets, comments, contentrules, local roles and local workflows).
- 
--* **Versions:** During migration you will lose all old revisions.
--* **Content-rules:** Rules assigned to content are not migrated. Rules assigned at the site itself are kept.
-+**Warning:** Versions of content are not migrated. During migration you will lose all old revisions.
- 
- 
- Migrating only certain types
-diff --git a/plone/app/contenttypes/migration/migration.py b/plone/app/contenttypes/migration/migration.py
-index 78b2d51..4d23a87 100644
---- a/plone/app/contenttypes/migration/migration.py
-+++ b/plone/app/contenttypes/migration/migration.py
-@@ -21,6 +21,7 @@
- from plone.app.contenttypes.migration.dxmigration import DXEventMigrator
- from plone.app.contenttypes.migration.dxmigration import DXOldEventMigrator
- from plone.app.contenttypes.migration.utils import add_portlet
-+from plone.app.contenttypes.migration.utils import copy_contentrules
- from plone.app.contenttypes.migration.utils import move_comments
- from plone.app.textfield.value import RichTextValue
- from plone.app.uuid.utils import uuidToObject
-@@ -41,8 +42,8 @@
- from zope.interface import Interface
- from zope.interface import implementer
- from zope.intid.interfaces import IIntIds
--import logging
- 
-+import logging
- logger = logging.getLogger(__name__)
- 
- 
-@@ -292,6 +293,9 @@ def migrate_custom(self):
-     def migrate_portlets(self):
-         migrate_portlets(self.old, self.new)
- 
-+    def migrate_contentrules(self):
-+        copy_contentrules(self.old, self.new)
-+
-     def last_migrate_comments(self):
-         """Migrate the plone.app.discussion comments.
-            Comments were stored on the portal, get them and
-@@ -322,6 +326,9 @@ def migrate_custom(self):
-     def migrate_portlets(self):
-         migrate_portlets(self.old, self.new)
- 
-+    def migrate_contentrules(self):
-+        copy_contentrules(self.old, self.new)
-+
- 
- class DocumentMigrator(ATCTContentMigrator):
- 
-diff --git a/plone/app/contenttypes/migration/utils.py b/plone/app/contenttypes/migration/utils.py
-index 609b543..35073bb 100644
---- a/plone/app/contenttypes/migration/utils.py
-+++ b/plone/app/contenttypes/migration/utils.py
-@@ -7,9 +7,11 @@
- from archetypes.schemaextender.interfaces import ISchemaExtender
- from archetypes.schemaextender.interfaces import ISchemaModifier
- from copy import deepcopy
-+from plone.app.contentrules.api import assign_rule
- from plone.app.contenttypes.utils import DEFAULT_TYPES
--from plone.app.discussion.conversation import ANNOTATION_KEY
-+from plone.app.discussion.conversation import ANNOTATION_KEY as DISCUSSION_KEY
- from plone.app.discussion.interfaces import IConversation
-+from plone.contentrules.engine.interfaces import IRuleAssignmentManager
- from plone.dexterity.interfaces import IDexterityFTI
- from plone.portlets.interfaces import IPortletAssignmentMapping
- from plone.portlets.interfaces import IPortletManager
-@@ -129,14 +131,28 @@ def move_comments(source_object, target_object):
-     and then removing the comments from the source (not the annotation).
-     """
-     source_annotations = IAnnotations(source_object)
--    comments = source_annotations.get(ANNOTATION_KEY, None)
-+    comments = source_annotations.get(DISCUSSION_KEY, None)
-     if comments is not None:
-         target_annotations = IAnnotations(target_object)
--        if target_annotations.get(ANNOTATION_KEY, None) is not None:
-+        if target_annotations.get(DISCUSSION_KEY, None) is not None:
-             logger.error('Comments exist on {0}').format(
-                 target_object.absolute_url())
--        target_annotations[ANNOTATION_KEY] = deepcopy(comments)
-+        target_annotations[DISCUSSION_KEY] = deepcopy(comments)
-         source_conversation = IConversation(source_object)
-         for comment in source_conversation.getComments():
-             del source_conversation[comment.comment_id]
--        del source_annotations[ANNOTATION_KEY]
-+        del source_annotations[DISCUSSION_KEY]
-+
-+def copy_contentrules(source_object, target_object):
-+    """Copy contentrules.
-+    """
-+    source_assignable = IRuleAssignmentManager(source_object, None)
-+    if source_assignable is not None:
-+        try:
-+            IRuleAssignmentManager(target_object)
-+        except TypeError:
-+            logger.info("Cound not migrate contentrule to {0}".format(
-+                target_object.absolute_url()))
-+            return
-+        for rule_id in source_assignable:
-+            assign_rule(target_object, rule_id)
+     def test_widget(self):
++        # TODO: fails on january first?
+         self.assertEqual(
+             {
+                 'pattern': 'pickadate',
 
 
