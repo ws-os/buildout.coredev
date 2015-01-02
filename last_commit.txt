@@ -1,25 +1,99 @@
 Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-01-02T09:45:03+01:00
+Date: 2015-01-02T10:21:50+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.widgets/commit/97fe47c9fb56d6ea19b211ece6aef10f477112fc
+Commit: https://github.com/plone/plone.app.widgets/commit/8a03c5aa0ce5b5b89210c236e8c36e3f90b8b8fd
 
-add note to test if it only fails on 1.1.
+fix tests
 
 Files changed:
+M plone/app/widgets/tests/test_at.py
 M plone/app/widgets/tests/test_dx.py
 
-diff --git a/plone/app/widgets/tests/test_dx.py b/plone/app/widgets/tests/test_dx.py
-index a467184..e263ac8 100644
---- a/plone/app/widgets/tests/test_dx.py
-+++ b/plone/app/widgets/tests/test_dx.py
-@@ -116,6 +116,7 @@ def setUp(self):
-         self.widget.pattern_options = {'date': {'firstDay': 0}}
+diff --git a/plone/app/widgets/tests/test_at.py b/plone/app/widgets/tests/test_at.py
+index 42272d5..d8b164b 100644
+--- a/plone/app/widgets/tests/test_at.py
++++ b/plone/app/widgets/tests/test_at.py
+@@ -81,6 +81,7 @@ def setUp(self):
+         self.widget = DateWidget()
  
      def test_widget(self):
-+        # TODO: fails on january first?
++        current_year = datetime.today().year
          self.assertEqual(
              {
                  'pattern': 'pickadate',
+@@ -89,8 +90,8 @@ def test_widget(self):
+                 'pattern_options': {
+                     'date': {
+                         'firstDay': 0,
+-                        'min': [1914, 1, 1],
+-                        'max': [2034, 1, 1],
++                        'min': [current_year - 100, 1, 1],
++                        'max': [current_year + 20, 1, 1],
+                         'clear': u'Clear',
+                         'format': 'mmmm d, yyyy',
+                         'monthsFull': [u'January', u'February', u'March',
+@@ -140,6 +141,7 @@ def setUp(self):
+         self.widget = DatetimeWidget()
+ 
+     def test_widget(self):
++        current_year = datetime.today().year
+         self.assertEqual(
+             {
+                 'pattern': 'pickadate',
+@@ -148,8 +150,8 @@ def test_widget(self):
+                 'pattern_options': {
+                     'date': {
+                         'firstDay': 0,
+-                        'min': [1914, 1, 1],
+-                        'max': [2034, 1, 1],
++                        'min': [current_year - 100, 1, 1],
++                        'max': [current_year + 20, 1, 1],
+                         'clear': u'Clear',
+                         'format': 'mmmm d, yyyy',
+                         'monthsFull': [u'January', u'February', u'March',
+diff --git a/plone/app/widgets/tests/test_dx.py b/plone/app/widgets/tests/test_dx.py
+index e263ac8..2c9595c 100644
+--- a/plone/app/widgets/tests/test_dx.py
++++ b/plone/app/widgets/tests/test_dx.py
+@@ -116,7 +116,7 @@ def setUp(self):
+         self.widget.pattern_options = {'date': {'firstDay': 0}}
+ 
+     def test_widget(self):
+-        # TODO: fails on january first?
++        current_year = datetime.today().year
+         self.assertEqual(
+             {
+                 'pattern': 'pickadate',
+@@ -125,8 +125,8 @@ def test_widget(self):
+                 'pattern_options': {
+                     'date': {
+                         'firstDay': 0,
+-                        'min': [1914, 1, 1],
+-                        'max': [2034, 1, 1],
++                        'min': [current_year - 100, 1, 1],
++                        'max': [current_year + 20, 1, 1],
+                         'clear': u'Clear',
+                         'format': 'mmmm d, yyyy',
+                         'monthsFull': [u'January', u'February', u'March',
+@@ -207,6 +207,7 @@ def setUp(self):
+         self.widget.pattern_options = {'date': {'firstDay': 0}}
+ 
+     def test_widget(self):
++        current_year = datetime.today().year
+         self.assertEqual(
+             {
+                 'pattern': 'pickadate',
+@@ -215,8 +216,8 @@ def test_widget(self):
+                 'pattern_options': {
+                     'date': {
+                         'firstDay': 0,
+-                        'min': [1914, 1, 1],
+-                        'max': [2034, 1, 1],
++                        'min': [current_year - 100, 1, 1],
++                        'max': [current_year + 20, 1, 1],
+                         'clear': u'Clear',
+                         'format': 'mmmm d, yyyy',
+                         'monthsFull': [u'January', u'February', u'March',
 
 
