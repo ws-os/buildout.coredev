@@ -1,38 +1,680 @@
-Repository: Products.PlonePAS
+Repository: plone.app.users
 Branch: refs/heads/master
-Date: 2015-01-02T11:29:39-08:00
+Date: 2015-01-02T10:53:33-08:00
 Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.PlonePAS/commit/100bf8d976487d7bb4c0b5396a7709de25d335e2
+Commit: https://github.com/plone/plone.app.users/commit/47f4e57365ade635d535521cc0a6b5859e3389b5
 
-fix test
+adjust form/nav markup for Plone 5
 
 Files changed:
-M Products/PlonePAS/tests/test_doctests.py
+M CHANGES.rst
+M plone/app/users/browser/account-configlet.pt
+M plone/app/users/browser/account-panel.pt
+M plone/app/users/browser/account.py
+M plone/app/users/browser/passwordpanel.py
+M plone/app/users/browser/personalpreferences.py
+M plone/app/users/browser/userdatapanel.py
 
-diff --git a/Products/PlonePAS/tests/test_doctests.py b/Products/PlonePAS/tests/test_doctests.py
-index a85b8d5..0e5bb77 100644
---- a/Products/PlonePAS/tests/test_doctests.py
-+++ b/Products/PlonePAS/tests/test_doctests.py
-@@ -1,10 +1,7 @@
--import unittest
--import doctest
--
--from Products.PlonePAS.tests import base
--
--from plone.testing import layered
- from plone.app.testing.bbb import PTC_FUNCTIONAL_TESTING
-+from plone.testing import layered
-+import doctest
-+import unittest
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 70bc016..bd0a9d7 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ CHANGES
+ 2.2 (unreleased)
+ ----------------
  
++- Adjust navigation markup for Plone 5.
++  [davisagli]
++
+ - Use email_from_address from registry (Plone 5) in tests.
+   [khink]
  
- def test_suite():
-@@ -13,5 +10,5 @@ def test_suite():
-         doctest.DocFileSuite('cookie_auth.txt', package='Products.PlonePAS.tests',
-                              optionflags=doctest.ELLIPSIS),
-         layer=PTC_FUNCTIONAL_TESTING))
--    suite.addTest(doctest.DocTestSuite('Products.PlonePAS.utils')),
-+    suite.addTest(doctest.DocTestSuite('Products.PlonePAS.utils', optionflags=doctest.ELLIPSIS)),
-     return suite
+diff --git a/plone/app/users/browser/account-configlet.pt b/plone/app/users/browser/account-configlet.pt
+index f03df64..bd8b243 100644
+--- a/plone/app/users/browser/account-configlet.pt
++++ b/plone/app/users/browser/account-configlet.pt
+@@ -6,41 +6,9 @@
+       metal:use-macro="here/prefs_main_template/macros/master"
+       i18n:domain="plone">
+ 
+-<body>
+-
+ <div metal:fill-slot="prefs_configlet_content">
+ 
+-    <div id="edit-bar"
+-         tal:define="view_name view/__name__;
+-                     userquery python:view.makeQuery()">
+-        <ul class="contentViews" id="content-views">
+-          <li tal:define="selected python:view_name=='user-information'"
+-              tal:attributes="class python:selected and 'selected' or 'plain'">
+-            <a href=""
+-               tal:attributes="href string:$portal_url/@@user-information${userquery}"
+-               i18n:translate="title_personal_information_form">Personal Information</a>
+-          </li>
+-          <li tal:define="selected python:view_name=='user-preferences'"
+-              tal:attributes="class python:selected and 'selected' or 'plain'">
+-            <a href=""
+-               tal:attributes="href string:$portal_url/@@user-preferences${userquery}"
+-               i18n:translate="">Personal Preferences</a>
+-          </li>
+-
+-          <li>
+-            <a href=""
+-               tal:attributes="href string:$portal_url/@@usergroup-usermembership${userquery}"
+-               i18n:translate="label_group_memberships">Group Memberships</a>
+-          </li>
+-        </ul>
+-        <div class="contentActions">&nbsp;</div>
+-    </div>
+-
+-    <article id="content">
+-
+-    <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+-      Portal status message
+-    </div>
++  <article id="content">
+ 
+     <a
+        href=""
+@@ -52,13 +20,32 @@
+ 
+     <h1 class="documentFirstHeading" tal:content="view/label | nothing" />
+ 
++    <div metal:use-macro="context/global_statusmessage/macros/portal_message">
++      Portal status message
++    </div>
++
+     <div id="content-core">
+-      <metal:block use-macro="context/@@ploneform-macros/titlelessform">
+-      </metal:block>
++      <div class="autotabs">
++        <nav class="autotoc-nav"
++             tal:define="view_name view/__name__;
++                         userquery python:view.makeQuery()">
++          <a href="${portal_url}/@@user-information${userquery}"
++             tal:define="selected python:view_name=='user-information'"
++             tal:attributes="class python:'autotoc-level-1' + (' active' if selected else '')"
++             i18n:translate="title_personal_information_form">Personal Information</a>
++          <a href="${portal_url}/@@user-preferences${userquery}"
++             tal:define="selected python:view_name=='user-preferences'"
++             tal:attributes="class python:'autotoc-level-1' + (' active' if selected else '')"
++             i18n:translate="">Personal Preferences</a>
++          <a href="${portal_url}/@@usergroup-usermembership${userquery}"
++             i18n:translate="label_group_memberships">Group Memberships</a>
++        </nav>
++        <metal:b use-macro="context/@@ploneform-macros/titlelessform" />
++      </div>
+     </div>
+ 
+-    </article>
++  </article>
+ 
+ </div>
+-</body>
++
+ </html>
+diff --git a/plone/app/users/browser/account-panel.pt b/plone/app/users/browser/account-panel.pt
+index 45a5043..092fa08 100644
+--- a/plone/app/users/browser/account-panel.pt
++++ b/plone/app/users/browser/account-panel.pt
+@@ -5,46 +5,25 @@
+       i18n:domain="plone"
+       metal:use-macro="context/main_template/macros/master">
+ 
+-    <metal:block fill-slot="content">
+-
+-        <div tal:define="view_actions view/prepareObjectTabs;"
+-             id="edit-bar">
+-        <h5 class="hiddenStructure"
+-            tal:condition="view_actions"
+-            i18n:translate="heading_views">Views</h5>
+-
+-        <ul class="contentViews"
+-            id="content-views"
+-            i18n:domain="plone">
+-
+-            <tal:views repeat="action view_actions">
+-              <li tal:define="selected action/selected|nothing;"
+-                  tal:attributes="id string:contentview-${action/id};
+-                                  class python:selected and 'selected' or 'plain'">
+-                <a href=""
+-                   tal:content="action/title"
+-                   tal:attributes="href action/url;"
+-                   i18n:translate="">
+-                View name
+-                </a>
+-              </li>
+-            </tal:views>
+-
+-        </ul>
+-        </div>
+-
+-        <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+-            Portal status message
+-        </div>
+-
+-        <article id="content">
+-            <h1 class="documentFirstHeading" tal:content="view/label | nothing" />
+-            <div id="content-core">
+-                <metal:block use-macro="context/@@ploneform-macros/titlelessform">
+-                </metal:block>
+-            </div>
+-        </article>
+-
+-    </metal:block>
++  <metal:b fill-slot="content-title">
++    <h1 class="documentFirstHeading">${view/label}</h1>
++  </metal:b>
++
++  <metal:b fill-slot="content-core">
++    <div class="autotabs">
++      <nav class="autotoc-nav"
++           tal:define="view_actions view/prepareObjectTabs;">
++        <tal:views repeat="action view_actions">
++          <a id="contentview-${action/id}"
++             href="${action/url}"
++             tal:define="selected action/selected|nothing;"
++             tal:attributes="class python:'autotoc-level-1' + (' active' if selected else '')"
++             i18n:translate="">${action/title}</a>
++        </tal:views>
++      </nav>
++
++      <metal:b use-macro="context/@@ploneform-macros/titlelessform" />
++    </div>
++  </metal:b>
+ 
+ </html>
+diff --git a/plone/app/users/browser/account.py b/plone/app/users/browser/account.py
+index 4fc7343..a5da91e 100644
+--- a/plone/app/users/browser/account.py
++++ b/plone/app/users/browser/account.py
+@@ -16,6 +16,7 @@
+ from plone.registry.interfaces import IRegistry
+ from z3c.form import button
+ from z3c.form import form
++from zope.cachedescriptors.property import Lazy as lazy_property
+ from zope.component import getMultiAdapter
+ from zope.component import getUtility
+ from zope.event import notify
+@@ -92,6 +93,17 @@ class AccountPanelForm(AutoExtensibleForm, form.Form):
+     successMessage = _("Changes saved.")
+     noChangesMessage = _("No changes made.")
+ 
++    @lazy_property
++    def member(self):
++        mtool = getToolByName(self.context, 'portal_membership')
++        if self.request.get('userid'):
++            return mtool.getMemberById(self.request.get('userid'))
++        return mtool.getAuthenticatedMember()
++
++    @property
++    def label(self):
++        return self.member.getProperty('fullname') or self.member.getUserName()
++
+     def _differentEmail(self, email):
+         """Check if the submitted form email address differs from the existing
+         one.
+diff --git a/plone/app/users/browser/passwordpanel.py b/plone/app/users/browser/passwordpanel.py
+index d37007d..8a3056d 100644
+--- a/plone/app/users/browser/passwordpanel.py
++++ b/plone/app/users/browser/passwordpanel.py
+@@ -56,7 +56,6 @@ def get_dummy(self):
+ class PasswordPanel(AccountPanelForm):
+     """Implementation of password reset form that uses z3c.form."""
+ 
+-    label = _(u'listingheader_reset_password', default=u'Reset Password')
+     description = _(u"Change Password")
+     form_name = _(u'legend_password_details', default=u'Password Details')
+     schema = IPasswordSchema
+diff --git a/plone/app/users/browser/personalpreferences.py b/plone/app/users/browser/personalpreferences.py
+index 1a9f2d1..f98c2f5 100644
+--- a/plone/app/users/browser/personalpreferences.py
++++ b/plone/app/users/browser/personalpreferences.py
+@@ -96,7 +96,6 @@ class PersonalPreferencesPanelAdapter(AccountPanelSchemaAdapter):
+ class PersonalPreferencesPanel(AccountPanelForm):
+     """Implementation of personalize form that uses z3c.form."""
+ 
+-    label = _(u"heading_my_preferences", default=u"Personal Preferences")
+     form_name = _(u'legend_personal_details', u'Personal Details')
+     schema = IPersonalPreferences
+ 
+diff --git a/plone/app/users/browser/userdatapanel.py b/plone/app/users/browser/userdatapanel.py
+index 675d25f..ea7ca00 100644
+--- a/plone/app/users/browser/userdatapanel.py
++++ b/plone/app/users/browser/userdatapanel.py
+@@ -63,8 +63,6 @@ def set_email(self, value):
+ 
+ class UserDataPanel(AccountPanelForm):
+ 
+-    label = _(u'title_personal_information_form',
+-              default=u'Personal Information')
+     form_name = _(u'User Data Form')
+     schema = IUserDataSchema
+     enableCSRFProtection = True
+
+
+Repository: plone.app.users
+Branch: refs/heads/master
+Date: 2015-01-02T11:14:58-08:00
+Author: David Glick (davisagli) <david@glicksoftware.com>
+Commit: https://github.com/plone/plone.app.users/commit/005f6541b377e6a52ad743c7d550665825445a81
+
+update markup for registration settings form
+
+Files changed:
+M plone/app/users/browser/memberregistration.pt
+
+diff --git a/plone/app/users/browser/memberregistration.pt b/plone/app/users/browser/memberregistration.pt
+index df1fd12..d0d517b 100644
+--- a/plone/app/users/browser/memberregistration.pt
++++ b/plone/app/users/browser/memberregistration.pt
+@@ -10,48 +10,34 @@
+ 
+ <metal:main fill-slot="prefs_configlet_content">
+ 
+-      <div id="edit-bar">
+-          <ul class="contentViews" id="content-views">
+-            <li>
+-              <a href=""
+-                 tal:attributes="href string:$portal_url/@@usergroup-userprefs"
+-                 i18n:translate="label_users">Users</a>
+-            </li>
+-            <li>
+-              <a href=""
+-                 tal:attributes="href string:$portal_url/@@usergroup-groupprefs"
+-                 i18n:translate="label_groups">Groups</a>
+-            </li>
+-            <li>
+-              <a href=""
+-                 tal:attributes="href string:$portal_url/@@usergroup-controlpanel"
+-                 i18n:translate="label_usergroup_settings">Settings</a>
+-            </li>
+-            <li class="selected">
+-              <a href=""
+-                 tal:attributes="href string:$portal_url/@@member-registration"
+-                 i18n:translate="label_member_registration">Member Registration</a>
+-            </li>
+-          </ul>
+-          <div class="contentActions">
+-            &nbsp;
+-          </div>
+-      </div>
++  <article id="content">
++    <h1 class="documentFirstHeading"
++        i18n:translate="heading_usergroup_settings">User/Groups Settings</h1>
+ 
+-      <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+-        Portal status message
+-      </div>
++    <div metal:use-macro="context/global_statusmessage/macros/portal_message">
++      Portal status message
++    </div>
+ 
+-      <article id="content">
++    <div class="autotabs">
++      <div class="autotoc-nav">
++        <a class="autotoc-level-1"
++           href="${portal_url}/@@usergroup-userprefs"
++           i18n:translate="label_users">Users</a>
++        <a class="autotoc-level-1"
++           href="${portal_url}/@@usergroup-groupprefs"
++           i18n:translate="label_groups">Groups</a>
++        <a class="autotoc-level-1"
++           href="${portal_url}/@@usergroup-controlpanel"
++           i18n:translate="label_usergroup_settings">Settings</a>
++        <a class="autotoc-level-1 active"
++           href="${portal_url}/@@member-registration"
++           i18n:translate="label_member_registration">Member Registration</a>
++      </div>
+ 
+-          <h1 class="documentFirstHeading"
+-              i18n:translate="heading_usergroup_settings">User/Groups Settings</h1>
++      <metal:b use-macro="context/@@ploneform-macros/titlelessform" />
++    </div>
++  </article>
+ 
+-          <div id="content-core">
+-                <metal:block use-macro="context/@@ploneform-macros/titlelessform">
+-                </metal:block>
+-          </div>
+-      </article>
+ </metal:main>
+ </body>
+ </html>
+
+
+Repository: plone.app.users
+Branch: refs/heads/master
+Date: 2015-01-02T11:37:12-08:00
+Author: Cris Ewing (cewing) <cris@crisewing.com>
+Commit: https://github.com/plone/plone.app.users/commit/4819a509aaf17bdc5b5e460919d9b1d95ef15a69
+
+Merge pull request #30 from plone/davisagli-fix-nav
+
+adjust form/nav markup for Plone 5
+
+Files changed:
+M CHANGES.rst
+M plone/app/users/browser/account-configlet.pt
+M plone/app/users/browser/account-panel.pt
+M plone/app/users/browser/account.py
+M plone/app/users/browser/memberregistration.pt
+M plone/app/users/browser/passwordpanel.py
+M plone/app/users/browser/personalpreferences.py
+M plone/app/users/browser/userdatapanel.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 70bc016..bd0a9d7 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ CHANGES
+ 2.2 (unreleased)
+ ----------------
+ 
++- Adjust navigation markup for Plone 5.
++  [davisagli]
++
+ - Use email_from_address from registry (Plone 5) in tests.
+   [khink]
+ 
+diff --git a/plone/app/users/browser/account-configlet.pt b/plone/app/users/browser/account-configlet.pt
+index f03df64..bd8b243 100644
+--- a/plone/app/users/browser/account-configlet.pt
++++ b/plone/app/users/browser/account-configlet.pt
+@@ -6,41 +6,9 @@
+       metal:use-macro="here/prefs_main_template/macros/master"
+       i18n:domain="plone">
+ 
+-<body>
+-
+ <div metal:fill-slot="prefs_configlet_content">
+ 
+-    <div id="edit-bar"
+-         tal:define="view_name view/__name__;
+-                     userquery python:view.makeQuery()">
+-        <ul class="contentViews" id="content-views">
+-          <li tal:define="selected python:view_name=='user-information'"
+-              tal:attributes="class python:selected and 'selected' or 'plain'">
+-            <a href=""
+-               tal:attributes="href string:$portal_url/@@user-information${userquery}"
+-               i18n:translate="title_personal_information_form">Personal Information</a>
+-          </li>
+-          <li tal:define="selected python:view_name=='user-preferences'"
+-              tal:attributes="class python:selected and 'selected' or 'plain'">
+-            <a href=""
+-               tal:attributes="href string:$portal_url/@@user-preferences${userquery}"
+-               i18n:translate="">Personal Preferences</a>
+-          </li>
+-
+-          <li>
+-            <a href=""
+-               tal:attributes="href string:$portal_url/@@usergroup-usermembership${userquery}"
+-               i18n:translate="label_group_memberships">Group Memberships</a>
+-          </li>
+-        </ul>
+-        <div class="contentActions">&nbsp;</div>
+-    </div>
+-
+-    <article id="content">
+-
+-    <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+-      Portal status message
+-    </div>
++  <article id="content">
+ 
+     <a
+        href=""
+@@ -52,13 +20,32 @@
+ 
+     <h1 class="documentFirstHeading" tal:content="view/label | nothing" />
+ 
++    <div metal:use-macro="context/global_statusmessage/macros/portal_message">
++      Portal status message
++    </div>
++
+     <div id="content-core">
+-      <metal:block use-macro="context/@@ploneform-macros/titlelessform">
+-      </metal:block>
++      <div class="autotabs">
++        <nav class="autotoc-nav"
++             tal:define="view_name view/__name__;
++                         userquery python:view.makeQuery()">
++          <a href="${portal_url}/@@user-information${userquery}"
++             tal:define="selected python:view_name=='user-information'"
++             tal:attributes="class python:'autotoc-level-1' + (' active' if selected else '')"
++             i18n:translate="title_personal_information_form">Personal Information</a>
++          <a href="${portal_url}/@@user-preferences${userquery}"
++             tal:define="selected python:view_name=='user-preferences'"
++             tal:attributes="class python:'autotoc-level-1' + (' active' if selected else '')"
++             i18n:translate="">Personal Preferences</a>
++          <a href="${portal_url}/@@usergroup-usermembership${userquery}"
++             i18n:translate="label_group_memberships">Group Memberships</a>
++        </nav>
++        <metal:b use-macro="context/@@ploneform-macros/titlelessform" />
++      </div>
+     </div>
+ 
+-    </article>
++  </article>
+ 
+ </div>
+-</body>
++
+ </html>
+diff --git a/plone/app/users/browser/account-panel.pt b/plone/app/users/browser/account-panel.pt
+index 45a5043..092fa08 100644
+--- a/plone/app/users/browser/account-panel.pt
++++ b/plone/app/users/browser/account-panel.pt
+@@ -5,46 +5,25 @@
+       i18n:domain="plone"
+       metal:use-macro="context/main_template/macros/master">
+ 
+-    <metal:block fill-slot="content">
+-
+-        <div tal:define="view_actions view/prepareObjectTabs;"
+-             id="edit-bar">
+-        <h5 class="hiddenStructure"
+-            tal:condition="view_actions"
+-            i18n:translate="heading_views">Views</h5>
+-
+-        <ul class="contentViews"
+-            id="content-views"
+-            i18n:domain="plone">
+-
+-            <tal:views repeat="action view_actions">
+-              <li tal:define="selected action/selected|nothing;"
+-                  tal:attributes="id string:contentview-${action/id};
+-                                  class python:selected and 'selected' or 'plain'">
+-                <a href=""
+-                   tal:content="action/title"
+-                   tal:attributes="href action/url;"
+-                   i18n:translate="">
+-                View name
+-                </a>
+-              </li>
+-            </tal:views>
+-
+-        </ul>
+-        </div>
+-
+-        <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+-            Portal status message
+-        </div>
+-
+-        <article id="content">
+-            <h1 class="documentFirstHeading" tal:content="view/label | nothing" />
+-            <div id="content-core">
+-                <metal:block use-macro="context/@@ploneform-macros/titlelessform">
+-                </metal:block>
+-            </div>
+-        </article>
+-
+-    </metal:block>
++  <metal:b fill-slot="content-title">
++    <h1 class="documentFirstHeading">${view/label}</h1>
++  </metal:b>
++
++  <metal:b fill-slot="content-core">
++    <div class="autotabs">
++      <nav class="autotoc-nav"
++           tal:define="view_actions view/prepareObjectTabs;">
++        <tal:views repeat="action view_actions">
++          <a id="contentview-${action/id}"
++             href="${action/url}"
++             tal:define="selected action/selected|nothing;"
++             tal:attributes="class python:'autotoc-level-1' + (' active' if selected else '')"
++             i18n:translate="">${action/title}</a>
++        </tal:views>
++      </nav>
++
++      <metal:b use-macro="context/@@ploneform-macros/titlelessform" />
++    </div>
++  </metal:b>
+ 
+ </html>
+diff --git a/plone/app/users/browser/account.py b/plone/app/users/browser/account.py
+index 4fc7343..a5da91e 100644
+--- a/plone/app/users/browser/account.py
++++ b/plone/app/users/browser/account.py
+@@ -16,6 +16,7 @@
+ from plone.registry.interfaces import IRegistry
+ from z3c.form import button
+ from z3c.form import form
++from zope.cachedescriptors.property import Lazy as lazy_property
+ from zope.component import getMultiAdapter
+ from zope.component import getUtility
+ from zope.event import notify
+@@ -92,6 +93,17 @@ class AccountPanelForm(AutoExtensibleForm, form.Form):
+     successMessage = _("Changes saved.")
+     noChangesMessage = _("No changes made.")
+ 
++    @lazy_property
++    def member(self):
++        mtool = getToolByName(self.context, 'portal_membership')
++        if self.request.get('userid'):
++            return mtool.getMemberById(self.request.get('userid'))
++        return mtool.getAuthenticatedMember()
++
++    @property
++    def label(self):
++        return self.member.getProperty('fullname') or self.member.getUserName()
++
+     def _differentEmail(self, email):
+         """Check if the submitted form email address differs from the existing
+         one.
+diff --git a/plone/app/users/browser/memberregistration.pt b/plone/app/users/browser/memberregistration.pt
+index df1fd12..d0d517b 100644
+--- a/plone/app/users/browser/memberregistration.pt
++++ b/plone/app/users/browser/memberregistration.pt
+@@ -10,48 +10,34 @@
+ 
+ <metal:main fill-slot="prefs_configlet_content">
+ 
+-      <div id="edit-bar">
+-          <ul class="contentViews" id="content-views">
+-            <li>
+-              <a href=""
+-                 tal:attributes="href string:$portal_url/@@usergroup-userprefs"
+-                 i18n:translate="label_users">Users</a>
+-            </li>
+-            <li>
+-              <a href=""
+-                 tal:attributes="href string:$portal_url/@@usergroup-groupprefs"
+-                 i18n:translate="label_groups">Groups</a>
+-            </li>
+-            <li>
+-              <a href=""
+-                 tal:attributes="href string:$portal_url/@@usergroup-controlpanel"
+-                 i18n:translate="label_usergroup_settings">Settings</a>
+-            </li>
+-            <li class="selected">
+-              <a href=""
+-                 tal:attributes="href string:$portal_url/@@member-registration"
+-                 i18n:translate="label_member_registration">Member Registration</a>
+-            </li>
+-          </ul>
+-          <div class="contentActions">
+-            &nbsp;
+-          </div>
+-      </div>
++  <article id="content">
++    <h1 class="documentFirstHeading"
++        i18n:translate="heading_usergroup_settings">User/Groups Settings</h1>
+ 
+-      <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+-        Portal status message
+-      </div>
++    <div metal:use-macro="context/global_statusmessage/macros/portal_message">
++      Portal status message
++    </div>
+ 
+-      <article id="content">
++    <div class="autotabs">
++      <div class="autotoc-nav">
++        <a class="autotoc-level-1"
++           href="${portal_url}/@@usergroup-userprefs"
++           i18n:translate="label_users">Users</a>
++        <a class="autotoc-level-1"
++           href="${portal_url}/@@usergroup-groupprefs"
++           i18n:translate="label_groups">Groups</a>
++        <a class="autotoc-level-1"
++           href="${portal_url}/@@usergroup-controlpanel"
++           i18n:translate="label_usergroup_settings">Settings</a>
++        <a class="autotoc-level-1 active"
++           href="${portal_url}/@@member-registration"
++           i18n:translate="label_member_registration">Member Registration</a>
++      </div>
+ 
+-          <h1 class="documentFirstHeading"
+-              i18n:translate="heading_usergroup_settings">User/Groups Settings</h1>
++      <metal:b use-macro="context/@@ploneform-macros/titlelessform" />
++    </div>
++  </article>
+ 
+-          <div id="content-core">
+-                <metal:block use-macro="context/@@ploneform-macros/titlelessform">
+-                </metal:block>
+-          </div>
+-      </article>
+ </metal:main>
+ </body>
+ </html>
+diff --git a/plone/app/users/browser/passwordpanel.py b/plone/app/users/browser/passwordpanel.py
+index d37007d..8a3056d 100644
+--- a/plone/app/users/browser/passwordpanel.py
++++ b/plone/app/users/browser/passwordpanel.py
+@@ -56,7 +56,6 @@ def get_dummy(self):
+ class PasswordPanel(AccountPanelForm):
+     """Implementation of password reset form that uses z3c.form."""
+ 
+-    label = _(u'listingheader_reset_password', default=u'Reset Password')
+     description = _(u"Change Password")
+     form_name = _(u'legend_password_details', default=u'Password Details')
+     schema = IPasswordSchema
+diff --git a/plone/app/users/browser/personalpreferences.py b/plone/app/users/browser/personalpreferences.py
+index 1a9f2d1..f98c2f5 100644
+--- a/plone/app/users/browser/personalpreferences.py
++++ b/plone/app/users/browser/personalpreferences.py
+@@ -96,7 +96,6 @@ class PersonalPreferencesPanelAdapter(AccountPanelSchemaAdapter):
+ class PersonalPreferencesPanel(AccountPanelForm):
+     """Implementation of personalize form that uses z3c.form."""
+ 
+-    label = _(u"heading_my_preferences", default=u"Personal Preferences")
+     form_name = _(u'legend_personal_details', u'Personal Details')
+     schema = IPersonalPreferences
+ 
+diff --git a/plone/app/users/browser/userdatapanel.py b/plone/app/users/browser/userdatapanel.py
+index 675d25f..ea7ca00 100644
+--- a/plone/app/users/browser/userdatapanel.py
++++ b/plone/app/users/browser/userdatapanel.py
+@@ -63,8 +63,6 @@ def set_email(self, value):
+ 
+ class UserDataPanel(AccountPanelForm):
+ 
+-    label = _(u'title_personal_information_form',
+-              default=u'Personal Information')
+     form_name = _(u'User Data Form')
+     schema = IUserDataSchema
+     enableCSRFProtection = True
 
 
