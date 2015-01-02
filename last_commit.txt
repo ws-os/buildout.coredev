@@ -1,99 +1,59 @@
-Repository: plone.app.widgets
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-02T10:21:50+01:00
+Date: 2015-01-02T15:16:09+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.widgets/commit/8a03c5aa0ce5b5b89210c236e8c36e3f90b8b8fd
+Commit: https://github.com/plone/plone.app.contenttypes/commit/e3b61bfc4bccb8bfadaa12583ea3a6c00646f41f
 
-fix tests
+allow comment-migration for folders
 
 Files changed:
-M plone/app/widgets/tests/test_at.py
-M plone/app/widgets/tests/test_dx.py
+M plone/app/contenttypes/migration/migration.py
+M plone/app/contenttypes/migration/utils.py
 
-diff --git a/plone/app/widgets/tests/test_at.py b/plone/app/widgets/tests/test_at.py
-index 42272d5..d8b164b 100644
---- a/plone/app/widgets/tests/test_at.py
-+++ b/plone/app/widgets/tests/test_at.py
-@@ -81,6 +81,7 @@ def setUp(self):
-         self.widget = DateWidget()
+diff --git a/plone/app/contenttypes/migration/migration.py b/plone/app/contenttypes/migration/migration.py
+index 4d23a87..5f28383 100644
+--- a/plone/app/contenttypes/migration/migration.py
++++ b/plone/app/contenttypes/migration/migration.py
+@@ -313,6 +313,13 @@ def __init__(self, *args, **kwargs):
+         logger.info(
+             "Migrating object {}".format('/'.join(self.old.getPhysicalPath())))
  
-     def test_widget(self):
-+        current_year = datetime.today().year
-         self.assertEqual(
-             {
-                 'pattern': 'pickadate',
-@@ -89,8 +90,8 @@ def test_widget(self):
-                 'pattern_options': {
-                     'date': {
-                         'firstDay': 0,
--                        'min': [1914, 1, 1],
--                        'max': [2034, 1, 1],
-+                        'min': [current_year - 100, 1, 1],
-+                        'max': [current_year + 20, 1, 1],
-                         'clear': u'Clear',
-                         'format': 'mmmm d, yyyy',
-                         'monthsFull': [u'January', u'February', u'March',
-@@ -140,6 +141,7 @@ def setUp(self):
-         self.widget = DatetimeWidget()
++    def beforeChange_store_comments_on_portal(self):
++        """Comments from plone.app.discussion are lost when the
++           old object is renamed...
++           We save the comments in a safe place..."""
++        portal = getToolByName(self.old, 'portal_url').getPortalObject()
++        move_comments(self.old, portal)
++
+     def migrate_atctmetadata(self):
+         field = self.old.getField('excludeFromNav')
+         self.new.exclude_from_nav = field.get(self.old)
+@@ -329,6 +336,13 @@ def migrate_portlets(self):
+     def migrate_contentrules(self):
+         copy_contentrules(self.old, self.new)
  
-     def test_widget(self):
-+        current_year = datetime.today().year
-         self.assertEqual(
-             {
-                 'pattern': 'pickadate',
-@@ -148,8 +150,8 @@ def test_widget(self):
-                 'pattern_options': {
-                     'date': {
-                         'firstDay': 0,
--                        'min': [1914, 1, 1],
--                        'max': [2034, 1, 1],
-+                        'min': [current_year - 100, 1, 1],
-+                        'max': [current_year + 20, 1, 1],
-                         'clear': u'Clear',
-                         'format': 'mmmm d, yyyy',
-                         'monthsFull': [u'January', u'February', u'March',
-diff --git a/plone/app/widgets/tests/test_dx.py b/plone/app/widgets/tests/test_dx.py
-index e263ac8..2c9595c 100644
---- a/plone/app/widgets/tests/test_dx.py
-+++ b/plone/app/widgets/tests/test_dx.py
-@@ -116,7 +116,7 @@ def setUp(self):
-         self.widget.pattern_options = {'date': {'firstDay': 0}}
++    def last_migrate_comments(self):
++        """Migrate the plone.app.discussion comments.
++           Comments were stored on the portal, get them and
++           Copy the conversations from old to new object."""
++        portal = getToolByName(self.old, 'portal_url').getPortalObject()
++        move_comments(portal, self.new)
++
  
-     def test_widget(self):
--        # TODO: fails on january first?
-+        current_year = datetime.today().year
-         self.assertEqual(
-             {
-                 'pattern': 'pickadate',
-@@ -125,8 +125,8 @@ def test_widget(self):
-                 'pattern_options': {
-                     'date': {
-                         'firstDay': 0,
--                        'min': [1914, 1, 1],
--                        'max': [2034, 1, 1],
-+                        'min': [current_year - 100, 1, 1],
-+                        'max': [current_year + 20, 1, 1],
-                         'clear': u'Clear',
-                         'format': 'mmmm d, yyyy',
-                         'monthsFull': [u'January', u'February', u'March',
-@@ -207,6 +207,7 @@ def setUp(self):
-         self.widget.pattern_options = {'date': {'firstDay': 0}}
+ class DocumentMigrator(ATCTContentMigrator):
  
-     def test_widget(self):
-+        current_year = datetime.today().year
-         self.assertEqual(
-             {
-                 'pattern': 'pickadate',
-@@ -215,8 +216,8 @@ def test_widget(self):
-                 'pattern_options': {
-                     'date': {
-                         'firstDay': 0,
--                        'min': [1914, 1, 1],
--                        'max': [2034, 1, 1],
-+                        'min': [current_year - 100, 1, 1],
-+                        'max': [current_year + 20, 1, 1],
-                         'clear': u'Clear',
-                         'format': 'mmmm d, yyyy',
-                         'monthsFull': [u'January', u'February', u'March',
+diff --git a/plone/app/contenttypes/migration/utils.py b/plone/app/contenttypes/migration/utils.py
+index 35073bb..5eb6d15 100644
+--- a/plone/app/contenttypes/migration/utils.py
++++ b/plone/app/contenttypes/migration/utils.py
+@@ -151,7 +151,7 @@ def copy_contentrules(source_object, target_object):
+         try:
+             IRuleAssignmentManager(target_object)
+         except TypeError:
+-            logger.info("Cound not migrate contentrule to {0}".format(
++            logger.info("Cound not assign contentrules to {0}".format(
+                 target_object.absolute_url()))
+             return
+         for rule_id in source_assignable:
 
 
