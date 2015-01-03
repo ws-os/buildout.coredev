@@ -1,26 +1,25 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-03T11:21:04+01:00
+Date: 2015-01-03T12:03:13+01:00
 Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/175a24cc9ca83b430fd781e91f68ccab67baba02
+Commit: https://github.com/plone/Products.CMFPlone/commit/d77018b992d1d64c8556626857c616b14dd81fd9
 
-Option to not have theme bundle configured
+Cleaning tests - js registry
 
 Files changed:
-M Products/CMFPlone/patterns/tinymce.py
+M Products/CMFPlone/tests/testCSSandJSRegistry.py
 
-diff --git a/Products/CMFPlone/patterns/tinymce.py b/Products/CMFPlone/patterns/tinymce.py
-index a57eb88..ee72fdc 100644
---- a/Products/CMFPlone/patterns/tinymce.py
-+++ b/Products/CMFPlone/patterns/tinymce.py
-@@ -55,7 +55,7 @@ def __call__(self):
-         # Check if theme has a custom content css
-         theme = getCurrentTheme()
-         themeObj = getTheme(theme)
--        if themeObj.tinymce_content_css:
-+        if themeObj and themeObj.tinymce_content_css:
-             content_css = self.config['portal_url'] + themeObj.tinymce_content_css
-         else:
-             content_css = self.settings.content_css
+diff --git a/Products/CMFPlone/tests/testCSSandJSRegistry.py b/Products/CMFPlone/tests/testCSSandJSRegistry.py
+index f7c5386..9984aea 100644
+--- a/Products/CMFPlone/tests/testCSSandJSRegistry.py
++++ b/Products/CMFPlone/tests/testCSSandJSRegistry.py
+@@ -55,7 +55,6 @@ def testDefaultJSIsInstalled(self):
+             '++resource++plone.js',
+             'jquery.highlightsearchterms.js',
+             'mark_special_links.js',
+-            'table_sorter.js',
+             'plone_javascript_variables.js',
+             ]
+         js_files = [x.js for x in installedResources.values()]
 
 
