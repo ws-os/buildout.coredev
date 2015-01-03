@@ -1,26 +1,23 @@
-Repository: mockup
+Repository: plonetheme.barceloneta
 Branch: refs/heads/master
-Date: 2015-01-03T03:39:49+01:00
+Date: 2015-01-03T04:00:51+01:00
 Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/mockup/commit/e98a39684f16b5bbb6ca1edfbf87f3b9eb4a6a9c
+Commit: https://github.com/plone/plonetheme.barceloneta/commit/b62261b29cf8e7bae93f9d0ad79c3e9dd61fe55e
 
-Inline css on tinymce
+Skins to make tests pass
 
 Files changed:
-M mockup/patterns/tinymce/less/pattern.tinymce.less
+A plonetheme/barceloneta/profiles/default/skins.xml
 
-diff --git a/mockup/patterns/tinymce/less/pattern.tinymce.less b/mockup/patterns/tinymce/less/pattern.tinymce.less
-index 0828146..5135c1f 100644
---- a/mockup/patterns/tinymce/less/pattern.tinymce.less
-+++ b/mockup/patterns/tinymce/less/pattern.tinymce.less
-@@ -1,6 +1,6 @@
- @import (less) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/skin.min.css";
--@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/content.inline.min.css";
--@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/plugins/visualblocks/css/visualblocks.css";
-+@import (inline) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/content.inline.min.css";
-+@import (inline) "@{bowerPath}/tinymce-builded/js/tinymce/plugins/visualblocks/css/visualblocks.css";
- @import "@{mockupPath}/modal/pattern.modal.less";
- @import "@{mockupPath}/autotoc/pattern.autotoc.less";
- @import "@{bowerPath}/bootstrap/less/buttons.less";
+diff --git a/plonetheme/barceloneta/profiles/default/skins.xml b/plonetheme/barceloneta/profiles/default/skins.xml
+new file mode 100644
+index 0000000..e8f7621
+--- /dev/null
++++ b/plonetheme/barceloneta/profiles/default/skins.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0"?>
++<object name="portal_skins" meta_type="Plone Skins Tool" default_skin="Plone Default">
++</object>
+\ No newline at end of file
 
 
