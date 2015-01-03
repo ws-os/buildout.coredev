@@ -1,23 +1,26 @@
-Repository: plonetheme.barceloneta
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-03T04:00:51+01:00
+Date: 2015-01-03T11:21:04+01:00
 Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/plonetheme.barceloneta/commit/b62261b29cf8e7bae93f9d0ad79c3e9dd61fe55e
+Commit: https://github.com/plone/Products.CMFPlone/commit/175a24cc9ca83b430fd781e91f68ccab67baba02
 
-Skins to make tests pass
+Option to not have theme bundle configured
 
 Files changed:
-A plonetheme/barceloneta/profiles/default/skins.xml
+M Products/CMFPlone/patterns/tinymce.py
 
-diff --git a/plonetheme/barceloneta/profiles/default/skins.xml b/plonetheme/barceloneta/profiles/default/skins.xml
-new file mode 100644
-index 0000000..e8f7621
---- /dev/null
-+++ b/plonetheme/barceloneta/profiles/default/skins.xml
-@@ -0,0 +1,3 @@
-+<?xml version="1.0"?>
-+<object name="portal_skins" meta_type="Plone Skins Tool" default_skin="Plone Default">
-+</object>
-\ No newline at end of file
+diff --git a/Products/CMFPlone/patterns/tinymce.py b/Products/CMFPlone/patterns/tinymce.py
+index a57eb88..ee72fdc 100644
+--- a/Products/CMFPlone/patterns/tinymce.py
++++ b/Products/CMFPlone/patterns/tinymce.py
+@@ -55,7 +55,7 @@ def __call__(self):
+         # Check if theme has a custom content css
+         theme = getCurrentTheme()
+         themeObj = getTheme(theme)
+-        if themeObj.tinymce_content_css:
++        if themeObj and themeObj.tinymce_content_css:
+             content_css = self.config['portal_url'] + themeObj.tinymce_content_css
+         else:
+             content_css = self.settings.content_css
 
 
