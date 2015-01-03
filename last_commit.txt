@@ -1,28 +1,26 @@
-Repository: plonetheme.barceloneta
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-02T15:10:04-08:00
-Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/plonetheme.barceloneta/commit/a2b0378766dfce7ef249bdf0a347b57868a8e364
+Date: 2015-01-03T03:39:49+01:00
+Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
+Commit: https://github.com/plone/mockup/commit/e98a39684f16b5bbb6ca1edfbf87f3b9eb4a6a9c
 
-improve contrast of form help text, refs plone/Products.CMFPlone#293
+Inline css on tinymce
 
 Files changed:
-M plonetheme/barceloneta/theme/less/forms.plone.less
+M mockup/patterns/tinymce/less/pattern.tinymce.less
 
-diff --git a/plonetheme/barceloneta/theme/less/forms.plone.less b/plonetheme/barceloneta/theme/less/forms.plone.less
-index 496cdde..2c0639b 100644
---- a/plonetheme/barceloneta/theme/less/forms.plone.less
-+++ b/plonetheme/barceloneta/theme/less/forms.plone.less
-@@ -210,8 +210,8 @@ input[type="checkbox"] {
-   //display: block; if want all helps to be block. As default span.formHelp inline and div.formHelp block
-   margin-top: 0;
-   margin-bottom: 0;
--  color: lighten(@plone-text-color, 25%); // lighten the text some for contrast
--  font-weight: @plone-font-weight-light;
-+  color: lighten(@plone-text-color, 10%);
-+  font-weight: @plone-font-weight-regular;
-   font-style: italic;
- }
- 
+diff --git a/mockup/patterns/tinymce/less/pattern.tinymce.less b/mockup/patterns/tinymce/less/pattern.tinymce.less
+index 0828146..5135c1f 100644
+--- a/mockup/patterns/tinymce/less/pattern.tinymce.less
++++ b/mockup/patterns/tinymce/less/pattern.tinymce.less
+@@ -1,6 +1,6 @@
+ @import (less) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/skin.min.css";
+-@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/content.inline.min.css";
+-@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/plugins/visualblocks/css/visualblocks.css";
++@import (inline) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/content.inline.min.css";
++@import (inline) "@{bowerPath}/tinymce-builded/js/tinymce/plugins/visualblocks/css/visualblocks.css";
+ @import "@{mockupPath}/modal/pattern.modal.less";
+ @import "@{mockupPath}/autotoc/pattern.autotoc.less";
+ @import "@{bowerPath}/bootstrap/less/buttons.less";
 
 
