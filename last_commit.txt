@@ -1,25 +1,361 @@
-Repository: Products.CMFPlone
+Repository: plone.app.portlets
 Branch: refs/heads/master
-Date: 2015-01-03T12:03:13+01:00
-Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/d77018b992d1d64c8556626857c616b14dd81fd9
+Date: 2015-01-03T17:50:39-08:00
+Author: David Glick (davisagli) <david@glicksoftware.com>
+Commit: https://github.com/plone/plone.app.portlets/commit/fbaa05b956062e78ae3819aa1e6c44569a74ab54
 
-Cleaning tests - js registry
+Updated markup for dashboard and group portlet management templates.
 
 Files changed:
-M Products/CMFPlone/tests/testCSSandJSRegistry.py
+M plone/app/portlets/browser/templates/manage-dashboard.pt
+M plone/app/portlets/browser/templates/manage-group-dashboard.pt
+M plone/app/portlets/browser/templates/manage-group.pt
 
-diff --git a/Products/CMFPlone/tests/testCSSandJSRegistry.py b/Products/CMFPlone/tests/testCSSandJSRegistry.py
-index f7c5386..9984aea 100644
---- a/Products/CMFPlone/tests/testCSSandJSRegistry.py
-+++ b/Products/CMFPlone/tests/testCSSandJSRegistry.py
-@@ -55,7 +55,6 @@ def testDefaultJSIsInstalled(self):
-             '++resource++plone.js',
-             'jquery.highlightsearchterms.js',
-             'mark_special_links.js',
--            'table_sorter.js',
-             'plone_javascript_variables.js',
-             ]
-         js_files = [x.js for x in installedResources.values()]
+diff --git a/plone/app/portlets/browser/templates/manage-dashboard.pt b/plone/app/portlets/browser/templates/manage-dashboard.pt
+index a072ff0..886a858 100644
+--- a/plone/app/portlets/browser/templates/manage-dashboard.pt
++++ b/plone/app/portlets/browser/templates/manage-dashboard.pt
+@@ -20,69 +20,40 @@
+ 
+ <body>
+ 
+-<tal:comment replace="nothing">
+-    Please note that this template fills the "content" slot instead of the
+-    "main" slot, this is done so we can provide stuff like the content
+-    tabs. This also means that we have to supply things that are normally
+-    present from main_template.
+-</tal:comment>
+-
+-<metal:main fill-slot="content"
+-    tal:define="errors options/state/getErrors | nothing">
+-
+-    <tal:main-macro metal:define-macro="main">
+-
+-            <div id="edit-bar">
+-                <h5 class="hiddenStructure"
+-                     i18n:translate="heading_content_views">Content views</h5>
+-
+-                <ul id="content-views"
+-                    class="contentViews">
+-                  <li>
+-                    <a href=""
+-                       tal:attributes="href string:${context/@@plone_portal_state/navigation_root_url}/dashboard"
+-                       i18n:translate="label_dashboard">Dashboard</a>
+-                  </li>
+-                  <li class="selected">
+-                    <a href=""
+-                       tal:attributes="href string:${context/@@plone_portal_state/navigation_root_url}/@@manage-dashboard?_authenticator=${view/auth_token}"
+-                       i18n:translate="label_edit">Edit</a>
+-                  </li>
+-                </ul>
+-
+-                <div class="contentActions">
+-                  &nbsp;
+-                </div>
+-            </div>
+-
+-            <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+-                Portal status message
+-            </div>
+-
+-            <article id="content">
+-
+-                <h1 class="documentFirstHeading" i18n:translate="title_edit_dashboard">
+-                    Edit your dashboard
+-                </h1>
+-
+-                <div id="content-core">
+-                    <div id="dashboard">
+-                        <div id="dashboard-portlets1"
+-                          tal:content="structure provider:plone.dashboard1" />
+-                        <div id="dashboard-portlets2"
+-                          tal:content="structure provider:plone.dashboard2" />
+-                        <div id="dashboard-portlets3"
+-                          tal:content="structure provider:plone.dashboard3" />
+-                        <div id="dashboard-portlets4"
+-                          tal:content="structure provider:plone.dashboard4" />
+-                    </div>
+-                    <div class="visualClear"><!-- --></div>
+-                </div>
+-
+-            </article>
+-    </tal:main-macro>
++<metal:b fill-slot="content-title">
++  <h1 class="documentFirstHeading" i18n:translate="title_edit_dashboard">
++      Edit your dashboard
++  </h1>
++</metal:b>
++
++<metal:b fill-slot="content-core">
++
++  <tal:main-macro metal:define-macro="main">
++
++    <div class="autotabs">
++      <nav class="autotoc-nav">
++        <a href="${context/@@plone_portal_state/navigation_root_url}/dashboard"
++           i18n:translate="label_dashboard">Dashboard</a>
++        <a class="active"
++           href="${context/@@plone_portal_state/navigation_root_url}/@@manage-dashboard?_authenticator=${view/auth_token}"
++           i18n:translate="label_edit">Edit</a>
++      </nav>
++
++      <div id="dashboard">
++          <div id="dashboard-portlets1"
++            tal:content="structure provider:plone.dashboard1" />
++          <div id="dashboard-portlets2"
++            tal:content="structure provider:plone.dashboard2" />
++          <div id="dashboard-portlets3"
++            tal:content="structure provider:plone.dashboard3" />
++          <div id="dashboard-portlets4"
++            tal:content="structure provider:plone.dashboard4" />
++      </div>
++      <div class="visualClear"><!-- --></div>
++    </div>
+ 
+-</metal:main>
++  </tal:main-macro>
++</metal:b>
+ 
+ </body>
+ </html>
+diff --git a/plone/app/portlets/browser/templates/manage-group-dashboard.pt b/plone/app/portlets/browser/templates/manage-group-dashboard.pt
+index a0ad46d..597de19 100644
+--- a/plone/app/portlets/browser/templates/manage-group-dashboard.pt
++++ b/plone/app/portlets/browser/templates/manage-group-dashboard.pt
+@@ -18,76 +18,51 @@
+ </head>
+ 
+ <body>
+-<metal:main fill-slot="prefs_configlet_content"
+-    tal:define="errors options/state/getErrors | nothing">
+-    <tal:main-macro metal:define-macro="main">
++<metal:b fill-slot="prefs_configlet_content">
++  <div id="content" metal:define-macro="main">
+ 
+-        <div id="edit-bar">
+-            <ul id="content-views" class="contentViews">
+-              <li>
+-                <a href=""
+-                   tal:attributes="href string:${context/absolute_url}/@@usergroup-groupmembership?groupname=${view/group}"
+-                   i18n:translate="label_group_members">Group Members</a>
+-              </li>
+-              <li>
+-                <a href=""
+-                   tal:attributes="href string:${context/absolute_url}/@@usergroup-groupdetails?groupname=${view/group}"
+-                   i18n:translate="label_group_properties">Group Properties</a>
+-              </li>
+-              <li>
+-                <a href=""
+-                   tal:attributes="href string:${portal_url}/@@manage-group-portlets?key=${request/key}"
+-                   i18n:translate="label_group_portlets">Group Portlets</a>
+-              </li>
+-              <li class="selected">
+-                <a href=""
+-                   tal:attributes="href string:${portal_url}/@@manage-group-dashboard?key=${request/key}"
+-                   i18n:translate="label_group_dashboard">Group Dashboard</a>
+-              </li>
+-            </ul>
++    <a href="${portal_url}/@@usergroup-groupprefs"
++       class="link-parent"
++       i18n:translate="label_up_to_groups_overview">
++        Up to Groups Overview
++    </a>
+ 
+-            <div class="contentActions">
+-              &nbsp;
+-            </div>
+-        </div>
+-
+-        <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+-            Portal status message
+-        </div>
+-
+-        <article id="content">
+-
+-            <h1 class="documentFirstHeading" i18n:translate="title_edit_dashboard_group">
+-                Edit Dashboard Portlets for <span i18n:name="group" tal:content="view/group" />
+-            </h1>
++    <h1 class="documentFirstHeading">Group: ${view/group}</h1>
+ 
+-            <div id="content-core">
+-                <a href=""
+-                   class="link-parent"
+-                   tal:attributes="href string:$portal_url/@@usergroup-groupprefs"
+-                   i18n:translate="label_up_to_groups_overview">
+-                    Up to Groups Overview
+-                </a>
+-
+-                <div id="dashboard">
+-                    <div id="dashboard-portlets1"
+-                      tal:content="structure provider:plone.dashboard1" />
+-                    <div id="dashboard-portlets2"
+-                      tal:content="structure provider:plone.dashboard2" />
+-                    <div id="dashboard-portlets3"
+-                      tal:content="structure provider:plone.dashboard3" />
+-                    <div id="dashboard-portlets4"
+-                      tal:content="structure provider:plone.dashboard4" />
+-                </div>
+-
+-                <div class="visualClear"><!-- --></div>
+-            </div>
++    <div metal:use-macro="context/global_statusmessage/macros/portal_message">
++        Portal status message
++    </div>
+ 
+-        </article>
++    <div id="content-core">
++      <div class="autotabs">        
++        <nav class="autotoc-nav">
++          <a href="${portal_url}/@@usergroup-groupmembership?groupname=${request/key}"
++             i18n:translate="label_group_members">Group Members</a>
++          <a href="${portal_url}/@@usergroup-groupdetails?groupname=${request/key}"
++             i18n:translate="label_group_properties">Group Properties</a>
++          <a href="${portal_url}/@@manage-group-portlets?key=${request/key}"
++             i18n:translate="label_group_portlets">Group Portlets</a>
++          <a class="active"
++             href="${portal_url}/@@manage-group-dashboard?key=${request/key}"
++             i18n:translate="label_group_dashboard">Group Dashboard</a>
++        </nav>
+ 
+-    </tal:main-macro>
++        <div id="dashboard">
++            <div id="dashboard-portlets1"
++              tal:content="structure provider:plone.dashboard1" />
++            <div id="dashboard-portlets2"
++              tal:content="structure provider:plone.dashboard2" />
++            <div id="dashboard-portlets3"
++              tal:content="structure provider:plone.dashboard3" />
++            <div id="dashboard-portlets4"
++              tal:content="structure provider:plone.dashboard4" />
++        </div>
++        <div class="visualClear"><!-- --></div>
++      </div>
++    </div>
+ 
+-</metal:main>
++  </div>
++</metal:b>
+ 
+ </body>
+ </html>
+diff --git a/plone/app/portlets/browser/templates/manage-group.pt b/plone/app/portlets/browser/templates/manage-group.pt
+index 1496a49..544a2a3 100644
+--- a/plone/app/portlets/browser/templates/manage-group.pt
++++ b/plone/app/portlets/browser/templates/manage-group.pt
+@@ -18,76 +18,47 @@
+ </head>
+ 
+ <body>
+-<metal:main fill-slot="content">
+ 
+-
+-    <!-- simulating views on the groups/user pages until we have real objects. -->
+-    <div id="edit-bar">
+-        <ul class="contentViews" id="content-views">
+-          <li>
+-            <a href=""
+-               tal:attributes="href string:${context/absolute_url}/@@usergroup-groupmembership?groupname=${request/key}"
+-               i18n:translate="label_group_members">Group Members</a>
+-          </li>
+-          <li>
+-            <a href=""
+-               tal:attributes="href string:${context/absolute_url}/@@usergroup-groupdetails?groupname=${request/key}"
+-               i18n:translate="label_group_properties">Group Properties</a>
+-          </li>
+-          <li class="selected">
+-            <a href=""
+-               tal:attributes="href string:${portal_url}/@@manage-group-portlets?key=${request/key}"
+-               i18n:translate="label_group_portlets">Group Portlets</a>
+-          </li>
+-          <li>
+-            <a href=""
+-               tal:attributes="href string:${portal_url}/@@manage-group-dashboard?key=${request/key}"
+-               i18n:translate="label_group_dashboard">Group Dashboard</a>
+-          </li>
+-        </ul>
+-
+-        <div class="contentActions">
+-          &nbsp;
+-        </div>
+-    </div>
+-
+-    <div metal:use-macro="here/global_statusmessage/macros/portal_message">
+-      Portal status message
++<metal:b fill-slot="content-title">
++  <a href=""
++       class="link-parent"
++       tal:attributes="href string:$portal_url/@@usergroup-groupprefs"
++       i18n:translate="label_up_to_groups_overview">
++    Up to Groups Overview
++  </a>
++
++  <h1 class="documentFirstHeading">Group: ${view/group}</h1>
++</metal:b>
++
++<metal:b fill-slot="content-core">
++  <metal:b metal:define-macro="props" tal:omit-tag="">
++
++    <div class="autotabs">        
++      <nav class="autotoc-nav">
++        <a href="${portal_url}/@@usergroup-groupmembership?groupname=${request/key}"
++           i18n:translate="label_group_members">Group Members</a>
++        <a href="${portal_url}/@@usergroup-groupdetails?groupname=${request/key}"
++           i18n:translate="label_group_properties">Group Properties</a>
++        <a class="active"
++           href="${portal_url}/@@manage-group-portlets?key=${request/key}"
++           i18n:translate="label_group_portlets">Group Portlets</a>
++        <a href="${portal_url}/@@manage-group-dashboard?key=${request/key}"
++           i18n:translate="label_group_dashboard">Group Dashboard</a>
++      </nav>
++
++      <p i18n:translate="description_manage_group_portlets">
++        The left and right portlet slots will now display only those portlets
++        assigned to this group. Use the up, down, delete and edit links
++        to manage user portlets. Use the drop-down list to add new portlets.
++      </p>
++
++      <p i18n:translate="description_group_portlets_below">
++        Note that group portlets are normally rendered below context portlets.
++      </p>
+     </div>
+ 
+-    <article id="content">
+-
+-        <metal:block metal:define-macro="props" tal:omit-tag="">
+-
+-          <h1 class="documentFirstHeading"
+-              i18n:translate="title_manage_group_portlets">
+-              Manage Group Portlets for
+-              <span i18n:name="group_name" tal:content="view/group">group</span>
+-          </h1>
+-
+-          <div id="content-core">
+-              <a href=""
+-                   class="link-parent"
+-                   tal:attributes="href string:$portal_url/@@usergroup-groupprefs"
+-                   i18n:translate="label_up_to_groups_overview">
+-                Up to Groups Overview
+-              </a>
+-
+-              <p i18n:translate="description_manage_group_portlets">
+-                The left and right portlet slots will now display only those portlets
+-                assigned to this group. Use the up, down, delete and edit links
+-                to manage user portlets. Use the drop-down list to add new portlets.
+-              </p>
+-
+-              <p i18n:translate="description_group_portlets_below">
+-                Note that group portlets are normally rendered below context portlets.
+-              </p>
+-          </div>
+-
+-        </metal:block>
+-
+-    </article>
++  </metal:b>
++</metal:b>
+ 
+-</metal:main>
+ </body>
+ </html>
 
 
