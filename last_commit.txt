@@ -1,49 +1,46 @@
-Repository: Products.CMFPlone
+Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-01-03T18:51:01-08:00
-Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/29d36f8f22f80dd1170e281f434b87f3eedaa7ea
+Date: 2015-01-05T21:37:10+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.event/commit/c7da7f3c073459939cf65a65ee7ed04801fa4d0e
 
-fix tests
+updated versions
 
 Files changed:
-M Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_usergroups.py
-M Products/CMFPlone/tests/csrf.txt
+M versions.cfg
 
-diff --git a/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_usergroups.py b/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_usergroups.py
-index d3c8e5d..b82a6f2 100644
---- a/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_usergroups.py
-+++ b/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_usergroups.py
-@@ -114,7 +114,7 @@ def test_usergroups_control_panel_link(self):
+diff --git a/versions.cfg b/versions.cfg
+index a87a4db..6d6b7d4 100644
+--- a/versions.cfg
++++ b/versions.cfg
+@@ -6,19 +6,19 @@ versions = versions
  
-     def test_usergroups_groups_link(self):
-         self.browser.open(self.usergroups_url)
--        self.browser.getLink('Groups').click()
-+        self.browser.getLink('Groups', index=1).click()
-         self.assertEqual(
-             self.browser.url,
-             "%s/@@usergroup-groupprefs" % self.portal_url
-diff --git a/Products/CMFPlone/tests/csrf.txt b/Products/CMFPlone/tests/csrf.txt
-index 4ca2dae..fba8796 100644
---- a/Products/CMFPlone/tests/csrf.txt
-+++ b/Products/CMFPlone/tests/csrf.txt
-@@ -226,7 +226,7 @@ Let's also try adding that user to a group:
-   >>> browser.getControl(name='add:list').value = ['Administrators']
-   >>> browser.getControl('Add user to selected groups').click()
-   >>> browser.contents
--  '...Group memberships for...johnny...
-+  '...johnny...
-    ...Current group memberships...
-    ...Administrators...
-    ...Authenticated Users...'
-@@ -252,7 +252,7 @@ Members" tab:
-   >>> browser.getControl('Add selected groups and users to this group').click()
-   >>> browser.contents
-   '...Info...Changes made...
--   ...Members of the Reviewers group...
-+   ...Group: Reviewers...
-    ...Current group members...
-    ...johnny...john@foo-security.com...
-    ...Remove selected groups / users...'
+ [versions]
+ Products.DateRecurringIndex = 2.1
+-icalendar = 3.8.3
+-plone.app.event = 2.0a4
++icalendar = 3.8.4
++plone.app.event = 2.0a5
+ plone.event = 1.1
+ plone.formwidget.recurrence = 1.2.5
+ 
+ z3c.form = 3.2.1
+-plone.app.vocabularies = 2.1.15
+-plone.app.portlets = 2.5.1
++plone.app.vocabularies = 2.1.16
++plone.app.portlets = 2.5.2
+ plone.app.jquery = 1.8.3
+ plone.app.widgets = 1.7.0
+ 
+-plone.app.contenttypes = 1.2a3
+-plone.app.dexterity = 2.1.1
+-plone.app.relationfield = 1.2.2
+-plone.app.z3cform = 1.0
+-plone.dexterity = 2.2.3
++plone.app.contenttypes = 1.2a5
++plone.app.dexterity = 2.1.2
++plone.app.relationfield = 1.3.0
++plone.app.z3cform = 1.0.1
++plone.dexterity = 2.2.4
 
 
