@@ -1,33 +1,76 @@
-Repository: plone.app.event
+Repository: plone.app.dexterity
 Branch: refs/heads/master
-Date: 2015-01-05T21:49:23+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.event/commit/2b587b3d62e71af41a5924e08a9df687b1f3b67b
+Date: 2015-01-05T08:58:07-08:00
+Author: Steve McMahon (smcmahon) <steve@dcn.org>
+Commit: https://github.com/plone/plone.app.dexterity/commit/ffa6a06829c03ef3be43205e5e4756f76286d779
 
-remove versions, which are already included by recent plone versions
+Add scale documentation to files and images page.
 
 Files changed:
-M versions.cfg
+M docs/advanced/files-and-images.rst
 
-diff --git a/versions.cfg b/versions.cfg
-index 6d6b7d4..748fefd 100644
---- a/versions.cfg
-+++ b/versions.cfg
-@@ -10,15 +10,7 @@ icalendar = 3.8.4
- plone.app.event = 2.0a5
- plone.event = 1.1
- plone.formwidget.recurrence = 1.2.5
--
--z3c.form = 3.2.1
--plone.app.vocabularies = 2.1.16
--plone.app.portlets = 2.5.2
--plone.app.jquery = 1.8.3
- plone.app.widgets = 1.7.0
--
- plone.app.contenttypes = 1.2a5
- plone.app.dexterity = 2.1.2
--plone.app.relationfield = 1.3.0
- plone.app.z3cform = 1.0.1
--plone.dexterity = 2.2.4
+diff --git a/docs/advanced/files-and-images.rst b/docs/advanced/files-and-images.rst
+index cfdf14f..c406813 100644
+--- a/docs/advanced/files-and-images.rst
++++ b/docs/advanced/files-and-images.rst
+@@ -83,6 +83,19 @@ URL ends in the correct extension, which can help ensure web browsers
+ display the picture correctly. We also define the ``height`` and ``width``
+ of the image based on the values set on the object.
+ 
++Access to image scales is similar::
++
++    <div tal:define="picture nocall:context/picture"
++         tal:condition="nocall:picture">
++        <img tal:replace="structure context/@@images/picture/scale" />
++    </div>
++
++where ``scales`` is large, preview, mini, thumb, tile, icon, or a custom scale.
++This code generates a full tag, including height and width attributes and alt and title based on the context title.
++To generate just a URL, use code like::
++
++    <img tal:attributes="src string: ${context/absolute_url}/@@images/picture/scale" />
++
+ For file fields, you can construct a download URL in a similar way,
+ using an ``<a />`` tag, e.g.::
+ 
+
+
+Repository: plone.app.dexterity
+Branch: refs/heads/master
+Date: 2015-01-06T10:01:50+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.dexterity/commit/4e2bc49790c658a21fd4f21513d4451a3fc8ce3e
+
+Merge pull request #145 from smcmahon/master
+
+Add scale documentation to files and images page.
+
+Files changed:
+M docs/advanced/files-and-images.rst
+
+diff --git a/docs/advanced/files-and-images.rst b/docs/advanced/files-and-images.rst
+index cfdf14f..c406813 100644
+--- a/docs/advanced/files-and-images.rst
++++ b/docs/advanced/files-and-images.rst
+@@ -83,6 +83,19 @@ URL ends in the correct extension, which can help ensure web browsers
+ display the picture correctly. We also define the ``height`` and ``width``
+ of the image based on the values set on the object.
+ 
++Access to image scales is similar::
++
++    <div tal:define="picture nocall:context/picture"
++         tal:condition="nocall:picture">
++        <img tal:replace="structure context/@@images/picture/scale" />
++    </div>
++
++where ``scales`` is large, preview, mini, thumb, tile, icon, or a custom scale.
++This code generates a full tag, including height and width attributes and alt and title based on the context title.
++To generate just a URL, use code like::
++
++    <img tal:attributes="src string: ${context/absolute_url}/@@images/picture/scale" />
++
+ For file fields, you can construct a download URL in a similar way,
+ using an ``<a />`` tag, e.g.::
+ 
 
 
