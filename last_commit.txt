@@ -1,76 +1,1087 @@
-Repository: plone.app.dexterity
+Repository: plone.app.referenceablebehavior
 Branch: refs/heads/master
-Date: 2015-01-05T08:58:07-08:00
-Author: Steve McMahon (smcmahon) <steve@dcn.org>
-Commit: https://github.com/plone/plone.app.dexterity/commit/ffa6a06829c03ef3be43205e5e4756f76286d779
+Date: 2015-01-05T05:41:18+01:00
+Author: Tom Gross (tomgross) <itconsense@gmail.com>
+Commit: https://github.com/plone/plone.app.referenceablebehavior/commit/bed1beed6e96c5a5366e5744d6eb3e03776929af
 
-Add scale documentation to files and images page.
+add custom AT type for tests
 
 Files changed:
-M docs/advanced/files-and-images.rst
+A plone/app/referenceablebehavior/profiles/sample_types/archetype_tool.xml
+A plone/app/referenceablebehavior/profiles/sample_types/metadata.xml
+A plone/app/referenceablebehavior/profiles/sample_types/types.xml
+A plone/app/referenceablebehavior/profiles/sample_types/types/ATRefnode.xml
+M plone/app/referenceablebehavior/__init__.py
+M plone/app/referenceablebehavior/referenceable.rst
+M plone/app/referenceablebehavior/testing.py
+M plone/app/referenceablebehavior/tests/test_basics.py
+M plone/app/referenceablebehavior/tests/test_doctest.py
+M plone/app/referenceablebehavior/uidcatalog.rst
+M setup.py
+D plone/app/referenceablebehavior/tests/base.py
+D plone/app/referenceablebehavior/tests/layer.py
 
-diff --git a/docs/advanced/files-and-images.rst b/docs/advanced/files-and-images.rst
-index cfdf14f..c406813 100644
---- a/docs/advanced/files-and-images.rst
-+++ b/docs/advanced/files-and-images.rst
-@@ -83,6 +83,19 @@ URL ends in the correct extension, which can help ensure web browsers
- display the picture correctly. We also define the ``height`` and ``width``
- of the image based on the values set on the object.
+diff --git a/plone/app/referenceablebehavior/__init__.py b/plone/app/referenceablebehavior/__init__.py
+index 6814a75..42e3421 100644
+--- a/plone/app/referenceablebehavior/__init__.py
++++ b/plone/app/referenceablebehavior/__init__.py
+@@ -1,6 +1,24 @@
+ import zope.i18nmessageid
+ MessageFactory = zope.i18nmessageid.MessageFactory("plone.app.referenceablebehavior")
  
-+Access to image scales is similar::
-+
-+    <div tal:define="picture nocall:context/picture"
-+         tal:condition="nocall:picture">
-+        <img tal:replace="structure context/@@images/picture/scale" />
-+    </div>
-+
-+where ``scales`` is large, preview, mini, thumb, tile, icon, or a custom scale.
-+This code generates a full tag, including height and width attributes and alt and title based on the context title.
-+To generate just a URL, use code like::
-+
-+    <img tal:attributes="src string: ${context/absolute_url}/@@images/picture/scale" />
-+
- For file fields, you can construct a download URL in a similar way,
- using an ``<a />`` tag, e.g.::
++PKG_NAME = "plone.app.referenceablebehavior"
++REGISTER_DEMO_TYPES = True
  
+ def initialize(context):
+     """Initializer called when used as a Zope 2 product."""
++    if REGISTER_DEMO_TYPES:
++        from Products.CMFCore import utils
++        from Products.CMFCore import permissions
++        from Products.Archetypes.ArchetypeTool import process_types, listTypes
++        import plone.app.referenceablebehavior.testing
++
++        content_types, constructors, ftis = process_types(
++            listTypes(PKG_NAME), PKG_NAME)
++
++        utils.ContentInit(
++            '%s Content' % PKG_NAME,
++            content_types=content_types,
++            permission=permissions.AddPortalContent,
++            extra_constructors=constructors,
++            fti=ftis,
++            ).initialize(context)
+diff --git a/plone/app/referenceablebehavior/profiles/sample_types/archetype_tool.xml b/plone/app/referenceablebehavior/profiles/sample_types/archetype_tool.xml
+new file mode 100644
+index 0000000..d782ffd
+--- /dev/null
++++ b/plone/app/referenceablebehavior/profiles/sample_types/archetype_tool.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0"?>
++<archetypetool>
++ <catalogmap>
++  <type portal_type="ATRefnode">
++   <catalog value="portal_catalog"/>
++  </type>
++ </catalogmap>
++</archetypetool>
+diff --git a/plone/app/referenceablebehavior/profiles/sample_types/metadata.xml b/plone/app/referenceablebehavior/profiles/sample_types/metadata.xml
+new file mode 100644
+index 0000000..2692b09
+--- /dev/null
++++ b/plone/app/referenceablebehavior/profiles/sample_types/metadata.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0"?>
++<metadata>
++  <version>1.6</version>
++</metadata>
+diff --git a/plone/app/referenceablebehavior/profiles/sample_types/types.xml b/plone/app/referenceablebehavior/profiles/sample_types/types.xml
+new file mode 100644
+index 0000000..85c4353
+--- /dev/null
++++ b/plone/app/referenceablebehavior/profiles/sample_types/types.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0"?>
++<object name="portal_types" meta_type="CMF Types Tool">
++ <object name="ATRefnode" meta_type="Factory-based Type Information"/>
++</object>
+diff --git a/plone/app/referenceablebehavior/profiles/sample_types/types/ATRefnode.xml b/plone/app/referenceablebehavior/profiles/sample_types/types/ATRefnode.xml
+new file mode 100644
+index 0000000..c032980
+--- /dev/null
++++ b/plone/app/referenceablebehavior/profiles/sample_types/types/ATRefnode.xml
+@@ -0,0 +1,31 @@
++<?xml version="1.0"?>
++<object name="ATRefnode" meta_type="Factory-based Type Information"
++   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
++ <property name="title">ATRefnode</property>
++ <property
++    name="description">A simple archetype for testing references. It can point to itself</property>
++ <property name="content_icon">document_icon.gif</property>
++ <property name="content_meta_type">ATRefnode</property>
++ <property name="factory">addATRefnode</property>
++ <property name="product">plone.app.referenceablebehavior</property>
++ <property name="immediate_view">base_edit</property>
++ <property name="global_allow">True</property>
++ <property name="filter_content_types">False</property>
++ <property name="allowed_content_types"/>
++ <property name="allow_discussion">False</property>
++ <alias from="(Default)" to="base_view"/>
++ <alias from="edit" to="base_edit"/>
++ <action title="View" action_id="view" category="object" condition_expr=""
++    url_expr="string:${object_url}/base_view" visible="True">
++  <permission value="View"/>
++ </action>
++ <action title="Edit" action_id="edit" category="object" condition_expr=""
++    url_expr="string:${object_url}/base_edit" visible="True">
++  <permission value="Modify portal content"/>
++ </action>
++ <action title="Properties" action_id="metadata" category="object"
++    condition_expr="" url_expr="string:${object_url}/base_metadata"
++    visible="True">
++  <permission value="Modify portal content"/>
++ </action>
++</object>
+diff --git a/plone/app/referenceablebehavior/referenceable.rst b/plone/app/referenceablebehavior/referenceable.rst
+index 9e5cd39..653d962 100644
+--- a/plone/app/referenceablebehavior/referenceable.rst
++++ b/plone/app/referenceablebehavior/referenceable.rst
+@@ -11,17 +11,20 @@ So first lets create a new dexterity content type
+     >>> fti = DexterityFTI('referenceable_type')
+     >>> fti.behaviors = ('plone.app.dexterity.behaviors.metadata.IDublinCore',
+     ...                  'plone.app.referenceablebehavior.referenceable.IReferenceable')
+-    >>> self.portal.portal_types._setObject('referenceable_type', fti)
++    >>> portal = layer['portal']
++    >>> app = layer['app']
++    >>> portal.portal_types._setObject('referenceable_type', fti)
+     'referenceable_type'
+     >>> schema = fti.lookupSchema()
++    >>> from transaction import commit
++    >>> commit()
+ 
+ If we access the site as an admin TTW::
+ 
+-    >>> from Products.Five.testbrowser import Browser
+-    >>> browser = Browser()
+-    >>> browser.handleErrors = False
+-    >>> self.app.acl_users.userFolderAddUser('root', 'secret', ['Manager'], [])
+-    >>> browser.addHeader('Authorization', 'Basic root:secret')
++    >>> from plone.testing.z2 import Browser
++    >>> browser = Browser(app)
++    >>> from plone.app.testing import SITE_OWNER_NAME, SITE_OWNER_PASSWORD
++    >>> browser.addHeader('Authorization', 'Basic %s:%s' % (SITE_OWNER_NAME, SITE_OWNER_PASSWORD))
+ 
+ We can see this type in the addable types at the root of the site::
+ 
+@@ -38,7 +41,7 @@ We can see this type in the addable types at the root of the site::
+ 
+ Now lets check that we have uuid stuff
+ 
+-    >>> item = self.portal.referenceable_type
++    >>> item = portal.referenceable_type
+     >>> from plone.app.referenceablebehavior.referenceable import IReferenceable
+     >>> IReferenceable.providedBy(item)
+     True
+@@ -50,15 +53,18 @@ Now lets check that we have uuid stuff
+     >>> uuid is not None
+     True
+ 
+-Now create an archetype content object
++Now create an archetype content object.
+ 
+-    >>> browser.open("http://nohost/plone/createObject?type_name=Document")
+-    >>> browser.getControl('Title').value= "archetype page"
+-    >>> browser.getControl('Save').click()
++    >>> from plone.app.testing import setRoles
++    >>> from plone.app.testing import TEST_USER_ID
++    >>> setRoles(portal, TEST_USER_ID, ['Manager'])
++    >>> _ = portal.invokeFactory('ATRefnode', "archetype-page",
++    ...                          title="archetype page")
++    >>> commit()
+ 
+ Now add the dexterity content as reference in archetype page
+ 
+-It seems there is no way to use related items with functionnal tests
++It seems there is no way to use related items with functional tests
+ ###    >>> browser.getLink('Edit').click()
+ 
+     >>> archetypes = getattr(portal,'archetype-page')
+@@ -99,7 +105,8 @@ Now create another dexterity referenceable object
+     >>> referenceable_dexterity1 = referenceable.IReferenceable(dexterity1)
+ 
+ 
+-    >>> reference_catalog = self.portal.reference_catalog
++    >>> reference_catalog = portal.reference_catalog
++
+     >>> 'relatesTo' in [b.relationship for b in reference_catalog()]
+     True
+     >>> 'isReferencing' in [b.relationship for b in reference_catalog()]
+@@ -120,7 +127,7 @@ We can get back references from dexterity content
+     >>> referenceable_dexterity1.getBRelationships()
+     ['isReferencing']
+     >>> referenceable_dexterity1.getBRefs()
+-    [<ATDocument at /plone/archetype-page>]
++    [<ATRefnode at /plone/archetype-page>]
+ 
+ We can add references between archetypes and dexterity content
+ 
+@@ -138,7 +145,7 @@ We can add references between archetypes and dexterity content
+     >>> referenceable_dexterity1.getRelationships()
+     ['isReferencing']
+     >>> referenceable_dexterity1.getRefs()
+-    [<ATDocument at /plone/archetype-page>]
++    [<ATRefnode at /plone/archetype-page>]
+     >>> referenceable_dexterity1.getReferenceImpl()
+     [<Reference ... rel:isReferencing>]
+     >>> referenceable_dexterity1.getBackReferenceImpl()
+@@ -163,7 +170,7 @@ We can add references between dexterity objects
+     >>> referenceable_dexterity1.getRelationships()
+     ['isReferencing']
+     >>> referenceable_dexterity1.getRefs()
+-    [<ATDocument at /plone/archetype-page>, <Item at /plone/referenceable_type>]
++    [<ATRefnode at /plone/archetype-page>, <Item at /plone/referenceable_type>]
+ 
+ We can remove references
+ 
+@@ -173,7 +180,7 @@ We can remove references
+     >>> referenceable_dexterity1.getRelationships()
+     ['isReferencing']
+     >>> referenceable_dexterity1.getRefs()
+-    [<ATDocument at /plone/archetype-page>]
++    [<ATRefnode at /plone/archetype-page>]
+     >>> referenceable_dexterity1.deleteReferences()
+     >>> referenceable_dexterity1.getRelationships()
+     []
+diff --git a/plone/app/referenceablebehavior/testing.py b/plone/app/referenceablebehavior/testing.py
+index 980f4ab..b33baf9 100644
+--- a/plone/app/referenceablebehavior/testing.py
++++ b/plone/app/referenceablebehavior/testing.py
+@@ -1,10 +1,18 @@
+ from Products.CMFCore.utils import getToolByName
+ from plone.app.testing import layers
+-from plone.app.testing import applyProfile
+ 
+ from plone.app.contenttypes.testing import PLONE_APP_CONTENTTYPES_FIXTURE
+ from plone.app.testing import PloneSandboxLayer
+-from zope.configuration import xmlconfig
++from plone.testing import z2
++from Products.GenericSetup import EXTENSION, profile_registry
++
++def setupSampleTypeProfile():
++    profile_registry.registerProfile('Testing_sampletypes',
++        'Archetypes Sample Content Types',
++        'Extension profile of Archetypes sample content types',
++        'profiles/sample_types',
++        'plone.app.referenceablebehavior',
++        EXTENSION)
+ 
+ 
+ class ReferenceableBehaviorLayer(PloneSandboxLayer):
+@@ -13,14 +21,18 @@ class ReferenceableBehaviorLayer(PloneSandboxLayer):
+     )
+ 
+     def setUpZope(self, app, configurationContext):
+-        # load ZCML
++        import Products.Archetypes
++        self.loadZCML(package=Products.Archetypes)
++        z2.installProduct(app, 'Products.Archetypes')
++        setupSampleTypeProfile()
+         import plone.app.referenceablebehavior
+-        xmlconfig.file('configure.zcml', plone.app.referenceablebehavior,
+-                       context=configurationContext)
++        self.loadZCML(package=plone.app.referenceablebehavior)
++        z2.installProduct(app, 'plone.app.referenceablebehavior')
+ 
+     def setUpPloneSite(self, portal):
+         # install into the Plone site
+-        applyProfile(portal, 'plone.app.referenceablebehavior:default')
++        self.applyProfile(portal, 'plone.app.referenceablebehavior:default')
++        self.applyProfile(portal, 'plone.app.referenceablebehavior:Testing_sampletypes')
+         ttool = getToolByName(portal, 'portal_types')
+         ttool.getTypeInfo('Document').behaviors += (
+             'plone.app.referenceablebehavior.referenceable.IReferenceable',
+@@ -39,3 +51,31 @@ def setUpPloneSite(self, portal):
+     bases=(PLONE_APP_REFERENCEABLE_FIXTURE, ),
+     name="plone.app.referenceable:Functional"
+ )
++
++from Products.Archetypes.atapi import BaseSchema, ReferenceField, Schema, ReferenceWidget, BaseContent, registerType
++from Products.CMFCore.permissions import ModifyPortalContent
++
++schema = BaseSchema.copy() + Schema((
++    ReferenceField('relatedItems',
++        relationship='relatesTo',
++        multiValued=True,
++        isMetadata=True,
++        languageIndependent=False,
++        index='KeywordIndex',
++        referencesSortable=True,
++        keepReferencesOnCopy=True,
++        write_permission=ModifyPortalContent,
++        widget=ReferenceWidget(
++            label=u'label_related_items',
++            description='',
++            visible={'edit': 'visible', 'view': 'invisible'}
++            )
++        )
++    ))
++
++class ATRefnode(BaseContent):
++    """A simple archetype for testing references. It can point to itself"""
++
++    schema = schema
++
++registerType(ATRefnode, 'plone.app.referenceablebehavior')
+diff --git a/plone/app/referenceablebehavior/tests/base.py b/plone/app/referenceablebehavior/tests/base.py
+deleted file mode 100644
+index 65b8410..0000000
+--- a/plone/app/referenceablebehavior/tests/base.py
++++ /dev/null
+@@ -1,6 +0,0 @@
+-from plone.app.dexterity.tests import base as dexterity_base
+-from plone.app.referenceablebehavior.tests.layer import ReferenceableLayer
+-
+-
+-class ReferenceableFunctionalTestCase(dexterity_base.DexterityFunctionalTestCase):
+-    layer = ReferenceableLayer
+diff --git a/plone/app/referenceablebehavior/tests/layer.py b/plone/app/referenceablebehavior/tests/layer.py
+deleted file mode 100644
+index c397186..0000000
+--- a/plone/app/referenceablebehavior/tests/layer.py
++++ /dev/null
+@@ -1,20 +0,0 @@
+-from plone.app.dexterity.tests import layer as dexterity_layer
+-# BBB Zope 2.12
+-try:
+-    from Zope2.App import zcml
+-    from OFS import metaconfigure
+-    zcml  # pyflakes
+-    metaconfigure
+-except ImportError:
+-    from Products.Five import zcml
+-    from Products.Five import fiveconfigure as metaconfigure
+-
+-
+-class ReferenceableLayer(dexterity_layer.DexterityLayer):
+-
+-    @classmethod
+-    def setUp(cls):
+-        metaconfigure.debug_mode = True
+-        import plone.app.referenceablebehavior
+-        zcml.load_config('configure.zcml', plone.app.referenceablebehavior)
+-        metaconfigure.debug_mode = False
+diff --git a/plone/app/referenceablebehavior/tests/test_basics.py b/plone/app/referenceablebehavior/tests/test_basics.py
+index 143305e..2130277 100644
+--- a/plone/app/referenceablebehavior/tests/test_basics.py
++++ b/plone/app/referenceablebehavior/tests/test_basics.py
+@@ -52,10 +52,6 @@ def test_remove_cleans_ref_catalog(self):
+         self.portal.manage_delObjects(['doc1'])
+         self.assertEquals(0, len(ref_catalog()))
+ 
+-
+-
+-
+-
+     def test_referenceable_api(self):
+         doc1 = self.portal['doc1']
+         doc2 = self.portal['doc2']
+diff --git a/plone/app/referenceablebehavior/tests/test_doctest.py b/plone/app/referenceablebehavior/tests/test_doctest.py
+index 5fc497c..d089176 100644
+--- a/plone/app/referenceablebehavior/tests/test_doctest.py
++++ b/plone/app/referenceablebehavior/tests/test_doctest.py
+@@ -1,22 +1,22 @@
+ import unittest
++import doctest
++from plone.testing import layered
+ 
+-from Testing import ZopeTestCase as ztc
++from plone.app.referenceablebehavior.testing import PLONE_APP_REFERENCEABLE_FUNCTION_TESTING
+ 
+-from plone.app.referenceablebehavior.tests.base import ReferenceableFunctionalTestCase
++OPTIONFLAGS = (doctest.ELLIPSIS |
++               doctest.NORMALIZE_WHITESPACE #|
++              # doctest.REPORT_ONLY_FIRST_FAILURE
++               )
+ 
++DOCTEST_FILES = ['referenceable.rst', 'uidcatalog.rst']
+ 
+ def test_suite():
+-    return unittest.TestSuite([
+-
+-        ztc.FunctionalDocFileSuite(
+-            'referenceable.rst', package='plone.app.referenceablebehavior',
+-            test_class=ReferenceableFunctionalTestCase),
+-
+-        ztc.FunctionalDocFileSuite(
+-            'uidcatalog.rst', package='plone.app.referenceablebehavior',
+-            test_class=ReferenceableFunctionalTestCase),
+-
+-        ])
+-
+-if __name__ == '__main__':
+-    unittest.main(defaultTest='test_suite')
++   suite = unittest.TestSuite()
++   for testfile in DOCTEST_FILES:
++        suite.addTest(layered(
++            doctest.DocFileSuite(testfile,
++                                 optionflags=OPTIONFLAGS,
++                                 package="plone.app.referenceablebehavior",),
++            layer=PLONE_APP_REFERENCEABLE_FUNCTION_TESTING))
++   return suite
+diff --git a/plone/app/referenceablebehavior/uidcatalog.rst b/plone/app/referenceablebehavior/uidcatalog.rst
+index 0b60c3b..48a2c0b 100644
+--- a/plone/app/referenceablebehavior/uidcatalog.rst
++++ b/plone/app/referenceablebehavior/uidcatalog.rst
+@@ -7,17 +7,21 @@ So first lets create a new dexterity content type
+     >>> fti = DexterityFTI('referenceable_type')
+     >>> fti.behaviors = ('plone.app.dexterity.behaviors.metadata.IDublinCore',
+     ...                  'plone.app.referenceablebehavior.referenceable.IReferenceable')
+-    >>> self.portal.portal_types._setObject('referenceable_type', fti)
++    >>> portal = layer['portal']
++    >>> app = layer['app']
++    >>> portal.portal_types._setObject('referenceable_type', fti)
+     'referenceable_type'
+     >>> schema = fti.lookupSchema()
++    >>> from transaction import commit
++    >>> commit()
+ 
+ If we access the site as an admin TTW::
+ 
+-    >>> from Products.Five.testbrowser import Browser
+-    >>> browser = Browser()
++    >>> from plone.testing.z2 import Browser
++    >>> browser = Browser(app)
+     >>> browser.handleErrors = False
+-    >>> self.app.acl_users.userFolderAddUser('root', 'secret', ['Manager'], [])
+-    >>> browser.addHeader('Authorization', 'Basic root:secret')
++    >>> from plone.app.testing import SITE_OWNER_NAME, SITE_OWNER_PASSWORD
++    >>> browser.addHeader('Authorization', 'Basic %s:%s' % (SITE_OWNER_NAME, SITE_OWNER_PASSWORD))
+ 
+ We can see this type in the addable types at the root of the site::
+ 
+@@ -36,7 +40,7 @@ First check it is indexed in the uid_catalog
+ 
+     >>> from plone.uuid.interfaces import IUUID
+     >>> uuid = IUUID(portal.referenceable_type)
+-    >>> uid_catalog = self.portal.uid_catalog
++    >>> uid_catalog = portal.uid_catalog
+     >>> results = uid_catalog(UID=uuid)
+     >>> len(results)
+     1
+diff --git a/setup.py b/setup.py
+index a7e839c..a969aa6 100644
+--- a/setup.py
++++ b/setup.py
+@@ -35,6 +35,7 @@
+       ],
+       extras_require={
+         'test': ['Products.CMFPlone',
++                 'Products.Archetypes',
+                  'plone.app.testing',
+                  'plone.app.dexterity'],
+       },
 
 
-Repository: plone.app.dexterity
+Repository: plone.app.referenceablebehavior
 Branch: refs/heads/master
-Date: 2015-01-06T10:01:50+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.dexterity/commit/4e2bc49790c658a21fd4f21513d4451a3fc8ce3e
+Date: 2015-01-06T14:40:00+01:00
+Author: Tom Gross (tomgross) <itconsense@gmail.com>
+Commit: https://github.com/plone/plone.app.referenceablebehavior/commit/203d2c484f55d42223315f48458b7adf9808f5ba
 
-Merge pull request #145 from smcmahon/master
-
-Add scale documentation to files and images page.
+cleanups and test fixture
 
 Files changed:
-M docs/advanced/files-and-images.rst
+M plone/app/referenceablebehavior/__init__.py
+M plone/app/referenceablebehavior/referenceable.rst
+M plone/app/referenceablebehavior/testing.py
 
-diff --git a/docs/advanced/files-and-images.rst b/docs/advanced/files-and-images.rst
-index cfdf14f..c406813 100644
---- a/docs/advanced/files-and-images.rst
-+++ b/docs/advanced/files-and-images.rst
-@@ -83,6 +83,19 @@ URL ends in the correct extension, which can help ensure web browsers
- display the picture correctly. We also define the ``height`` and ``width``
- of the image based on the values set on the object.
+diff --git a/plone/app/referenceablebehavior/__init__.py b/plone/app/referenceablebehavior/__init__.py
+index 42e3421..ded38f6 100644
+--- a/plone/app/referenceablebehavior/__init__.py
++++ b/plone/app/referenceablebehavior/__init__.py
+@@ -1,12 +1,12 @@
++import os
+ import zope.i18nmessageid
+ MessageFactory = zope.i18nmessageid.MessageFactory("plone.app.referenceablebehavior")
  
-+Access to image scales is similar::
-+
-+    <div tal:define="picture nocall:context/picture"
-+         tal:condition="nocall:picture">
-+        <img tal:replace="structure context/@@images/picture/scale" />
-+    </div>
-+
-+where ``scales`` is large, preview, mini, thumb, tile, icon, or a custom scale.
-+This code generates a full tag, including height and width attributes and alt and title based on the context title.
-+To generate just a URL, use code like::
-+
-+    <img tal:attributes="src string: ${context/absolute_url}/@@images/picture/scale" />
-+
- For file fields, you can construct a download URL in a similar way,
- using an ``<a />`` tag, e.g.::
+ PKG_NAME = "plone.app.referenceablebehavior"
+-REGISTER_DEMO_TYPES = True
  
+ def initialize(context):
+     """Initializer called when used as a Zope 2 product."""
+-    if REGISTER_DEMO_TYPES:
++    if 'ZOPETESTCASE' in os.environ:   # register demo type only when testing
+         from Products.CMFCore import utils
+         from Products.CMFCore import permissions
+         from Products.Archetypes.ArchetypeTool import process_types, listTypes
+diff --git a/plone/app/referenceablebehavior/referenceable.rst b/plone/app/referenceablebehavior/referenceable.rst
+index 653d962..d5b30a4 100644
+--- a/plone/app/referenceablebehavior/referenceable.rst
++++ b/plone/app/referenceablebehavior/referenceable.rst
+@@ -75,6 +75,7 @@ It seems there is no way to use related items with functional tests
+     >>> archetypes.reindexObject()
+     >>> archetypes.getRelatedItems()
+     [<Item at /plone/referenceable_type>]
++    >>> commit()
+ 
+ A dexterity could be adapted to Archetypes IReferenceable
+ 
+diff --git a/plone/app/referenceablebehavior/testing.py b/plone/app/referenceablebehavior/testing.py
+index b33baf9..1e132ca 100644
+--- a/plone/app/referenceablebehavior/testing.py
++++ b/plone/app/referenceablebehavior/testing.py
+@@ -1,4 +1,8 @@
++from Products.Archetypes.atapi import (
++        BaseSchema, ReferenceField, Schema, ReferenceWidget, BaseContent,
++        registerType)
+ from Products.CMFCore.utils import getToolByName
++from Products.CMFCore.permissions import ModifyPortalContent
+ from plone.app.testing import layers
+ 
+ from plone.app.contenttypes.testing import PLONE_APP_CONTENTTYPES_FIXTURE
+@@ -52,30 +56,28 @@ def setUpPloneSite(self, portal):
+     name="plone.app.referenceable:Functional"
+ )
+ 
+-from Products.Archetypes.atapi import BaseSchema, ReferenceField, Schema, ReferenceWidget, BaseContent, registerType
+-from Products.CMFCore.permissions import ModifyPortalContent
+-
+-schema = BaseSchema.copy() + Schema((
+-    ReferenceField('relatedItems',
+-        relationship='relatesTo',
+-        multiValued=True,
+-        isMetadata=True,
+-        languageIndependent=False,
+-        index='KeywordIndex',
+-        referencesSortable=True,
+-        keepReferencesOnCopy=True,
+-        write_permission=ModifyPortalContent,
+-        widget=ReferenceWidget(
+-            label=u'label_related_items',
+-            description='',
+-            visible={'edit': 'visible', 'view': 'invisible'}
+-            )
+-        )
+-    ))
+ 
+ class ATRefnode(BaseContent):
+     """A simple archetype for testing references. It can point to itself"""
+ 
+-    schema = schema
++    schema = BaseSchema.copy() + Schema((
++        ReferenceField('relatedItems',
++            relationship='relatesTo',
++            multiValued=True,
++            isMetadata=True,
++            languageIndependent=False,
++            index='KeywordIndex',
++            referencesSortable=True,
++            keepReferencesOnCopy=True,
++            write_permission=ModifyPortalContent,
++            widget=ReferenceWidget(
++                label=u'label_related_items',
++                description='',
++                visible={'edit': 'visible', 'view': 'invisible'}
++                )
++           ),   # make it a list
++        )
++    )
++
+ 
+ registerType(ATRefnode, 'plone.app.referenceablebehavior')
+
+
+Repository: plone.app.referenceablebehavior
+Branch: refs/heads/master
+Date: 2015-01-06T14:42:32+01:00
+Author: Tom Gross (tomgross) <itconsense@gmail.com>
+Commit: https://github.com/plone/plone.app.referenceablebehavior/commit/ff8948472985c2711e7422362cdddefb2daf0deb
+
+document changes
+
+Files changed:
+M docs/HISTORY.rst
+
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index d8589a8..90596f7 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -7,6 +7,8 @@ Changelog
+ - Fix tests so they run on jenkins 4.3 - ecosystem
+   [maartenkling]
+ 
++- Ported to plone.app.testing
++  [tomgross]
+ 
+ 0.7.0 (2014-05-21)
+ ------------------
+
+
+Repository: plone.app.referenceablebehavior
+Branch: refs/heads/master
+Date: 2015-01-06T15:28:12+01:00
+Author: Patrick Gerken (do3cc) <do3cc@patrick-gerken.de>
+Commit: https://github.com/plone/plone.app.referenceablebehavior/commit/9a84b887eaa0d0f6ce2476eb64bbd7490677127d
+
+Merge pull request #4 from plone/tomgross-noptc
+
+Ported to plone.app.testing
+
+Files changed:
+A plone/app/referenceablebehavior/profiles/sample_types/archetype_tool.xml
+A plone/app/referenceablebehavior/profiles/sample_types/metadata.xml
+A plone/app/referenceablebehavior/profiles/sample_types/types.xml
+A plone/app/referenceablebehavior/profiles/sample_types/types/ATRefnode.xml
+M docs/HISTORY.rst
+M plone/app/referenceablebehavior/__init__.py
+M plone/app/referenceablebehavior/referenceable.rst
+M plone/app/referenceablebehavior/testing.py
+M plone/app/referenceablebehavior/tests/test_basics.py
+M plone/app/referenceablebehavior/tests/test_doctest.py
+M plone/app/referenceablebehavior/uidcatalog.rst
+M setup.py
+D plone/app/referenceablebehavior/tests/base.py
+D plone/app/referenceablebehavior/tests/layer.py
+
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index d8589a8..90596f7 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -7,6 +7,8 @@ Changelog
+ - Fix tests so they run on jenkins 4.3 - ecosystem
+   [maartenkling]
+ 
++- Ported to plone.app.testing
++  [tomgross]
+ 
+ 0.7.0 (2014-05-21)
+ ------------------
+diff --git a/plone/app/referenceablebehavior/__init__.py b/plone/app/referenceablebehavior/__init__.py
+index 6814a75..ded38f6 100644
+--- a/plone/app/referenceablebehavior/__init__.py
++++ b/plone/app/referenceablebehavior/__init__.py
+@@ -1,6 +1,24 @@
++import os
+ import zope.i18nmessageid
+ MessageFactory = zope.i18nmessageid.MessageFactory("plone.app.referenceablebehavior")
+ 
++PKG_NAME = "plone.app.referenceablebehavior"
+ 
+ def initialize(context):
+     """Initializer called when used as a Zope 2 product."""
++    if 'ZOPETESTCASE' in os.environ:   # register demo type only when testing
++        from Products.CMFCore import utils
++        from Products.CMFCore import permissions
++        from Products.Archetypes.ArchetypeTool import process_types, listTypes
++        import plone.app.referenceablebehavior.testing
++
++        content_types, constructors, ftis = process_types(
++            listTypes(PKG_NAME), PKG_NAME)
++
++        utils.ContentInit(
++            '%s Content' % PKG_NAME,
++            content_types=content_types,
++            permission=permissions.AddPortalContent,
++            extra_constructors=constructors,
++            fti=ftis,
++            ).initialize(context)
+diff --git a/plone/app/referenceablebehavior/profiles/sample_types/archetype_tool.xml b/plone/app/referenceablebehavior/profiles/sample_types/archetype_tool.xml
+new file mode 100644
+index 0000000..d782ffd
+--- /dev/null
++++ b/plone/app/referenceablebehavior/profiles/sample_types/archetype_tool.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0"?>
++<archetypetool>
++ <catalogmap>
++  <type portal_type="ATRefnode">
++   <catalog value="portal_catalog"/>
++  </type>
++ </catalogmap>
++</archetypetool>
+diff --git a/plone/app/referenceablebehavior/profiles/sample_types/metadata.xml b/plone/app/referenceablebehavior/profiles/sample_types/metadata.xml
+new file mode 100644
+index 0000000..2692b09
+--- /dev/null
++++ b/plone/app/referenceablebehavior/profiles/sample_types/metadata.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0"?>
++<metadata>
++  <version>1.6</version>
++</metadata>
+diff --git a/plone/app/referenceablebehavior/profiles/sample_types/types.xml b/plone/app/referenceablebehavior/profiles/sample_types/types.xml
+new file mode 100644
+index 0000000..85c4353
+--- /dev/null
++++ b/plone/app/referenceablebehavior/profiles/sample_types/types.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0"?>
++<object name="portal_types" meta_type="CMF Types Tool">
++ <object name="ATRefnode" meta_type="Factory-based Type Information"/>
++</object>
+diff --git a/plone/app/referenceablebehavior/profiles/sample_types/types/ATRefnode.xml b/plone/app/referenceablebehavior/profiles/sample_types/types/ATRefnode.xml
+new file mode 100644
+index 0000000..c032980
+--- /dev/null
++++ b/plone/app/referenceablebehavior/profiles/sample_types/types/ATRefnode.xml
+@@ -0,0 +1,31 @@
++<?xml version="1.0"?>
++<object name="ATRefnode" meta_type="Factory-based Type Information"
++   xmlns:i18n="http://xml.zope.org/namespaces/i18n">
++ <property name="title">ATRefnode</property>
++ <property
++    name="description">A simple archetype for testing references. It can point to itself</property>
++ <property name="content_icon">document_icon.gif</property>
++ <property name="content_meta_type">ATRefnode</property>
++ <property name="factory">addATRefnode</property>
++ <property name="product">plone.app.referenceablebehavior</property>
++ <property name="immediate_view">base_edit</property>
++ <property name="global_allow">True</property>
++ <property name="filter_content_types">False</property>
++ <property name="allowed_content_types"/>
++ <property name="allow_discussion">False</property>
++ <alias from="(Default)" to="base_view"/>
++ <alias from="edit" to="base_edit"/>
++ <action title="View" action_id="view" category="object" condition_expr=""
++    url_expr="string:${object_url}/base_view" visible="True">
++  <permission value="View"/>
++ </action>
++ <action title="Edit" action_id="edit" category="object" condition_expr=""
++    url_expr="string:${object_url}/base_edit" visible="True">
++  <permission value="Modify portal content"/>
++ </action>
++ <action title="Properties" action_id="metadata" category="object"
++    condition_expr="" url_expr="string:${object_url}/base_metadata"
++    visible="True">
++  <permission value="Modify portal content"/>
++ </action>
++</object>
+diff --git a/plone/app/referenceablebehavior/referenceable.rst b/plone/app/referenceablebehavior/referenceable.rst
+index 9e5cd39..d5b30a4 100644
+--- a/plone/app/referenceablebehavior/referenceable.rst
++++ b/plone/app/referenceablebehavior/referenceable.rst
+@@ -11,17 +11,20 @@ So first lets create a new dexterity content type
+     >>> fti = DexterityFTI('referenceable_type')
+     >>> fti.behaviors = ('plone.app.dexterity.behaviors.metadata.IDublinCore',
+     ...                  'plone.app.referenceablebehavior.referenceable.IReferenceable')
+-    >>> self.portal.portal_types._setObject('referenceable_type', fti)
++    >>> portal = layer['portal']
++    >>> app = layer['app']
++    >>> portal.portal_types._setObject('referenceable_type', fti)
+     'referenceable_type'
+     >>> schema = fti.lookupSchema()
++    >>> from transaction import commit
++    >>> commit()
+ 
+ If we access the site as an admin TTW::
+ 
+-    >>> from Products.Five.testbrowser import Browser
+-    >>> browser = Browser()
+-    >>> browser.handleErrors = False
+-    >>> self.app.acl_users.userFolderAddUser('root', 'secret', ['Manager'], [])
+-    >>> browser.addHeader('Authorization', 'Basic root:secret')
++    >>> from plone.testing.z2 import Browser
++    >>> browser = Browser(app)
++    >>> from plone.app.testing import SITE_OWNER_NAME, SITE_OWNER_PASSWORD
++    >>> browser.addHeader('Authorization', 'Basic %s:%s' % (SITE_OWNER_NAME, SITE_OWNER_PASSWORD))
+ 
+ We can see this type in the addable types at the root of the site::
+ 
+@@ -38,7 +41,7 @@ We can see this type in the addable types at the root of the site::
+ 
+ Now lets check that we have uuid stuff
+ 
+-    >>> item = self.portal.referenceable_type
++    >>> item = portal.referenceable_type
+     >>> from plone.app.referenceablebehavior.referenceable import IReferenceable
+     >>> IReferenceable.providedBy(item)
+     True
+@@ -50,15 +53,18 @@ Now lets check that we have uuid stuff
+     >>> uuid is not None
+     True
+ 
+-Now create an archetype content object
++Now create an archetype content object.
+ 
+-    >>> browser.open("http://nohost/plone/createObject?type_name=Document")
+-    >>> browser.getControl('Title').value= "archetype page"
+-    >>> browser.getControl('Save').click()
++    >>> from plone.app.testing import setRoles
++    >>> from plone.app.testing import TEST_USER_ID
++    >>> setRoles(portal, TEST_USER_ID, ['Manager'])
++    >>> _ = portal.invokeFactory('ATRefnode', "archetype-page",
++    ...                          title="archetype page")
++    >>> commit()
+ 
+ Now add the dexterity content as reference in archetype page
+ 
+-It seems there is no way to use related items with functionnal tests
++It seems there is no way to use related items with functional tests
+ ###    >>> browser.getLink('Edit').click()
+ 
+     >>> archetypes = getattr(portal,'archetype-page')
+@@ -69,6 +75,7 @@ It seems there is no way to use related items with functionnal tests
+     >>> archetypes.reindexObject()
+     >>> archetypes.getRelatedItems()
+     [<Item at /plone/referenceable_type>]
++    >>> commit()
+ 
+ A dexterity could be adapted to Archetypes IReferenceable
+ 
+@@ -99,7 +106,8 @@ Now create another dexterity referenceable object
+     >>> referenceable_dexterity1 = referenceable.IReferenceable(dexterity1)
+ 
+ 
+-    >>> reference_catalog = self.portal.reference_catalog
++    >>> reference_catalog = portal.reference_catalog
++
+     >>> 'relatesTo' in [b.relationship for b in reference_catalog()]
+     True
+     >>> 'isReferencing' in [b.relationship for b in reference_catalog()]
+@@ -120,7 +128,7 @@ We can get back references from dexterity content
+     >>> referenceable_dexterity1.getBRelationships()
+     ['isReferencing']
+     >>> referenceable_dexterity1.getBRefs()
+-    [<ATDocument at /plone/archetype-page>]
++    [<ATRefnode at /plone/archetype-page>]
+ 
+ We can add references between archetypes and dexterity content
+ 
+@@ -138,7 +146,7 @@ We can add references between archetypes and dexterity content
+     >>> referenceable_dexterity1.getRelationships()
+     ['isReferencing']
+     >>> referenceable_dexterity1.getRefs()
+-    [<ATDocument at /plone/archetype-page>]
++    [<ATRefnode at /plone/archetype-page>]
+     >>> referenceable_dexterity1.getReferenceImpl()
+     [<Reference ... rel:isReferencing>]
+     >>> referenceable_dexterity1.getBackReferenceImpl()
+@@ -163,7 +171,7 @@ We can add references between dexterity objects
+     >>> referenceable_dexterity1.getRelationships()
+     ['isReferencing']
+     >>> referenceable_dexterity1.getRefs()
+-    [<ATDocument at /plone/archetype-page>, <Item at /plone/referenceable_type>]
++    [<ATRefnode at /plone/archetype-page>, <Item at /plone/referenceable_type>]
+ 
+ We can remove references
+ 
+@@ -173,7 +181,7 @@ We can remove references
+     >>> referenceable_dexterity1.getRelationships()
+     ['isReferencing']
+     >>> referenceable_dexterity1.getRefs()
+-    [<ATDocument at /plone/archetype-page>]
++    [<ATRefnode at /plone/archetype-page>]
+     >>> referenceable_dexterity1.deleteReferences()
+     >>> referenceable_dexterity1.getRelationships()
+     []
+diff --git a/plone/app/referenceablebehavior/testing.py b/plone/app/referenceablebehavior/testing.py
+index 980f4ab..1e132ca 100644
+--- a/plone/app/referenceablebehavior/testing.py
++++ b/plone/app/referenceablebehavior/testing.py
+@@ -1,10 +1,22 @@
++from Products.Archetypes.atapi import (
++        BaseSchema, ReferenceField, Schema, ReferenceWidget, BaseContent,
++        registerType)
+ from Products.CMFCore.utils import getToolByName
++from Products.CMFCore.permissions import ModifyPortalContent
+ from plone.app.testing import layers
+-from plone.app.testing import applyProfile
+ 
+ from plone.app.contenttypes.testing import PLONE_APP_CONTENTTYPES_FIXTURE
+ from plone.app.testing import PloneSandboxLayer
+-from zope.configuration import xmlconfig
++from plone.testing import z2
++from Products.GenericSetup import EXTENSION, profile_registry
++
++def setupSampleTypeProfile():
++    profile_registry.registerProfile('Testing_sampletypes',
++        'Archetypes Sample Content Types',
++        'Extension profile of Archetypes sample content types',
++        'profiles/sample_types',
++        'plone.app.referenceablebehavior',
++        EXTENSION)
+ 
+ 
+ class ReferenceableBehaviorLayer(PloneSandboxLayer):
+@@ -13,14 +25,18 @@ class ReferenceableBehaviorLayer(PloneSandboxLayer):
+     )
+ 
+     def setUpZope(self, app, configurationContext):
+-        # load ZCML
++        import Products.Archetypes
++        self.loadZCML(package=Products.Archetypes)
++        z2.installProduct(app, 'Products.Archetypes')
++        setupSampleTypeProfile()
+         import plone.app.referenceablebehavior
+-        xmlconfig.file('configure.zcml', plone.app.referenceablebehavior,
+-                       context=configurationContext)
++        self.loadZCML(package=plone.app.referenceablebehavior)
++        z2.installProduct(app, 'plone.app.referenceablebehavior')
+ 
+     def setUpPloneSite(self, portal):
+         # install into the Plone site
+-        applyProfile(portal, 'plone.app.referenceablebehavior:default')
++        self.applyProfile(portal, 'plone.app.referenceablebehavior:default')
++        self.applyProfile(portal, 'plone.app.referenceablebehavior:Testing_sampletypes')
+         ttool = getToolByName(portal, 'portal_types')
+         ttool.getTypeInfo('Document').behaviors += (
+             'plone.app.referenceablebehavior.referenceable.IReferenceable',
+@@ -39,3 +55,29 @@ def setUpPloneSite(self, portal):
+     bases=(PLONE_APP_REFERENCEABLE_FIXTURE, ),
+     name="plone.app.referenceable:Functional"
+ )
++
++
++class ATRefnode(BaseContent):
++    """A simple archetype for testing references. It can point to itself"""
++
++    schema = BaseSchema.copy() + Schema((
++        ReferenceField('relatedItems',
++            relationship='relatesTo',
++            multiValued=True,
++            isMetadata=True,
++            languageIndependent=False,
++            index='KeywordIndex',
++            referencesSortable=True,
++            keepReferencesOnCopy=True,
++            write_permission=ModifyPortalContent,
++            widget=ReferenceWidget(
++                label=u'label_related_items',
++                description='',
++                visible={'edit': 'visible', 'view': 'invisible'}
++                )
++           ),   # make it a list
++        )
++    )
++
++
++registerType(ATRefnode, 'plone.app.referenceablebehavior')
+diff --git a/plone/app/referenceablebehavior/tests/base.py b/plone/app/referenceablebehavior/tests/base.py
+deleted file mode 100644
+index 65b8410..0000000
+--- a/plone/app/referenceablebehavior/tests/base.py
++++ /dev/null
+@@ -1,6 +0,0 @@
+-from plone.app.dexterity.tests import base as dexterity_base
+-from plone.app.referenceablebehavior.tests.layer import ReferenceableLayer
+-
+-
+-class ReferenceableFunctionalTestCase(dexterity_base.DexterityFunctionalTestCase):
+-    layer = ReferenceableLayer
+diff --git a/plone/app/referenceablebehavior/tests/layer.py b/plone/app/referenceablebehavior/tests/layer.py
+deleted file mode 100644
+index c397186..0000000
+--- a/plone/app/referenceablebehavior/tests/layer.py
++++ /dev/null
+@@ -1,20 +0,0 @@
+-from plone.app.dexterity.tests import layer as dexterity_layer
+-# BBB Zope 2.12
+-try:
+-    from Zope2.App import zcml
+-    from OFS import metaconfigure
+-    zcml  # pyflakes
+-    metaconfigure
+-except ImportError:
+-    from Products.Five import zcml
+-    from Products.Five import fiveconfigure as metaconfigure
+-
+-
+-class ReferenceableLayer(dexterity_layer.DexterityLayer):
+-
+-    @classmethod
+-    def setUp(cls):
+-        metaconfigure.debug_mode = True
+-        import plone.app.referenceablebehavior
+-        zcml.load_config('configure.zcml', plone.app.referenceablebehavior)
+-        metaconfigure.debug_mode = False
+diff --git a/plone/app/referenceablebehavior/tests/test_basics.py b/plone/app/referenceablebehavior/tests/test_basics.py
+index 143305e..2130277 100644
+--- a/plone/app/referenceablebehavior/tests/test_basics.py
++++ b/plone/app/referenceablebehavior/tests/test_basics.py
+@@ -52,10 +52,6 @@ def test_remove_cleans_ref_catalog(self):
+         self.portal.manage_delObjects(['doc1'])
+         self.assertEquals(0, len(ref_catalog()))
+ 
+-
+-
+-
+-
+     def test_referenceable_api(self):
+         doc1 = self.portal['doc1']
+         doc2 = self.portal['doc2']
+diff --git a/plone/app/referenceablebehavior/tests/test_doctest.py b/plone/app/referenceablebehavior/tests/test_doctest.py
+index 5fc497c..d089176 100644
+--- a/plone/app/referenceablebehavior/tests/test_doctest.py
++++ b/plone/app/referenceablebehavior/tests/test_doctest.py
+@@ -1,22 +1,22 @@
+ import unittest
++import doctest
++from plone.testing import layered
+ 
+-from Testing import ZopeTestCase as ztc
++from plone.app.referenceablebehavior.testing import PLONE_APP_REFERENCEABLE_FUNCTION_TESTING
+ 
+-from plone.app.referenceablebehavior.tests.base import ReferenceableFunctionalTestCase
++OPTIONFLAGS = (doctest.ELLIPSIS |
++               doctest.NORMALIZE_WHITESPACE #|
++              # doctest.REPORT_ONLY_FIRST_FAILURE
++               )
+ 
++DOCTEST_FILES = ['referenceable.rst', 'uidcatalog.rst']
+ 
+ def test_suite():
+-    return unittest.TestSuite([
+-
+-        ztc.FunctionalDocFileSuite(
+-            'referenceable.rst', package='plone.app.referenceablebehavior',
+-            test_class=ReferenceableFunctionalTestCase),
+-
+-        ztc.FunctionalDocFileSuite(
+-            'uidcatalog.rst', package='plone.app.referenceablebehavior',
+-            test_class=ReferenceableFunctionalTestCase),
+-
+-        ])
+-
+-if __name__ == '__main__':
+-    unittest.main(defaultTest='test_suite')
++   suite = unittest.TestSuite()
++   for testfile in DOCTEST_FILES:
++        suite.addTest(layered(
++            doctest.DocFileSuite(testfile,
++                                 optionflags=OPTIONFLAGS,
++                                 package="plone.app.referenceablebehavior",),
++            layer=PLONE_APP_REFERENCEABLE_FUNCTION_TESTING))
++   return suite
+diff --git a/plone/app/referenceablebehavior/uidcatalog.rst b/plone/app/referenceablebehavior/uidcatalog.rst
+index 0b60c3b..48a2c0b 100644
+--- a/plone/app/referenceablebehavior/uidcatalog.rst
++++ b/plone/app/referenceablebehavior/uidcatalog.rst
+@@ -7,17 +7,21 @@ So first lets create a new dexterity content type
+     >>> fti = DexterityFTI('referenceable_type')
+     >>> fti.behaviors = ('plone.app.dexterity.behaviors.metadata.IDublinCore',
+     ...                  'plone.app.referenceablebehavior.referenceable.IReferenceable')
+-    >>> self.portal.portal_types._setObject('referenceable_type', fti)
++    >>> portal = layer['portal']
++    >>> app = layer['app']
++    >>> portal.portal_types._setObject('referenceable_type', fti)
+     'referenceable_type'
+     >>> schema = fti.lookupSchema()
++    >>> from transaction import commit
++    >>> commit()
+ 
+ If we access the site as an admin TTW::
+ 
+-    >>> from Products.Five.testbrowser import Browser
+-    >>> browser = Browser()
++    >>> from plone.testing.z2 import Browser
++    >>> browser = Browser(app)
+     >>> browser.handleErrors = False
+-    >>> self.app.acl_users.userFolderAddUser('root', 'secret', ['Manager'], [])
+-    >>> browser.addHeader('Authorization', 'Basic root:secret')
++    >>> from plone.app.testing import SITE_OWNER_NAME, SITE_OWNER_PASSWORD
++    >>> browser.addHeader('Authorization', 'Basic %s:%s' % (SITE_OWNER_NAME, SITE_OWNER_PASSWORD))
+ 
+ We can see this type in the addable types at the root of the site::
+ 
+@@ -36,7 +40,7 @@ First check it is indexed in the uid_catalog
+ 
+     >>> from plone.uuid.interfaces import IUUID
+     >>> uuid = IUUID(portal.referenceable_type)
+-    >>> uid_catalog = self.portal.uid_catalog
++    >>> uid_catalog = portal.uid_catalog
+     >>> results = uid_catalog(UID=uuid)
+     >>> len(results)
+     1
+diff --git a/setup.py b/setup.py
+index a7e839c..a969aa6 100644
+--- a/setup.py
++++ b/setup.py
+@@ -35,6 +35,7 @@
+       ],
+       extras_require={
+         'test': ['Products.CMFPlone',
++                 'Products.Archetypes',
+                  'plone.app.testing',
+                  'plone.app.dexterity'],
+       },
 
 
