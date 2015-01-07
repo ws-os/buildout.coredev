@@ -1,47 +1,27 @@
-Repository: plone.resourceeditor
+Repository: plone.schemaeditor
 Branch: refs/heads/master
-Date: 2015-01-07T09:46:03+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/plone.resourceeditor/commit/9fe3a1f0c16d050c53a7015dce6e6f28efc83603
+Date: 2015-01-07T11:04:15+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.schemaeditor/commit/7b935f1a854588ecffa0c1fc7a503c831ecdf7c8
 
-fix getFile if context is FilesystemResourceDirectory
+Update CHANGES.rst
 
 Files changed:
-M plone/resourceeditor/browser.py
+M CHANGES.rst
 
-diff --git a/plone/resourceeditor/browser.py b/plone/resourceeditor/browser.py
-index b464ef4..815103f 100644
---- a/plone/resourceeditor/browser.py
-+++ b/plone/resourceeditor/browser.py
-@@ -51,8 +51,10 @@ def getObject(self, path):
-         except (KeyError, NotFound,):
-             raise KeyError(path)
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 7534f3c..2d9d6ab 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -10,6 +10,9 @@ Changelog
+ 2.0.1 (2014-10-23)
+ ------------------
  
--    def getExtension(self, obj):
--        basename, ext = os.path.splitext(obj.__name__)
-+    def getExtension(self, obj=None, path=None):
-+        if not path:
-+            path = obj.__name__
-+        basename, ext = os.path.splitext(path)
-         ext = ext[1:].lower()
-         return ext
++- Fix schemaeditor.js to work with jQuery 1.9+.
++  [bloodbare]
++
+ - Internationalize delete field confirmation message.
+   [thomasdesvenain]
  
-@@ -61,11 +63,13 @@ def getFile(self, path):
-         path = path.encode('utf-8')
- 
-         path = self.normalizePath(path)
--        file = self.context.context.unrestrictedTraverse(path)
--        ext = self.getExtension(file)
-+        ext = self.getExtension(path=path)
-         result = {'ext': ext}
-         if ext not in self.imageExtensions:
--            result['contents'] = str(file.data)
-+            data = self.context.openFile(path)
-+            if hasattr(data, 'read'):
-+                data = data.read()
-+            result['contents'] = str(data)
-         else:
-             info = self.getInfo(path)
-             result['info'] = self.previewTemplate(info=info)
 
 
