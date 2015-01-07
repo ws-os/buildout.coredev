@@ -1,27 +1,47 @@
-Repository: plone.app.controlpanel
+Repository: plone.resourceeditor
 Branch: refs/heads/master
-Date: 2015-01-06T17:36:17+01:00
-Author: Tom Gross (tomgross) <itconsense@gmail.com>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/ef17490de4cbc78e51a87a48adc72f32554638f6
+Date: 2015-01-07T09:46:03+01:00
+Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
+Commit: https://github.com/plone/plone.resourceeditor/commit/9fe3a1f0c16d050c53a7015dce6e6f28efc83603
 
-Update .gitignore
+fix getFile if context is FilesystemResourceDirectory
 
 Files changed:
-M .gitignore
+M plone/resourceeditor/browser.py
 
-diff --git a/.gitignore b/.gitignore
-index 67aeaa1..66b8acc 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -1,4 +1,8 @@
- *.egg-info/
--*.pyc
-+*.py[co]
- *~
- *.swp
-+.installed.cfg
-+/bin/
-+/develop-eggs/
-+/parts/
+diff --git a/plone/resourceeditor/browser.py b/plone/resourceeditor/browser.py
+index b464ef4..815103f 100644
+--- a/plone/resourceeditor/browser.py
++++ b/plone/resourceeditor/browser.py
+@@ -51,8 +51,10 @@ def getObject(self, path):
+         except (KeyError, NotFound,):
+             raise KeyError(path)
+ 
+-    def getExtension(self, obj):
+-        basename, ext = os.path.splitext(obj.__name__)
++    def getExtension(self, obj=None, path=None):
++        if not path:
++            path = obj.__name__
++        basename, ext = os.path.splitext(path)
+         ext = ext[1:].lower()
+         return ext
+ 
+@@ -61,11 +63,13 @@ def getFile(self, path):
+         path = path.encode('utf-8')
+ 
+         path = self.normalizePath(path)
+-        file = self.context.context.unrestrictedTraverse(path)
+-        ext = self.getExtension(file)
++        ext = self.getExtension(path=path)
+         result = {'ext': ext}
+         if ext not in self.imageExtensions:
+-            result['contents'] = str(file.data)
++            data = self.context.openFile(path)
++            if hasattr(data, 'read'):
++                data = data.read()
++            result['contents'] = str(data)
+         else:
+             info = self.getInfo(path)
+             result['info'] = self.previewTemplate(info=info)
 
 
