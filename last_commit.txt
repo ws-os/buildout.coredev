@@ -1,92 +1,26 @@
-Repository: plone.app.content
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-08T16:38:50+01:00
-Author: Peter Mathis (petschki) <peter.mathis@kombinat.at>
-Commit: https://github.com/plone/plone.app.content/commit/303974d1640f408fab03a640c4a061d6b36c40a1
+Date: 2015-01-09T12:16:41+01:00
+Author: Ramon Navarro Bosch () <ramon@iMac-de-Ramon.local>
+Commit: https://github.com/plone/Products.CMFPlone/commit/50eaef21456ec9108ed66d0498c2c6520573497d
 
-fix removing tags with non-ascii characters in folder_contents
+In case tinymce_content_css is not defined on the theme
 
 Files changed:
-M CHANGES.rst
-M plone/app/content/browser/folder.py
+M Products/CMFPlone/patterns/tinymce.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 8c18a0e..941d44c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -7,7 +7,8 @@ Changelog
- - Allow folderish types as default_page as long as users cannot add content
-   to them.
-   [pbauer]
--
-+- fix removing tags with non-ascii characters in folder_contents
-+  [petschki]
- 
- 3.0.1 (2014-10-23)
- ------------------
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index 0c523cd..c065ac0 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -326,8 +326,10 @@ class TagsAction(FolderContentsActionView):
-     required_obj_permission = 'Modify portal content'
- 
-     def __call__(self):
--        self.remove = set(json.loads(self.request.form.get('remove')))
--        self.add = set(json.loads(self.request.form.get('add')))
-+        self.remove = set([v.encode('utf8') for v in \
-+            json.loads(self.request.form.get('remove'))])
-+        self.add = set([v.encode('utf8') for v in \
-+            json.loads(self.request.form.get('add'))])
-         return super(TagsAction, self).__call__()
- 
-     def action(self, obj):
-
-
-Repository: plone.app.content
-Branch: refs/heads/master
-Date: 2015-01-09T09:39:15+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.content/commit/7496bd1af3045274d7b939eac0461108b0ed0db3
-
-Merge pull request #23 from plone/folder_contents_tags_action_fix
-
-fix removing tags with non-ascii characters in folder_contents
-
-Files changed:
-M CHANGES.rst
-M plone/app/content/browser/folder.py
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 8c18a0e..941d44c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -7,7 +7,8 @@ Changelog
- - Allow folderish types as default_page as long as users cannot add content
-   to them.
-   [pbauer]
--
-+- fix removing tags with non-ascii characters in folder_contents
-+  [petschki]
- 
- 3.0.1 (2014-10-23)
- ------------------
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index 0c523cd..c065ac0 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -326,8 +326,10 @@ class TagsAction(FolderContentsActionView):
-     required_obj_permission = 'Modify portal content'
- 
-     def __call__(self):
--        self.remove = set(json.loads(self.request.form.get('remove')))
--        self.add = set(json.loads(self.request.form.get('add')))
-+        self.remove = set([v.encode('utf8') for v in \
-+            json.loads(self.request.form.get('remove'))])
-+        self.add = set([v.encode('utf8') for v in \
-+            json.loads(self.request.form.get('add'))])
-         return super(TagsAction, self).__call__()
- 
-     def action(self, obj):
+diff --git a/Products/CMFPlone/patterns/tinymce.py b/Products/CMFPlone/patterns/tinymce.py
+index ee72fdc..84e9fd9 100644
+--- a/Products/CMFPlone/patterns/tinymce.py
++++ b/Products/CMFPlone/patterns/tinymce.py
+@@ -55,7 +55,7 @@ def __call__(self):
+         # Check if theme has a custom content css
+         theme = getCurrentTheme()
+         themeObj = getTheme(theme)
+-        if themeObj and themeObj.tinymce_content_css:
++        if themeObj and hasattr(themeObj, 'tinymce_content_css') and themeObj.tinymce_content_css:
+             content_css = self.config['portal_url'] + themeObj.tinymce_content_css
+         else:
+             content_css = self.settings.content_css
 
 
