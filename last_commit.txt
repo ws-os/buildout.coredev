@@ -1,29 +1,92 @@
-Repository: plone.app.upgrade
+Repository: plone.app.content
 Branch: refs/heads/master
-Date: 2015-01-08T11:27:17+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.upgrade/commit/0aa6c0fb592b991b006f861ae55a207264d3427c
+Date: 2015-01-08T16:38:50+01:00
+Author: Peter Mathis (petschki) <peter.mathis@kombinat.at>
+Commit: https://github.com/plone/plone.app.content/commit/303974d1640f408fab03a640c4a061d6b36c40a1
 
-inlcude other schemas to consider for upgrading
+fix removing tags with non-ascii characters in folder_contents
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+M CHANGES.rst
+M plone/app/content/browser/folder.py
 
-diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-index fd89c49..12883fa 100644
---- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-@@ -1,5 +1,11 @@
- <?xml version="1.0"?>
- <registry>
-+  <records interface="Products.CMFPlone.interfaces.IMailSchema"
-+           prefix="plone" />
-+  <records interface="Products.CMFPlone.interfaces.IMarkupSchema"
-+           prefix="plone" />
-   <records interface="Products.CMFPlone.interfaces.ISecuritySchema"
-            prefix="plone" />
-+  <records interface="Products.CMFPlone.interfaces.ISiteSchema"
-+           prefix="plone" />
- </registry>
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 8c18a0e..941d44c 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -7,7 +7,8 @@ Changelog
+ - Allow folderish types as default_page as long as users cannot add content
+   to them.
+   [pbauer]
+-
++- fix removing tags with non-ascii characters in folder_contents
++  [petschki]
+ 
+ 3.0.1 (2014-10-23)
+ ------------------
+diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
+index 0c523cd..c065ac0 100644
+--- a/plone/app/content/browser/folder.py
++++ b/plone/app/content/browser/folder.py
+@@ -326,8 +326,10 @@ class TagsAction(FolderContentsActionView):
+     required_obj_permission = 'Modify portal content'
+ 
+     def __call__(self):
+-        self.remove = set(json.loads(self.request.form.get('remove')))
+-        self.add = set(json.loads(self.request.form.get('add')))
++        self.remove = set([v.encode('utf8') for v in \
++            json.loads(self.request.form.get('remove'))])
++        self.add = set([v.encode('utf8') for v in \
++            json.loads(self.request.form.get('add'))])
+         return super(TagsAction, self).__call__()
+ 
+     def action(self, obj):
+
+
+Repository: plone.app.content
+Branch: refs/heads/master
+Date: 2015-01-09T09:39:15+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.content/commit/7496bd1af3045274d7b939eac0461108b0ed0db3
+
+Merge pull request #23 from plone/folder_contents_tags_action_fix
+
+fix removing tags with non-ascii characters in folder_contents
+
+Files changed:
+M CHANGES.rst
+M plone/app/content/browser/folder.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 8c18a0e..941d44c 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -7,7 +7,8 @@ Changelog
+ - Allow folderish types as default_page as long as users cannot add content
+   to them.
+   [pbauer]
+-
++- fix removing tags with non-ascii characters in folder_contents
++  [petschki]
+ 
+ 3.0.1 (2014-10-23)
+ ------------------
+diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
+index 0c523cd..c065ac0 100644
+--- a/plone/app/content/browser/folder.py
++++ b/plone/app/content/browser/folder.py
+@@ -326,8 +326,10 @@ class TagsAction(FolderContentsActionView):
+     required_obj_permission = 'Modify portal content'
+ 
+     def __call__(self):
+-        self.remove = set(json.loads(self.request.form.get('remove')))
+-        self.add = set(json.loads(self.request.form.get('add')))
++        self.remove = set([v.encode('utf8') for v in \
++            json.loads(self.request.form.get('remove'))])
++        self.add = set([v.encode('utf8') for v in \
++            json.loads(self.request.form.get('add'))])
+         return super(TagsAction, self).__call__()
+ 
+     def action(self, obj):
 
 
