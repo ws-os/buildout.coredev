@@ -1,26 +1,190 @@
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-09T12:16:41+01:00
-Author: Ramon Navarro Bosch () <ramon@iMac-de-Ramon.local>
-Commit: https://github.com/plone/Products.CMFPlone/commit/50eaef21456ec9108ed66d0498c2c6520573497d
+Date: 2015-01-12T22:19:57+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/mockup/commit/fd3ca5cc845c42dbe292e6c452ad798e06909f10
 
-In case tinymce_content_css is not defined on the theme
+More jQuery 1.9 compatibility changes: Change attr to prop for setting / getting the state of multiple, selected, checked and disabled states.
 
 Files changed:
-M Products/CMFPlone/patterns/tinymce.py
+M CHANGES.rst
+M mockup/patterns/inlinevalidation/pattern.js
+M mockup/patterns/querystring/pattern.js
+M mockup/patterns/resourceregistry/js/registry.js
+M mockup/patterns/structure/js/views/table.js
+M mockup/patterns/thememapper/pattern.js
+M mockup/patterns/tinymce/js/links.js
 
-diff --git a/Products/CMFPlone/patterns/tinymce.py b/Products/CMFPlone/patterns/tinymce.py
-index ee72fdc..84e9fd9 100644
---- a/Products/CMFPlone/patterns/tinymce.py
-+++ b/Products/CMFPlone/patterns/tinymce.py
-@@ -55,7 +55,7 @@ def __call__(self):
-         # Check if theme has a custom content css
-         theme = getCurrentTheme()
-         themeObj = getTheme(theme)
--        if themeObj and themeObj.tinymce_content_css:
-+        if themeObj and hasattr(themeObj, 'tinymce_content_css') and themeObj.tinymce_content_css:
-             content_css = self.config['portal_url'] + themeObj.tinymce_content_css
-         else:
-             content_css = self.settings.content_css
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 292809c..d1249f0 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -26,6 +26,11 @@ New patterns:
+ 
+ Fixes and enhancements:
+ 
++- More jQuery 1.9 compatibility changes: Change ``attr`` to ``prop`` for
++  setting / getting the state of ``multiple``, ``selected``, ``checked`` and
++  ``disabled`` states.
++  [thet]
++
+ - Modal Pattern: If ``data-base-url`` attribute is available on the body, use
+   it. Otherwise search for a ``<base>`` tag. Plone 5 dropped the usage of base
+   tags.
+diff --git a/mockup/patterns/inlinevalidation/pattern.js b/mockup/patterns/inlinevalidation/pattern.js
+index a79b4dd..52ccbc8 100644
+--- a/mockup/patterns/inlinevalidation/pattern.js
++++ b/mockup/patterns/inlinevalidation/pattern.js
+@@ -59,7 +59,7 @@ define([
+ 
+         // value is null for empty multiSelection select, turn it into a [] instead
+         // so it does not break at_validate_field
+-        if ($input.attr('multiple') === 'multiple' && value === null) {
++        if ($input.prop('multiple') && value === null) {
+             value = $([]).serialize();
+         }
+ 
+diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
+index 34cbd53..852f036 100644
+--- a/mockup/patterns/querystring/pattern.js
++++ b/mockup/patterns/querystring/pattern.js
+@@ -265,7 +265,7 @@ define([
+                 });
+ 
+       } else if (widget === 'MultipleSelectionWidget') {
+-        self.$value = $('<select/>').attr('multiple', true)
++        self.$value = $('<select/>').prop('multiple', true)
+                 .addClass(self.options.classValueName + '-' + widget)
+                 .appendTo($wrapper)
+                 .change(function() {
+@@ -595,10 +595,10 @@ define([
+         .attr('name', 'sort_reversed:boolean')
+         .change(function() {
+           self.refreshPreviewEvent.call(self);
+-          if ($(this).attr('checked') === 'checked') {
+-            $('.option input[type="checkbox"]', existingSortOrder).attr('checked', 'checked');
++          if ($(this).prop('checked')) {
++            $('.option input[type="checkbox"]', existingSortOrder).prop('checked', true);
+           } else {
+-            $('.option input[type="checkbox"]', existingSortOrder).removeAttr('checked');
++            $('.option input[type="checkbox"]', existingSortOrder).prop('checked', false);
+           }
+         });
+ 
+@@ -615,10 +615,10 @@ define([
+       // if the form already contains the sort fields, hide them! Their values
+       // will be synced back and forth between the querystring's form elements
+       if (existingSortOn.length >= 1 && existingSortOrder.length >= 1) {
+-        var reversed = $('.option input[type="checkbox"]', existingSortOrder).attr('checked') === 'checked';
++        var reversed = $('.option input[type="checkbox"]', existingSortOrder).prop('checked');
+         var sortOn = $('[id$="-sort_on"]', existingSortOn).val();
+         if (reversed) {
+-          self.$sortOrder.attr('checked', 'checked');
++          self.$sortOrder.prop('checked', true);
+         }
+         self.$sortOn.select2('val', sortOn);
+         $(existingSortOn).hide();
+@@ -670,8 +670,7 @@ define([
+       }
+ 
+       query.push('sort_on=' + self.$sortOn.val());
+-      var sortorder = self.$sortOrder.attr('checked');
+-      if (sortorder === 'checked') {
++      if (self.$sortOrder.prop('checked')) {
+         query.push('sort_order=reverse');
+       }
+ 
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index 6c37583..b0b5b0f 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -194,7 +194,7 @@ define([
+       $btn.off('click').on('click', function(e){
+         e.preventDefault();
+         $info.addClass('hidden');
+-        $btn.attr('disabled', 'true');
++        $btn.prop('disabled', true);
+         self.$results = $el.find('.list-group').removeClass('hidden');
+         self.buildJS();
+         self.rview.loading.show();
+@@ -539,12 +539,12 @@ define([
+     },
+ 
+     showHideButtons: function(){
+-      var val = 'disabled';
++      var val = true;
+       if(this.dirty){
+-        val = null;
++        val = false;
+       }
+-      this.$('button.save').attr('disabled', val);
+-      this.$('button.cancel').attr('disabled', val);
++      this.$('button.save').prop('disabled', val);
++      this.$('button.cancel').prop('disabled', val);
+     },
+ 
+     filterResources: function(){
+diff --git a/mockup/patterns/structure/js/views/table.js b/mockup/patterns/structure/js/views/table.js
+index fafc568..e598087 100644
+--- a/mockup/patterns/structure/js/views/table.js
++++ b/mockup/patterns/structure/js/views/table.js
+@@ -139,7 +139,7 @@ define([
+     },
+     selectAll: function(e) {
+       if ($(e.target).is(':checked')) {
+-        $('input[type="checkbox"]', this.$('tbody')).attr('checked', 'checked').change();
++        $('input[type="checkbox"]', this.$('tbody')).prop('checked', true).change();
+       } else {
+         this.selectedCollection.remove(this.collection.models);
+       }
+@@ -148,7 +148,7 @@ define([
+     toggleSelectAll: function(e) {
+       var $el = $(e.target);
+       if (!$el.is(':checked')) {
+-        this.$('.select-all').removeAttr('checked');
++        this.$('.select-all').prop('checked', false);
+       }
+     },
+     addReordering: function() {
+diff --git a/mockup/patterns/thememapper/pattern.js b/mockup/patterns/thememapper/pattern.js
+index c3daa1d..be9acee 100644
+--- a/mockup/patterns/thememapper/pattern.js
++++ b/mockup/patterns/thememapper/pattern.js
+@@ -282,14 +282,14 @@ define([
+     },
+     on: function() {
+       var self = this;
+-      self.$off.attr('disabled', null);
+-      self.$on.attr('disabled', 'disabled');
++      self.$off.prop('disabled', false);
++      self.$on.prop('disabled', true);
+       self.enabled = true;
+     },
+     off: function() {
+       var self = this;
+-      self.$on.attr('disabled', null);
+-      self.$off.attr('disabled', 'disabled');
++      self.$on.prop('disabled', false);
++      self.$off.prop('disabled', true);
+       self.enabled = false;
+     },
+     setupFrame: function() {
+diff --git a/mockup/patterns/tinymce/js/links.js b/mockup/patterns/tinymce/js/links.js
+index 29ff234..1bf69dd 100644
+--- a/mockup/patterns/tinymce/js/links.js
++++ b/mockup/patterns/tinymce/js/links.js
+@@ -618,10 +618,10 @@ define([
+       }
+     },
+     setSelectElement: function($el, val) {
+-      $el.find('option:selected').attr('selected', '');
++      $el.find('option:selected').prop('selected', false);
+       if (val) {
+         // update
+-        $el.find('option[value="' + val + '"]').attr('selected', 'true');
++        $el.find('option[value="' + val + '"]').prop('selected', true);
+       }
+     },
+     reinitialize: function() {
 
 
