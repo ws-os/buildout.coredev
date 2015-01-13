@@ -1,224 +1,136 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-13T10:05:06+01:00
+Date: 2015-01-13T10:22:34+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/mockup/commit/d2586ea8dbabb40929c1729f37cab0cd8c20cd89
+Commit: https://github.com/plone/Products.CMFPlone/commit/d1de2f4f80e4005d19f6efcda7951d9ff7404c20
 
-In the resource registry bundle detail view, add the fields last_compilation, jscompilation and csscompilation for display.  This gives more insight about the state of each bundle.^C
+whitespace
 
 Files changed:
-M CHANGES.rst
-M mockup/patterns/resourceregistry/js/fields.js
-M mockup/patterns/resourceregistry/js/registry.js
+M Products/CMFPlone/resources/viewlets/__init__.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index d1249f0..ed528de 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -26,6 +26,11 @@ New patterns:
- 
- Fixes and enhancements:
- 
-+- In the resource registry bundle detail view, add the fields
-+  ``last_compilation``, ``jscompilation`` and ``csscompilation`` for display.
-+  This gives more insight about the state of each bundle.
-+  [thet]
-+
- - More jQuery 1.9 compatibility changes: Change ``attr`` to ``prop`` for
-   setting / getting the state of ``multiple``, ``selected``, ``checked`` and
-   ``disabled`` states.
-diff --git a/mockup/patterns/resourceregistry/js/fields.js b/mockup/patterns/resourceregistry/js/fields.js
-index 93ee7ec..0c34c27 100644
---- a/mockup/patterns/resourceregistry/js/fields.js
-+++ b/mockup/patterns/resourceregistry/js/fields.js
-@@ -8,6 +8,32 @@ define([
-   'use strict';
- 
- 
-+  var ResourceDisplayFieldView = BaseView.extend({
-+    tagName: 'div',
-+    className: 'form-group',
-+    template: _.template(
-+      '<label class="col-sm-3 control-label"><%- title %></label>' +
-+      '<div class="col-sm-9">' +
-+        '<strong><%- value %></strong><br/>' +
-+        '<%= description %>' +
-+      '</div>'),
-+    initialize: function(options) {
-+      this.options = options;
-+      for (var key in this.options) {
-+        this[key] = this.options[key];
-+      }
-+      if (! this.value) {
-+        this.template = _.template('');
-+      }
-+    },
-+    serializedModel: function(){
-+    },
-+    afterRender: function(){
-+      this.$el.addClass('field-' + this.options.name);
-+    }
-+
-+  });
-+
-   var ResourceInputFieldView = BaseView.extend({
-     tagName: 'div',
-     className: 'form-group',
-@@ -332,6 +358,7 @@ define([
-   });
- 
-   return {
-+    ResourceDisplayFieldView: ResourceDisplayFieldView,
-     VariableFieldView: VariableFieldView,
-     ResourceInputFieldView: ResourceInputFieldView,
-     ResourceNameFieldView: ResourceNameFieldView,
-diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index b0b5b0f..fe6cbfc 100644
---- a/mockup/patterns/resourceregistry/js/registry.js
-+++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -119,6 +119,21 @@ define([
-       name: 'compile',
-       title: 'Does your bundle contain any RequireJS or LESS files?',
-       view: fields.ResourceBoolFieldView
-+    }, {
-+      name: 'last_compilation',
-+      title: 'Last compilation',
-+      description: 'Date/Time when your bundle was last compiled. Empty, if it was never compiled.',
-+      view: fields.ResourceDisplayFieldView
-+    }, {
-+      name: 'jscompilation',
-+      title: 'Compiled JavaScript',
-+      description: 'Automatically generated path to the compiled JavaScript.',
-+      view: fields.ResourceDisplayFieldView
-+    }, {
-+      name: 'csscompilation',
-+      title: 'Compiled CSS',
-+      description: 'Automatically generated path to the compiled CSS.',
-+      view: fields.ResourceDisplayFieldView
-     }]
-   });
- 
-@@ -249,7 +264,7 @@ define([
-     };
- 
-     self._buildCSSBundle = function(config){
--      var $iframe = $('<iframe><html><head></head><body></body></html></iframe').
-+      var $iframe = $('<iframe><html><head></head><body></body></html></iframe>').
-           appendTo('body').on('load', function(){
-       });
-       var iframe = $iframe[0];
+diff --git a/Products/CMFPlone/resources/viewlets/__init__.py b/Products/CMFPlone/resources/viewlets/__init__.py
+index 16b6374..2fc0fe7 100644
+--- a/Products/CMFPlone/resources/viewlets/__init__.py
++++ b/Products/CMFPlone/resources/viewlets/__init__.py
+@@ -1,4 +1,3 @@
+-
+ from Products.ResourceRegistries.interfaces.registries import IResourceRegistry
+ from Products.ResourceRegistries.interfaces.registries import ICSSRegistry
+ from Products.ResourceRegistries.interfaces.registries import IKSSRegistry
 
 
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-13T08:03:44-06:00
-Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/d7237593f6b2edaeff33553ac8a39f958d29b935
+Date: 2015-01-13T10:31:13+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/Products.CMFPlone/commit/6966e636e9a2a6d0dd17762841c3e430c467017c
 
-Merge pull request #457 from plone/thet-rrbundledetailview
-
-Resource registry: show bundle compilation metadata
+Fix the resource registry to save the automatically generated filepath to the compiled resource on the bundle object after compilation. The filepath is always in the '++plone++static/' namespace. This fix makes custom bundles actually includable.
 
 Files changed:
 M CHANGES.rst
-M mockup/patterns/resourceregistry/js/fields.js
-M mockup/patterns/resourceregistry/js/registry.js
+M Products/CMFPlone/controlpanel/browser/resourceregistry.py
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index d1249f0..ed528de 100644
+index b3d615b..3ada11c 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -26,6 +26,11 @@ New patterns:
+@@ -8,6 +8,12 @@ Changelog
+ 5.0b1 (unreleased)
+ ------------------
  
- Fixes and enhancements:
- 
-+- In the resource registry bundle detail view, add the fields
-+  ``last_compilation``, ``jscompilation`` and ``csscompilation`` for display.
-+  This gives more insight about the state of each bundle.
++- Fix the resource registry to save the automatically generated filepath to the
++  compiled resource on the bundle object after compilation. The filepath is
++  always in the '++plone++static/' namespace. This fix makes custom bundles
++  actually includable.
 +  [thet]
 +
- - More jQuery 1.9 compatibility changes: Change ``attr`` to ``prop`` for
-   setting / getting the state of ``multiple``, ``selected``, ``checked`` and
-   ``disabled`` states.
-diff --git a/mockup/patterns/resourceregistry/js/fields.js b/mockup/patterns/resourceregistry/js/fields.js
-index 93ee7ec..0c34c27 100644
---- a/mockup/patterns/resourceregistry/js/fields.js
-+++ b/mockup/patterns/resourceregistry/js/fields.js
-@@ -8,6 +8,32 @@ define([
-   'use strict';
+ - Get icon from layout_view instead of plone_view.
+   [pbauer]
  
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.py b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+index 77270bc..07cc30f 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.py
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+@@ -240,6 +240,7 @@ def save_js_build(self):
+         bundle = self.get_bundles().get(req.form['bundle'])
+         if bundle:
+             bundle.last_compilation = datetime.now()
++            bundle.jscompilation = '++plone++{}'.format(filepath)
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+@@ -255,6 +256,7 @@ def save_less_build(self):
+         bundle = self.get_bundles().get(req.form['bundle'])
+         if bundle:
+             bundle.last_compilation = datetime.now()
++            bundle.csscompilation = '++plone++{}'.format(filepath)
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2015-01-13T08:04:19-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/e00f34bae6c4c33f85a134f48b4b33afcc0cb1eb
+
+Merge pull request #350 from plone/thet-custombundlefix
+
+custom bundle fix
+
+Files changed:
+M CHANGES.rst
+M Products/CMFPlone/controlpanel/browser/resourceregistry.py
+M Products/CMFPlone/resources/viewlets/__init__.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index b3d615b..3ada11c 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -8,6 +8,12 @@ Changelog
+ 5.0b1 (unreleased)
+ ------------------
  
-+  var ResourceDisplayFieldView = BaseView.extend({
-+    tagName: 'div',
-+    className: 'form-group',
-+    template: _.template(
-+      '<label class="col-sm-3 control-label"><%- title %></label>' +
-+      '<div class="col-sm-9">' +
-+        '<strong><%- value %></strong><br/>' +
-+        '<%= description %>' +
-+      '</div>'),
-+    initialize: function(options) {
-+      this.options = options;
-+      for (var key in this.options) {
-+        this[key] = this.options[key];
-+      }
-+      if (! this.value) {
-+        this.template = _.template('');
-+      }
-+    },
-+    serializedModel: function(){
-+    },
-+    afterRender: function(){
-+      this.$el.addClass('field-' + this.options.name);
-+    }
++- Fix the resource registry to save the automatically generated filepath to the
++  compiled resource on the bundle object after compilation. The filepath is
++  always in the '++plone++static/' namespace. This fix makes custom bundles
++  actually includable.
++  [thet]
 +
-+  });
-+
-   var ResourceInputFieldView = BaseView.extend({
-     tagName: 'div',
-     className: 'form-group',
-@@ -332,6 +358,7 @@ define([
-   });
+ - Get icon from layout_view instead of plone_view.
+   [pbauer]
  
-   return {
-+    ResourceDisplayFieldView: ResourceDisplayFieldView,
-     VariableFieldView: VariableFieldView,
-     ResourceInputFieldView: ResourceInputFieldView,
-     ResourceNameFieldView: ResourceNameFieldView,
-diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index b0b5b0f..fe6cbfc 100644
---- a/mockup/patterns/resourceregistry/js/registry.js
-+++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -119,6 +119,21 @@ define([
-       name: 'compile',
-       title: 'Does your bundle contain any RequireJS or LESS files?',
-       view: fields.ResourceBoolFieldView
-+    }, {
-+      name: 'last_compilation',
-+      title: 'Last compilation',
-+      description: 'Date/Time when your bundle was last compiled. Empty, if it was never compiled.',
-+      view: fields.ResourceDisplayFieldView
-+    }, {
-+      name: 'jscompilation',
-+      title: 'Compiled JavaScript',
-+      description: 'Automatically generated path to the compiled JavaScript.',
-+      view: fields.ResourceDisplayFieldView
-+    }, {
-+      name: 'csscompilation',
-+      title: 'Compiled CSS',
-+      description: 'Automatically generated path to the compiled CSS.',
-+      view: fields.ResourceDisplayFieldView
-     }]
-   });
- 
-@@ -249,7 +264,7 @@ define([
-     };
- 
-     self._buildCSSBundle = function(config){
--      var $iframe = $('<iframe><html><head></head><body></body></html></iframe').
-+      var $iframe = $('<iframe><html><head></head><body></body></html></iframe>').
-           appendTo('body').on('load', function(){
-       });
-       var iframe = $iframe[0];
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.py b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+index 77270bc..07cc30f 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.py
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+@@ -240,6 +240,7 @@ def save_js_build(self):
+         bundle = self.get_bundles().get(req.form['bundle'])
+         if bundle:
+             bundle.last_compilation = datetime.now()
++            bundle.jscompilation = '++plone++{}'.format(filepath)
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+@@ -255,6 +256,7 @@ def save_less_build(self):
+         bundle = self.get_bundles().get(req.form['bundle'])
+         if bundle:
+             bundle.last_compilation = datetime.now()
++            bundle.csscompilation = '++plone++{}'.format(filepath)
+         return json.dumps({
+             'success': True,
+             'filepath': '++plone++' + filepath
+diff --git a/Products/CMFPlone/resources/viewlets/__init__.py b/Products/CMFPlone/resources/viewlets/__init__.py
+index 16b6374..2fc0fe7 100644
+--- a/Products/CMFPlone/resources/viewlets/__init__.py
++++ b/Products/CMFPlone/resources/viewlets/__init__.py
+@@ -1,4 +1,3 @@
+-
+ from Products.ResourceRegistries.interfaces.registries import IResourceRegistry
+ from Products.ResourceRegistries.interfaces.registries import ICSSRegistry
+ from Products.ResourceRegistries.interfaces.registries import IKSSRegistry
 
 
