@@ -1,190 +1,767 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-12T22:19:57+01:00
+Date: 2015-01-13T02:04:01+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/mockup/commit/fd3ca5cc845c42dbe292e6c452ad798e06909f10
+Commit: https://github.com/plone/Products.CMFPlone/commit/686f562cee5d08c3c85454f96cacdb0f2b955372
 
-More jQuery 1.9 compatibility changes: Change attr to prop for setting / getting the state of multiple, selected, checked and disabled states.
+pep8 resource registry
 
 Files changed:
-M CHANGES.rst
-M mockup/patterns/inlinevalidation/pattern.js
-M mockup/patterns/querystring/pattern.js
-M mockup/patterns/resourceregistry/js/registry.js
-M mockup/patterns/structure/js/views/table.js
-M mockup/patterns/thememapper/pattern.js
-M mockup/patterns/tinymce/js/links.js
+M Products/CMFPlone/resources/browser/__init__.py
+M Products/CMFPlone/resources/browser/configjs.py
+M Products/CMFPlone/resources/browser/configure.zcml
+M Products/CMFPlone/resources/browser/cook.py
+M Products/CMFPlone/resources/browser/interfaces.py
+M Products/CMFPlone/resources/browser/mixins.py
+M Products/CMFPlone/resources/browser/resource.py
+M Products/CMFPlone/resources/browser/scripts.py
+M Products/CMFPlone/resources/browser/styles.py
+M Products/CMFPlone/resources/exportimport/__init__.py
+M Products/CMFPlone/resources/exportimport/configure.zcml
+M Products/CMFPlone/resources/exportimport/cssregistry.py
+M Products/CMFPlone/resources/exportimport/jsregistry.py
+M Products/CMFPlone/resources/exportimport/resourceregistry.py
+M Products/CMFPlone/resources/viewlets/__init__.py
+M Products/CMFPlone/resources/viewlets/registries.py
+M Products/CMFPlone/resources/viewlets/settings.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 292809c..d1249f0 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -26,6 +26,11 @@ New patterns:
+diff --git a/Products/CMFPlone/resources/browser/__init__.py b/Products/CMFPlone/resources/browser/__init__.py
+index 4287ca8..e69de29 100644
+--- a/Products/CMFPlone/resources/browser/__init__.py
++++ b/Products/CMFPlone/resources/browser/__init__.py
+@@ -1 +0,0 @@
+-#
+\ No newline at end of file
+diff --git a/Products/CMFPlone/resources/browser/configjs.py b/Products/CMFPlone/resources/browser/configjs.py
+index ef06d6a..b65fcda 100644
+--- a/Products/CMFPlone/resources/browser/configjs.py
++++ b/Products/CMFPlone/resources/browser/configjs.py
+@@ -1,9 +1,8 @@
++from Products.CMFPlone.interfaces import IResourceRegistry
+ from Products.Five.browser import BrowserView
+ from plone.registry.interfaces import IRegistry
+-from Products.CMFPlone.interfaces import IResourceRegistry
+ from zope.component import getMultiAdapter
+ from zope.component import getUtility
+-
+ import re
  
- Fixes and enhancements:
  
-+- More jQuery 1.9 compatibility changes: Change ``attr`` to ``prop`` for
-+  setting / getting the state of ``multiple``, ``selected``, ``checked`` and
-+  ``disabled`` states.
-+  [thet]
+diff --git a/Products/CMFPlone/resources/browser/configure.zcml b/Products/CMFPlone/resources/browser/configure.zcml
+index d30664c..18875cf 100644
+--- a/Products/CMFPlone/resources/browser/configure.zcml
++++ b/Products/CMFPlone/resources/browser/configure.zcml
+@@ -1,53 +1,52 @@
+-<configure xmlns="http://namespaces.zope.org/zope"
+-           xmlns:browser="http://namespaces.zope.org/browser"
+-           xmlns:five="http://namespaces.zope.org/five">
+-
+-    <browser:viewlet  
+-        name="plone.resourceregistries.scripts" 
+-        manager="plone.app.layout.viewlets.interfaces.IScripts"
+-        class="Products.CMFPlone.resources.browser.scripts.ScriptsView"
+-        template="scripts.pt"
+-        permission="zope2.View" 
+-        />
+-
+-    <browser:viewlet  
+-        name="plone.resourceregistries.styles" 
+-        manager="plone.app.layout.viewlets.interfaces.IHtmlHeadLinks"
+-        class="Products.CMFPlone.resources.browser.styles.StylesView"
+-        template="styles.pt"
+-        permission="zope2.View" 
+-        />
+-
+-
+-    <browser:page
+-        for="*"
+-        name="config.js"
+-        class=".configjs.ConfigJsView"
+-        permission="zope.Public"
+-        />
+-
+-    <browser:page
+-        for="*"
+-        name="less-variables.js"
+-        class=".mixins.LessConfiguration"
+-        permission="zope.Public"
+-        />
+-
+-    <browser:page
+-        for="*"
+-        name="less-modify.js"
+-        class=".mixins.LessModifyConfiguration"
+-        permission="zope.Public"
+-        />
+-
+-
+-
+-    <browser:page
+-        for="*"
+-        name="plone_less_dependency.less"
+-        class=".mixins.LessDependency"
+-        permission="zope.Public"
+-        />
+-
++<configure
++    xmlns="http://namespaces.zope.org/zope"
++    xmlns:browser="http://namespaces.zope.org/browser"
++    i18n_domain="plone">
 +
- - Modal Pattern: If ``data-base-url`` attribute is available on the body, use
-   it. Otherwise search for a ``<base>`` tag. Plone 5 dropped the usage of base
-   tags.
-diff --git a/mockup/patterns/inlinevalidation/pattern.js b/mockup/patterns/inlinevalidation/pattern.js
-index a79b4dd..52ccbc8 100644
---- a/mockup/patterns/inlinevalidation/pattern.js
-+++ b/mockup/patterns/inlinevalidation/pattern.js
-@@ -59,7 +59,7 @@ define([
++  <browser:viewlet
++      name="plone.resourceregistries.scripts"
++      manager="plone.app.layout.viewlets.interfaces.IScripts"
++      class="Products.CMFPlone.resources.browser.scripts.ScriptsView"
++      template="scripts.pt"
++      permission="zope2.View"
++      />
++
++  <browser:viewlet
++      name="plone.resourceregistries.styles"
++      manager="plone.app.layout.viewlets.interfaces.IHtmlHeadLinks"
++      class="Products.CMFPlone.resources.browser.styles.StylesView"
++      template="styles.pt"
++      permission="zope2.View"
++      />
++
++
++  <browser:page
++      for="*"
++      name="config.js"
++      class=".configjs.ConfigJsView"
++      permission="zope.Public"
++      />
++
++  <browser:page
++      for="*"
++      name="less-variables.js"
++      class=".mixins.LessConfiguration"
++      permission="zope.Public"
++      />
++
++  <browser:page
++      for="*"
++      name="less-modify.js"
++      class=".mixins.LessModifyConfiguration"
++      permission="zope.Public"
++      />
++
++
++  <browser:page
++      for="*"
++      name="plone_less_dependency.less"
++      class=".mixins.LessDependency"
++      permission="zope.Public"
++      />
  
-         // value is null for empty multiSelection select, turn it into a [] instead
-         // so it does not break at_validate_field
--        if ($input.attr('multiple') === 'multiple' && value === null) {
-+        if ($input.prop('multiple') && value === null) {
-             value = $([]).serialize();
-         }
+ </configure>
+diff --git a/Products/CMFPlone/resources/browser/cook.py b/Products/CMFPlone/resources/browser/cook.py
+index b9fac49..29b4664 100644
+--- a/Products/CMFPlone/resources/browser/cook.py
++++ b/Products/CMFPlone/resources/browser/cook.py
+@@ -1,16 +1,15 @@
+-from zope.component import getUtility
+-from plone.registry.interfaces import IRegistry
+-from Products.CMFPlone.interfaces.resources import (
+-    IResourceRegistry,
+-    OVERRIDE_RESOURCE_DIRECTORY_NAME)
+-from slimit import minify
++from Products.CMFPlone.interfaces.resources import IResourceRegistry
++from Products.CMFPlone.interfaces.resources import OVERRIDE_RESOURCE_DIRECTORY_NAME  # noqa
++from StringIO import StringIO
+ from cssmin import cssmin
+ from datetime import datetime
+-from plone.resource.interfaces import IResourceDirectory
+-from StringIO import StringIO
+-from zope.component.hooks import getSite
+ from plone.protect.interfaces import IDisableCSRFProtection
++from plone.registry.interfaces import IRegistry
++from plone.resource.interfaces import IResourceDirectory
+ from plone.subrequest import subrequest
++from slimit import minify
++from zope.component import getUtility
++from zope.component.hooks import getSite
+ from zope.globalrequest import getRequest
+ from zope.interface import alsoProvides
  
-diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
-index 34cbd53..852f036 100644
---- a/mockup/patterns/querystring/pattern.js
-+++ b/mockup/patterns/querystring/pattern.js
-@@ -265,7 +265,7 @@ define([
-                 });
+@@ -37,7 +36,8 @@ def cookWhenChangingSettings(context, bundle):
+                     css_file += '\n'
  
-       } else if (widget === 'MultipleSelectionWidget') {
--        self.$value = $('<select/>').attr('multiple', true)
-+        self.$value = $('<select/>').prop('multiple', true)
-                 .addClass(self.options.classValueName + '-' + widget)
-                 .appendTo($wrapper)
-                 .change(function() {
-@@ -595,10 +595,10 @@ define([
-         .attr('name', 'sort_reversed:boolean')
-         .change(function() {
-           self.refreshPreviewEvent.call(self);
--          if ($(this).attr('checked') === 'checked') {
--            $('.option input[type="checkbox"]', existingSortOrder).attr('checked', 'checked');
-+          if ($(this).prop('checked')) {
-+            $('.option input[type="checkbox"]', existingSortOrder).prop('checked', true);
-           } else {
--            $('.option input[type="checkbox"]', existingSortOrder).removeAttr('checked');
-+            $('.option input[type="checkbox"]', existingSortOrder).prop('checked', false);
-           }
-         });
+             if resource.js:
+-                response = subrequest(siteUrl + '/' + resource.js, root=context)
++                response = subrequest(
++                    siteUrl + '/' + resource.js, root=context)
+                 if response.status == 200:
+                     js_file += response.getBody()
+                     js_file += '\n'
+@@ -51,9 +51,9 @@ def cookWhenChangingSettings(context, bundle):
+     # Storing js
+     resource_path = js_path.split('++plone++')[-1]
+     resource_name, resource_filepath = resource_path.split('/', 1)
+-    persistent_directory = getUtility(IResourceDirectory, name="persistent")  # noqa
++    persistent_directory = getUtility(IResourceDirectory, name="persistent")
+     if OVERRIDE_RESOURCE_DIRECTORY_NAME not in persistent_directory:
+-        persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)  # noqa
++        persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)
+     container = persistent_directory[OVERRIDE_RESOURCE_DIRECTORY_NAME]
+     if resource_name not in container:
+         container.makeDirectory(resource_name)
+@@ -64,9 +64,9 @@ def cookWhenChangingSettings(context, bundle):
+     # Storing css
+     resource_path = css_path.split('++plone++')[-1]
+     resource_name, resource_filepath = resource_path.split('/', 1)
+-    persistent_directory = getUtility(IResourceDirectory, name="persistent")  # noqa
++    persistent_directory = getUtility(IResourceDirectory, name="persistent")
+     if OVERRIDE_RESOURCE_DIRECTORY_NAME not in persistent_directory:
+-        persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)  # noqa
++        persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)
+     container = persistent_directory[OVERRIDE_RESOURCE_DIRECTORY_NAME]
+     if resource_name not in container:
+         container.makeDirectory(resource_name)
+diff --git a/Products/CMFPlone/resources/browser/interfaces.py b/Products/CMFPlone/resources/browser/interfaces.py
+index a023ae1..b10009c 100644
+--- a/Products/CMFPlone/resources/browser/interfaces.py
++++ b/Products/CMFPlone/resources/browser/interfaces.py
+@@ -1,4 +1,4 @@
+-from zope.interface import Interface, Attribute
++from zope.interface import Interface
  
-@@ -615,10 +615,10 @@ define([
-       // if the form already contains the sort fields, hide them! Their values
-       // will be synced back and forth between the querystring's form elements
-       if (existingSortOn.length >= 1 && existingSortOrder.length >= 1) {
--        var reversed = $('.option input[type="checkbox"]', existingSortOrder).attr('checked') === 'checked';
-+        var reversed = $('.option input[type="checkbox"]', existingSortOrder).prop('checked');
-         var sortOn = $('[id$="-sort_on"]', existingSortOn).val();
-         if (reversed) {
--          self.$sortOrder.attr('checked', 'checked');
-+          self.$sortOrder.prop('checked', true);
-         }
-         self.$sortOn.select2('val', sortOn);
-         $(existingSortOn).hide();
-@@ -670,8 +670,7 @@ define([
-       }
  
-       query.push('sort_on=' + self.$sortOn.val());
--      var sortorder = self.$sortOrder.attr('checked');
--      if (sortorder === 'checked') {
-+      if (self.$sortOrder.prop('checked')) {
-         query.push('sort_order=reverse');
-       }
+ class IScriptsView(Interface):
+@@ -11,5 +11,3 @@ class IStylesView(Interface):
  
-diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index 6c37583..b0b5b0f 100644
---- a/mockup/patterns/resourceregistry/js/registry.js
-+++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -194,7 +194,7 @@ define([
-       $btn.off('click').on('click', function(e){
-         e.preventDefault();
-         $info.addClass('hidden');
--        $btn.attr('disabled', 'true');
-+        $btn.prop('disabled', true);
-         self.$results = $el.find('.list-group').removeClass('hidden');
-         self.buildJS();
-         self.rview.loading.show();
-@@ -539,12 +539,12 @@ define([
-     },
+     def styles():
+         """ Returns a list of dicts with information for style rendering. """
+-
+-
+diff --git a/Products/CMFPlone/resources/browser/mixins.py b/Products/CMFPlone/resources/browser/mixins.py
+index eec80b7..504901d 100644
+--- a/Products/CMFPlone/resources/browser/mixins.py
++++ b/Products/CMFPlone/resources/browser/mixins.py
+@@ -1,12 +1,11 @@
++from Products.CMFPlone.interfaces import IResourceRegistry
+ from Products.Five.browser import BrowserView
+-from zope.component import getUtility
+-from zope.component import getMultiAdapter
++from plone.registry.interfaces import IRegistry
+ from urlparse import urlparse
++from zope.component import getMultiAdapter
++from zope.component import getUtility
  
-     showHideButtons: function(){
--      var val = 'disabled';
-+      var val = true;
-       if(this.dirty){
--        val = null;
-+        val = false;
-       }
--      this.$('button.save').attr('disabled', val);
--      this.$('button.cancel').attr('disabled', val);
-+      this.$('button.save').prop('disabled', val);
-+      this.$('button.cancel').prop('disabled', val);
-     },
  
-     filterResources: function(){
-diff --git a/mockup/patterns/structure/js/views/table.js b/mockup/patterns/structure/js/views/table.js
-index fafc568..e598087 100644
---- a/mockup/patterns/structure/js/views/table.js
-+++ b/mockup/patterns/structure/js/views/table.js
-@@ -139,7 +139,7 @@ define([
-     },
-     selectAll: function(e) {
-       if ($(e.target).is(':checked')) {
--        $('input[type="checkbox"]', this.$('tbody')).attr('checked', 'checked').change();
-+        $('input[type="checkbox"]', this.$('tbody')).prop('checked', true).change();
-       } else {
-         this.selectedCollection.remove(this.collection.models);
-       }
-@@ -148,7 +148,7 @@ define([
-     toggleSelectAll: function(e) {
-       var $el = $(e.target);
-       if (!$el.is(':checked')) {
--        this.$('.select-all').removeAttr('checked');
-+        this.$('.select-all').prop('checked', false);
-       }
-     },
-     addReordering: function() {
-diff --git a/mockup/patterns/thememapper/pattern.js b/mockup/patterns/thememapper/pattern.js
-index c3daa1d..be9acee 100644
---- a/mockup/patterns/thememapper/pattern.js
-+++ b/mockup/patterns/thememapper/pattern.js
-@@ -282,14 +282,14 @@ define([
-     },
-     on: function() {
-       var self = this;
--      self.$off.attr('disabled', null);
--      self.$on.attr('disabled', 'disabled');
-+      self.$off.prop('disabled', false);
-+      self.$on.prop('disabled', true);
-       self.enabled = true;
-     },
-     off: function() {
-       var self = this;
--      self.$on.attr('disabled', null);
--      self.$off.attr('disabled', 'disabled');
-+      self.$on.prop('disabled', false);
-+      self.$off.prop('disabled', true);
-       self.enabled = false;
-     },
-     setupFrame: function() {
-diff --git a/mockup/patterns/tinymce/js/links.js b/mockup/patterns/tinymce/js/links.js
-index 29ff234..1bf69dd 100644
---- a/mockup/patterns/tinymce/js/links.js
-+++ b/mockup/patterns/tinymce/js/links.js
-@@ -618,10 +618,10 @@ define([
-       }
-     },
-     setSelectElement: function($el, val) {
--      $el.find('option:selected').attr('selected', '');
-+      $el.find('option:selected').prop('selected', false);
-       if (val) {
-         // update
--        $el.find('option[value="' + val + '"]').attr('selected', 'true');
-+        $el.find('option[value="' + val + '"]').prop('selected', true);
-       }
-     },
-     reinitialize: function() {
+-from plone.registry.interfaces import IRegistry
+-from Products.CMFPlone.interfaces import IResourceRegistry
+-
+ lessconfig = """
+  window.less = {
+     env: "development",
+@@ -35,8 +34,7 @@
+ 
+ 
+ class LessConfiguration(BrowserView):
+-    """
+-    Browser view that gets the definition of less variables on plone
++    """Browser view that gets the definition of less variables on plone.
+     """
+ 
+     def registry(self):
+@@ -93,6 +91,7 @@ def __call__(self):
+ 
+ 
+ class LessModifyConfiguration(LessConfiguration):
++
+     def __call__(self):
+         registry = self.registry()
+         portal_state = getMultiAdapter((self.context, self.request),
+@@ -122,8 +121,8 @@ def __call__(self):
+ 
+ 
+ class LessDependency(BrowserView):
+-    """
+-    Browser view that returns the less/css on less format for specific resource
++    """Browser view that returns the less/css on less format for specific
++    resource.
+     """
+ 
+     def registry(self):
+diff --git a/Products/CMFPlone/resources/browser/resource.py b/Products/CMFPlone/resources/browser/resource.py
+index 7d4ffd5..0e32f90 100644
+--- a/Products/CMFPlone/resources/browser/resource.py
++++ b/Products/CMFPlone/resources/browser/resource.py
+@@ -1,24 +1,23 @@
+-from zope import component
+-from zope.ramcache.interfaces import ram
+-
+ from Acquisition import aq_inner, aq_base, aq_parent
+-from zope.component import getUtility
+-from plone.registry.interfaces import IRegistry
+-from Products.CMFPlone.interfaces import (
+-    IBundleRegistry,
+-    IResourceRegistry)
+-from plone.app.layout.viewlets.common import ViewletBase
+ from Products.CMFCore.Expression import Expression
+ from Products.CMFCore.Expression import createExprContext
+-from zope.component import getMultiAdapter
+ from Products.CMFCore.utils import getToolByName
++from Products.CMFPlone.interfaces import IBundleRegistry
++from Products.CMFPlone.interfaces import IResourceRegistry
++from plone.app.layout.viewlets.common import ViewletBase
+ from plone.app.theming.utils import getCurrentTheme
+-from plone.app.theming.utils import isThemeEnabled
+ from plone.app.theming.utils import getTheme
++from plone.app.theming.utils import isThemeEnabled
++from plone.registry.interfaces import IRegistry
++from zope import component
++from zope.component import getMultiAdapter
++from zope.component import getUtility
++from zope.ramcache.interfaces import ram
+ 
+ 
+ class ResourceView(ViewletBase):
+-    """ Information for script rendering. """
++    """Information for script rendering.
++    """
+ 
+     @property
+     def development(self):
+@@ -26,7 +25,7 @@ def development(self):
+ 
+     @property
+     def last_legacy_import(self):
+-        return self.registry.records['plone.resources.last_legacy_import'].value
++        return self.registry.records['plone.resources.last_legacy_import'].value  # noqa
+ 
+     def evaluateExpression(self, expression, context):
+         """Evaluate an object's TALES condition to see if it should be
+@@ -114,10 +113,14 @@ def get_cooked_bundles(self):
+             disabled_request_bundles.extend(self.request.disabled_bundles)
+ 
+         for key, bundle in bundles.items():
+-            # The diazo manifest and request bundles are more important than the disabled bundle on registry
++            # The diazo manifest and request bundles are more important than
++            # the disabled bundle on registry.
+             # We can access the site with diazo.off=1 without diazo bundles
+-            if (bundle.enabled or key in enabled_request_bundles or key in enabled_diazo_bundles) and \
+-                    (key not in disabled_diazo_bundles and key not in disabled_request_bundles):
++            if (bundle.enabled
++                    or key in enabled_request_bundles
++                    or key in enabled_diazo_bundles) and\
++                    (key not in disabled_diazo_bundles
++                        and key not in disabled_request_bundles):
+                 # check expression
+                 if bundle.expression:
+                     cooked_expression = None
+@@ -179,4 +182,3 @@ def ordered_bundles_result(self):
+                 self.get_data(bundle, result)
+ 
+         return result
+-
+diff --git a/Products/CMFPlone/resources/browser/scripts.py b/Products/CMFPlone/resources/browser/scripts.py
+index 043f48a..603ba47 100644
+--- a/Products/CMFPlone/resources/browser/scripts.py
++++ b/Products/CMFPlone/resources/browser/scripts.py
+@@ -4,14 +4,16 @@
+ 
+ 
+ class ScriptsView(ResourceView):
+-    """ Information for script rendering. """
++    """Information for script rendering.
++    """
+ 
+     def get_data(self, bundle, result):
+         bundle_name = bundle.__prefix__.split('/', 1)[1].rstrip('.')
+         if self.development is False:
+             if bundle.compile is False:
+                 # Its a legacy css bundle
+-                if not bundle.last_compilation or self.last_legacy_import > bundle.last_compilation:
++                if not bundle.last_compilation\
++                        or self.last_legacy_import > bundle.last_compilation:
+                     # We need to compile
+                     cookWhenChangingSettings(self.context, bundle)
+             if bundle.jscompilation:
+@@ -42,9 +44,8 @@ def get_data(self, bundle, result):
+                         result.append(data)
+ 
+     def scripts(self):
+-        """
+-        The requirejs scripts, the ones that are not resources
+-        are loaded on configjs.py
++        """The requirejs scripts, the ones that are not resources are loaded on
++        configjs.py
+         """
+         result = []
+         # We always add jquery resource
+diff --git a/Products/CMFPlone/resources/browser/styles.py b/Products/CMFPlone/resources/browser/styles.py
+index 9ffdd49..c4f60c7 100644
+--- a/Products/CMFPlone/resources/browser/styles.py
++++ b/Products/CMFPlone/resources/browser/styles.py
+@@ -1,17 +1,19 @@
+-from Products.CMFPlone.resources.browser.resource import ResourceView
+ from Products.CMFPlone.resources.browser.cook import cookWhenChangingSettings
++from Products.CMFPlone.resources.browser.resource import ResourceView
+ from urlparse import urlparse
+ 
+ 
+ class StylesView(ResourceView):
+-    """ Information for style rendering. """
+ 
++    """ Information for style rendering. """
+ 
+     def get_urls(self, style, bundle):
+         """
+         Extracts the urls for the specific resource
+         """
+-        bundle_name = bundle.__prefix__.split('/', 1)[1].rstrip('.') if bundle else 'none'
++        bundle_name = bundle.__prefix__.split(
++            '/',
++            1)[1].rstrip('.') if bundle else 'none'
+         for css in style.css:
+             url = urlparse(css)
+             if url.netloc == '':
+@@ -25,22 +27,26 @@ def get_urls(self, style, bundle):
+             if extension != '' and extension != 'css':
+                 rel = "stylesheet/%s" % extension
+ 
+-            data = {'rel': rel,
+-                    'bundle': bundle_name,
+-                    'conditionalcomment' : bundle.conditionalcomment if bundle else '',
+-                    'src': src}
++            data = {
++                'rel': rel,
++                'bundle': bundle_name,
++                'conditionalcomment': bundle.conditionalcomment if bundle else '',  # noqa
++                'src': src}
+             yield data
+ 
+     def get_data(self, bundle, result):
+-        """ 
++        """
+         Gets the needed information for the bundle
+         and stores it on the result list
+         """
+-        bundle_name = bundle.__prefix__.split('/', 1)[1].rstrip('.') if bundle else 'none'
++        bundle_name = bundle.__prefix__.split(
++            '/',
++            1)[1].rstrip('.') if bundle else 'none'
+         if self.development is False:
+             if bundle.compile is False:
+                 # Its a legacy css bundle
+-                if not bundle.last_compilation or self.last_legacy_import > bundle.last_compilation:
++                if not bundle.last_compilation\
++                        or self.last_legacy_import > bundle.last_compilation:
+                     # We need to compile
+                     cookWhenChangingSettings(self.context, bundle)
+ 
+@@ -48,14 +54,18 @@ def get_data(self, bundle, result):
+                 result.append({
+                     'bundle': bundle_name,
+                     'rel': 'stylesheet',
+-                    'conditionalcomment' : bundle.conditionalcomment,
+-                    'src': '%s/%s?version=%s' % (self.portal_url, bundle.csscompilation, bundle.last_compilation)
+-                    })
++                    'conditionalcomment': bundle.conditionalcomment,
++                    'src': '%s/%s?version=%s' % (
++                        self.portal_url,
++                        bundle.csscompilation,
++                        bundle.last_compilation
++                    )
++                })
+         else:
+             self.resources = self.get_resources()
+             # The bundle resources
+             for resource in bundle.resources:
+-                if resource in self.resources:        
++                if resource in self.resources:
+                     style = self.resources[resource]
+                     for data in self.get_urls(style, bundle):
+                         result.append(data)
+@@ -88,9 +98,6 @@ def styles(self):
+                     'conditionalcomment': '',
+                     'src': src,
+                     'bundle': 'diazo'}
+-        
++
+             result.append(data)
+         return result
+-
+-
+-
+diff --git a/Products/CMFPlone/resources/exportimport/__init__.py b/Products/CMFPlone/resources/exportimport/__init__.py
+index 4287ca8..e69de29 100644
+--- a/Products/CMFPlone/resources/exportimport/__init__.py
++++ b/Products/CMFPlone/resources/exportimport/__init__.py
+@@ -1 +0,0 @@
+-#
+\ No newline at end of file
+diff --git a/Products/CMFPlone/resources/exportimport/configure.zcml b/Products/CMFPlone/resources/exportimport/configure.zcml
+index c1791fb..400fed6 100644
+--- a/Products/CMFPlone/resources/exportimport/configure.zcml
++++ b/Products/CMFPlone/resources/exportimport/configure.zcml
+@@ -1,8 +1,6 @@
+ <configure
+     xmlns="http://namespaces.zope.org/zope"
+-    xmlns:five="http://namespaces.zope.org/five"
+-    i18n_domain="plone"
+-    >
++    i18n_domain="plone">
+ 
+   <adapter
+       factory=".jsregistry.JSRegistryNodeAdapter"
+diff --git a/Products/CMFPlone/resources/exportimport/cssregistry.py b/Products/CMFPlone/resources/exportimport/cssregistry.py
+index 21592d3..fb567e4 100644
+--- a/Products/CMFPlone/resources/exportimport/cssregistry.py
++++ b/Products/CMFPlone/resources/exportimport/cssregistry.py
+@@ -1,12 +1,12 @@
++from .resourceregistry import ResourceRegistryNodeAdapter
++from .resourceregistry import importResRegistry
+ from Products.ResourceRegistries.interfaces import ICSSRegistry
+ 
+-from resourceregistry import ResourceRegistryNodeAdapter, \
+-     importResRegistry
+-
+ _FILENAME = 'cssregistry.xml'
+ _REG_ID = 'portal_css'
+ _REG_TITLE = 'Stylesheet registry'
+ 
++
+ def importCSSRegistry(context):
+     """
+     Import CSS registry.
+@@ -15,6 +15,7 @@ def importCSSRegistry(context):
+ 
+ 
+ class CSSRegistryNodeAdapter(ResourceRegistryNodeAdapter):
++
+     """
+     Node im- and exporter for CSSRegistry.
+     """
+diff --git a/Products/CMFPlone/resources/exportimport/jsregistry.py b/Products/CMFPlone/resources/exportimport/jsregistry.py
+index 4cb9a39..0b04fbc 100644
+--- a/Products/CMFPlone/resources/exportimport/jsregistry.py
++++ b/Products/CMFPlone/resources/exportimport/jsregistry.py
+@@ -1,22 +1,20 @@
+ from Products.ResourceRegistries.interfaces import IJSRegistry
+-
+-from resourceregistry import ResourceRegistryNodeAdapter, \
+-     importResRegistry
++from resourceregistry import ResourceRegistryNodeAdapter
++from resourceregistry import importResRegistry
+ 
+ _FILENAME = 'jsregistry.xml'
+ _REG_ID = 'portal_javascripts'
+ _REG_TITLE = 'Javascript registry'
+ 
++
+ def importJSRegistry(context):
+-    """
+-    Import javascript registry.
++    """Import javascript registry.
+     """
+     return importResRegistry(context, _REG_ID, _REG_TITLE, _FILENAME)
+ 
+ 
+ class JSRegistryNodeAdapter(ResourceRegistryNodeAdapter):
+-    """
+-    Node im- and exporter for JSRegistry.
++    """Node im- and exporter for JSRegistry.
+     """
+ 
+     __used_for__ = IJSRegistry
+diff --git a/Products/CMFPlone/resources/exportimport/resourceregistry.py b/Products/CMFPlone/resources/exportimport/resourceregistry.py
+index c5cb5a8..404ec83 100644
+--- a/Products/CMFPlone/resources/exportimport/resourceregistry.py
++++ b/Products/CMFPlone/resources/exportimport/resourceregistry.py
+@@ -1,17 +1,16 @@
+-from plone.i18n.normalizer.interfaces import IIDNormalizer
+-from zope.component import queryMultiAdapter
+-from zope.component import queryUtility
+ from Products.CMFCore.utils import getToolByName
+-from Products.CMFPlone.interfaces import IResourceRegistry
+ from Products.CMFPlone.interfaces import IBundleRegistry
++from Products.CMFPlone.interfaces import IResourceRegistry
+ from Products.GenericSetup.interfaces import IBody
+ from Products.GenericSetup.utils import XMLAdapterBase
+ from datetime import datetime
++from plone.i18n.normalizer.interfaces import IIDNormalizer
++from zope.component import queryMultiAdapter
++from zope.component import queryUtility
+ 
+ 
+ def importResRegistry(context, reg_id, reg_title, filename):
+-    """
+-    Import resource registry.
++    """Import resource registry.
+     """
+     site = context.getSite()
+     logger = context.getLogger('resourceregistry')
+@@ -38,8 +37,7 @@ def importResRegistry(context, reg_id, reg_title, filename):
+ class ResourceRegistryNodeAdapter(XMLAdapterBase):
+ 
+     def _importNode(self, node):
+-        """
+-        Import the object from the DOM node.
++        """Import the object from the DOM node.
+         """
+         if self.registry is None:
+             # Upgrade 3.x no registry there
+@@ -125,5 +123,7 @@ def _importNode(self, node):
+                             res_id)
+                     else:
+                         legacy.resources.append(res_id)
+-                if 'plone.resources.last_legacy_import' in self.registry.records:
+-                    self.registry.records['plone.resources.last_legacy_import'].value = datetime.now()
++                if 'plone.resources.last_legacy_import' in self.registry.records:  # noqa
++                    self.registry.records[
++                        'plone.resources.last_legacy_import'
++                    ].value = datetime.now()
+diff --git a/Products/CMFPlone/resources/viewlets/__init__.py b/Products/CMFPlone/resources/viewlets/__init__.py
+index c93af55..16b6374 100644
+--- a/Products/CMFPlone/resources/viewlets/__init__.py
++++ b/Products/CMFPlone/resources/viewlets/__init__.py
+@@ -1,3 +1,10 @@
+-from Products.ResourceRegistries.interfaces.registries import IResourceRegistry, ICSSRegistry, IKSSRegistry, IJSRegistry, ICookedFile, IResourceProvider
+-from Products.ResourceRegistries.interfaces.viewletmanagers import IHtmlHeadScripts, IHtmlHeadStyles
+-from Products.ResourceRegistries.interfaces.settings import IResourceRegistriesSettings
+\ No newline at end of file
++
++from Products.ResourceRegistries.interfaces.registries import IResourceRegistry
++from Products.ResourceRegistries.interfaces.registries import ICSSRegistry
++from Products.ResourceRegistries.interfaces.registries import IKSSRegistry
++from Products.ResourceRegistries.interfaces.registries import IJSRegistry
++from Products.ResourceRegistries.interfaces.registries import ICookedFile
++from Products.ResourceRegistries.interfaces.registries import IResourceProvider
++from Products.ResourceRegistries.interfaces.viewletmanagers import IHtmlHeadScripts
++from Products.ResourceRegistries.interfaces.viewletmanagers import IHtmlHeadStyles
++from Products.ResourceRegistries.interfaces.settings import IResourceRegistriesSettings
+diff --git a/Products/CMFPlone/resources/viewlets/registries.py b/Products/CMFPlone/resources/viewlets/registries.py
+index 32f515a..a5c43d2 100644
+--- a/Products/CMFPlone/resources/viewlets/registries.py
++++ b/Products/CMFPlone/resources/viewlets/registries.py
+@@ -1,23 +1,26 @@
+-from zope.interface import Interface
+ from zope.interface import Attribute
++from zope.interface import Interface
++
+ 
+ class ICookedFile(Interface):
+     """Marker interface for file objects created on the fly for
+     concatenated resources.
+     """
+ 
++
+ class IResourceProvider(Interface):
+     """A provider of resources.
+-    
++
+     Register a named adapter from the particular resource registry object
+     to this interface to provide resources from locations other than the
+     main persistent registry.
+     """
+-    
++
+     def getResources(self):
+         """Get a list of available Resource objects
+         """
+ 
++
+ class IResourceRegistry(Interface):
+     """A tool for registering and evaluating resource linkage."""
+ 
+@@ -34,7 +37,7 @@ def unregisterResource(id):
+ 
+     def getResource(id):
+         """Get resource object by id.
+-        
++
+         If any property of the resource is changed, then cookResources of the
+         registry must be called."""
+ 
+@@ -74,6 +77,7 @@ def getResources():
+         For use in management screens.
+         """
+ 
++
+ class ICSSRegistry(Interface):
+     """A tool for registering and evaluating stylesheet linkage."""
+ 
+@@ -87,8 +91,14 @@ def registerStylesheet(id, expression='', media='screen', rel='stylesheet',
+                            rendering='link', enabled=1):
+         """Register a stylesheet."""
+ 
+-    def manage_addStylesheet(id, expression='', media='screen', rel='stylesheet',
+-                             rendering='link', enabled=True , REQUEST=None):
++    def manage_addStylesheet(
++            id,
++            expression='',
++            media='screen',
++            rel='stylesheet',
++            rendering='link',
++            enabled=True,
++            REQUEST=None):
+         """Add stylesheet from a ZMI form."""
+ 
+     def manage_removeStylesheet(id, REQUEST=None):
+@@ -110,8 +120,8 @@ class IKSSRegistry(Interface):
+     def registerKineticStylesheet(id, expression='', enabled=1):
+         """Register a kineticstylesheet."""
+ 
+-    def manage_addKineticStylesheet(id, expression='', 
+-                                    enabled=True , REQUEST=None):
++    def manage_addKineticStylesheet(id, expression='',
++                                    enabled=True, REQUEST=None):
+         """Add kineticstylesheet from a ZMI form."""
+ 
+     def manage_removeKineticStylesheet(id, REQUEST=None):
+@@ -122,6 +132,7 @@ def manage_saveKineticStylesheets(REQUEST=None):
+ 
+ 
+ class IJSRegistry(Interface):
++
+     """A tool for registering and evaluating script linkage."""
+ 
+     id = Attribute('id',
+@@ -136,7 +147,12 @@ def registerScript(id, expression='', inline=False, enabled=True):
+     def manage_saveScripts(REQUEST=None):
+         """Save script data from form submission."""
+ 
+-    def manage_addScript(id, expression='', inline=False, enabled=True , REQUEST=None):
++    def manage_addScript(
++            id,
++            expression='',
++            inline=False,
++            enabled=True,
++            REQUEST=None):
+         """Add script from a ZMI form."""
+ 
+     def manage_removeScript(id, REQUEST=None):
+diff --git a/Products/CMFPlone/resources/viewlets/settings.py b/Products/CMFPlone/resources/viewlets/settings.py
+index 841c63d..de1f147 100644
+--- a/Products/CMFPlone/resources/viewlets/settings.py
++++ b/Products/CMFPlone/resources/viewlets/settings.py
+@@ -1,16 +1,17 @@
+-from zope.interface import Interface
+ from zope import schema
+ from zope.i18nmessageid import MessageFactory
++from zope.interface import Interface
+ 
+ _ = MessageFactory('plone')
+ 
++
+ class IResourceRegistriesSettings(Interface):
+     """Settings stored in portal_registry
+     """
+-    
++
+     resourceBundlesForThemes = schema.Dict(
+-            title=_(u"Resource bundles for themes"),
+-            description=_(u"Maps skin names to lists of resource bundle names"),
+-            key_type=schema.ASCIILine(),
+-            value_type=schema.List(value_type=schema.ASCIILine())
+-        )
++        title=_(u"Resource bundles for themes"),
++        description=_(u"Maps skin names to lists of resource bundle names"),
++        key_type=schema.ASCIILine(),
++        value_type=schema.List(value_type=schema.ASCIILine())
++    )
 
 
