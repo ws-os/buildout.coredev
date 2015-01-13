@@ -1,26 +1,30 @@
-Repository: plone.app.widgets
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-13T16:23:31+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/plone.app.widgets/commit/564e94c1735e51bdd24cc1aacaf0daf8ecb5e44a
+Date: 2015-01-13T20:00:03-03:00
+Author: Franco Pellegrini (frapell) <frapell@gmail.com>
+Commit: https://github.com/plone/mockup/commit/c3d1c26a7e181f657fb3566490b2f34677bf8782
 
-@@qsOptions view must be available for INavigationRoot (not just IPloneSiteRoot)
+If no scale is provided, do not append anything at the end
 
 Files changed:
-M plone/app/widgets/browser/configure.zcml
+M mockup/patterns/tinymce/pattern.js
 
-diff --git a/plone/app/widgets/browser/configure.zcml b/plone/app/widgets/browser/configure.zcml
-index efea02e..f5b619e 100644
---- a/plone/app/widgets/browser/configure.zcml
-+++ b/plone/app/widgets/browser/configure.zcml
-@@ -29,7 +29,7 @@
- 
-   <browser:page
-     name="qsOptions"
--    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+    for="plone.app.layout.navigation.interfaces.INavigationRoot"
-     class=".query.QueryStringIndexOptions"
-     permission="zope2.View"
-     />
+diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
+index 42e4df0..74ac881 100644
+--- a/mockup/patterns/tinymce/pattern.js
++++ b/mockup/patterns/tinymce/pattern.js
+@@ -204,7 +204,11 @@ define([
+     generateImageUrl: function(data, scale) {
+       var self = this;
+       var url = self.generateUrl(data);
+-      return url + self.options.prependToScalePart + scale + self.options.appendToScalePart;
++      if (scale !== ""){
++          url = (url + self.options.prependToScalePart + scale +
++                 self.options.appendToScalePart);
++      }
++      return url;
+     },
+     stripGeneratedUrl: function(url) {
+       // to get original attribute back
 
 
