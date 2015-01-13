@@ -1,54 +1,26 @@
-Repository: Products.CMFPlone
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-01-13T13:49:58+01:00
-Author: Tom Gross (tomgross) <itconsense@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/61405e01446a29d29ef398005783126124d811d9
+Date: 2015-01-13T16:23:31+01:00
+Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
+Commit: https://github.com/plone/plone.app.widgets/commit/564e94c1735e51bdd24cc1aacaf0daf8ecb5e44a
 
-use p.a.testing import location
+@@qsOptions view must be available for INavigationRoot (not just IPloneSiteRoot)
 
 Files changed:
-M Products/CMFPlone/tests/translate.txt
+M plone/app/widgets/browser/configure.zcml
 
-diff --git a/Products/CMFPlone/tests/translate.txt b/Products/CMFPlone/tests/translate.txt
-index 7039e82..bfee85b 100644
---- a/Products/CMFPlone/tests/translate.txt
-+++ b/Products/CMFPlone/tests/translate.txt
-@@ -29,7 +29,7 @@ First make a custom translator for our i18n domain
-     >>> t = TranslationDomain()
-     >>> from zope.component import provideUtility
-     >>> provideUtility(t, ITranslationDomain, 'attesti18n')
--    >>> from Products.Archetypes.tests.atsitetestcase import portal_owner
-+    >>> from plone.app.testing import SITE_OWNER_NAME as portal_owner
+diff --git a/plone/app/widgets/browser/configure.zcml b/plone/app/widgets/browser/configure.zcml
+index efea02e..f5b619e 100644
+--- a/plone/app/widgets/browser/configure.zcml
++++ b/plone/app/widgets/browser/configure.zcml
+@@ -29,7 +29,7 @@
  
- 
- Now be sure our values are correctly translated in view
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2015-01-13T15:39:19+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/7474e85077011c2f7883c1d1812a4b284fdcfc49
-
-Merge pull request #352 from plone/tomgross-patesting
-
-use p.a.testing import location
-
-Files changed:
-M Products/CMFPlone/tests/translate.txt
-
-diff --git a/Products/CMFPlone/tests/translate.txt b/Products/CMFPlone/tests/translate.txt
-index 7039e82..bfee85b 100644
---- a/Products/CMFPlone/tests/translate.txt
-+++ b/Products/CMFPlone/tests/translate.txt
-@@ -29,7 +29,7 @@ First make a custom translator for our i18n domain
-     >>> t = TranslationDomain()
-     >>> from zope.component import provideUtility
-     >>> provideUtility(t, ITranslationDomain, 'attesti18n')
--    >>> from Products.Archetypes.tests.atsitetestcase import portal_owner
-+    >>> from plone.app.testing import SITE_OWNER_NAME as portal_owner
- 
- 
- Now be sure our values are correctly translated in view
+   <browser:page
+     name="qsOptions"
+-    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
++    for="plone.app.layout.navigation.interfaces.INavigationRoot"
+     class=".query.QueryStringIndexOptions"
+     permission="zope2.View"
+     />
 
 
