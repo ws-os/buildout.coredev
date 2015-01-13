@@ -1,767 +1,574 @@
-Repository: Products.CMFPlone
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-13T02:04:01+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/686f562cee5d08c3c85454f96cacdb0f2b955372
+Date: 2015-01-02T15:17:16+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/1bc48f7976000be0ff2d0e6b6cc06372cc5d2f41
 
-pep8 resource registry
+add leadimage-migration
 
 Files changed:
-M Products/CMFPlone/resources/browser/__init__.py
-M Products/CMFPlone/resources/browser/configjs.py
-M Products/CMFPlone/resources/browser/configure.zcml
-M Products/CMFPlone/resources/browser/cook.py
-M Products/CMFPlone/resources/browser/interfaces.py
-M Products/CMFPlone/resources/browser/mixins.py
-M Products/CMFPlone/resources/browser/resource.py
-M Products/CMFPlone/resources/browser/scripts.py
-M Products/CMFPlone/resources/browser/styles.py
-M Products/CMFPlone/resources/exportimport/__init__.py
-M Products/CMFPlone/resources/exportimport/configure.zcml
-M Products/CMFPlone/resources/exportimport/cssregistry.py
-M Products/CMFPlone/resources/exportimport/jsregistry.py
-M Products/CMFPlone/resources/exportimport/resourceregistry.py
-M Products/CMFPlone/resources/viewlets/__init__.py
-M Products/CMFPlone/resources/viewlets/registries.py
-M Products/CMFPlone/resources/viewlets/settings.py
+M plone/app/contenttypes/migration/migration.py
+M plone/app/contenttypes/migration/utils.py
 
-diff --git a/Products/CMFPlone/resources/browser/__init__.py b/Products/CMFPlone/resources/browser/__init__.py
-index 4287ca8..e69de29 100644
---- a/Products/CMFPlone/resources/browser/__init__.py
-+++ b/Products/CMFPlone/resources/browser/__init__.py
-@@ -1 +0,0 @@
--#
-\ No newline at end of file
-diff --git a/Products/CMFPlone/resources/browser/configjs.py b/Products/CMFPlone/resources/browser/configjs.py
-index ef06d6a..b65fcda 100644
---- a/Products/CMFPlone/resources/browser/configjs.py
-+++ b/Products/CMFPlone/resources/browser/configjs.py
-@@ -1,9 +1,8 @@
-+from Products.CMFPlone.interfaces import IResourceRegistry
- from Products.Five.browser import BrowserView
- from plone.registry.interfaces import IRegistry
--from Products.CMFPlone.interfaces import IResourceRegistry
+diff --git a/plone/app/contenttypes/migration/migration.py b/plone/app/contenttypes/migration/migration.py
+index 5f28383..5ca27e5 100644
+--- a/plone/app/contenttypes/migration/migration.py
++++ b/plone/app/contenttypes/migration/migration.py
+@@ -23,6 +23,7 @@
+ from plone.app.contenttypes.migration.utils import add_portlet
+ from plone.app.contenttypes.migration.utils import copy_contentrules
+ from plone.app.contenttypes.migration.utils import move_comments
++from plone.app.contenttypes.migration.utils import migrate_leadimage
+ from plone.app.textfield.value import RichTextValue
+ from plone.app.uuid.utils import uuidToObject
+ from plone.dexterity.interfaces import IDexterityContent
+@@ -296,6 +297,9 @@ def migrate_portlets(self):
+     def migrate_contentrules(self):
+         copy_contentrules(self.old, self.new)
+ 
++    def migrate_leadimage(self):
++        migrate_leadimage(self.old, self.new)
++
+     def last_migrate_comments(self):
+         """Migrate the plone.app.discussion comments.
+            Comments were stored on the portal, get them and
+@@ -336,6 +340,9 @@ def migrate_portlets(self):
+     def migrate_contentrules(self):
+         copy_contentrules(self.old, self.new)
+ 
++    def migrate_leadimage(self):
++        migrate_leadimage(self.old, self.new)
++
+     def last_migrate_comments(self):
+         """Migrate the plone.app.discussion comments.
+            Comments were stored on the portal, get them and
+diff --git a/plone/app/contenttypes/migration/utils.py b/plone/app/contenttypes/migration/utils.py
+index 5eb6d15..20ae0d4 100644
+--- a/plone/app/contenttypes/migration/utils.py
++++ b/plone/app/contenttypes/migration/utils.py
+@@ -1,5 +1,6 @@
+ # -*- coding: utf-8 -*-
+ from Products.CMFCore.utils import getToolByName
++from Products.CMFPlone.utils import safe_unicode, safe_hasattr
+ from Products.GenericSetup.context import DirectoryImportContext
+ from Products.GenericSetup.utils import importObjects
+ from archetypes.schemaextender.interfaces import IBrowserLayerAwareExtender
+@@ -8,11 +9,13 @@
+ from archetypes.schemaextender.interfaces import ISchemaModifier
+ from copy import deepcopy
+ from plone.app.contentrules.api import assign_rule
++from plone.app.contenttypes.behaviors.leadimage import ILeadImage
+ from plone.app.contenttypes.utils import DEFAULT_TYPES
+ from plone.app.discussion.conversation import ANNOTATION_KEY as DISCUSSION_KEY
+ from plone.app.discussion.interfaces import IConversation
+ from plone.contentrules.engine.interfaces import IRuleAssignmentManager
+ from plone.dexterity.interfaces import IDexterityFTI
++from plone.namedfile.file import NamedBlobImage
+ from plone.portlets.interfaces import IPortletAssignmentMapping
+ from plone.portlets.interfaces import IPortletManager
+ from zope.annotation.interfaces import IAnnotations
+@@ -156,3 +159,49 @@ def copy_contentrules(source_object, target_object):
+             return
+         for rule_id in source_assignable:
+             assign_rule(target_object, rule_id)
++
++def migrate_leadimage(source_object, target_object):
++    """ Migrate images added using collective.contentleadimage to the
++    ILeadImage-behavior of plone.app.contenttypes if it is enabled.
++    """
++    OLD_LEADIMAGE_FIELD_NAME = 'leadImage'
++    OLD_CAPTION_FIELD_NAME = 'leadImage_caption'
++    NEW_LEADIMAGE_FIELD_NAME = 'image'
++    NEW_CAPTION_FIELD_NAME = 'image_caption'
++
++    old_leadimage_field = source_object.getField(OLD_LEADIMAGE_FIELD_NAME)
++    if not old_leadimage_field:
++        # skip if old content has no field
++        return
++
++    if ILeadImage(target_object, None) is None:
++        # skip if new content does not have the LeadImage-behavior enabled
++        logger.info("Target does not have the behavior 'Lead Image' enabled. "
++                    "Could not migrate collective.leadimage fields.")
++        return
++
++    old_image = old_leadimage_field.get(source_object)
++    if not old_image:
++        # skip if image-field is empty
++        return
++
++    filename = safe_unicode(old_image.filename)
++    old_image_data = old_image.data
++    if safe_hasattr(old_image_data, 'data'):
++        # handle relstorage
++        old_image_data = old_image_data.data
++
++    # construct the new image
++    namedblobimage = NamedBlobImage(data=old_image_data,
++                                    filename=filename)
++
++    # set new field on destination object
++    setattr(target_object, NEW_LEADIMAGE_FIELD_NAME, namedblobimage)
++
++    # handle image caption field
++    caption_field = source_object.getField(OLD_CAPTION_FIELD_NAME, None)
++    if caption_field:
++        setattr(target_object,
++                (NEW_CAPTION_FIELD_NAME),
++                safe_unicode(caption_field.get(source_object)))
++    logger.info("Migrating contentlead image %s" % filename)
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2015-01-10T11:05:27+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/bff830f89f77e16bbdccbb05def14830147a6ba6
+
+add warning and infos when migration with collective.contentleadimage
+
+Files changed:
+M plone/app/contenttypes/migration/atct_migrator.pt
+M plone/app/contenttypes/migration/browser.py
+
+diff --git a/plone/app/contenttypes/migration/atct_migrator.pt b/plone/app/contenttypes/migration/atct_migrator.pt
+index 9b21679..9bb49e9 100644
+--- a/plone/app/contenttypes/migration/atct_migrator.pt
++++ b/plone/app/contenttypes/migration/atct_migrator.pt
+@@ -29,7 +29,9 @@
+                          linguaplone_installed helpers/linguaplone_installed;
+                          object_number helpers/objects_to_be_migrated;
+                          subtopics helpers/site_has_subtopics;
+-                         collections_are_folderish helpers/collections_are_folderish;">
++                         collections_are_folderish helpers/collections_are_folderish;
++                         has_contentleadimage helpers/has_contentleadimage;
++                         installed_types helpers/installed_types;">
+   <div class="important">
+     <h2 i18n:translate="">Important</h2>
+     <p i18n:translate="">Before migrating your content please read the <a href="https://github.com/plone/plone.app.contenttypes#migration">migration-section in the documentation of plone.app.contenttypes</a></p>
+@@ -94,6 +96,22 @@
+         <p i18n:translate="">Your site has <span tal:replace="python: len(subtopics)" /> subtopic(s). You can migrate them since you have folderish Collections but their functionality to inherit criteria will not work unless you.</p>
+       </div>
+     </tal:block>
++    <tal:block condition="python: has_contentleadimage"
++               tal:define="installed_with_behavior python:installed_types['installed_with_behavior'];
++                           installed_without_behavior python:installed_types['installed_without_behavior'];
++                           not_installed python:installed_types['not_installed']">
++      <div class="important">
++        <h2 i18n:translate="">Warning</h2>
++        <p i18n:translate="">
++          Your site seems to use the addon <a href="https://pypi.python.org/pypi/collective.contentleadimage/">collective.contentleadimage</a>.
++          This addons allows you to add images to any content in your site. These images will <strong>not</strong> be migrated unless you enable the behavior "Lead Image" on all those types where you want to migrate images added using collective.contentleadimage. Depending on the way you installed plone.app.contenttypes you might have to first install these types by (re-)installing plone.app.contenttypes. The old types that use leadimages are listed in the navigation-form with the comment <em>"extended fields: 'leadImage', 'leadImage_caption'"</em>
++        </p>
++        <p tal:condition="python:installed_with_behavior">These types are installed and have the image-behavior: <span tal:content="python:', '.join(installed_with_behavior)">Document, Image</span></p>
++        <p tal:condition="python:installed_without_behavior">These types are installed but do not have the behavior enabled: <span tal:content="python:', '.join(installed_without_behavior)">Link, File</span></p>
++        <p tal:condition="python:not_installed">These types are not installed yet: <span tal:content="python:', '.join(not_installed)">News Item, Folder</span></p>
++      </div>
++    </tal:block>
++
+   </tal:block>
+   <tal:block condition="not:object_number">
+     <div class="important">
+diff --git a/plone/app/contenttypes/migration/browser.py b/plone/app/contenttypes/migration/browser.py
+index 91ce767..2f6191f 100644
+--- a/plone/app/contenttypes/migration/browser.py
++++ b/plone/app/contenttypes/migration/browser.py
+@@ -9,8 +9,14 @@
+ from Products.statusmessages.interfaces import IStatusMessage
+ from datetime import datetime
+ from datetime import timedelta
+-from plone.app.contenttypes.migration import migration
++from plone.app.contenttypes.content import Document
++from plone.app.contenttypes.content import File
++from plone.app.contenttypes.content import Folder
++from plone.app.contenttypes.content import Image
++from plone.app.contenttypes.content import Link
++from plone.app.contenttypes.content import NewsItem
+ from plone.app.contenttypes.migration import dxmigration
++from plone.app.contenttypes.migration import migration
+ from plone.app.contenttypes.migration.utils import HAS_MULTILINGUAL
+ from plone.app.contenttypes.migration.utils import installTypeIfNeeded
+ from plone.app.contenttypes.migration.utils import isSchemaExtended
+@@ -31,20 +37,18 @@
  from zope.component import getMultiAdapter
- from zope.component import getUtility
--
- import re
+ from zope.component import queryUtility
+ from zope.interface import Interface
+-import logging
+ 
+-logger = logging.getLogger(__name__)
++import logging
++import pkg_resources
+ 
+-# Schema Extender allowed interfaces
++try:
++    pkg_resources.get_distribution('collective.contentleadimage')
++except pkg_resources.DistributionNotFound:
++    HAS_CONTENTLEADIMAGE = False
++else:
++    HAS_CONTENTLEADIMAGE = True
+ 
+-from plone.app.contenttypes.content import (
+-    Document,
+-    File,
+-    Folder,
+-    Image,
+-    Link,
+-    NewsItem,
+-)
++logger = logging.getLogger(__name__)
+ 
+ PATCH_NOTIFY = [
+     DexterityContent,
+@@ -526,6 +530,28 @@ class FolderishCollection(Container):
+             logger.warn("You are trying to migrate topic to collection. "
+                 "Instead you need a type 'Collection'.")
+ 
++    def has_contentleadimage(self):
++        return HAS_CONTENTLEADIMAGE
++
++    def installed_types(self):
++        """Which types are already Dexterity and which are not."""
++        results = {}
++        results['installed_with_behavior'] = []
++        results['installed_without_behavior'] = []
++        results['not_installed'] = []
++        behavior = 'plone.app.contenttypes.behaviors.leadimage.ILeadImage'
++        portal_types = getToolByName(self.context, 'portal_types')
++        for type_name in DEFAULT_TYPES:
++            fti = queryUtility(IDexterityFTI, name=type_name)
++            if fti:
++                if behavior in fti.behaviors:
++                    results['installed_with_behavior'].append(type_name)
++                else:
++                    results['installed_without_behavior'].append(type_name)
++            else:
++                results['not_installed'].append(type_name)
++        return results
++
+ 
+ class ATCTMigratorResults(BrowserView):
+ 
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2015-01-10T11:38:19+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/3d4fac9fadcb25604205d80c0c4d5c4864be2d00
+
+document migrating content with collective.contentleadimage
+
+Files changed:
+M docs/README.rst
+
+diff --git a/docs/README.rst b/docs/README.rst
+index 56b4bdb..e22e623 100644
+--- a/docs/README.rst
++++ b/docs/README.rst
+@@ -222,7 +222,7 @@ Since LinguaPlone does not support Dexterity you need to migrate from LinguaPlon
+ Migrating from old versions of plone.app.contenttypes
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 
+-Before version 1.0a2 the content-items did not implement marker-interfaces.  They will break in newer versions since the views are now registered for these interfaces (e.g. ``plone.app.contenttypes.interfaces.IDocument``). To fix this you can call the view ``/@@fix_base_classes`` on your site-root.
++Before version 1.0a2 the content-items did not implement marker-interfaces. They will break in newer versions since the views are now registered for these interfaces (e.g. ``plone.app.contenttypes.interfaces.IDocument``). To fix this you can call the view ``/@@fix_base_classes`` on your site-root.
+ 
+ Since plone.app.contenttypes 1.1a1, the Collection type uses the new Collection behavior and the Event type utilizes behaviors from `plone.app.event <http://pypi.python.org/pypi/plone.app.event>`_. In order to upgrade:
+ 
+@@ -233,9 +233,17 @@ Since plone.app.contenttypes 1.1a1, the Collection type uses the new Collection
+ Migrating default-content that was extended with archetypes.schemaextender
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 
+-The migration should warn you if any of your types are extended with archetypes.schemaextender. The data contained in these fields will be lost.
++The migration-form warns you if any of your old types were extended with aditional fields using archetypes.schemaextender. The data contained in these fields will be lost during migration (with the exception of images added with collective.contentleadimage).
+ 
+-You need to implement a custom migration for your types and dexterity-behaviors for the functionality provided by the schemaextenders. This is an advanced development task and beyond the scope of this documentation.
++To keep the data you would need to write a custom migration for your types dexterity-behaviors for the functionality provided by the schemaextenders. This is an advanced development task and beyond the scope of this documentation.
++
++
++Migrating images created with collective.contentleadimage
++^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++
++`collective.contentleadimage <https://pypi.python.org/pypi/collective.contentleadimage/>`_ was a popular addon that allows you to add images to any content in your site by extending the default types. To make sure these images are kept during migration you have to enable the behavior "Lead Image" on all those types where you want to migrate images added using collective.contentleadimage.
++
++The old types that use leadimages are listed in the navigation-form with the comment *"extended fields: 'leadImage', 'leadImage_caption'"*. The migration-form informs you which new types have the behavior enabled and which do not. Depending on the way you installed plone.app.contenttypes you might have to first install these types by (re-)installing plone.app.contenttypes.
  
  
-diff --git a/Products/CMFPlone/resources/browser/configure.zcml b/Products/CMFPlone/resources/browser/configure.zcml
-index d30664c..18875cf 100644
---- a/Products/CMFPlone/resources/browser/configure.zcml
-+++ b/Products/CMFPlone/resources/browser/configure.zcml
-@@ -1,53 +1,52 @@
--<configure xmlns="http://namespaces.zope.org/zope"
--           xmlns:browser="http://namespaces.zope.org/browser"
--           xmlns:five="http://namespaces.zope.org/five">
--
--    <browser:viewlet  
--        name="plone.resourceregistries.scripts" 
--        manager="plone.app.layout.viewlets.interfaces.IScripts"
--        class="Products.CMFPlone.resources.browser.scripts.ScriptsView"
--        template="scripts.pt"
--        permission="zope2.View" 
--        />
--
--    <browser:viewlet  
--        name="plone.resourceregistries.styles" 
--        manager="plone.app.layout.viewlets.interfaces.IHtmlHeadLinks"
--        class="Products.CMFPlone.resources.browser.styles.StylesView"
--        template="styles.pt"
--        permission="zope2.View" 
--        />
--
--
--    <browser:page
--        for="*"
--        name="config.js"
--        class=".configjs.ConfigJsView"
--        permission="zope.Public"
--        />
--
--    <browser:page
--        for="*"
--        name="less-variables.js"
--        class=".mixins.LessConfiguration"
--        permission="zope.Public"
--        />
--
--    <browser:page
--        for="*"
--        name="less-modify.js"
--        class=".mixins.LessModifyConfiguration"
--        permission="zope.Public"
--        />
--
--
--
--    <browser:page
--        for="*"
--        name="plone_less_dependency.less"
--        class=".mixins.LessDependency"
--        permission="zope.Public"
--        />
--
-+<configure
-+    xmlns="http://namespaces.zope.org/zope"
-+    xmlns:browser="http://namespaces.zope.org/browser"
-+    i18n_domain="plone">
-+
-+  <browser:viewlet
-+      name="plone.resourceregistries.scripts"
-+      manager="plone.app.layout.viewlets.interfaces.IScripts"
-+      class="Products.CMFPlone.resources.browser.scripts.ScriptsView"
-+      template="scripts.pt"
-+      permission="zope2.View"
-+      />
-+
-+  <browser:viewlet
-+      name="plone.resourceregistries.styles"
-+      manager="plone.app.layout.viewlets.interfaces.IHtmlHeadLinks"
-+      class="Products.CMFPlone.resources.browser.styles.StylesView"
-+      template="styles.pt"
-+      permission="zope2.View"
-+      />
-+
-+
-+  <browser:page
-+      for="*"
-+      name="config.js"
-+      class=".configjs.ConfigJsView"
-+      permission="zope.Public"
-+      />
-+
-+  <browser:page
-+      for="*"
-+      name="less-variables.js"
-+      class=".mixins.LessConfiguration"
-+      permission="zope.Public"
-+      />
-+
-+  <browser:page
-+      for="*"
-+      name="less-modify.js"
-+      class=".mixins.LessModifyConfiguration"
-+      permission="zope.Public"
-+      />
-+
-+
-+  <browser:page
-+      for="*"
-+      name="plone_less_dependency.less"
-+      class=".mixins.LessDependency"
-+      permission="zope.Public"
-+      />
+ Migrating custom content
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2015-01-13T11:11:39+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/ab959ecc8b22d27adbc3eb7a38ec3852df2acd00
+
+Merge pull request #200 from plone/leadimage
+
+Migrate images from collective.contentleadimage
+
+Files changed:
+M docs/README.rst
+M plone/app/contenttypes/migration/atct_migrator.pt
+M plone/app/contenttypes/migration/browser.py
+M plone/app/contenttypes/migration/migration.py
+M plone/app/contenttypes/migration/utils.py
+
+diff --git a/docs/README.rst b/docs/README.rst
+index 56b4bdb..e22e623 100644
+--- a/docs/README.rst
++++ b/docs/README.rst
+@@ -222,7 +222,7 @@ Since LinguaPlone does not support Dexterity you need to migrate from LinguaPlon
+ Migrating from old versions of plone.app.contenttypes
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
- </configure>
-diff --git a/Products/CMFPlone/resources/browser/cook.py b/Products/CMFPlone/resources/browser/cook.py
-index b9fac49..29b4664 100644
---- a/Products/CMFPlone/resources/browser/cook.py
-+++ b/Products/CMFPlone/resources/browser/cook.py
-@@ -1,16 +1,15 @@
--from zope.component import getUtility
--from plone.registry.interfaces import IRegistry
--from Products.CMFPlone.interfaces.resources import (
--    IResourceRegistry,
--    OVERRIDE_RESOURCE_DIRECTORY_NAME)
--from slimit import minify
-+from Products.CMFPlone.interfaces.resources import IResourceRegistry
-+from Products.CMFPlone.interfaces.resources import OVERRIDE_RESOURCE_DIRECTORY_NAME  # noqa
-+from StringIO import StringIO
- from cssmin import cssmin
+-Before version 1.0a2 the content-items did not implement marker-interfaces.  They will break in newer versions since the views are now registered for these interfaces (e.g. ``plone.app.contenttypes.interfaces.IDocument``). To fix this you can call the view ``/@@fix_base_classes`` on your site-root.
++Before version 1.0a2 the content-items did not implement marker-interfaces. They will break in newer versions since the views are now registered for these interfaces (e.g. ``plone.app.contenttypes.interfaces.IDocument``). To fix this you can call the view ``/@@fix_base_classes`` on your site-root.
+ 
+ Since plone.app.contenttypes 1.1a1, the Collection type uses the new Collection behavior and the Event type utilizes behaviors from `plone.app.event <http://pypi.python.org/pypi/plone.app.event>`_. In order to upgrade:
+ 
+@@ -233,9 +233,17 @@ Since plone.app.contenttypes 1.1a1, the Collection type uses the new Collection
+ Migrating default-content that was extended with archetypes.schemaextender
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 
+-The migration should warn you if any of your types are extended with archetypes.schemaextender. The data contained in these fields will be lost.
++The migration-form warns you if any of your old types were extended with aditional fields using archetypes.schemaextender. The data contained in these fields will be lost during migration (with the exception of images added with collective.contentleadimage).
+ 
+-You need to implement a custom migration for your types and dexterity-behaviors for the functionality provided by the schemaextenders. This is an advanced development task and beyond the scope of this documentation.
++To keep the data you would need to write a custom migration for your types dexterity-behaviors for the functionality provided by the schemaextenders. This is an advanced development task and beyond the scope of this documentation.
++
++
++Migrating images created with collective.contentleadimage
++^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++
++`collective.contentleadimage <https://pypi.python.org/pypi/collective.contentleadimage/>`_ was a popular addon that allows you to add images to any content in your site by extending the default types. To make sure these images are kept during migration you have to enable the behavior "Lead Image" on all those types where you want to migrate images added using collective.contentleadimage.
++
++The old types that use leadimages are listed in the navigation-form with the comment *"extended fields: 'leadImage', 'leadImage_caption'"*. The migration-form informs you which new types have the behavior enabled and which do not. Depending on the way you installed plone.app.contenttypes you might have to first install these types by (re-)installing plone.app.contenttypes.
+ 
+ 
+ Migrating custom content
+diff --git a/plone/app/contenttypes/migration/atct_migrator.pt b/plone/app/contenttypes/migration/atct_migrator.pt
+index 9b21679..9bb49e9 100644
+--- a/plone/app/contenttypes/migration/atct_migrator.pt
++++ b/plone/app/contenttypes/migration/atct_migrator.pt
+@@ -29,7 +29,9 @@
+                          linguaplone_installed helpers/linguaplone_installed;
+                          object_number helpers/objects_to_be_migrated;
+                          subtopics helpers/site_has_subtopics;
+-                         collections_are_folderish helpers/collections_are_folderish;">
++                         collections_are_folderish helpers/collections_are_folderish;
++                         has_contentleadimage helpers/has_contentleadimage;
++                         installed_types helpers/installed_types;">
+   <div class="important">
+     <h2 i18n:translate="">Important</h2>
+     <p i18n:translate="">Before migrating your content please read the <a href="https://github.com/plone/plone.app.contenttypes#migration">migration-section in the documentation of plone.app.contenttypes</a></p>
+@@ -94,6 +96,22 @@
+         <p i18n:translate="">Your site has <span tal:replace="python: len(subtopics)" /> subtopic(s). You can migrate them since you have folderish Collections but their functionality to inherit criteria will not work unless you.</p>
+       </div>
+     </tal:block>
++    <tal:block condition="python: has_contentleadimage"
++               tal:define="installed_with_behavior python:installed_types['installed_with_behavior'];
++                           installed_without_behavior python:installed_types['installed_without_behavior'];
++                           not_installed python:installed_types['not_installed']">
++      <div class="important">
++        <h2 i18n:translate="">Warning</h2>
++        <p i18n:translate="">
++          Your site seems to use the addon <a href="https://pypi.python.org/pypi/collective.contentleadimage/">collective.contentleadimage</a>.
++          This addons allows you to add images to any content in your site. These images will <strong>not</strong> be migrated unless you enable the behavior "Lead Image" on all those types where you want to migrate images added using collective.contentleadimage. Depending on the way you installed plone.app.contenttypes you might have to first install these types by (re-)installing plone.app.contenttypes. The old types that use leadimages are listed in the navigation-form with the comment <em>"extended fields: 'leadImage', 'leadImage_caption'"</em>
++        </p>
++        <p tal:condition="python:installed_with_behavior">These types are installed and have the image-behavior: <span tal:content="python:', '.join(installed_with_behavior)">Document, Image</span></p>
++        <p tal:condition="python:installed_without_behavior">These types are installed but do not have the behavior enabled: <span tal:content="python:', '.join(installed_without_behavior)">Link, File</span></p>
++        <p tal:condition="python:not_installed">These types are not installed yet: <span tal:content="python:', '.join(not_installed)">News Item, Folder</span></p>
++      </div>
++    </tal:block>
++
+   </tal:block>
+   <tal:block condition="not:object_number">
+     <div class="important">
+diff --git a/plone/app/contenttypes/migration/browser.py b/plone/app/contenttypes/migration/browser.py
+index 91ce767..2f6191f 100644
+--- a/plone/app/contenttypes/migration/browser.py
++++ b/plone/app/contenttypes/migration/browser.py
+@@ -9,8 +9,14 @@
+ from Products.statusmessages.interfaces import IStatusMessage
  from datetime import datetime
--from plone.resource.interfaces import IResourceDirectory
--from StringIO import StringIO
--from zope.component.hooks import getSite
- from plone.protect.interfaces import IDisableCSRFProtection
-+from plone.registry.interfaces import IRegistry
-+from plone.resource.interfaces import IResourceDirectory
- from plone.subrequest import subrequest
-+from slimit import minify
-+from zope.component import getUtility
-+from zope.component.hooks import getSite
- from zope.globalrequest import getRequest
- from zope.interface import alsoProvides
+ from datetime import timedelta
+-from plone.app.contenttypes.migration import migration
++from plone.app.contenttypes.content import Document
++from plone.app.contenttypes.content import File
++from plone.app.contenttypes.content import Folder
++from plone.app.contenttypes.content import Image
++from plone.app.contenttypes.content import Link
++from plone.app.contenttypes.content import NewsItem
+ from plone.app.contenttypes.migration import dxmigration
++from plone.app.contenttypes.migration import migration
+ from plone.app.contenttypes.migration.utils import HAS_MULTILINGUAL
+ from plone.app.contenttypes.migration.utils import installTypeIfNeeded
+ from plone.app.contenttypes.migration.utils import isSchemaExtended
+@@ -31,20 +37,18 @@
+ from zope.component import getMultiAdapter
+ from zope.component import queryUtility
+ from zope.interface import Interface
+-import logging
  
-@@ -37,7 +36,8 @@ def cookWhenChangingSettings(context, bundle):
-                     css_file += '\n'
+-logger = logging.getLogger(__name__)
++import logging
++import pkg_resources
  
-             if resource.js:
--                response = subrequest(siteUrl + '/' + resource.js, root=context)
-+                response = subrequest(
-+                    siteUrl + '/' + resource.js, root=context)
-                 if response.status == 200:
-                     js_file += response.getBody()
-                     js_file += '\n'
-@@ -51,9 +51,9 @@ def cookWhenChangingSettings(context, bundle):
-     # Storing js
-     resource_path = js_path.split('++plone++')[-1]
-     resource_name, resource_filepath = resource_path.split('/', 1)
--    persistent_directory = getUtility(IResourceDirectory, name="persistent")  # noqa
-+    persistent_directory = getUtility(IResourceDirectory, name="persistent")
-     if OVERRIDE_RESOURCE_DIRECTORY_NAME not in persistent_directory:
--        persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)  # noqa
-+        persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)
-     container = persistent_directory[OVERRIDE_RESOURCE_DIRECTORY_NAME]
-     if resource_name not in container:
-         container.makeDirectory(resource_name)
-@@ -64,9 +64,9 @@ def cookWhenChangingSettings(context, bundle):
-     # Storing css
-     resource_path = css_path.split('++plone++')[-1]
-     resource_name, resource_filepath = resource_path.split('/', 1)
--    persistent_directory = getUtility(IResourceDirectory, name="persistent")  # noqa
-+    persistent_directory = getUtility(IResourceDirectory, name="persistent")
-     if OVERRIDE_RESOURCE_DIRECTORY_NAME not in persistent_directory:
--        persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)  # noqa
-+        persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)
-     container = persistent_directory[OVERRIDE_RESOURCE_DIRECTORY_NAME]
-     if resource_name not in container:
-         container.makeDirectory(resource_name)
-diff --git a/Products/CMFPlone/resources/browser/interfaces.py b/Products/CMFPlone/resources/browser/interfaces.py
-index a023ae1..b10009c 100644
---- a/Products/CMFPlone/resources/browser/interfaces.py
-+++ b/Products/CMFPlone/resources/browser/interfaces.py
-@@ -1,4 +1,4 @@
--from zope.interface import Interface, Attribute
-+from zope.interface import Interface
+-# Schema Extender allowed interfaces
++try:
++    pkg_resources.get_distribution('collective.contentleadimage')
++except pkg_resources.DistributionNotFound:
++    HAS_CONTENTLEADIMAGE = False
++else:
++    HAS_CONTENTLEADIMAGE = True
  
+-from plone.app.contenttypes.content import (
+-    Document,
+-    File,
+-    Folder,
+-    Image,
+-    Link,
+-    NewsItem,
+-)
++logger = logging.getLogger(__name__)
  
- class IScriptsView(Interface):
-@@ -11,5 +11,3 @@ class IStylesView(Interface):
+ PATCH_NOTIFY = [
+     DexterityContent,
+@@ -526,6 +530,28 @@ class FolderishCollection(Container):
+             logger.warn("You are trying to migrate topic to collection. "
+                 "Instead you need a type 'Collection'.")
  
-     def styles():
-         """ Returns a list of dicts with information for style rendering. """
--
--
-diff --git a/Products/CMFPlone/resources/browser/mixins.py b/Products/CMFPlone/resources/browser/mixins.py
-index eec80b7..504901d 100644
---- a/Products/CMFPlone/resources/browser/mixins.py
-+++ b/Products/CMFPlone/resources/browser/mixins.py
-@@ -1,12 +1,11 @@
-+from Products.CMFPlone.interfaces import IResourceRegistry
- from Products.Five.browser import BrowserView
--from zope.component import getUtility
--from zope.component import getMultiAdapter
-+from plone.registry.interfaces import IRegistry
- from urlparse import urlparse
-+from zope.component import getMultiAdapter
-+from zope.component import getUtility
- 
- 
--from plone.registry.interfaces import IRegistry
--from Products.CMFPlone.interfaces import IResourceRegistry
--
- lessconfig = """
-  window.less = {
-     env: "development",
-@@ -35,8 +34,7 @@
- 
- 
- class LessConfiguration(BrowserView):
--    """
--    Browser view that gets the definition of less variables on plone
-+    """Browser view that gets the definition of less variables on plone.
-     """
- 
-     def registry(self):
-@@ -93,6 +91,7 @@ def __call__(self):
- 
- 
- class LessModifyConfiguration(LessConfiguration):
++    def has_contentleadimage(self):
++        return HAS_CONTENTLEADIMAGE
 +
-     def __call__(self):
-         registry = self.registry()
-         portal_state = getMultiAdapter((self.context, self.request),
-@@ -122,8 +121,8 @@ def __call__(self):
++    def installed_types(self):
++        """Which types are already Dexterity and which are not."""
++        results = {}
++        results['installed_with_behavior'] = []
++        results['installed_without_behavior'] = []
++        results['not_installed'] = []
++        behavior = 'plone.app.contenttypes.behaviors.leadimage.ILeadImage'
++        portal_types = getToolByName(self.context, 'portal_types')
++        for type_name in DEFAULT_TYPES:
++            fti = queryUtility(IDexterityFTI, name=type_name)
++            if fti:
++                if behavior in fti.behaviors:
++                    results['installed_with_behavior'].append(type_name)
++                else:
++                    results['installed_without_behavior'].append(type_name)
++            else:
++                results['not_installed'].append(type_name)
++        return results
++
  
+ class ATCTMigratorResults(BrowserView):
  
- class LessDependency(BrowserView):
--    """
--    Browser view that returns the less/css on less format for specific resource
-+    """Browser view that returns the less/css on less format for specific
-+    resource.
-     """
+diff --git a/plone/app/contenttypes/migration/migration.py b/plone/app/contenttypes/migration/migration.py
+index 5f28383..5ca27e5 100644
+--- a/plone/app/contenttypes/migration/migration.py
++++ b/plone/app/contenttypes/migration/migration.py
+@@ -23,6 +23,7 @@
+ from plone.app.contenttypes.migration.utils import add_portlet
+ from plone.app.contenttypes.migration.utils import copy_contentrules
+ from plone.app.contenttypes.migration.utils import move_comments
++from plone.app.contenttypes.migration.utils import migrate_leadimage
+ from plone.app.textfield.value import RichTextValue
+ from plone.app.uuid.utils import uuidToObject
+ from plone.dexterity.interfaces import IDexterityContent
+@@ -296,6 +297,9 @@ def migrate_portlets(self):
+     def migrate_contentrules(self):
+         copy_contentrules(self.old, self.new)
  
-     def registry(self):
-diff --git a/Products/CMFPlone/resources/browser/resource.py b/Products/CMFPlone/resources/browser/resource.py
-index 7d4ffd5..0e32f90 100644
---- a/Products/CMFPlone/resources/browser/resource.py
-+++ b/Products/CMFPlone/resources/browser/resource.py
-@@ -1,24 +1,23 @@
--from zope import component
--from zope.ramcache.interfaces import ram
--
- from Acquisition import aq_inner, aq_base, aq_parent
--from zope.component import getUtility
--from plone.registry.interfaces import IRegistry
--from Products.CMFPlone.interfaces import (
--    IBundleRegistry,
--    IResourceRegistry)
--from plone.app.layout.viewlets.common import ViewletBase
- from Products.CMFCore.Expression import Expression
- from Products.CMFCore.Expression import createExprContext
--from zope.component import getMultiAdapter
++    def migrate_leadimage(self):
++        migrate_leadimage(self.old, self.new)
++
+     def last_migrate_comments(self):
+         """Migrate the plone.app.discussion comments.
+            Comments were stored on the portal, get them and
+@@ -336,6 +340,9 @@ def migrate_portlets(self):
+     def migrate_contentrules(self):
+         copy_contentrules(self.old, self.new)
+ 
++    def migrate_leadimage(self):
++        migrate_leadimage(self.old, self.new)
++
+     def last_migrate_comments(self):
+         """Migrate the plone.app.discussion comments.
+            Comments were stored on the portal, get them and
+diff --git a/plone/app/contenttypes/migration/utils.py b/plone/app/contenttypes/migration/utils.py
+index 5eb6d15..20ae0d4 100644
+--- a/plone/app/contenttypes/migration/utils.py
++++ b/plone/app/contenttypes/migration/utils.py
+@@ -1,5 +1,6 @@
+ # -*- coding: utf-8 -*-
  from Products.CMFCore.utils import getToolByName
-+from Products.CMFPlone.interfaces import IBundleRegistry
-+from Products.CMFPlone.interfaces import IResourceRegistry
-+from plone.app.layout.viewlets.common import ViewletBase
- from plone.app.theming.utils import getCurrentTheme
--from plone.app.theming.utils import isThemeEnabled
- from plone.app.theming.utils import getTheme
-+from plone.app.theming.utils import isThemeEnabled
-+from plone.registry.interfaces import IRegistry
-+from zope import component
-+from zope.component import getMultiAdapter
-+from zope.component import getUtility
-+from zope.ramcache.interfaces import ram
- 
- 
- class ResourceView(ViewletBase):
--    """ Information for script rendering. """
-+    """Information for script rendering.
++from Products.CMFPlone.utils import safe_unicode, safe_hasattr
+ from Products.GenericSetup.context import DirectoryImportContext
+ from Products.GenericSetup.utils import importObjects
+ from archetypes.schemaextender.interfaces import IBrowserLayerAwareExtender
+@@ -8,11 +9,13 @@
+ from archetypes.schemaextender.interfaces import ISchemaModifier
+ from copy import deepcopy
+ from plone.app.contentrules.api import assign_rule
++from plone.app.contenttypes.behaviors.leadimage import ILeadImage
+ from plone.app.contenttypes.utils import DEFAULT_TYPES
+ from plone.app.discussion.conversation import ANNOTATION_KEY as DISCUSSION_KEY
+ from plone.app.discussion.interfaces import IConversation
+ from plone.contentrules.engine.interfaces import IRuleAssignmentManager
+ from plone.dexterity.interfaces import IDexterityFTI
++from plone.namedfile.file import NamedBlobImage
+ from plone.portlets.interfaces import IPortletAssignmentMapping
+ from plone.portlets.interfaces import IPortletManager
+ from zope.annotation.interfaces import IAnnotations
+@@ -156,3 +159,49 @@ def copy_contentrules(source_object, target_object):
+             return
+         for rule_id in source_assignable:
+             assign_rule(target_object, rule_id)
++
++def migrate_leadimage(source_object, target_object):
++    """ Migrate images added using collective.contentleadimage to the
++    ILeadImage-behavior of plone.app.contenttypes if it is enabled.
 +    """
- 
-     @property
-     def development(self):
-@@ -26,7 +25,7 @@ def development(self):
- 
-     @property
-     def last_legacy_import(self):
--        return self.registry.records['plone.resources.last_legacy_import'].value
-+        return self.registry.records['plone.resources.last_legacy_import'].value  # noqa
- 
-     def evaluateExpression(self, expression, context):
-         """Evaluate an object's TALES condition to see if it should be
-@@ -114,10 +113,14 @@ def get_cooked_bundles(self):
-             disabled_request_bundles.extend(self.request.disabled_bundles)
- 
-         for key, bundle in bundles.items():
--            # The diazo manifest and request bundles are more important than the disabled bundle on registry
-+            # The diazo manifest and request bundles are more important than
-+            # the disabled bundle on registry.
-             # We can access the site with diazo.off=1 without diazo bundles
--            if (bundle.enabled or key in enabled_request_bundles or key in enabled_diazo_bundles) and \
--                    (key not in disabled_diazo_bundles and key not in disabled_request_bundles):
-+            if (bundle.enabled
-+                    or key in enabled_request_bundles
-+                    or key in enabled_diazo_bundles) and\
-+                    (key not in disabled_diazo_bundles
-+                        and key not in disabled_request_bundles):
-                 # check expression
-                 if bundle.expression:
-                     cooked_expression = None
-@@ -179,4 +182,3 @@ def ordered_bundles_result(self):
-                 self.get_data(bundle, result)
- 
-         return result
--
-diff --git a/Products/CMFPlone/resources/browser/scripts.py b/Products/CMFPlone/resources/browser/scripts.py
-index 043f48a..603ba47 100644
---- a/Products/CMFPlone/resources/browser/scripts.py
-+++ b/Products/CMFPlone/resources/browser/scripts.py
-@@ -4,14 +4,16 @@
- 
- 
- class ScriptsView(ResourceView):
--    """ Information for script rendering. """
-+    """Information for script rendering.
-+    """
- 
-     def get_data(self, bundle, result):
-         bundle_name = bundle.__prefix__.split('/', 1)[1].rstrip('.')
-         if self.development is False:
-             if bundle.compile is False:
-                 # Its a legacy css bundle
--                if not bundle.last_compilation or self.last_legacy_import > bundle.last_compilation:
-+                if not bundle.last_compilation\
-+                        or self.last_legacy_import > bundle.last_compilation:
-                     # We need to compile
-                     cookWhenChangingSettings(self.context, bundle)
-             if bundle.jscompilation:
-@@ -42,9 +44,8 @@ def get_data(self, bundle, result):
-                         result.append(data)
- 
-     def scripts(self):
--        """
--        The requirejs scripts, the ones that are not resources
--        are loaded on configjs.py
-+        """The requirejs scripts, the ones that are not resources are loaded on
-+        configjs.py
-         """
-         result = []
-         # We always add jquery resource
-diff --git a/Products/CMFPlone/resources/browser/styles.py b/Products/CMFPlone/resources/browser/styles.py
-index 9ffdd49..c4f60c7 100644
---- a/Products/CMFPlone/resources/browser/styles.py
-+++ b/Products/CMFPlone/resources/browser/styles.py
-@@ -1,17 +1,19 @@
--from Products.CMFPlone.resources.browser.resource import ResourceView
- from Products.CMFPlone.resources.browser.cook import cookWhenChangingSettings
-+from Products.CMFPlone.resources.browser.resource import ResourceView
- from urlparse import urlparse
- 
- 
- class StylesView(ResourceView):
--    """ Information for style rendering. """
- 
-+    """ Information for style rendering. """
- 
-     def get_urls(self, style, bundle):
-         """
-         Extracts the urls for the specific resource
-         """
--        bundle_name = bundle.__prefix__.split('/', 1)[1].rstrip('.') if bundle else 'none'
-+        bundle_name = bundle.__prefix__.split(
-+            '/',
-+            1)[1].rstrip('.') if bundle else 'none'
-         for css in style.css:
-             url = urlparse(css)
-             if url.netloc == '':
-@@ -25,22 +27,26 @@ def get_urls(self, style, bundle):
-             if extension != '' and extension != 'css':
-                 rel = "stylesheet/%s" % extension
- 
--            data = {'rel': rel,
--                    'bundle': bundle_name,
--                    'conditionalcomment' : bundle.conditionalcomment if bundle else '',
--                    'src': src}
-+            data = {
-+                'rel': rel,
-+                'bundle': bundle_name,
-+                'conditionalcomment': bundle.conditionalcomment if bundle else '',  # noqa
-+                'src': src}
-             yield data
- 
-     def get_data(self, bundle, result):
--        """ 
-+        """
-         Gets the needed information for the bundle
-         and stores it on the result list
-         """
--        bundle_name = bundle.__prefix__.split('/', 1)[1].rstrip('.') if bundle else 'none'
-+        bundle_name = bundle.__prefix__.split(
-+            '/',
-+            1)[1].rstrip('.') if bundle else 'none'
-         if self.development is False:
-             if bundle.compile is False:
-                 # Its a legacy css bundle
--                if not bundle.last_compilation or self.last_legacy_import > bundle.last_compilation:
-+                if not bundle.last_compilation\
-+                        or self.last_legacy_import > bundle.last_compilation:
-                     # We need to compile
-                     cookWhenChangingSettings(self.context, bundle)
- 
-@@ -48,14 +54,18 @@ def get_data(self, bundle, result):
-                 result.append({
-                     'bundle': bundle_name,
-                     'rel': 'stylesheet',
--                    'conditionalcomment' : bundle.conditionalcomment,
--                    'src': '%s/%s?version=%s' % (self.portal_url, bundle.csscompilation, bundle.last_compilation)
--                    })
-+                    'conditionalcomment': bundle.conditionalcomment,
-+                    'src': '%s/%s?version=%s' % (
-+                        self.portal_url,
-+                        bundle.csscompilation,
-+                        bundle.last_compilation
-+                    )
-+                })
-         else:
-             self.resources = self.get_resources()
-             # The bundle resources
-             for resource in bundle.resources:
--                if resource in self.resources:        
-+                if resource in self.resources:
-                     style = self.resources[resource]
-                     for data in self.get_urls(style, bundle):
-                         result.append(data)
-@@ -88,9 +98,6 @@ def styles(self):
-                     'conditionalcomment': '',
-                     'src': src,
-                     'bundle': 'diazo'}
--        
++    OLD_LEADIMAGE_FIELD_NAME = 'leadImage'
++    OLD_CAPTION_FIELD_NAME = 'leadImage_caption'
++    NEW_LEADIMAGE_FIELD_NAME = 'image'
++    NEW_CAPTION_FIELD_NAME = 'image_caption'
 +
-             result.append(data)
-         return result
--
--
--
-diff --git a/Products/CMFPlone/resources/exportimport/__init__.py b/Products/CMFPlone/resources/exportimport/__init__.py
-index 4287ca8..e69de29 100644
---- a/Products/CMFPlone/resources/exportimport/__init__.py
-+++ b/Products/CMFPlone/resources/exportimport/__init__.py
-@@ -1 +0,0 @@
--#
-\ No newline at end of file
-diff --git a/Products/CMFPlone/resources/exportimport/configure.zcml b/Products/CMFPlone/resources/exportimport/configure.zcml
-index c1791fb..400fed6 100644
---- a/Products/CMFPlone/resources/exportimport/configure.zcml
-+++ b/Products/CMFPlone/resources/exportimport/configure.zcml
-@@ -1,8 +1,6 @@
- <configure
-     xmlns="http://namespaces.zope.org/zope"
--    xmlns:five="http://namespaces.zope.org/five"
--    i18n_domain="plone"
--    >
-+    i18n_domain="plone">
- 
-   <adapter
-       factory=".jsregistry.JSRegistryNodeAdapter"
-diff --git a/Products/CMFPlone/resources/exportimport/cssregistry.py b/Products/CMFPlone/resources/exportimport/cssregistry.py
-index 21592d3..fb567e4 100644
---- a/Products/CMFPlone/resources/exportimport/cssregistry.py
-+++ b/Products/CMFPlone/resources/exportimport/cssregistry.py
-@@ -1,12 +1,12 @@
-+from .resourceregistry import ResourceRegistryNodeAdapter
-+from .resourceregistry import importResRegistry
- from Products.ResourceRegistries.interfaces import ICSSRegistry
- 
--from resourceregistry import ResourceRegistryNodeAdapter, \
--     importResRegistry
--
- _FILENAME = 'cssregistry.xml'
- _REG_ID = 'portal_css'
- _REG_TITLE = 'Stylesheet registry'
- 
++    old_leadimage_field = source_object.getField(OLD_LEADIMAGE_FIELD_NAME)
++    if not old_leadimage_field:
++        # skip if old content has no field
++        return
 +
- def importCSSRegistry(context):
-     """
-     Import CSS registry.
-@@ -15,6 +15,7 @@ def importCSSRegistry(context):
- 
- 
- class CSSRegistryNodeAdapter(ResourceRegistryNodeAdapter):
++    if ILeadImage(target_object, None) is None:
++        # skip if new content does not have the LeadImage-behavior enabled
++        logger.info("Target does not have the behavior 'Lead Image' enabled. "
++                    "Could not migrate collective.leadimage fields.")
++        return
 +
-     """
-     Node im- and exporter for CSSRegistry.
-     """
-diff --git a/Products/CMFPlone/resources/exportimport/jsregistry.py b/Products/CMFPlone/resources/exportimport/jsregistry.py
-index 4cb9a39..0b04fbc 100644
---- a/Products/CMFPlone/resources/exportimport/jsregistry.py
-+++ b/Products/CMFPlone/resources/exportimport/jsregistry.py
-@@ -1,22 +1,20 @@
- from Products.ResourceRegistries.interfaces import IJSRegistry
--
--from resourceregistry import ResourceRegistryNodeAdapter, \
--     importResRegistry
-+from resourceregistry import ResourceRegistryNodeAdapter
-+from resourceregistry import importResRegistry
- 
- _FILENAME = 'jsregistry.xml'
- _REG_ID = 'portal_javascripts'
- _REG_TITLE = 'Javascript registry'
- 
++    old_image = old_leadimage_field.get(source_object)
++    if not old_image:
++        # skip if image-field is empty
++        return
 +
- def importJSRegistry(context):
--    """
--    Import javascript registry.
-+    """Import javascript registry.
-     """
-     return importResRegistry(context, _REG_ID, _REG_TITLE, _FILENAME)
- 
- 
- class JSRegistryNodeAdapter(ResourceRegistryNodeAdapter):
--    """
--    Node im- and exporter for JSRegistry.
-+    """Node im- and exporter for JSRegistry.
-     """
- 
-     __used_for__ = IJSRegistry
-diff --git a/Products/CMFPlone/resources/exportimport/resourceregistry.py b/Products/CMFPlone/resources/exportimport/resourceregistry.py
-index c5cb5a8..404ec83 100644
---- a/Products/CMFPlone/resources/exportimport/resourceregistry.py
-+++ b/Products/CMFPlone/resources/exportimport/resourceregistry.py
-@@ -1,17 +1,16 @@
--from plone.i18n.normalizer.interfaces import IIDNormalizer
--from zope.component import queryMultiAdapter
--from zope.component import queryUtility
- from Products.CMFCore.utils import getToolByName
--from Products.CMFPlone.interfaces import IResourceRegistry
- from Products.CMFPlone.interfaces import IBundleRegistry
-+from Products.CMFPlone.interfaces import IResourceRegistry
- from Products.GenericSetup.interfaces import IBody
- from Products.GenericSetup.utils import XMLAdapterBase
- from datetime import datetime
-+from plone.i18n.normalizer.interfaces import IIDNormalizer
-+from zope.component import queryMultiAdapter
-+from zope.component import queryUtility
- 
- 
- def importResRegistry(context, reg_id, reg_title, filename):
--    """
--    Import resource registry.
-+    """Import resource registry.
-     """
-     site = context.getSite()
-     logger = context.getLogger('resourceregistry')
-@@ -38,8 +37,7 @@ def importResRegistry(context, reg_id, reg_title, filename):
- class ResourceRegistryNodeAdapter(XMLAdapterBase):
- 
-     def _importNode(self, node):
--        """
--        Import the object from the DOM node.
-+        """Import the object from the DOM node.
-         """
-         if self.registry is None:
-             # Upgrade 3.x no registry there
-@@ -125,5 +123,7 @@ def _importNode(self, node):
-                             res_id)
-                     else:
-                         legacy.resources.append(res_id)
--                if 'plone.resources.last_legacy_import' in self.registry.records:
--                    self.registry.records['plone.resources.last_legacy_import'].value = datetime.now()
-+                if 'plone.resources.last_legacy_import' in self.registry.records:  # noqa
-+                    self.registry.records[
-+                        'plone.resources.last_legacy_import'
-+                    ].value = datetime.now()
-diff --git a/Products/CMFPlone/resources/viewlets/__init__.py b/Products/CMFPlone/resources/viewlets/__init__.py
-index c93af55..16b6374 100644
---- a/Products/CMFPlone/resources/viewlets/__init__.py
-+++ b/Products/CMFPlone/resources/viewlets/__init__.py
-@@ -1,3 +1,10 @@
--from Products.ResourceRegistries.interfaces.registries import IResourceRegistry, ICSSRegistry, IKSSRegistry, IJSRegistry, ICookedFile, IResourceProvider
--from Products.ResourceRegistries.interfaces.viewletmanagers import IHtmlHeadScripts, IHtmlHeadStyles
--from Products.ResourceRegistries.interfaces.settings import IResourceRegistriesSettings
-\ No newline at end of file
++    filename = safe_unicode(old_image.filename)
++    old_image_data = old_image.data
++    if safe_hasattr(old_image_data, 'data'):
++        # handle relstorage
++        old_image_data = old_image_data.data
 +
-+from Products.ResourceRegistries.interfaces.registries import IResourceRegistry
-+from Products.ResourceRegistries.interfaces.registries import ICSSRegistry
-+from Products.ResourceRegistries.interfaces.registries import IKSSRegistry
-+from Products.ResourceRegistries.interfaces.registries import IJSRegistry
-+from Products.ResourceRegistries.interfaces.registries import ICookedFile
-+from Products.ResourceRegistries.interfaces.registries import IResourceProvider
-+from Products.ResourceRegistries.interfaces.viewletmanagers import IHtmlHeadScripts
-+from Products.ResourceRegistries.interfaces.viewletmanagers import IHtmlHeadStyles
-+from Products.ResourceRegistries.interfaces.settings import IResourceRegistriesSettings
-diff --git a/Products/CMFPlone/resources/viewlets/registries.py b/Products/CMFPlone/resources/viewlets/registries.py
-index 32f515a..a5c43d2 100644
---- a/Products/CMFPlone/resources/viewlets/registries.py
-+++ b/Products/CMFPlone/resources/viewlets/registries.py
-@@ -1,23 +1,26 @@
--from zope.interface import Interface
- from zope.interface import Attribute
-+from zope.interface import Interface
++    # construct the new image
++    namedblobimage = NamedBlobImage(data=old_image_data,
++                                    filename=filename)
 +
- 
- class ICookedFile(Interface):
-     """Marker interface for file objects created on the fly for
-     concatenated resources.
-     """
- 
++    # set new field on destination object
++    setattr(target_object, NEW_LEADIMAGE_FIELD_NAME, namedblobimage)
 +
- class IResourceProvider(Interface):
-     """A provider of resources.
--    
-+
-     Register a named adapter from the particular resource registry object
-     to this interface to provide resources from locations other than the
-     main persistent registry.
-     """
--    
-+
-     def getResources(self):
-         """Get a list of available Resource objects
-         """
- 
-+
- class IResourceRegistry(Interface):
-     """A tool for registering and evaluating resource linkage."""
- 
-@@ -34,7 +37,7 @@ def unregisterResource(id):
- 
-     def getResource(id):
-         """Get resource object by id.
--        
-+
-         If any property of the resource is changed, then cookResources of the
-         registry must be called."""
- 
-@@ -74,6 +77,7 @@ def getResources():
-         For use in management screens.
-         """
- 
-+
- class ICSSRegistry(Interface):
-     """A tool for registering and evaluating stylesheet linkage."""
- 
-@@ -87,8 +91,14 @@ def registerStylesheet(id, expression='', media='screen', rel='stylesheet',
-                            rendering='link', enabled=1):
-         """Register a stylesheet."""
- 
--    def manage_addStylesheet(id, expression='', media='screen', rel='stylesheet',
--                             rendering='link', enabled=True , REQUEST=None):
-+    def manage_addStylesheet(
-+            id,
-+            expression='',
-+            media='screen',
-+            rel='stylesheet',
-+            rendering='link',
-+            enabled=True,
-+            REQUEST=None):
-         """Add stylesheet from a ZMI form."""
- 
-     def manage_removeStylesheet(id, REQUEST=None):
-@@ -110,8 +120,8 @@ class IKSSRegistry(Interface):
-     def registerKineticStylesheet(id, expression='', enabled=1):
-         """Register a kineticstylesheet."""
- 
--    def manage_addKineticStylesheet(id, expression='', 
--                                    enabled=True , REQUEST=None):
-+    def manage_addKineticStylesheet(id, expression='',
-+                                    enabled=True, REQUEST=None):
-         """Add kineticstylesheet from a ZMI form."""
- 
-     def manage_removeKineticStylesheet(id, REQUEST=None):
-@@ -122,6 +132,7 @@ def manage_saveKineticStylesheets(REQUEST=None):
- 
- 
- class IJSRegistry(Interface):
-+
-     """A tool for registering and evaluating script linkage."""
- 
-     id = Attribute('id',
-@@ -136,7 +147,12 @@ def registerScript(id, expression='', inline=False, enabled=True):
-     def manage_saveScripts(REQUEST=None):
-         """Save script data from form submission."""
- 
--    def manage_addScript(id, expression='', inline=False, enabled=True , REQUEST=None):
-+    def manage_addScript(
-+            id,
-+            expression='',
-+            inline=False,
-+            enabled=True,
-+            REQUEST=None):
-         """Add script from a ZMI form."""
- 
-     def manage_removeScript(id, REQUEST=None):
-diff --git a/Products/CMFPlone/resources/viewlets/settings.py b/Products/CMFPlone/resources/viewlets/settings.py
-index 841c63d..de1f147 100644
---- a/Products/CMFPlone/resources/viewlets/settings.py
-+++ b/Products/CMFPlone/resources/viewlets/settings.py
-@@ -1,16 +1,17 @@
--from zope.interface import Interface
- from zope import schema
- from zope.i18nmessageid import MessageFactory
-+from zope.interface import Interface
- 
- _ = MessageFactory('plone')
- 
-+
- class IResourceRegistriesSettings(Interface):
-     """Settings stored in portal_registry
-     """
--    
-+
-     resourceBundlesForThemes = schema.Dict(
--            title=_(u"Resource bundles for themes"),
--            description=_(u"Maps skin names to lists of resource bundle names"),
--            key_type=schema.ASCIILine(),
--            value_type=schema.List(value_type=schema.ASCIILine())
--        )
-+        title=_(u"Resource bundles for themes"),
-+        description=_(u"Maps skin names to lists of resource bundle names"),
-+        key_type=schema.ASCIILine(),
-+        value_type=schema.List(value_type=schema.ASCIILine())
-+    )
++    # handle image caption field
++    caption_field = source_object.getField(OLD_CAPTION_FIELD_NAME, None)
++    if caption_field:
++        setattr(target_object,
++                (NEW_CAPTION_FIELD_NAME),
++                safe_unicode(caption_field.get(source_object)))
++    logger.info("Migrating contentlead image %s" % filename)
 
 
