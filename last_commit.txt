@@ -1,30 +1,26 @@
-Repository: mockup
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-01-13T20:00:03-03:00
+Date: 2015-01-13T20:11:22-03:00
 Author: Franco Pellegrini (frapell) <frapell@gmail.com>
-Commit: https://github.com/plone/mockup/commit/c3d1c26a7e181f657fb3566490b2f34677bf8782
+Commit: https://github.com/plone/plone.app.widgets/commit/1475e889cd582865fe3a23f8c89efe896f6fb541
 
-If no scale is provided, do not append anything at the end
+We want raw output for the field in edit mode
 
 Files changed:
-M mockup/patterns/tinymce/pattern.js
+M plone/app/widgets/at.py
 
-diff --git a/mockup/patterns/tinymce/pattern.js b/mockup/patterns/tinymce/pattern.js
-index 42e4df0..74ac881 100644
---- a/mockup/patterns/tinymce/pattern.js
-+++ b/mockup/patterns/tinymce/pattern.js
-@@ -204,7 +204,11 @@ define([
-     generateImageUrl: function(data, scale) {
-       var self = this;
-       var url = self.generateUrl(data);
--      return url + self.options.prependToScalePart + scale + self.options.appendToScalePart;
-+      if (scale !== ""){
-+          url = (url + self.options.prependToScalePart + scale +
-+                 self.options.appendToScalePart);
-+      }
-+      return url;
-     },
-     stripGeneratedUrl: function(url) {
-       // to get original attribute back
+diff --git a/plone/app/widgets/at.py b/plone/app/widgets/at.py
+index f46910a..ee864ce 100644
+--- a/plone/app/widgets/at.py
++++ b/plone/app/widgets/at.py
+@@ -572,7 +572,7 @@ def _base_args(self, context, field, request):
+         charset = properties.site_properties.getProperty('default_charset',
+                                                          'utf-8')
+         args['value'] = (request.get(field.getName(),
+-                                     field.getAccessor(context)())
++                                     field.getRaw(context))
+                          ).decode(charset)
+ 
+         args.setdefault('pattern_options', {})
 
 
