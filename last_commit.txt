@@ -1,26 +1,54 @@
-Repository: plone.app.widgets
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-15T18:39:57-03:00
-Author: Franco Pellegrini (frapell) <frapell@gmail.com>
-Commit: https://github.com/plone/plone.app.widgets/commit/678fa4272811ff3ddcab41ae5ff96c68fc950b27
+Date: 2015-01-15T23:30:54+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/e427adc1b6838928607760f9eb736b8bd8e905e5
 
-Fix test case that failed after 1475e889cd582865fe3a23f8c89efe896f6fb541
+Add event_listing to available view methods for the Folder and Collection
 
 Files changed:
-M plone/app/widgets/tests/test_at.py
+M docs/CHANGES.rst
+M plone/app/contenttypes/profiles/default/types/Collection.xml
+M plone/app/contenttypes/profiles/default/types/Folder.xml
 
-diff --git a/plone/app/widgets/tests/test_at.py b/plone/app/widgets/tests/test_at.py
-index d8b164b..e5e7594 100644
---- a/plone/app/widgets/tests/test_at.py
-+++ b/plone/app/widgets/tests/test_at.py
-@@ -553,7 +553,7 @@ def setUp(self):
-         self.portal = self.layer['portal']
-         self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
-         self.field = Mock()
--        self.field.getAccessor.return_value = lambda: 'fieldvalue'
-+        self.field.getRaw.return_value = 'fieldvalue'
-         self.field.getName.return_value = 'fieldname'
-         self.field.getContentType.return_value = 'text/html'
+diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
+index f698cd1..a8e25e2 100644
+--- a/docs/CHANGES.rst
++++ b/docs/CHANGES.rst
+@@ -4,6 +4,10 @@ Changelog
+ 1.2 (unreleased)
+ ----------------
  
++- Add ``event_listing`` to available view methods for the Folder and Collection
++  types.
++  [thet]
++
+ - Migrate comments created with plone.app.discussion.
+   [gbastien, pbauer]
+ 
+diff --git a/plone/app/contenttypes/profiles/default/types/Collection.xml b/plone/app/contenttypes/profiles/default/types/Collection.xml
+index a525995..ffe12c7 100644
+--- a/plone/app/contenttypes/profiles/default/types/Collection.xml
++++ b/plone/app/contenttypes/profiles/default/types/Collection.xml
+@@ -36,6 +36,7 @@
+     <element value="all_content" />
+     <element value="tabular_view" />
+     <element value="thumbnail_view" />
++    <element value="event_listing"/>
+   </property>
+ 
+   <!-- Method aliases -->
+diff --git a/plone/app/contenttypes/profiles/default/types/Folder.xml b/plone/app/contenttypes/profiles/default/types/Folder.xml
+index 01a3166..e318c5d 100644
+--- a/plone/app/contenttypes/profiles/default/types/Folder.xml
++++ b/plone/app/contenttypes/profiles/default/types/Folder.xml
+@@ -19,6 +19,7 @@
+   <element value="folder_tabular_view"/>
+   <element value="folder_album_view"/>
+   <element value="folder_listing"/>
++  <element value="event_listing"/>
+  </property>
+  <property name="default_view_fallback">False</property>
+  <property name="add_permission">plone.app.contenttypes.addFolder</property>
 
 
