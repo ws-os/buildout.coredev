@@ -1,116 +1,96 @@
-Repository: plone.schema
+Repository: plone.formwidget.recurrence
 Branch: refs/heads/master
-Date: 2014-11-17T00:53:36+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.schema/commit/2d819ac6b32fade48764c59db882b59505995ae9
+Date: 2014-11-12T14:37:10+01:00
+Author: Dimitar Dimitrov (mitakas) <admin@mitakas.com>
+Commit: https://github.com/plone/plone.formwidget.recurrence/commit/15ea5a07e92f73257d5986b695e11c5f3344452f
 
-Fix install_requires
-
-There's no import/zcml dependency on plone.app.dexterity.
-
-All other imports come from z3c.dependencychecker analysis.
+Recurrence widget not shown in Plone 4.3/Archetypes.
 
 Files changed:
-M setup.py
+M plone/formwidget/recurrence/at/widget.pt
 
-diff --git a/setup.py b/setup.py
-index ab12db3..81e6631 100644
---- a/setup.py
-+++ b/setup.py
-@@ -28,8 +28,14 @@
-     zip_safe=False,
-     install_requires=[
-         'setuptools',
--        'plone.app.dexterity',
--        'plone.app.z3cform'
-+        'plone.app.z3cform',
-+        'plone.schemaeditor',
-+        'plone.supermodel',
-+        'z3c.form',
-+        'zope.component'
-+        'zope.i18nmessageid',
-+        'zope.interface',
-+        'zope.schema',
-     ],
-     extras_require={
-         'test': ['plone.app.testing'],
+diff --git a/plone/formwidget/recurrence/at/widget.pt b/plone/formwidget/recurrence/at/widget.pt
+index 5b1d5a5..3e9899a 100644
+--- a/plone/formwidget/recurrence/at/widget.pt
++++ b/plone/formwidget/recurrence/at/widget.pt
+@@ -27,7 +27,7 @@
+           <!-- Make the text area a recurrenceinput -->
+           <script type="text/javascript"
+               tal:content="string:
+-              string: if (typeof jQuery !== 'undefined') {
++              if (typeof jQuery !== 'undefined') {
+                 jQuery(document).ready(function() {
+                   jQuery.tools.recurrenceinput.localize('${request/LANGUAGE}', ${widget/@@recurrence_widget/translation});
+                   jQuery('.ArchetypesRecurrenceWidget textarea').recurrenceinput(
 
 
-Repository: plone.schema
+Repository: plone.formwidget.recurrence
 Branch: refs/heads/master
-Date: 2015-01-15T17:51:47+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.schema/commit/b946a2251634b4adaa4d9bfcba8a43d15efa9430
+Date: 2015-01-15T19:15:24+01:00
+Author: Dimitar Dimitrov (mitakas) <admin@mitakas.com>
+Commit: https://github.com/plone/plone.formwidget.recurrence/commit/6bdddc9072b2754f62481f4abdbe8c0aa7e58114
 
-Update CHANGES.rst
+Update changelog.
 
 Files changed:
 M CHANGES.rst
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index ba34266..ab693f1 100644
+index 9c6d489..1230f73 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -1,7 +1,8 @@
- 1.0a2 (unreleased)
+@@ -4,7 +4,8 @@ Changelog
+ 1.2.6 (unreleased)
  ------------------
  
 -- Nothing changed yet.
-+- Fix install_requires to specify correct dependencies.
-+  [gforcada]
++- Fix typo in the template of the AT widget, which prevented it from loading.
++  [mitakas]
  
  
- 1.0a1 (2014-04-17)
+ 1.2.5 (2014-07-22)
 
 
-Repository: plone.schema
+Repository: plone.formwidget.recurrence
 Branch: refs/heads/master
-Date: 2015-01-15T17:52:05+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.schema/commit/102ee1d2d2e94ad18c5d4034f329ea30227b869a
+Date: 2015-01-15T21:13:52+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.formwidget.recurrence/commit/fa7b6c153233788bec4f5016c1f7c838e3e2cf15
 
-Merge pull request #1 from plone/fix-requirements
+Merge pull request #15 from mitakas/fix-at-widget
 
-Fix install_requires
+Recurrence widget not shown in Plone 4.3/Archetypes.
 
 Files changed:
 M CHANGES.rst
-M setup.py
+M plone/formwidget/recurrence/at/widget.pt
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index ba34266..ab693f1 100644
+index 9c6d489..1230f73 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -1,7 +1,8 @@
- 1.0a2 (unreleased)
+@@ -4,7 +4,8 @@ Changelog
+ 1.2.6 (unreleased)
  ------------------
  
 -- Nothing changed yet.
-+- Fix install_requires to specify correct dependencies.
-+  [gforcada]
++- Fix typo in the template of the AT widget, which prevented it from loading.
++  [mitakas]
  
  
- 1.0a1 (2014-04-17)
-diff --git a/setup.py b/setup.py
-index bce873d..435a348 100644
---- a/setup.py
-+++ b/setup.py
-@@ -28,8 +28,14 @@
-     zip_safe=False,
-     install_requires=[
-         'setuptools',
--        'plone.app.dexterity',
--        'plone.app.z3cform'
-+        'plone.app.z3cform',
-+        'plone.schemaeditor',
-+        'plone.supermodel',
-+        'z3c.form',
-+        'zope.component'
-+        'zope.i18nmessageid',
-+        'zope.interface',
-+        'zope.schema',
-     ],
-     extras_require={
-         'test': ['plone.app.testing'],
+ 1.2.5 (2014-07-22)
+diff --git a/plone/formwidget/recurrence/at/widget.pt b/plone/formwidget/recurrence/at/widget.pt
+index 5b1d5a5..3e9899a 100644
+--- a/plone/formwidget/recurrence/at/widget.pt
++++ b/plone/formwidget/recurrence/at/widget.pt
+@@ -27,7 +27,7 @@
+           <!-- Make the text area a recurrenceinput -->
+           <script type="text/javascript"
+               tal:content="string:
+-              string: if (typeof jQuery !== 'undefined') {
++              if (typeof jQuery !== 'undefined') {
+                 jQuery(document).ready(function() {
+                   jQuery.tools.recurrenceinput.localize('${request/LANGUAGE}', ${widget/@@recurrence_widget/translation});
+                   jQuery('.ArchetypesRecurrenceWidget textarea').recurrenceinput(
 
 
