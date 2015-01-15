@@ -1,96 +1,26 @@
-Repository: plone.formwidget.recurrence
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2014-11-12T14:37:10+01:00
-Author: Dimitar Dimitrov (mitakas) <admin@mitakas.com>
-Commit: https://github.com/plone/plone.formwidget.recurrence/commit/15ea5a07e92f73257d5986b695e11c5f3344452f
+Date: 2015-01-15T18:39:57-03:00
+Author: Franco Pellegrini (frapell) <frapell@gmail.com>
+Commit: https://github.com/plone/plone.app.widgets/commit/678fa4272811ff3ddcab41ae5ff96c68fc950b27
 
-Recurrence widget not shown in Plone 4.3/Archetypes.
+Fix test case that failed after 1475e889cd582865fe3a23f8c89efe896f6fb541
 
 Files changed:
-M plone/formwidget/recurrence/at/widget.pt
+M plone/app/widgets/tests/test_at.py
 
-diff --git a/plone/formwidget/recurrence/at/widget.pt b/plone/formwidget/recurrence/at/widget.pt
-index 5b1d5a5..3e9899a 100644
---- a/plone/formwidget/recurrence/at/widget.pt
-+++ b/plone/formwidget/recurrence/at/widget.pt
-@@ -27,7 +27,7 @@
-           <!-- Make the text area a recurrenceinput -->
-           <script type="text/javascript"
-               tal:content="string:
--              string: if (typeof jQuery !== 'undefined') {
-+              if (typeof jQuery !== 'undefined') {
-                 jQuery(document).ready(function() {
-                   jQuery.tools.recurrenceinput.localize('${request/LANGUAGE}', ${widget/@@recurrence_widget/translation});
-                   jQuery('.ArchetypesRecurrenceWidget textarea').recurrenceinput(
-
-
-Repository: plone.formwidget.recurrence
-Branch: refs/heads/master
-Date: 2015-01-15T19:15:24+01:00
-Author: Dimitar Dimitrov (mitakas) <admin@mitakas.com>
-Commit: https://github.com/plone/plone.formwidget.recurrence/commit/6bdddc9072b2754f62481f4abdbe8c0aa7e58114
-
-Update changelog.
-
-Files changed:
-M CHANGES.rst
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 9c6d489..1230f73 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 1.2.6 (unreleased)
- ------------------
+diff --git a/plone/app/widgets/tests/test_at.py b/plone/app/widgets/tests/test_at.py
+index d8b164b..e5e7594 100644
+--- a/plone/app/widgets/tests/test_at.py
++++ b/plone/app/widgets/tests/test_at.py
+@@ -553,7 +553,7 @@ def setUp(self):
+         self.portal = self.layer['portal']
+         self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
+         self.field = Mock()
+-        self.field.getAccessor.return_value = lambda: 'fieldvalue'
++        self.field.getRaw.return_value = 'fieldvalue'
+         self.field.getName.return_value = 'fieldname'
+         self.field.getContentType.return_value = 'text/html'
  
--- Nothing changed yet.
-+- Fix typo in the template of the AT widget, which prevented it from loading.
-+  [mitakas]
- 
- 
- 1.2.5 (2014-07-22)
-
-
-Repository: plone.formwidget.recurrence
-Branch: refs/heads/master
-Date: 2015-01-15T21:13:52+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.formwidget.recurrence/commit/fa7b6c153233788bec4f5016c1f7c838e3e2cf15
-
-Merge pull request #15 from mitakas/fix-at-widget
-
-Recurrence widget not shown in Plone 4.3/Archetypes.
-
-Files changed:
-M CHANGES.rst
-M plone/formwidget/recurrence/at/widget.pt
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 9c6d489..1230f73 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 1.2.6 (unreleased)
- ------------------
- 
--- Nothing changed yet.
-+- Fix typo in the template of the AT widget, which prevented it from loading.
-+  [mitakas]
- 
- 
- 1.2.5 (2014-07-22)
-diff --git a/plone/formwidget/recurrence/at/widget.pt b/plone/formwidget/recurrence/at/widget.pt
-index 5b1d5a5..3e9899a 100644
---- a/plone/formwidget/recurrence/at/widget.pt
-+++ b/plone/formwidget/recurrence/at/widget.pt
-@@ -27,7 +27,7 @@
-           <!-- Make the text area a recurrenceinput -->
-           <script type="text/javascript"
-               tal:content="string:
--              string: if (typeof jQuery !== 'undefined') {
-+              if (typeof jQuery !== 'undefined') {
-                 jQuery(document).ready(function() {
-                   jQuery.tools.recurrenceinput.localize('${request/LANGUAGE}', ${widget/@@recurrence_widget/translation});
-                   jQuery('.ArchetypesRecurrenceWidget textarea').recurrenceinput(
 
 
