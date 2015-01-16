@@ -1,28 +1,83 @@
-Repository: plone.app.content
+Repository: plone.formwidget.contenttree
 Branch: refs/heads/master
-Date: 2015-01-16T06:10:38-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.content/commit/4839c18719c9675fcb529902477dac97294fb008
+Date: 2015-01-16T16:31:08Z
+Author: Matthew Wilkes (MatthewWilkes) <git@matthewwilkes.name>
+Commit: https://github.com/plone/plone.formwidget.contenttree/commit/5aee040c5db8263f84cc7d168d12dfe3e96ff37b
 
-disable portlets on folder contents
+Release 1.0.10
 
 Files changed:
-M plone/app/content/browser/templates/folder_contents.pt
+M docs/HISTORY.rst
+M setup.py
 
-diff --git a/plone/app/content/browser/templates/folder_contents.pt b/plone/app/content/browser/templates/folder_contents.pt
-index 83e9feb..485eaf0 100644
---- a/plone/app/content/browser/templates/folder_contents.pt
-+++ b/plone/app/content/browser/templates/folder_contents.pt
-@@ -8,7 +8,9 @@
-   <head>
-       <metal:block fill-slot="top_slot">
-         <tal:insert tal:replace="nothing"
--              tal:define="dummy python:request.set('enable_border', 1)" />
-+              tal:define="dummy python:request.set('enable_border', 1);
-+                          disable_column_one python:request.set('disable_plone.leftcolumn', 1);
-+                          disable_column_two python:request.set('disable_plone.rightcolumn', 1);" />
-       </metal:block>
-   </head>
- <body>
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index 23da822..2c6a986 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -1,7 +1,7 @@
+ Changelog
+ =========
+ 
+-1.0.10 (unreleased)
++1.0.10 (2015-01-16)
+ -------------------
+ 
+ - Render CSS as link, no css-import. This allows cooking with other
+diff --git a/setup.py b/setup.py
+index c047759..c92a2ac 100644
+--- a/setup.py
++++ b/setup.py
+@@ -3,7 +3,7 @@
+ import os
+ 
+ 
+-version = '1.0.10.dev0'
++version = '1.0.10'
+ desc = 'AJAX selection widget for Plone'
+ longdesc = '\n\n'.join([
+     open('README.rst').read(),
+
+
+Repository: plone.formwidget.contenttree
+Branch: refs/heads/master
+Date: 2015-01-16T16:31:45Z
+Author: Matthew Wilkes (MatthewWilkes) <git@matthewwilkes.name>
+Commit: https://github.com/plone/plone.formwidget.contenttree/commit/f8c653cfce5d46503aff70504fc0579f9a729b83
+
+Back to development (1.0.11)
+
+Files changed:
+M docs/HISTORY.rst
+M setup.py
+
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index 2c6a986..ec5828f 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -1,6 +1,11 @@
+ Changelog
+ =========
+ 
++1.0.11 (Unreleased)
++-------------------
++
++
++
+ 1.0.10 (2015-01-16)
+ -------------------
+ 
+diff --git a/setup.py b/setup.py
+index c92a2ac..301da20 100644
+--- a/setup.py
++++ b/setup.py
+@@ -3,7 +3,7 @@
+ import os
+ 
+ 
+-version = '1.0.10'
++version = '1.0.11dev0'
+ desc = 'AJAX selection widget for Plone'
+ longdesc = '\n\n'.join([
+     open('README.rst').read(),
 
 
