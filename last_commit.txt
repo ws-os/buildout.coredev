@@ -1,31 +1,68 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-16T04:29:48-06:00
+Date: 2015-01-16T04:54:34-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/d07241b73d244bd5e7a2072eb9d3ab589c1e3a8f
+Commit: https://github.com/plone/mockup/commit/3cb8e955d9df6dc72eedd8522fd343c12f391448
 
-change template to include icons
+fix getting date values and add expirationdate column to structure
 
 Files changed:
-M mockup/patterns/structure/templates/tablerow.xml
+M mockup/patterns/structure/js/views/properties.js
+M mockup/patterns/structure/js/views/table.js
+M mockup/patterns/structure/pattern.js
 
-diff --git a/mockup/patterns/structure/templates/tablerow.xml b/mockup/patterns/structure/templates/tablerow.xml
-index 8583088..53ccad6 100644
---- a/mockup/patterns/structure/templates/tablerow.xml
-+++ b/mockup/patterns/structure/templates/tablerow.xml
-@@ -1,12 +1,6 @@
- <td class="selection"><input type="checkbox" <% if(selected){ %> checked="checked" <% } %>/></td>
- <td class="title">
--  <a href="<%- getURL %>">
--    <% if(['File', 'Image'].indexOf(attributes.Type) !== -1){ %>
--      <span class="glyphicon glyphicon-file"></span>
--    <% } %>
--    <% if(attributes.is_folderish) { %>
--      <span class="glyphicon glyphicon-folder-open"></span>
--    <% } %>
-+  <a href="<%- getURL %>" class="state-<%- review_state %> contenttype-<%- Type.toLowerCase() %>">
-     <%- Title %>
-   </a>
- </td>
+diff --git a/mockup/patterns/structure/js/views/properties.js b/mockup/patterns/structure/js/views/properties.js
+index 4090dd8..1ed4de9 100644
+--- a/mockup/patterns/structure/js/views/properties.js
++++ b/mockup/patterns/structure/js/views/properties.js
+@@ -77,10 +77,10 @@ define([
+     },
+     applyButtonClicked: function(e) {
+       var data = {
+-        effectiveDate: this.effectivePickADate.$date.attr('value'),
+-        effectiveTime: this.effectivePickADate.$time.attr('value'),
+-        expirationDate: this.expirationPickADate.$date.attr('value'),
+-        expirationTime: this.expirationPickADate.$time.attr('value'),
++        effectiveDate: this.effectivePickADate.$date.val(),
++        effectiveTime: this.effectivePickADate.$time.val(),
++        expirationDate: this.expirationPickADate.$date.val(),
++        expirationTime: this.expirationPickADate.$time.val(),
+         copyright: this.$copyright.val(),
+         contributors: JSON.stringify(this.$contributors.select2('data')),
+         creators: JSON.stringify(this.$creators.select2('data'))
+diff --git a/mockup/patterns/structure/js/views/table.js b/mockup/patterns/structure/js/views/table.js
+index e598087..7d4f476 100644
+--- a/mockup/patterns/structure/js/views/table.js
++++ b/mockup/patterns/structure/js/views/table.js
+@@ -101,7 +101,7 @@ define([
+       }
+ 
+       self.moment = new Moment(self.$el, {
+-        selector: '.ModificationDate,.EffectiveDate,.CreationDate',
++        selector: '.ModificationDate,.EffectiveDate,.CreationDate,.ExpirationDate',
+         format: 'relative'
+       });
+       self.addReordering();
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index ea9fe66..8b001cf 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -53,7 +53,7 @@ define([
+       backdropSelector: '.plone-modal', // Element upon which to apply backdrops used for popovers
+       attributes: [
+         'UID', 'Title', 'Type', 'path', 'review_state',
+-        'ModificationDate', 'EffectiveDate', 'CreationDate',
++        'ModificationDate', 'EffectiveDate', 'ExpirationDate', 'CreationDate',
+         'is_folderish', 'Subject', 'getURL', 'id', 'exclude_from_nav',
+         'getObjSize', 'last_comment_date', 'total_comments'
+       ],
+@@ -65,6 +65,7 @@ define([
+       availableColumns: {
+         'ModificationDate': _t('Last modified'),
+         'EffectiveDate': _t('Published'),
++        'ExpirationDate': _t('Expiration'),
+         'CreationDate': _t('Created'),
+         'review_state': _t('Review state'),
+         'Subject': _t('Tags'),
 
 
