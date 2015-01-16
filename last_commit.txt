@@ -1,54 +1,26 @@
-Repository: plone.app.contenttypes
+Repository: plone.schema
 Branch: refs/heads/master
-Date: 2015-01-15T23:30:54+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/e427adc1b6838928607760f9eb736b8bd8e905e5
+Date: 2015-01-16T10:17:01+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.schema/commit/86a02e428191ac1c8a5391b66c3a72733c833140
 
-Add event_listing to available view methods for the Folder and Collection
+Remove soft dependencies
 
 Files changed:
-M docs/CHANGES.rst
-M plone/app/contenttypes/profiles/default/types/Collection.xml
-M plone/app/contenttypes/profiles/default/types/Folder.xml
+M setup.py
 
-diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
-index f698cd1..a8e25e2 100644
---- a/docs/CHANGES.rst
-+++ b/docs/CHANGES.rst
-@@ -4,6 +4,10 @@ Changelog
- 1.2 (unreleased)
- ----------------
- 
-+- Add ``event_listing`` to available view methods for the Folder and Collection
-+  types.
-+  [thet]
-+
- - Migrate comments created with plone.app.discussion.
-   [gbastien, pbauer]
- 
-diff --git a/plone/app/contenttypes/profiles/default/types/Collection.xml b/plone/app/contenttypes/profiles/default/types/Collection.xml
-index a525995..ffe12c7 100644
---- a/plone/app/contenttypes/profiles/default/types/Collection.xml
-+++ b/plone/app/contenttypes/profiles/default/types/Collection.xml
-@@ -36,6 +36,7 @@
-     <element value="all_content" />
-     <element value="tabular_view" />
-     <element value="thumbnail_view" />
-+    <element value="event_listing"/>
-   </property>
- 
-   <!-- Method aliases -->
-diff --git a/plone/app/contenttypes/profiles/default/types/Folder.xml b/plone/app/contenttypes/profiles/default/types/Folder.xml
-index 01a3166..e318c5d 100644
---- a/plone/app/contenttypes/profiles/default/types/Folder.xml
-+++ b/plone/app/contenttypes/profiles/default/types/Folder.xml
-@@ -19,6 +19,7 @@
-   <element value="folder_tabular_view"/>
-   <element value="folder_album_view"/>
-   <element value="folder_listing"/>
-+  <element value="event_listing"/>
-  </property>
-  <property name="default_view_fallback">False</property>
-  <property name="add_permission">plone.app.contenttypes.addFolder</property>
+diff --git a/setup.py b/setup.py
+index 435a348..a772259 100644
+--- a/setup.py
++++ b/setup.py
+@@ -29,8 +29,6 @@
+     install_requires=[
+         'setuptools',
+         'plone.app.z3cform',
+-        'plone.schemaeditor',
+-        'plone.supermodel',
+         'z3c.form',
+         'zope.component'
+         'zope.i18nmessageid',
 
 
