@@ -1,68 +1,47 @@
-Repository: mockup
+Repository: plone.app.content
 Branch: refs/heads/master
-Date: 2015-01-16T04:54:34-06:00
+Date: 2015-01-16T04:55:02-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/3cb8e955d9df6dc72eedd8522fd343c12f391448
+Commit: https://github.com/plone/plone.app.content/commit/a3b1750812a2aff7d453cb6c28b6b6de47e0ce10
 
-fix getting date values and add expirationdate column to structure
+fix setting effective and expiration date
 
 Files changed:
-M mockup/patterns/structure/js/views/properties.js
-M mockup/patterns/structure/js/views/table.js
-M mockup/patterns/structure/pattern.js
+M plone/app/content/browser/folder.py
 
-diff --git a/mockup/patterns/structure/js/views/properties.js b/mockup/patterns/structure/js/views/properties.js
-index 4090dd8..1ed4de9 100644
---- a/mockup/patterns/structure/js/views/properties.js
-+++ b/mockup/patterns/structure/js/views/properties.js
-@@ -77,10 +77,10 @@ define([
-     },
-     applyButtonClicked: function(e) {
-       var data = {
--        effectiveDate: this.effectivePickADate.$date.attr('value'),
--        effectiveTime: this.effectivePickADate.$time.attr('value'),
--        expirationDate: this.expirationPickADate.$date.attr('value'),
--        expirationTime: this.expirationPickADate.$time.attr('value'),
-+        effectiveDate: this.effectivePickADate.$date.val(),
-+        effectiveTime: this.effectivePickADate.$time.val(),
-+        expirationDate: this.expirationPickADate.$date.val(),
-+        expirationTime: this.expirationPickADate.$time.val(),
-         copyright: this.$copyright.val(),
-         contributors: JSON.stringify(this.$contributors.select2('data')),
-         creators: JSON.stringify(this.$creators.select2('data'))
-diff --git a/mockup/patterns/structure/js/views/table.js b/mockup/patterns/structure/js/views/table.js
-index e598087..7d4f476 100644
---- a/mockup/patterns/structure/js/views/table.js
-+++ b/mockup/patterns/structure/js/views/table.js
-@@ -101,7 +101,7 @@ define([
-       }
+diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
+index c065ac0..c4c1140 100644
+--- a/plone/app/content/browser/folder.py
++++ b/plone/app/content/browser/folder.py
+@@ -326,10 +326,10 @@ class TagsAction(FolderContentsActionView):
+     required_obj_permission = 'Modify portal content'
  
-       self.moment = new Moment(self.$el, {
--        selector: '.ModificationDate,.EffectiveDate,.CreationDate',
-+        selector: '.ModificationDate,.EffectiveDate,.CreationDate,.ExpirationDate',
-         format: 'relative'
-       });
-       self.addReordering();
-diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
-index ea9fe66..8b001cf 100644
---- a/mockup/patterns/structure/pattern.js
-+++ b/mockup/patterns/structure/pattern.js
-@@ -53,7 +53,7 @@ define([
-       backdropSelector: '.plone-modal', // Element upon which to apply backdrops used for popovers
-       attributes: [
-         'UID', 'Title', 'Type', 'path', 'review_state',
--        'ModificationDate', 'EffectiveDate', 'CreationDate',
-+        'ModificationDate', 'EffectiveDate', 'ExpirationDate', 'CreationDate',
-         'is_folderish', 'Subject', 'getURL', 'id', 'exclude_from_nav',
-         'getObjSize', 'last_comment_date', 'total_comments'
-       ],
-@@ -65,6 +65,7 @@ define([
-       availableColumns: {
-         'ModificationDate': _t('Last modified'),
-         'EffectiveDate': _t('Published'),
-+        'ExpirationDate': _t('Expiration'),
-         'CreationDate': _t('Created'),
-         'review_state': _t('Review state'),
-         'Subject': _t('Tags'),
+     def __call__(self):
+-        self.remove = set([v.encode('utf8') for v in \
+-            json.loads(self.request.form.get('remove'))])
+-        self.add = set([v.encode('utf8') for v in \
+-            json.loads(self.request.form.get('add'))])
++        self.remove = set([v.encode('utf8') for v in
++                           json.loads(self.request.form.get('remove'))])
++        self.add = set([v.encode('utf8') for v in
++                        json.loads(self.request.form.get('add'))])
+         return super(TagsAction, self).__call__()
+ 
+     def action(self, obj):
+@@ -414,10 +414,10 @@ def __call__(self):
+         return super(PropertiesAction, self).__call__()
+ 
+     def dx_action(self, obj):
+-        if self.effectiveDate and hasattr(obj, 'effective'):
+-            obj.effective = DateTime(self.effectiveDate)
+-        if self.expirationDate and hasattr(obj, 'expires'):
+-            obj.expires = DateTime(self.expirationDate)
++        if self.effectiveDate and hasattr(obj, 'effective_date'):
++            obj.effective_date = DateTime(self.effectiveDate)
++        if self.expirationDate and hasattr(obj, 'expiration_date'):
++            obj.expiration_date = DateTime(self.expirationDate)
+         if self.copyright and hasattr(obj, 'rights'):
+             obj.rights = self.copyright
+         if self.contributors and hasattr(obj, 'contributors'):
 
 
