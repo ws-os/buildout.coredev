@@ -1,83 +1,56 @@
-Repository: plone.formwidget.contenttree
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-01-16T16:31:08Z
-Author: Matthew Wilkes (MatthewWilkes) <git@matthewwilkes.name>
-Commit: https://github.com/plone/plone.formwidget.contenttree/commit/5aee040c5db8263f84cc7d168d12dfe3e96ff37b
+Date: 2015-01-17T08:31:20+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.widgets/commit/ac4ce026527e316197d2075fc826ca0c7aa8f8b9
 
-Release 1.0.10
+Revert "Fix test case that failed after 1475e889cd582865fe3a23f8c89efe896f6fb541"
+
+This reverts commit 678fa4272811ff3ddcab41ae5ff96c68fc950b27.
 
 Files changed:
-M docs/HISTORY.rst
-M setup.py
+M plone/app/widgets/tests/test_at.py
 
-diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
-index 23da822..2c6a986 100644
---- a/docs/HISTORY.rst
-+++ b/docs/HISTORY.rst
-@@ -1,7 +1,7 @@
- Changelog
- =========
+diff --git a/plone/app/widgets/tests/test_at.py b/plone/app/widgets/tests/test_at.py
+index e5e7594..d8b164b 100644
+--- a/plone/app/widgets/tests/test_at.py
++++ b/plone/app/widgets/tests/test_at.py
+@@ -553,7 +553,7 @@ def setUp(self):
+         self.portal = self.layer['portal']
+         self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
+         self.field = Mock()
+-        self.field.getRaw.return_value = 'fieldvalue'
++        self.field.getAccessor.return_value = lambda: 'fieldvalue'
+         self.field.getName.return_value = 'fieldname'
+         self.field.getContentType.return_value = 'text/html'
  
--1.0.10 (unreleased)
-+1.0.10 (2015-01-16)
- -------------------
- 
- - Render CSS as link, no css-import. This allows cooking with other
-diff --git a/setup.py b/setup.py
-index c047759..c92a2ac 100644
---- a/setup.py
-+++ b/setup.py
-@@ -3,7 +3,7 @@
- import os
- 
- 
--version = '1.0.10.dev0'
-+version = '1.0.10'
- desc = 'AJAX selection widget for Plone'
- longdesc = '\n\n'.join([
-     open('README.rst').read(),
 
 
-Repository: plone.formwidget.contenttree
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-01-16T16:31:45Z
-Author: Matthew Wilkes (MatthewWilkes) <git@matthewwilkes.name>
-Commit: https://github.com/plone/plone.formwidget.contenttree/commit/f8c653cfce5d46503aff70504fc0579f9a729b83
+Date: 2015-01-17T08:31:25+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.widgets/commit/21cebf213cb3f45aae36a5bfe24c352c595d1aca
 
-Back to development (1.0.11)
+Revert "We want raw output for the field in edit mode"
+
+This reverts commit 1475e889cd582865fe3a23f8c89efe896f6fb541.
 
 Files changed:
-M docs/HISTORY.rst
-M setup.py
+M plone/app/widgets/at.py
 
-diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
-index 2c6a986..ec5828f 100644
---- a/docs/HISTORY.rst
-+++ b/docs/HISTORY.rst
-@@ -1,6 +1,11 @@
- Changelog
- =========
+diff --git a/plone/app/widgets/at.py b/plone/app/widgets/at.py
+index ee864ce..f46910a 100644
+--- a/plone/app/widgets/at.py
++++ b/plone/app/widgets/at.py
+@@ -572,7 +572,7 @@ def _base_args(self, context, field, request):
+         charset = properties.site_properties.getProperty('default_charset',
+                                                          'utf-8')
+         args['value'] = (request.get(field.getName(),
+-                                     field.getRaw(context))
++                                     field.getAccessor(context)())
+                          ).decode(charset)
  
-+1.0.11 (Unreleased)
-+-------------------
-+
-+
-+
- 1.0.10 (2015-01-16)
- -------------------
- 
-diff --git a/setup.py b/setup.py
-index c92a2ac..301da20 100644
---- a/setup.py
-+++ b/setup.py
-@@ -3,7 +3,7 @@
- import os
- 
- 
--version = '1.0.10'
-+version = '1.0.11dev0'
- desc = 'AJAX selection widget for Plone'
- longdesc = '\n\n'.join([
-     open('README.rst').read(),
+         args.setdefault('pattern_options', {})
 
 
