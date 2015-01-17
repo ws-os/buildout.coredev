@@ -1,79 +1,97 @@
-Repository: plone.app.content
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-17T09:12:20+01:00
+Date: 2015-01-17T11:07:06+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.content/commit/b0ed396f5b8bc515f40e28873dc49ca26327dccf
+Commit: https://github.com/plone/mockup/commit/73d95b2dd8066953126885eda9310b4865d3cbf0
 
-Revert "disable portlets on folder contents"
+Revert "fix upload to different locations in folder contents and some spacing issues"
 
-This reverts commit 4839c18719c9675fcb529902477dac97294fb008.
+This reverts commit 582b9e57d86612770c6a7703fd1535556acf3cd9.
 
 Files changed:
-M plone/app/content/browser/templates/folder_contents.pt
+M mockup/patterns/structure/js/views/upload.js
+M mockup/patterns/upload/less/pattern.upload.less
+M mockup/patterns/upload/pattern.js
 
-diff --git a/plone/app/content/browser/templates/folder_contents.pt b/plone/app/content/browser/templates/folder_contents.pt
-index 485eaf0..83e9feb 100644
---- a/plone/app/content/browser/templates/folder_contents.pt
-+++ b/plone/app/content/browser/templates/folder_contents.pt
-@@ -8,9 +8,7 @@
-   <head>
-       <metal:block fill-slot="top_slot">
-         <tal:insert tal:replace="nothing"
--              tal:define="dummy python:request.set('enable_border', 1);
--                          disable_column_one python:request.set('disable_plone.leftcolumn', 1);
--                          disable_column_two python:request.set('disable_plone.rightcolumn', 1);" />
-+              tal:define="dummy python:request.set('enable_border', 1)" />
-       </metal:block>
-   </head>
- <body>
-
-
-Repository: plone.app.content
-Branch: refs/heads/master
-Date: 2015-01-17T09:12:30+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.content/commit/0283bc78d96719aaaad8d8c48ee77b0af9f6bf80
-
-Revert "fix setting effective and expiration date"
-
-This reverts commit a3b1750812a2aff7d453cb6c28b6b6de47e0ce10.
-
-Files changed:
-M plone/app/content/browser/folder.py
-
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index c4c1140..c065ac0 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -326,10 +326,10 @@ class TagsAction(FolderContentsActionView):
-     required_obj_permission = 'Modify portal content'
+diff --git a/mockup/patterns/structure/js/views/upload.js b/mockup/patterns/structure/js/views/upload.js
+index 7979d51..68cb636 100644
+--- a/mockup/patterns/structure/js/views/upload.js
++++ b/mockup/patterns/structure/js/views/upload.js
+@@ -46,7 +46,6 @@ define([
+       if (!this.opened) {
+         return;
+       }
+-
+       var currentPath = self.app.queryHelper.getCurrentPath();
+       var relatedItems = self.upload.relatedItems;
+       if (self.currentPathData && relatedItems && currentPath !== self.upload.currentPath){
+@@ -55,7 +54,7 @@ define([
+         } else {
+           relatedItems.$el.select2('data', [self.currentPathData.object]);
+         }
+-        self.upload.setPath(currentPath);
++        self.upload.currentPath = currentPath;
+       }
+     }
  
-     def __call__(self):
--        self.remove = set([v.encode('utf8') for v in
--                           json.loads(self.request.form.get('remove'))])
--        self.add = set([v.encode('utf8') for v in
--                        json.loads(self.request.form.get('add'))])
-+        self.remove = set([v.encode('utf8') for v in \
-+            json.loads(self.request.form.get('remove'))])
-+        self.add = set([v.encode('utf8') for v in \
-+            json.loads(self.request.form.get('add'))])
-         return super(TagsAction, self).__call__()
+diff --git a/mockup/patterns/upload/less/pattern.upload.less b/mockup/patterns/upload/less/pattern.upload.less
+index 3076680..7184337 100644
+--- a/mockup/patterns/upload/less/pattern.upload.less
++++ b/mockup/patterns/upload/less/pattern.upload.less
+@@ -24,15 +24,11 @@
+         .controls{
+             margin-top: 10px;
+             padding-top: 10px;
+-            clear: both;
+         }
+         .previews{
+-            margin-top: 4em;
+-            .item{
+-                padding: 5px 0;
+-                clear: both;
+-            }
+-            .title{ padding-left: 3px; }
++            margin-top: 2em;
++            .item{ padding: 5px 0; }
++            .title{ padding-left: 0; }
+             .info img {
+                 width: 32px;
+                 height: 32px;
+diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
+index e51fa06..1f84094 100644
+--- a/mockup/patterns/upload/pattern.js
++++ b/mockup/patterns/upload/pattern.js
+@@ -391,12 +391,6 @@ define([
+       return Math.round(mb / 1024) + ' GB';
+     },
  
-     def action(self, obj):
-@@ -414,10 +414,10 @@ def __call__(self):
-         return super(PropertiesAction, self).__call__()
- 
-     def dx_action(self, obj):
--        if self.effectiveDate and hasattr(obj, 'effective_date'):
--            obj.effective_date = DateTime(self.effectiveDate)
--        if self.expirationDate and hasattr(obj, 'expiration_date'):
--            obj.expiration_date = DateTime(self.expirationDate)
-+        if self.effectiveDate and hasattr(obj, 'effective'):
-+            obj.effective = DateTime(self.effectiveDate)
-+        if self.expirationDate and hasattr(obj, 'expires'):
-+            obj.expires = DateTime(self.expirationDate)
-         if self.copyright and hasattr(obj, 'rights'):
-             obj.rights = self.copyright
-         if self.contributors and hasattr(obj, 'contributors'):
+-    setPath: function(path){
+-      var self = this;
+-      self.currentPath = path;
+-      self.options.url = self.dropzone.options.url = self.getUrl();
+-    },
+-
+     setupRelatedItems: function($input) {
+       var self = this;
+       var options = self.options.relatedItems;
+@@ -404,14 +398,14 @@ define([
+         $input.attr('value', self.options.initialFolder);
+       }
+       var ri = new RelatedItems($input, options);
+-
+       ri.$el.on('change', function() {
+         var result = $(this).select2('data');
+-        var path = null;
+         if (result.length > 0){
+-          path = result[0].path;
++          self.currentPath = result[0].path;
++        } else {
++          self.currentPath = null;
+         }
+-        self.setPath(path);
++        self.options.url = self.dropzone.options.url = self.getUrl();
+       });
+       return ri;
+     }
 
 
