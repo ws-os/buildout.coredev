@@ -1,97 +1,257 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-17T11:07:06+01:00
+Date: 2015-01-17T11:07:43+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/mockup/commit/73d95b2dd8066953126885eda9310b4865d3cbf0
+Commit: https://github.com/plone/mockup/commit/ac13f1bf725b055aca78dcb14fe05a5e2fff6698
 
-Revert "fix upload to different locations in folder contents and some spacing issues"
+Revert "change template to include icons"
 
-This reverts commit 582b9e57d86612770c6a7703fd1535556acf3cd9.
+This reverts commit d07241b73d244bd5e7a2072eb9d3ab589c1e3a8f.
 
 Files changed:
-M mockup/patterns/structure/js/views/upload.js
-M mockup/patterns/upload/less/pattern.upload.less
-M mockup/patterns/upload/pattern.js
+M mockup/patterns/structure/templates/tablerow.xml
 
-diff --git a/mockup/patterns/structure/js/views/upload.js b/mockup/patterns/structure/js/views/upload.js
-index 7979d51..68cb636 100644
---- a/mockup/patterns/structure/js/views/upload.js
-+++ b/mockup/patterns/structure/js/views/upload.js
-@@ -46,7 +46,6 @@ define([
-       if (!this.opened) {
-         return;
-       }
--
-       var currentPath = self.app.queryHelper.getCurrentPath();
-       var relatedItems = self.upload.relatedItems;
-       if (self.currentPathData && relatedItems && currentPath !== self.upload.currentPath){
-@@ -55,7 +54,7 @@ define([
-         } else {
-           relatedItems.$el.select2('data', [self.currentPathData.object]);
-         }
--        self.upload.setPath(currentPath);
-+        self.upload.currentPath = currentPath;
-       }
-     }
- 
-diff --git a/mockup/patterns/upload/less/pattern.upload.less b/mockup/patterns/upload/less/pattern.upload.less
-index 3076680..7184337 100644
---- a/mockup/patterns/upload/less/pattern.upload.less
-+++ b/mockup/patterns/upload/less/pattern.upload.less
-@@ -24,15 +24,11 @@
-         .controls{
-             margin-top: 10px;
-             padding-top: 10px;
--            clear: both;
-         }
-         .previews{
--            margin-top: 4em;
--            .item{
--                padding: 5px 0;
--                clear: both;
--            }
--            .title{ padding-left: 3px; }
-+            margin-top: 2em;
-+            .item{ padding: 5px 0; }
-+            .title{ padding-left: 0; }
-             .info img {
-                 width: 32px;
-                 height: 32px;
-diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
-index e51fa06..1f84094 100644
---- a/mockup/patterns/upload/pattern.js
-+++ b/mockup/patterns/upload/pattern.js
-@@ -391,12 +391,6 @@ define([
-       return Math.round(mb / 1024) + ' GB';
+diff --git a/mockup/patterns/structure/templates/tablerow.xml b/mockup/patterns/structure/templates/tablerow.xml
+index 53ccad6..8583088 100644
+--- a/mockup/patterns/structure/templates/tablerow.xml
++++ b/mockup/patterns/structure/templates/tablerow.xml
+@@ -1,6 +1,12 @@
+ <td class="selection"><input type="checkbox" <% if(selected){ %> checked="checked" <% } %>/></td>
+ <td class="title">
+-  <a href="<%- getURL %>" class="state-<%- review_state %> contenttype-<%- Type.toLowerCase() %>">
++  <a href="<%- getURL %>">
++    <% if(['File', 'Image'].indexOf(attributes.Type) !== -1){ %>
++      <span class="glyphicon glyphicon-file"></span>
++    <% } %>
++    <% if(attributes.is_folderish) { %>
++      <span class="glyphicon glyphicon-folder-open"></span>
++    <% } %>
+     <%- Title %>
+   </a>
+ </td>
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2015-01-17T11:07:59+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/mockup/commit/77827e9a3476caa3cdf11ff75926779495a8aad4
+
+Revert "fix getting date values and add expirationdate column to structure"
+
+This reverts commit 3cb8e955d9df6dc72eedd8522fd343c12f391448.
+
+Files changed:
+M mockup/patterns/structure/js/views/properties.js
+M mockup/patterns/structure/js/views/table.js
+M mockup/patterns/structure/pattern.js
+
+diff --git a/mockup/patterns/structure/js/views/properties.js b/mockup/patterns/structure/js/views/properties.js
+index 1ed4de9..4090dd8 100644
+--- a/mockup/patterns/structure/js/views/properties.js
++++ b/mockup/patterns/structure/js/views/properties.js
+@@ -77,10 +77,10 @@ define([
      },
- 
--    setPath: function(path){
--      var self = this;
--      self.currentPath = path;
--      self.options.url = self.dropzone.options.url = self.getUrl();
--    },
--
-     setupRelatedItems: function($input) {
-       var self = this;
-       var options = self.options.relatedItems;
-@@ -404,14 +398,14 @@ define([
-         $input.attr('value', self.options.initialFolder);
+     applyButtonClicked: function(e) {
+       var data = {
+-        effectiveDate: this.effectivePickADate.$date.val(),
+-        effectiveTime: this.effectivePickADate.$time.val(),
+-        expirationDate: this.expirationPickADate.$date.val(),
+-        expirationTime: this.expirationPickADate.$time.val(),
++        effectiveDate: this.effectivePickADate.$date.attr('value'),
++        effectiveTime: this.effectivePickADate.$time.attr('value'),
++        expirationDate: this.expirationPickADate.$date.attr('value'),
++        expirationTime: this.expirationPickADate.$time.attr('value'),
+         copyright: this.$copyright.val(),
+         contributors: JSON.stringify(this.$contributors.select2('data')),
+         creators: JSON.stringify(this.$creators.select2('data'))
+diff --git a/mockup/patterns/structure/js/views/table.js b/mockup/patterns/structure/js/views/table.js
+index 7d4f476..e598087 100644
+--- a/mockup/patterns/structure/js/views/table.js
++++ b/mockup/patterns/structure/js/views/table.js
+@@ -101,7 +101,7 @@ define([
        }
-       var ri = new RelatedItems($input, options);
--
-       ri.$el.on('change', function() {
-         var result = $(this).select2('data');
--        var path = null;
-         if (result.length > 0){
--          path = result[0].path;
-+          self.currentPath = result[0].path;
-+        } else {
-+          self.currentPath = null;
-         }
--        self.setPath(path);
-+        self.options.url = self.dropzone.options.url = self.getUrl();
+ 
+       self.moment = new Moment(self.$el, {
+-        selector: '.ModificationDate,.EffectiveDate,.CreationDate,.ExpirationDate',
++        selector: '.ModificationDate,.EffectiveDate,.CreationDate',
+         format: 'relative'
        });
-       return ri;
-     }
+       self.addReordering();
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index 8b001cf..ea9fe66 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -53,7 +53,7 @@ define([
+       backdropSelector: '.plone-modal', // Element upon which to apply backdrops used for popovers
+       attributes: [
+         'UID', 'Title', 'Type', 'path', 'review_state',
+-        'ModificationDate', 'EffectiveDate', 'ExpirationDate', 'CreationDate',
++        'ModificationDate', 'EffectiveDate', 'CreationDate',
+         'is_folderish', 'Subject', 'getURL', 'id', 'exclude_from_nav',
+         'getObjSize', 'last_comment_date', 'total_comments'
+       ],
+@@ -65,7 +65,6 @@ define([
+       availableColumns: {
+         'ModificationDate': _t('Last modified'),
+         'EffectiveDate': _t('Published'),
+-        'ExpirationDate': _t('Expiration'),
+         'CreationDate': _t('Created'),
+         'review_state': _t('Review state'),
+         'Subject': _t('Tags'),
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2015-01-17T11:08:20+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/mockup/commit/f4d926966132e1139232dd23d06331f188d4d9fe
+
+Revert "fix test failure"
+
+This reverts commit 77d008c4a07f43a577a9f52116c3e0818283b794.
+
+Files changed:
+M mockup/tests/pattern-markspeciallinks-test.js
+
+diff --git a/mockup/tests/pattern-markspeciallinks-test.js b/mockup/tests/pattern-markspeciallinks-test.js
+index e60e7b2..a2a2e5f 100644
+--- a/mockup/tests/pattern-markspeciallinks-test.js
++++ b/mockup/tests/pattern-markspeciallinks-test.js
+@@ -52,29 +52,29 @@ define([
+     it('normal external links have target=_blank', function() {
+       registry.scan(this.$el);
+       var link = this.$el.find('a');
+-      expect(link.eq(0).attr('target')===undefined).to.be.equal(true);
+-      expect(link.eq(1).attr('target')===undefined).to.be.equal(true);
+-      expect(link.eq(2).attr('target')).to.be.equal('_blank');
+-      expect(link.eq(3).attr('target')===undefined).to.be.equal(true);
+-      expect(link.eq(0).prev()[0].tagName).to.be.equal('I');
+-      expect(link.eq(1).prev()[0].tagName).not.to.equal('I');
+-      expect(link.eq(4).prev().length).to.be.equal(0);
+-      expect(link.eq(5).prev()[0].tagName).not.to.equal('I');
++      expect(link.eq(0).attr("target")===undefined).to.be.equal(true);
++      expect(link.eq(1).attr("target")===undefined).to.be.equal(true);
++      expect(link.eq(2).attr("target")).to.be.equal("_blank");
++      expect(link.eq(3).attr("target")===undefined).to.be.equal(true);
++      expect(link.eq(0).parent("i").length).to.be.equal(1);
++      expect(link.eq(1).parent("i").length).to.be.equal(0);
++      expect(link.eq(4).parent("i").length).to.be.equal(0);
++      expect(link.eq(5).parent("i").length).to.be.equal(0);
+     });
+     it('check for correct icon classes per protocol', function() {
+       registry.scan(this.$el);
+       var listel = this.$el.next('.icons').find('li');
+-      expect(listel.eq(0).find('i').hasClass('link-external')).to.be.equal(true);
+-      expect(listel.eq(1).find('i').hasClass('link-https')).to.be.equal(true);
+-      expect(listel.eq(2).find('i').hasClass('link-mailto')).to.be.equal(true);
+-      expect(listel.eq(3).find('i').hasClass('link-ftp')).to.be.equal(true);
+-      expect(listel.eq(4).find('i').hasClass('link-news')).to.be.equal(true);
+-      expect(listel.eq(5).find('i').hasClass('link-irc')).to.be.equal(true);
+-      expect(listel.eq(6).find('i').hasClass('link-h323')).to.be.equal(true);
+-      expect(listel.eq(7).find('i').hasClass('link-sip')).to.be.equal(true);
+-      expect(listel.eq(8).find('i').hasClass('link-callto')).to.be.equal(true);
+-      expect(listel.eq(9).find('i').hasClass('link-feed')).to.be.equal(true);
+-      expect(listel.eq(10).find('i').hasClass('link-webcal')).to.be.equal(true);
++      expect(listel.eq(0).find("i").hasClass('link-external')).to.be.equal(true);
++      expect(listel.eq(1).find("i").hasClass('link-https')).to.be.equal(true);
++      expect(listel.eq(2).find("i").hasClass('link-mailto')).to.be.equal(true);
++      expect(listel.eq(3).find("i").hasClass('link-ftp')).to.be.equal(true);
++      expect(listel.eq(4).find("i").hasClass('link-news')).to.be.equal(true);
++      expect(listel.eq(5).find("i").hasClass('link-irc')).to.be.equal(true);
++      expect(listel.eq(6).find("i").hasClass('link-h323')).to.be.equal(true);
++      expect(listel.eq(7).find("i").hasClass('link-sip')).to.be.equal(true);
++      expect(listel.eq(8).find("i").hasClass('link-callto')).to.be.equal(true);
++      expect(listel.eq(9).find("i").hasClass('link-feed')).to.be.equal(true);
++      expect(listel.eq(10).find("i").hasClass('link-webcal')).to.be.equal(true);
+     });
+   });
+ });
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2015-01-17T11:08:29+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/mockup/commit/e4b996a9056caee734b4b3f3668ad0fdc77eb783
+
+Revert "remove sauce integration"
+
+This reverts commit 0cd32c6e42ca3468f3724e4836bef0e16ed2af0c.
+
+Files changed:
+M .travis.yml
+D .travis-sauce.yml
+
+diff --git a/.travis-sauce.yml b/.travis-sauce.yml
+deleted file mode 100644
+index 25c3b51..0000000
+--- a/.travis-sauce.yml
++++ /dev/null
+@@ -1,43 +0,0 @@
+-language: node_js
+-node_js:
+-  - 0.10
+-env:
+-  global:
+-    - secure: "fPRKgxcbSXyiLqkUjAjPkn5eGBqMqf6c5haTZ9x76sDl1792nDyiL2FXSpiv2s8PeOqMbWgcXly0r+CLXypYkWba9nIxb4bhvtXyDoYAaoBV0lG1NbBakuOwqW/u60WpPJS1qTqmEUSEbSxdntqk7HF1yG6MdMi3PdubxMyw9h0="
+-    - secure: VFB17+mogAMLzk1RkwQo4qY8jgc8tD8lUWV6j2xtqDBG6gdkUl+mhuUm8ibbD910/kjQJc47FAHiZi4xrRW1vDmOizw7K48Fq+V180bf+2fAvAJNakI6Z4uuPcA7VnuRYoNfUPXAmWgtvMzgMAF+sXeV+jhgha6Kx02xj39LjD0=
+-    - secure: lLMAD0VmG1/SpfuJKwOT9xn4lV1pUq71WszWjpF8TgxJfIgRBYLp9QkRTXQ6pfTwXTL22YSsc8N5yhJsALKV2V57Og6Pfta6jQqRIzJU6maIZBBLqW6LQThuazF6tmEcTpty1j1LdFf3tuNVchsbsii2eRhXNdIPXLjBliMJkuo=
+-    - SAUCE_CONNECT_READY_FILE=/tmp/sauce-connect-ready
+-  matrix:
+-    - BROWSERS="SL_Chrome,SL_Firefox"
+-    - BROWSERS="SL_IE_8,SL_IE_9"
+-    - BROWSERS="SL_IE_10,SL_IE_11"
+-    - BROWSERS="SL_Opera,SL_Safari"
+-    - BROWSERS="SL_IPhone"
+-    - BROWSERS="SL_IPad"
+-    - BROWSERS="SL_Android"
+-install:
+-  - cd mockup
+-  - travis_retry make bootstrap
+-  - echo "Host github.com" >> ~/.ssh/config
+-  - echo "   StrictHostKeyChecking no" >> ~/.ssh/config
+-  - git config --global user.email "mockup@garbas.si"
+-  - git config --global user.name "Travis CI"
+-script:
+-  - make test-once
+-  - make bundles
+-  - if [ "$TRAVIS_BRANCH" == "master" ]; then make test-ci; fi
+-  - make docs
+-after_success:
+-  - if [ "$BROWSERS" == "SL_Chrome,SL_Firefox" ]; then ./node_modules/.bin/lcov-result-merger "coverage/**/lcov.info" | ./node_modules/.bin/coveralls; fi
+-matrix:
+-  fast_finish: true
+-  allow_failures:
+-    - env: BROWSERS="SL_IE_8,SL_IE_9"
+-    - env: BROWSERS="SL_IE_10,SL_IE_11"
+-    - env: BROWSERS="SL_Opera,SL_Safari"
+-    - env: BROWSERS="SL_IPhone"
+-    - env: BROWSERS="SL_IPad"
+-    - env: BROWSERS="SL_Android"
+-branches:
+-  only:
+-    - master
+diff --git a/.travis.yml b/.travis.yml
+index 2bbde39..25c3b51 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -6,6 +6,7 @@ env:
+     - secure: "fPRKgxcbSXyiLqkUjAjPkn5eGBqMqf6c5haTZ9x76sDl1792nDyiL2FXSpiv2s8PeOqMbWgcXly0r+CLXypYkWba9nIxb4bhvtXyDoYAaoBV0lG1NbBakuOwqW/u60WpPJS1qTqmEUSEbSxdntqk7HF1yG6MdMi3PdubxMyw9h0="
+     - secure: VFB17+mogAMLzk1RkwQo4qY8jgc8tD8lUWV6j2xtqDBG6gdkUl+mhuUm8ibbD910/kjQJc47FAHiZi4xrRW1vDmOizw7K48Fq+V180bf+2fAvAJNakI6Z4uuPcA7VnuRYoNfUPXAmWgtvMzgMAF+sXeV+jhgha6Kx02xj39LjD0=
+     - secure: lLMAD0VmG1/SpfuJKwOT9xn4lV1pUq71WszWjpF8TgxJfIgRBYLp9QkRTXQ6pfTwXTL22YSsc8N5yhJsALKV2V57Og6Pfta6jQqRIzJU6maIZBBLqW6LQThuazF6tmEcTpty1j1LdFf3tuNVchsbsii2eRhXNdIPXLjBliMJkuo=
++    - SAUCE_CONNECT_READY_FILE=/tmp/sauce-connect-ready
+   matrix:
+     - BROWSERS="SL_Chrome,SL_Firefox"
+     - BROWSERS="SL_IE_8,SL_IE_9"
+@@ -23,6 +24,8 @@ install:
+   - git config --global user.name "Travis CI"
+ script:
+   - make test-once
++  - make bundles
++  - if [ "$TRAVIS_BRANCH" == "master" ]; then make test-ci; fi
+   - make docs
+ after_success:
+   - if [ "$BROWSERS" == "SL_Chrome,SL_Firefox" ]; then ./node_modules/.bin/lcov-result-merger "coverage/**/lcov.info" | ./node_modules/.bin/coveralls; fi
 
 
