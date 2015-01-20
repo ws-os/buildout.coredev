@@ -1,50 +1,98 @@
-Repository: Products.Archetypes
+Repository: plone.app.content
 Branch: refs/heads/master
-Date: 2015-01-19T14:13:41+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.Archetypes/commit/cb6cd8ca7a4b96916fcebcab14edfcce83c1a8ba
+Date: 2015-01-20T00:25:29-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.app.content/commit/30f69a2e77d13692bec719fe4f1b3842cd93f48b
 
-Fix ``MimeTypesRegistry`` test import.
+fix setting effective and expiration date
 
 Files changed:
-M CHANGES.txt
-M Products/Archetypes/tests/test_classgen.py
+M plone/app/content/browser/folder.py
+M plone/app/content/tests/test_folder.py
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 48f0226..6fefcd6 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -4,6 +4,9 @@ Changelog
- 1.10.3 (unreleased)
- -------------------
+diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
+index c065ac0..c4c1140 100644
+--- a/plone/app/content/browser/folder.py
++++ b/plone/app/content/browser/folder.py
+@@ -326,10 +326,10 @@ class TagsAction(FolderContentsActionView):
+     required_obj_permission = 'Modify portal content'
  
-+- Fix ``MimeTypesRegistry`` test import.
-+  [thet]
-+
- - For Plone 5, support getting markup control panel settings from the registry,
-   while still supporting normal portal_properties access for Plone < 5.
-   [thet]
-diff --git a/Products/Archetypes/tests/test_classgen.py b/Products/Archetypes/tests/test_classgen.py
-index 9a27378..df9835c 100644
---- a/Products/Archetypes/tests/test_classgen.py
-+++ b/Products/Archetypes/tests/test_classgen.py
-@@ -37,7 +37,7 @@
- from Products.Archetypes import atapi
- from Products.Archetypes.interfaces.base import IBaseUnit
- from Products.Archetypes.ClassGen import generateMethods
--from Products.MimetypesRegistry.MimeTypesTool import MimeTypesTool
-+from Products.MimetypesRegistry.MimeTypesRegistry import MimeTypesRegistry
- from Products.PortalTransforms.TransformTool import TransformTool
+     def __call__(self):
+-        self.remove = set([v.encode('utf8') for v in \
+-            json.loads(self.request.form.get('remove'))])
+-        self.add = set([v.encode('utf8') for v in \
+-            json.loads(self.request.form.get('add'))])
++        self.remove = set([v.encode('utf8') for v in
++                           json.loads(self.request.form.get('remove'))])
++        self.add = set([v.encode('utf8') for v in
++                        json.loads(self.request.form.get('add'))])
+         return super(TagsAction, self).__call__()
  
+     def action(self, obj):
+@@ -414,10 +414,10 @@ def __call__(self):
+         return super(PropertiesAction, self).__call__()
  
-@@ -112,7 +112,7 @@ class PortalProperties:
- class Dummy(atapi.BaseContent):
-     portal_properties = PortalProperties()
-     portal_discussion = DummyDiscussionTool()
--    mimetypes_registry = MimeTypesTool()
-+    mimetypes_registry = MimeTypesRegistry()
+     def dx_action(self, obj):
+-        if self.effectiveDate and hasattr(obj, 'effective'):
+-            obj.effective = DateTime(self.effectiveDate)
+-        if self.expirationDate and hasattr(obj, 'expires'):
+-            obj.expires = DateTime(self.expirationDate)
++        if self.effectiveDate and hasattr(obj, 'effective_date'):
++            obj.effective_date = DateTime(self.effectiveDate)
++        if self.expirationDate and hasattr(obj, 'expiration_date'):
++            obj.expiration_date = DateTime(self.expirationDate)
+         if self.copyright and hasattr(obj, 'rights'):
+             obj.rights = self.copyright
+         if self.contributors and hasattr(obj, 'contributors'):
+diff --git a/plone/app/content/tests/test_folder.py b/plone/app/content/tests/test_folder.py
+index b5bfddc..1af71d8 100644
+--- a/plone/app/content/tests/test_folder.py
++++ b/plone/app/content/tests/test_folder.py
+@@ -70,7 +70,7 @@ def testEffective(self):
+         self.request.form['effectiveTime'] = '09:00'
+         view = PropertiesAction(self.portal.page, self.request)
+         view()
+-        self.assertEquals(self.portal.page.effective,
++        self.assertEquals(self.portal.page.effective_date,
+                           DateTime('1999/01/01 09:00'))
  
-     def __init__(self, oid='test', init_transforms=0, **kwargs):
-         atapi.BaseContent.__init__(self, oid, **kwargs)
+     def testExpires(self):
+@@ -79,7 +79,7 @@ def testExpires(self):
+         self.request.form['expirationTime'] = '09:00'
+         view = PropertiesAction(self.portal.page, self.request)
+         view()
+-        self.assertEquals(self.portal.page.expires,
++        self.assertEquals(self.portal.page.expiration_date,
+                           DateTime('1999/01/01 09:00'))
+ 
+     def testSetDexterityExcludeFromNav(self):
+
+
+Repository: plone.app.content
+Branch: refs/heads/master
+Date: 2015-01-20T00:26:42-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.app.content/commit/8d58b81fd1d856886c1ec0b44957dcd7b9cde936
+
+disable portlets on folder contents
+
+Files changed:
+M plone/app/content/browser/templates/folder_contents.pt
+
+diff --git a/plone/app/content/browser/templates/folder_contents.pt b/plone/app/content/browser/templates/folder_contents.pt
+index 83e9feb..485eaf0 100644
+--- a/plone/app/content/browser/templates/folder_contents.pt
++++ b/plone/app/content/browser/templates/folder_contents.pt
+@@ -8,7 +8,9 @@
+   <head>
+       <metal:block fill-slot="top_slot">
+         <tal:insert tal:replace="nothing"
+-              tal:define="dummy python:request.set('enable_border', 1)" />
++              tal:define="dummy python:request.set('enable_border', 1);
++                          disable_column_one python:request.set('disable_plone.leftcolumn', 1);
++                          disable_column_two python:request.set('disable_plone.rightcolumn', 1);" />
+       </metal:block>
+   </head>
+ <body>
 
 
