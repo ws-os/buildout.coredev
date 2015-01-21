@@ -1,360 +1,248 @@
-Repository: plone.app.contenttypes
+Repository: plone.app.caching
 Branch: refs/heads/master
-Date: 2015-01-19T23:50:45+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/f30624d211b8e6f6a4e5866aa20d96974b208f02
+Date: 2015-01-21T11:38:02+02:00
+Author: Alexandru Ghica (alecghica) <alec.ghica@eaudeweb.ro>
+Commit: https://github.com/plone/plone.app.caching/commit/a28176e64173a65f1de8a774cda47421ada49488
 
-In the file view, render HTML5 &lt;audio&gt; or &lt;video&gt; tags for audio respectively video file types. Ancient browsers, which do not support that, just don't render these tags.
+Cleanup &amp; PEP8 fixes
 
 Files changed:
-A plone/app/contenttypes/browser/file.py
-M docs/CHANGES.rst
-M plone/app/contenttypes/browser/configure.zcml
-M plone/app/contenttypes/browser/templates/file.pt
+M plone/app/caching/utils.py
 
-diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
-index a8e25e2..46974f2 100644
---- a/docs/CHANGES.rst
-+++ b/docs/CHANGES.rst
-@@ -4,6 +4,11 @@ Changelog
- 1.2 (unreleased)
- ----------------
+diff --git a/plone/app/caching/utils.py b/plone/app/caching/utils.py
+index af64a75..a6b92ea 100644
+--- a/plone/app/caching/utils.py
++++ b/plone/app/caching/utils.py
+@@ -47,7 +47,8 @@ def getObjectDefaultView(context):
  
-+- In the file view, render HTML5 ``<audio>`` or ``<video>`` tags for audio
-+  respectively video file types. Ancient browsers, which do not support that,
-+  just don't render these tags.
-+  [thet]
-+
- - Add ``event_listing`` to available view methods for the Folder and Collection
-   types.
-   [thet]
-diff --git a/plone/app/contenttypes/browser/configure.zcml b/plone/app/contenttypes/browser/configure.zcml
-index 44c0d62..a3fc913 100644
---- a/plone/app/contenttypes/browser/configure.zcml
-+++ b/plone/app/contenttypes/browser/configure.zcml
-@@ -117,6 +117,7 @@
-     name="file_view"
-     for="plone.app.contenttypes.interfaces.IFile"
-     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
-+    class=".file.FileView"
-     template="templates/file.pt"
-     permission="zope2.View"
-     menu="plone_displayviews"
-diff --git a/plone/app/contenttypes/browser/file.py b/plone/app/contenttypes/browser/file.py
-new file mode 100644
-index 0000000..ad37107
---- /dev/null
-+++ b/plone/app/contenttypes/browser/file.py
-@@ -0,0 +1,18 @@
-+from plone.app.contenttypes.browser.utils import Utils
-+
-+
-+class FileView(Utils):
-+
-+    def __init__(self, context, request):
-+        super(FileView, self).__init__(context, request)
-+
-+    def is_videotype(self):
-+        ct = self.context.file.contentType
-+        return 'video/' in ct
-+
-+    def is_audiotype(self):
-+        ct = self.context.file.contentType
-+        return 'audio/' in ct
-+
-+    def get_mimetype_icon(self):
-+        return super(FileView, self).getMimeTypeIcon(self.context.file)
-diff --git a/plone/app/contenttypes/browser/templates/file.pt b/plone/app/contenttypes/browser/templates/file.pt
-index 3cfc525..547d748 100644
---- a/plone/app/contenttypes/browser/templates/file.pt
-+++ b/plone/app/contenttypes/browser/templates/file.pt
-@@ -11,10 +11,10 @@
-     <metal:content-core fill-slot="content-core">
-         <metal:block define-macro="content-core"
-                      tal:define="content_type context/file/contentType|nothing;
--                                 v python:context.restrictedTraverse('contenttype_utils');">
-+                                 download_url string:${context/absolute_url}/@@download/file/${context/file/filename}">
-             <p>
--                <a tal:attributes="href string:${context/absolute_url}/@@download/file/${context/file/filename}">
--                    <img tal:attributes="src python: v.getMimeTypeIcon(context.file);
-+                <a tal:attributes="href download_url">
-+                    <img tal:attributes="src view/get_mimetype_icon;
-                                          alt content_type;" border="0"  />
-                     <tal:name tal:content="context/file/filename" >Filename</tal:name>
-                 </a>
-@@ -24,6 +24,14 @@
-                       &mdash; <span tal:replace="kb" /> KB</span>
-             </p>
+     fti = context.getTypeInfo()
+     try:
+-        # XXX: This isn't quite right since it assumes the action starts with ${object_url}
++        # XXX: This isn't quite right since it assumes the action starts
++        #with ${object_url}
+         action = fti.getActionInfo('object/view')['url'].split('/')[-1]
+     except ValueError:
+         # If the action doesn't exist, stop
+@@ -57,7 +58,8 @@ def getObjectDefaultView(context):
+     if action:
+         action = fti.queryMethodID(action, default = action, context = context)
+     else:
+-        action = fti.queryMethodID('(Default)', default = action, context = context)
++        action = fti.queryMethodID('(Default)', default = action,
++                                   context = context)
  
-+            <video tal:condition="view/is_videotype" controls="controls">
-+              <source tal:attributes="src download_url; type content_type"></source>
-+            </video>
-+
-+            <audio tal:condition="view/is_audiotype" controls="controls">
-+              <source tal:attributes="src download_url; type content_type"></source>
-+            </audio>
-+
-             <div tal:condition="python: content_type.startswith('text')">
-                 <h2 i18n:translate="heading_file_contents">File contents</h2>
-                 <pre tal:content="context/file/data|nothing" />
+     # Strip off leading / and/or @@
+     if action and action[0] == '/':
+@@ -65,5 +67,3 @@ def getObjectDefaultView(context):
+     if action and action.startswith('@@'):
+         action = action[2:]
+     return action
+-
+-
 
 
-Repository: plone.app.contenttypes
+Repository: plone.app.caching
 Branch: refs/heads/master
-Date: 2015-01-20T12:12:45+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/fa5e9f10da64b3757d05637fce23043ca33d19bf
+Date: 2015-01-21T11:43:04+02:00
+Author: Alexandru Ghica (alecghica) <alec.ghica@eaudeweb.ro>
+Commit: https://github.com/plone/plone.app.caching/commit/dc87fa4c34b6d9ae57ad89ba9201091d99e911b9
 
-tests for &lt;audio&gt; &lt;video&gt; tag in @@file_view. plus: dont fail, if no filename or contenttype is available for the file
+Fixed getObjectDefaultView method
+
+- Fixed getObjectDefaultView method to strip off leading / and/or @@.
+  [alecghica]
 
 Files changed:
-M plone/app/contenttypes/browser/utils.py
-M plone/app/contenttypes/tests/test_file.py
+M CHANGES.rst
+M plone/app/caching/utils.py
 
-diff --git a/plone/app/contenttypes/browser/utils.py b/plone/app/contenttypes/browser/utils.py
-index b816539..c4c7037 100644
---- a/plone/app/contenttypes/browser/utils.py
-+++ b/plone/app/contenttypes/browser/utils.py
-@@ -31,8 +31,11 @@ def getMimeTypeIcon(self, content_file):
-         )
-         portal_url = pstate.portal_url()
-         mtr = getToolByName(context, "mimetypes_registry")
--        mime = list(mtr.lookup(content_file.contentType))
--        mime.append(mtr.lookupExtension(content_file.filename))
-+        mime = []
-+        if content_file.contentType:
-+            mime.append(mtr.lookup(content_file.contentType))
-+        if content_file.filename:
-+            mime.append(mtr.lookupExtension(content_file.filename))
-         mime.append(mtr.lookup("application/octet-stream")[0])
-         icon_paths = [m.icon_path for m in mime if hasattr(m, 'icon_path')]
-         if icon_paths:
-diff --git a/plone/app/contenttypes/tests/test_file.py b/plone/app/contenttypes/tests/test_file.py
-index ca359e6..b31fd86 100644
---- a/plone/app/contenttypes/tests/test_file.py
-+++ b/plone/app/contenttypes/tests/test_file.py
-@@ -23,6 +23,9 @@
- from plone.app.testing import TEST_USER_ID, setRoles
- from plone.app.z3cform.interfaces import IPloneFormLayer
+diff --git a/CHANGES.rst b/CHANGES.rst
+index af909ed..6c52e37 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,8 @@ Changelog
+ 1.2.3 (unreleased)
+ ------------------
  
-+from plone.namedfile.file import NamedFile
-+from plone.app.contenttypes.interfaces import IPloneAppContenttypesLayer
+-- Nothing changed yet.
++- Fixed getObjectDefaultView method to strip off leading / and/or @@.
++  [alecghica]
+ 
+ 
+ 1.2.2 (2014-10-23)
+diff --git a/plone/app/caching/utils.py b/plone/app/caching/utils.py
+index a6b92ea..ad37cc6 100644
+--- a/plone/app/caching/utils.py
++++ b/plone/app/caching/utils.py
+@@ -27,6 +27,17 @@ def isPurged(object):
+ 
+     return (portal_type in settings.purgedContentTypes)
+ 
++def stripLeadingCharacters(name):
++    """Strip off leading / and/or @@
++    """
 +
- 
- class FileIntegrationTest(unittest.TestCase):
- 
-@@ -79,6 +82,37 @@ def test_view(self):
-         self.assertTrue('My File' in view())
-         self.assertTrue('This is my file.' in view())
- 
-+    def test_view_no_video_audio_tag(self):
-+        self.portal.invokeFactory('File', 'file')
-+        file = self.portal['file']
-+        file.file = NamedFile()
-+        file.file.contentType = 'application/pdf'
-+        alsoProvides(self.request, IPloneAppContenttypesLayer)
-+        view = file.restrictedTraverse('@@file_view')
-+        rendered = view()
-+        self.assertTrue('</audio>' not in rendered)
-+        self.assertTrue('</video>' not in rendered)
++    if name and name[0] == '/':
++        name = name[1:]
++    if name and name.startswith('@@'):
++        name = name[2:]
 +
-+    def test_view_video_tag(self):
-+        self.portal.invokeFactory('File', 'file')
-+        file = self.portal['file']
-+        file.file = NamedFile()
-+        file.file.contentType = 'audio/mp3'
-+        alsoProvides(self.request, IPloneAppContenttypesLayer)
-+        view = file.restrictedTraverse('@@file_view')
-+        rendered = view()
-+        self.assertTrue('</audio>' in rendered)
++    return name
 +
-+    def test_view_audio_tag(self):
-+        self.portal.invokeFactory('File', 'file')
-+        file = self.portal['file']
-+        file.file = NamedFile()
-+        file.file.contentType = 'video/ogv'
-+        alsoProvides(self.request, IPloneAppContenttypesLayer)
-+        view = file.restrictedTraverse('@@file_view')
-+        rendered = view()
-+        self.assertTrue('</video>' in rendered)
-+
+ def getObjectDefaultView(context):
+     """Get the id of an object's default view
+     """
+@@ -37,7 +48,7 @@ def getObjectDefaultView(context):
  
- class FileFunctionalTest(unittest.TestCase):
+     if browserDefault is not None:
+         try:
+-            return browserDefault.defaultView()
++            return stripLeadingCharacters(browserDefault.defaultView())
+         except AttributeError:
+             # Might happen if FTI didn't migrate yet.
+             pass
+@@ -61,9 +72,4 @@ def getObjectDefaultView(context):
+         action = fti.queryMethodID('(Default)', default = action,
+                                    context = context)
  
+-    # Strip off leading / and/or @@
+-    if action and action[0] == '/':
+-        action = action[1:]
+-    if action and action.startswith('@@'):
+-        action = action[2:]
+-    return action
++    return stripLeadingCharacters(action)
 
 
-Repository: plone.app.contenttypes
+Repository: plone.app.caching
 Branch: refs/heads/master
-Date: 2015-01-21T11:02:48+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/0492cc7ca6efa424c9c225fe3274dfcdec1cfda6
+Date: 2015-01-21T14:22:08+02:00
+Author: Alexandru Ghica (alecghica) <alec.ghica@eaudeweb.ro>
+Commit: https://github.com/plone/plone.app.caching/commit/d659e98faaa4f2aef148e2abd5b3f109647eac4b
 
-Merge pull request #201 from plone/thet-audiovideo
-
-audio/video tag for file view
+Added test for getObjectDefaultView fix
 
 Files changed:
-A plone/app/contenttypes/browser/file.py
-M docs/CHANGES.rst
-M plone/app/contenttypes/browser/configure.zcml
-M plone/app/contenttypes/browser/templates/file.pt
-M plone/app/contenttypes/browser/utils.py
-M plone/app/contenttypes/tests/test_file.py
+M plone/app/caching/tests/test_utils.py
 
-diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
-index a8e25e2..46974f2 100644
---- a/docs/CHANGES.rst
-+++ b/docs/CHANGES.rst
-@@ -4,6 +4,11 @@ Changelog
- 1.2 (unreleased)
- ----------------
+diff --git a/plone/app/caching/tests/test_utils.py b/plone/app/caching/tests/test_utils.py
+index b768054..86e6563 100644
+--- a/plone/app/caching/tests/test_utils.py
++++ b/plone/app/caching/tests/test_utils.py
+@@ -130,6 +130,10 @@ def test_browserdefault(self):
+         context = DummyContent()
+         self.assertEqual('defaultView', getObjectDefaultView(context))
  
-+- In the file view, render HTML5 ``<audio>`` or ``<video>`` tags for audio
-+  respectively video file types. Ancient browsers, which do not support that,
-+  just don't render these tags.
-+  [thet]
++    def test_browserviewdefault(self):
++        context = DummyContent(defaultView="@@defaultView")
++        self.assertEqual('defaultView', getObjectDefaultView(context))
 +
- - Add ``event_listing`` to available view methods for the Folder and Collection
-   types.
-   [thet]
-diff --git a/plone/app/contenttypes/browser/configure.zcml b/plone/app/contenttypes/browser/configure.zcml
-index 44c0d62..a3fc913 100644
---- a/plone/app/contenttypes/browser/configure.zcml
-+++ b/plone/app/contenttypes/browser/configure.zcml
-@@ -117,6 +117,7 @@
-     name="file_view"
-     for="plone.app.contenttypes.interfaces.IFile"
-     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
-+    class=".file.FileView"
-     template="templates/file.pt"
-     permission="zope2.View"
-     menu="plone_displayviews"
-diff --git a/plone/app/contenttypes/browser/file.py b/plone/app/contenttypes/browser/file.py
-new file mode 100644
-index 0000000..ad37107
---- /dev/null
-+++ b/plone/app/contenttypes/browser/file.py
-@@ -0,0 +1,18 @@
-+from plone.app.contenttypes.browser.utils import Utils
-+
-+
-+class FileView(Utils):
-+
-+    def __init__(self, context, request):
-+        super(FileView, self).__init__(context, request)
-+
-+    def is_videotype(self):
-+        ct = self.context.file.contentType
-+        return 'video/' in ct
-+
-+    def is_audiotype(self):
-+        ct = self.context.file.contentType
-+        return 'audio/' in ct
-+
-+    def get_mimetype_icon(self):
-+        return super(FileView, self).getMimeTypeIcon(self.context.file)
-diff --git a/plone/app/contenttypes/browser/templates/file.pt b/plone/app/contenttypes/browser/templates/file.pt
-index 3cfc525..547d748 100644
---- a/plone/app/contenttypes/browser/templates/file.pt
-+++ b/plone/app/contenttypes/browser/templates/file.pt
-@@ -11,10 +11,10 @@
-     <metal:content-core fill-slot="content-core">
-         <metal:block define-macro="content-core"
-                      tal:define="content_type context/file/contentType|nothing;
--                                 v python:context.restrictedTraverse('contenttype_utils');">
-+                                 download_url string:${context/absolute_url}/@@download/file/${context/file/filename}">
-             <p>
--                <a tal:attributes="href string:${context/absolute_url}/@@download/file/${context/file/filename}">
--                    <img tal:attributes="src python: v.getMimeTypeIcon(context.file);
-+                <a tal:attributes="href download_url">
-+                    <img tal:attributes="src view/get_mimetype_icon;
-                                          alt content_type;" border="0"  />
-                     <tal:name tal:content="context/file/filename" >Filename</tal:name>
-                 </a>
-@@ -24,6 +24,14 @@
-                       &mdash; <span tal:replace="kb" /> KB</span>
-             </p>
+     def test_not_IBrowserDefault_methodid(self):
+         context = DummyNotBrowserDefault('testtype', 'string:${object_url}/view')
+         self.assertEqual('defaultView', getObjectDefaultView(context))
+
+
+Repository: plone.app.caching
+Branch: refs/heads/master
+Date: 2015-01-21T07:38:14-05:00
+Author: Eric Steele (esteele) <eric@esteele.net>
+Commit: https://github.com/plone/plone.app.caching/commit/031356bf0f26a37365c36a6b4b77ece396ed95a3
+
+Merge pull request #11 from alecghica/master
+
+Fixed getObjectDefaultView method to strip off leading / and/or @@
+
+Files changed:
+M CHANGES.rst
+M plone/app/caching/tests/test_utils.py
+M plone/app/caching/utils.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index af909ed..6c52e37 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,8 @@ Changelog
+ 1.2.3 (unreleased)
+ ------------------
  
-+            <video tal:condition="view/is_videotype" controls="controls">
-+              <source tal:attributes="src download_url; type content_type"></source>
-+            </video>
-+
-+            <audio tal:condition="view/is_audiotype" controls="controls">
-+              <source tal:attributes="src download_url; type content_type"></source>
-+            </audio>
-+
-             <div tal:condition="python: content_type.startswith('text')">
-                 <h2 i18n:translate="heading_file_contents">File contents</h2>
-                 <pre tal:content="context/file/data|nothing" />
-diff --git a/plone/app/contenttypes/browser/utils.py b/plone/app/contenttypes/browser/utils.py
-index b816539..c4c7037 100644
---- a/plone/app/contenttypes/browser/utils.py
-+++ b/plone/app/contenttypes/browser/utils.py
-@@ -31,8 +31,11 @@ def getMimeTypeIcon(self, content_file):
-         )
-         portal_url = pstate.portal_url()
-         mtr = getToolByName(context, "mimetypes_registry")
--        mime = list(mtr.lookup(content_file.contentType))
--        mime.append(mtr.lookupExtension(content_file.filename))
-+        mime = []
-+        if content_file.contentType:
-+            mime.append(mtr.lookup(content_file.contentType))
-+        if content_file.filename:
-+            mime.append(mtr.lookupExtension(content_file.filename))
-         mime.append(mtr.lookup("application/octet-stream")[0])
-         icon_paths = [m.icon_path for m in mime if hasattr(m, 'icon_path')]
-         if icon_paths:
-diff --git a/plone/app/contenttypes/tests/test_file.py b/plone/app/contenttypes/tests/test_file.py
-index ca359e6..b31fd86 100644
---- a/plone/app/contenttypes/tests/test_file.py
-+++ b/plone/app/contenttypes/tests/test_file.py
-@@ -23,6 +23,9 @@
- from plone.app.testing import TEST_USER_ID, setRoles
- from plone.app.z3cform.interfaces import IPloneFormLayer
+-- Nothing changed yet.
++- Fixed getObjectDefaultView method to strip off leading / and/or @@.
++  [alecghica]
  
-+from plone.namedfile.file import NamedFile
-+from plone.app.contenttypes.interfaces import IPloneAppContenttypesLayer
+ 
+ 1.2.2 (2014-10-23)
+diff --git a/plone/app/caching/tests/test_utils.py b/plone/app/caching/tests/test_utils.py
+index b768054..86e6563 100644
+--- a/plone/app/caching/tests/test_utils.py
++++ b/plone/app/caching/tests/test_utils.py
+@@ -130,6 +130,10 @@ def test_browserdefault(self):
+         context = DummyContent()
+         self.assertEqual('defaultView', getObjectDefaultView(context))
+ 
++    def test_browserviewdefault(self):
++        context = DummyContent(defaultView="@@defaultView")
++        self.assertEqual('defaultView', getObjectDefaultView(context))
 +
+     def test_not_IBrowserDefault_methodid(self):
+         context = DummyNotBrowserDefault('testtype', 'string:${object_url}/view')
+         self.assertEqual('defaultView', getObjectDefaultView(context))
+diff --git a/plone/app/caching/utils.py b/plone/app/caching/utils.py
+index af64a75..ad37cc6 100644
+--- a/plone/app/caching/utils.py
++++ b/plone/app/caching/utils.py
+@@ -27,6 +27,17 @@ def isPurged(object):
  
- class FileIntegrationTest(unittest.TestCase):
+     return (portal_type in settings.purgedContentTypes)
  
-@@ -79,6 +82,37 @@ def test_view(self):
-         self.assertTrue('My File' in view())
-         self.assertTrue('This is my file.' in view())
- 
-+    def test_view_no_video_audio_tag(self):
-+        self.portal.invokeFactory('File', 'file')
-+        file = self.portal['file']
-+        file.file = NamedFile()
-+        file.file.contentType = 'application/pdf'
-+        alsoProvides(self.request, IPloneAppContenttypesLayer)
-+        view = file.restrictedTraverse('@@file_view')
-+        rendered = view()
-+        self.assertTrue('</audio>' not in rendered)
-+        self.assertTrue('</video>' not in rendered)
++def stripLeadingCharacters(name):
++    """Strip off leading / and/or @@
++    """
 +
-+    def test_view_video_tag(self):
-+        self.portal.invokeFactory('File', 'file')
-+        file = self.portal['file']
-+        file.file = NamedFile()
-+        file.file.contentType = 'audio/mp3'
-+        alsoProvides(self.request, IPloneAppContenttypesLayer)
-+        view = file.restrictedTraverse('@@file_view')
-+        rendered = view()
-+        self.assertTrue('</audio>' in rendered)
++    if name and name[0] == '/':
++        name = name[1:]
++    if name and name.startswith('@@'):
++        name = name[2:]
 +
-+    def test_view_audio_tag(self):
-+        self.portal.invokeFactory('File', 'file')
-+        file = self.portal['file']
-+        file.file = NamedFile()
-+        file.file.contentType = 'video/ogv'
-+        alsoProvides(self.request, IPloneAppContenttypesLayer)
-+        view = file.restrictedTraverse('@@file_view')
-+        rendered = view()
-+        self.assertTrue('</video>' in rendered)
++    return name
 +
+ def getObjectDefaultView(context):
+     """Get the id of an object's default view
+     """
+@@ -37,7 +48,7 @@ def getObjectDefaultView(context):
  
- class FileFunctionalTest(unittest.TestCase):
+     if browserDefault is not None:
+         try:
+-            return browserDefault.defaultView()
++            return stripLeadingCharacters(browserDefault.defaultView())
+         except AttributeError:
+             # Might happen if FTI didn't migrate yet.
+             pass
+@@ -47,7 +58,8 @@ def getObjectDefaultView(context):
  
+     fti = context.getTypeInfo()
+     try:
+-        # XXX: This isn't quite right since it assumes the action starts with ${object_url}
++        # XXX: This isn't quite right since it assumes the action starts
++        #with ${object_url}
+         action = fti.getActionInfo('object/view')['url'].split('/')[-1]
+     except ValueError:
+         # If the action doesn't exist, stop
+@@ -57,13 +69,7 @@ def getObjectDefaultView(context):
+     if action:
+         action = fti.queryMethodID(action, default = action, context = context)
+     else:
+-        action = fti.queryMethodID('(Default)', default = action, context = context)
+-
+-    # Strip off leading / and/or @@
+-    if action and action[0] == '/':
+-        action = action[1:]
+-    if action and action.startswith('@@'):
+-        action = action[2:]
+-    return action
+-
++        action = fti.queryMethodID('(Default)', default = action,
++                                   context = context)
+ 
++    return stripLeadingCharacters(action)
 
 
