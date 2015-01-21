@@ -1,26 +1,25 @@
-Repository: plone.app.robotframework
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-21T13:39:54+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.robotframework/commit/732e0081bf06bc1d980b607e4dddced74f730c2b
+Date: 2015-01-21T15:30:30+01:00
+Author: Mathieu Le Marec - Pasquet (kiorky) <kiorky@cryptelium.net>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/baa885c6f8b1febb56186c87812dda25e1e4535b
 
-fix broken link
+missing define
 
 Files changed:
-M docs/source/index.rst
+M plone/app/contenttypes/browser/templates/folder_listing.pt
 
-diff --git a/docs/source/index.rst b/docs/source/index.rst
-index d7dcc91..1032189 100644
---- a/docs/source/index.rst
-+++ b/docs/source/index.rst
-@@ -49,7 +49,7 @@ tests:
- * `Robot Framework built-in library documentation`__
- * `Robot Framework Selenium2Library documentation`__
- 
--__ http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html
-+__ http://robotframework.org/robotframework/latest/libraries/BuiltIn.html
- __ http://rtomac.github.com/robotframework-selenium2library/doc/Selenium2Library.html
- 
- 
+diff --git a/plone/app/contenttypes/browser/templates/folder_listing.pt b/plone/app/contenttypes/browser/templates/folder_listing.pt
+index 96a368d..d63282c 100644
+--- a/plone/app/contenttypes/browser/templates/folder_listing.pt
++++ b/plone/app/contenttypes/browser/templates/folder_listing.pt
+@@ -35,6 +35,7 @@
+                         site_properties context/portal_properties/site_properties;
+                         use_view_action site_properties/typesUseViewActionInListings|python:();
+                         Batch python:modules['Products.CMFPlone'].Batch;
++                        plone_layout context/@@plone_layout;
+                         b_start python:request.get('b_start', 0);
+                         batch python:isinstance(folderContents, Batch) and folderContents or Batch(folderContents, limit_display or 100, int(b_start), orphan=1);
+                         isAnon portal_state/anonymous;
 
 
