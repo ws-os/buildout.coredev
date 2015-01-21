@@ -1,25 +1,29 @@
-Repository: plone.app.contenttypes
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-21T15:30:30+01:00
-Author: Mathieu Le Marec - Pasquet (kiorky) <kiorky@cryptelium.net>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/baa885c6f8b1febb56186c87812dda25e1e4535b
+Date: 2015-01-21T18:36:10+01:00
+Author: JC Brand (jcbrand) <jc@opkode.com>
+Commit: https://github.com/plone/mockup/commit/579221bbe3d8e6f361d7a077524ef5b7efc0d371
 
-missing define
+Add karma-spec-reporter and phantomjs
 
 Files changed:
-M plone/app/contenttypes/browser/templates/folder_listing.pt
+M mockup/package.json
 
-diff --git a/plone/app/contenttypes/browser/templates/folder_listing.pt b/plone/app/contenttypes/browser/templates/folder_listing.pt
-index 96a368d..d63282c 100644
---- a/plone/app/contenttypes/browser/templates/folder_listing.pt
-+++ b/plone/app/contenttypes/browser/templates/folder_listing.pt
-@@ -35,6 +35,7 @@
-                         site_properties context/portal_properties/site_properties;
-                         use_view_action site_properties/typesUseViewActionInListings|python:();
-                         Batch python:modules['Products.CMFPlone'].Batch;
-+                        plone_layout context/@@plone_layout;
-                         b_start python:request.get('b_start', 0);
-                         batch python:isinstance(folderContents, Batch) and folderContents or Batch(folderContents, limit_display or 100, int(b_start), orphan=1);
-                         isAnon portal_state/anonymous;
+diff --git a/mockup/package.json b/mockup/package.json
+index c36cee5..2e0fbfb 100644
+--- a/mockup/package.json
++++ b/mockup/package.json
+@@ -26,9 +26,11 @@
+     "karma-requirejs": "~0.2.1",
+     "karma-sauce-launcher": "~0.2.10",
+     "karma-script-launcher": "~0.1.0",
++    "karma-spec-reporter": "0.0.16",
+     "lcov-result-merger": "~0.0.2",
+     "less": "~1.7.0",
+     "mocha": "~1.18.2",
++    "phantomjs": "^1.9.13",
+     "requirejs": "~2.1.11"
+   },
+   "maintainers": [
 
 
