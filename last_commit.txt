@@ -1,98 +1,360 @@
-Repository: plone.app.content
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-20T00:25:29-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.content/commit/30f69a2e77d13692bec719fe4f1b3842cd93f48b
+Date: 2015-01-19T23:50:45+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/f30624d211b8e6f6a4e5866aa20d96974b208f02
 
-fix setting effective and expiration date
+In the file view, render HTML5 &lt;audio&gt; or &lt;video&gt; tags for audio respectively video file types. Ancient browsers, which do not support that, just don't render these tags.
 
 Files changed:
-M plone/app/content/browser/folder.py
-M plone/app/content/tests/test_folder.py
+A plone/app/contenttypes/browser/file.py
+M docs/CHANGES.rst
+M plone/app/contenttypes/browser/configure.zcml
+M plone/app/contenttypes/browser/templates/file.pt
 
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index c065ac0..c4c1140 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -326,10 +326,10 @@ class TagsAction(FolderContentsActionView):
-     required_obj_permission = 'Modify portal content'
+diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
+index a8e25e2..46974f2 100644
+--- a/docs/CHANGES.rst
++++ b/docs/CHANGES.rst
+@@ -4,6 +4,11 @@ Changelog
+ 1.2 (unreleased)
+ ----------------
  
-     def __call__(self):
--        self.remove = set([v.encode('utf8') for v in \
--            json.loads(self.request.form.get('remove'))])
--        self.add = set([v.encode('utf8') for v in \
--            json.loads(self.request.form.get('add'))])
-+        self.remove = set([v.encode('utf8') for v in
-+                           json.loads(self.request.form.get('remove'))])
-+        self.add = set([v.encode('utf8') for v in
-+                        json.loads(self.request.form.get('add'))])
-         return super(TagsAction, self).__call__()
++- In the file view, render HTML5 ``<audio>`` or ``<video>`` tags for audio
++  respectively video file types. Ancient browsers, which do not support that,
++  just don't render these tags.
++  [thet]
++
+ - Add ``event_listing`` to available view methods for the Folder and Collection
+   types.
+   [thet]
+diff --git a/plone/app/contenttypes/browser/configure.zcml b/plone/app/contenttypes/browser/configure.zcml
+index 44c0d62..a3fc913 100644
+--- a/plone/app/contenttypes/browser/configure.zcml
++++ b/plone/app/contenttypes/browser/configure.zcml
+@@ -117,6 +117,7 @@
+     name="file_view"
+     for="plone.app.contenttypes.interfaces.IFile"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
++    class=".file.FileView"
+     template="templates/file.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+diff --git a/plone/app/contenttypes/browser/file.py b/plone/app/contenttypes/browser/file.py
+new file mode 100644
+index 0000000..ad37107
+--- /dev/null
++++ b/plone/app/contenttypes/browser/file.py
+@@ -0,0 +1,18 @@
++from plone.app.contenttypes.browser.utils import Utils
++
++
++class FileView(Utils):
++
++    def __init__(self, context, request):
++        super(FileView, self).__init__(context, request)
++
++    def is_videotype(self):
++        ct = self.context.file.contentType
++        return 'video/' in ct
++
++    def is_audiotype(self):
++        ct = self.context.file.contentType
++        return 'audio/' in ct
++
++    def get_mimetype_icon(self):
++        return super(FileView, self).getMimeTypeIcon(self.context.file)
+diff --git a/plone/app/contenttypes/browser/templates/file.pt b/plone/app/contenttypes/browser/templates/file.pt
+index 3cfc525..547d748 100644
+--- a/plone/app/contenttypes/browser/templates/file.pt
++++ b/plone/app/contenttypes/browser/templates/file.pt
+@@ -11,10 +11,10 @@
+     <metal:content-core fill-slot="content-core">
+         <metal:block define-macro="content-core"
+                      tal:define="content_type context/file/contentType|nothing;
+-                                 v python:context.restrictedTraverse('contenttype_utils');">
++                                 download_url string:${context/absolute_url}/@@download/file/${context/file/filename}">
+             <p>
+-                <a tal:attributes="href string:${context/absolute_url}/@@download/file/${context/file/filename}">
+-                    <img tal:attributes="src python: v.getMimeTypeIcon(context.file);
++                <a tal:attributes="href download_url">
++                    <img tal:attributes="src view/get_mimetype_icon;
+                                          alt content_type;" border="0"  />
+                     <tal:name tal:content="context/file/filename" >Filename</tal:name>
+                 </a>
+@@ -24,6 +24,14 @@
+                       &mdash; <span tal:replace="kb" /> KB</span>
+             </p>
  
-     def action(self, obj):
-@@ -414,10 +414,10 @@ def __call__(self):
-         return super(PropertiesAction, self).__call__()
- 
-     def dx_action(self, obj):
--        if self.effectiveDate and hasattr(obj, 'effective'):
--            obj.effective = DateTime(self.effectiveDate)
--        if self.expirationDate and hasattr(obj, 'expires'):
--            obj.expires = DateTime(self.expirationDate)
-+        if self.effectiveDate and hasattr(obj, 'effective_date'):
-+            obj.effective_date = DateTime(self.effectiveDate)
-+        if self.expirationDate and hasattr(obj, 'expiration_date'):
-+            obj.expiration_date = DateTime(self.expirationDate)
-         if self.copyright and hasattr(obj, 'rights'):
-             obj.rights = self.copyright
-         if self.contributors and hasattr(obj, 'contributors'):
-diff --git a/plone/app/content/tests/test_folder.py b/plone/app/content/tests/test_folder.py
-index b5bfddc..1af71d8 100644
---- a/plone/app/content/tests/test_folder.py
-+++ b/plone/app/content/tests/test_folder.py
-@@ -70,7 +70,7 @@ def testEffective(self):
-         self.request.form['effectiveTime'] = '09:00'
-         view = PropertiesAction(self.portal.page, self.request)
-         view()
--        self.assertEquals(self.portal.page.effective,
-+        self.assertEquals(self.portal.page.effective_date,
-                           DateTime('1999/01/01 09:00'))
- 
-     def testExpires(self):
-@@ -79,7 +79,7 @@ def testExpires(self):
-         self.request.form['expirationTime'] = '09:00'
-         view = PropertiesAction(self.portal.page, self.request)
-         view()
--        self.assertEquals(self.portal.page.expires,
-+        self.assertEquals(self.portal.page.expiration_date,
-                           DateTime('1999/01/01 09:00'))
- 
-     def testSetDexterityExcludeFromNav(self):
++            <video tal:condition="view/is_videotype" controls="controls">
++              <source tal:attributes="src download_url; type content_type"></source>
++            </video>
++
++            <audio tal:condition="view/is_audiotype" controls="controls">
++              <source tal:attributes="src download_url; type content_type"></source>
++            </audio>
++
+             <div tal:condition="python: content_type.startswith('text')">
+                 <h2 i18n:translate="heading_file_contents">File contents</h2>
+                 <pre tal:content="context/file/data|nothing" />
 
 
-Repository: plone.app.content
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-20T00:26:42-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.content/commit/8d58b81fd1d856886c1ec0b44957dcd7b9cde936
+Date: 2015-01-20T12:12:45+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/fa5e9f10da64b3757d05637fce23043ca33d19bf
 
-disable portlets on folder contents
+tests for &lt;audio&gt; &lt;video&gt; tag in @@file_view. plus: dont fail, if no filename or contenttype is available for the file
 
 Files changed:
-M plone/app/content/browser/templates/folder_contents.pt
+M plone/app/contenttypes/browser/utils.py
+M plone/app/contenttypes/tests/test_file.py
 
-diff --git a/plone/app/content/browser/templates/folder_contents.pt b/plone/app/content/browser/templates/folder_contents.pt
-index 83e9feb..485eaf0 100644
---- a/plone/app/content/browser/templates/folder_contents.pt
-+++ b/plone/app/content/browser/templates/folder_contents.pt
-@@ -8,7 +8,9 @@
-   <head>
-       <metal:block fill-slot="top_slot">
-         <tal:insert tal:replace="nothing"
--              tal:define="dummy python:request.set('enable_border', 1)" />
-+              tal:define="dummy python:request.set('enable_border', 1);
-+                          disable_column_one python:request.set('disable_plone.leftcolumn', 1);
-+                          disable_column_two python:request.set('disable_plone.rightcolumn', 1);" />
-       </metal:block>
-   </head>
- <body>
+diff --git a/plone/app/contenttypes/browser/utils.py b/plone/app/contenttypes/browser/utils.py
+index b816539..c4c7037 100644
+--- a/plone/app/contenttypes/browser/utils.py
++++ b/plone/app/contenttypes/browser/utils.py
+@@ -31,8 +31,11 @@ def getMimeTypeIcon(self, content_file):
+         )
+         portal_url = pstate.portal_url()
+         mtr = getToolByName(context, "mimetypes_registry")
+-        mime = list(mtr.lookup(content_file.contentType))
+-        mime.append(mtr.lookupExtension(content_file.filename))
++        mime = []
++        if content_file.contentType:
++            mime.append(mtr.lookup(content_file.contentType))
++        if content_file.filename:
++            mime.append(mtr.lookupExtension(content_file.filename))
+         mime.append(mtr.lookup("application/octet-stream")[0])
+         icon_paths = [m.icon_path for m in mime if hasattr(m, 'icon_path')]
+         if icon_paths:
+diff --git a/plone/app/contenttypes/tests/test_file.py b/plone/app/contenttypes/tests/test_file.py
+index ca359e6..b31fd86 100644
+--- a/plone/app/contenttypes/tests/test_file.py
++++ b/plone/app/contenttypes/tests/test_file.py
+@@ -23,6 +23,9 @@
+ from plone.app.testing import TEST_USER_ID, setRoles
+ from plone.app.z3cform.interfaces import IPloneFormLayer
+ 
++from plone.namedfile.file import NamedFile
++from plone.app.contenttypes.interfaces import IPloneAppContenttypesLayer
++
+ 
+ class FileIntegrationTest(unittest.TestCase):
+ 
+@@ -79,6 +82,37 @@ def test_view(self):
+         self.assertTrue('My File' in view())
+         self.assertTrue('This is my file.' in view())
+ 
++    def test_view_no_video_audio_tag(self):
++        self.portal.invokeFactory('File', 'file')
++        file = self.portal['file']
++        file.file = NamedFile()
++        file.file.contentType = 'application/pdf'
++        alsoProvides(self.request, IPloneAppContenttypesLayer)
++        view = file.restrictedTraverse('@@file_view')
++        rendered = view()
++        self.assertTrue('</audio>' not in rendered)
++        self.assertTrue('</video>' not in rendered)
++
++    def test_view_video_tag(self):
++        self.portal.invokeFactory('File', 'file')
++        file = self.portal['file']
++        file.file = NamedFile()
++        file.file.contentType = 'audio/mp3'
++        alsoProvides(self.request, IPloneAppContenttypesLayer)
++        view = file.restrictedTraverse('@@file_view')
++        rendered = view()
++        self.assertTrue('</audio>' in rendered)
++
++    def test_view_audio_tag(self):
++        self.portal.invokeFactory('File', 'file')
++        file = self.portal['file']
++        file.file = NamedFile()
++        file.file.contentType = 'video/ogv'
++        alsoProvides(self.request, IPloneAppContenttypesLayer)
++        view = file.restrictedTraverse('@@file_view')
++        rendered = view()
++        self.assertTrue('</video>' in rendered)
++
+ 
+ class FileFunctionalTest(unittest.TestCase):
+ 
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2015-01-21T11:02:48+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/0492cc7ca6efa424c9c225fe3274dfcdec1cfda6
+
+Merge pull request #201 from plone/thet-audiovideo
+
+audio/video tag for file view
+
+Files changed:
+A plone/app/contenttypes/browser/file.py
+M docs/CHANGES.rst
+M plone/app/contenttypes/browser/configure.zcml
+M plone/app/contenttypes/browser/templates/file.pt
+M plone/app/contenttypes/browser/utils.py
+M plone/app/contenttypes/tests/test_file.py
+
+diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
+index a8e25e2..46974f2 100644
+--- a/docs/CHANGES.rst
++++ b/docs/CHANGES.rst
+@@ -4,6 +4,11 @@ Changelog
+ 1.2 (unreleased)
+ ----------------
+ 
++- In the file view, render HTML5 ``<audio>`` or ``<video>`` tags for audio
++  respectively video file types. Ancient browsers, which do not support that,
++  just don't render these tags.
++  [thet]
++
+ - Add ``event_listing`` to available view methods for the Folder and Collection
+   types.
+   [thet]
+diff --git a/plone/app/contenttypes/browser/configure.zcml b/plone/app/contenttypes/browser/configure.zcml
+index 44c0d62..a3fc913 100644
+--- a/plone/app/contenttypes/browser/configure.zcml
++++ b/plone/app/contenttypes/browser/configure.zcml
+@@ -117,6 +117,7 @@
+     name="file_view"
+     for="plone.app.contenttypes.interfaces.IFile"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
++    class=".file.FileView"
+     template="templates/file.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+diff --git a/plone/app/contenttypes/browser/file.py b/plone/app/contenttypes/browser/file.py
+new file mode 100644
+index 0000000..ad37107
+--- /dev/null
++++ b/plone/app/contenttypes/browser/file.py
+@@ -0,0 +1,18 @@
++from plone.app.contenttypes.browser.utils import Utils
++
++
++class FileView(Utils):
++
++    def __init__(self, context, request):
++        super(FileView, self).__init__(context, request)
++
++    def is_videotype(self):
++        ct = self.context.file.contentType
++        return 'video/' in ct
++
++    def is_audiotype(self):
++        ct = self.context.file.contentType
++        return 'audio/' in ct
++
++    def get_mimetype_icon(self):
++        return super(FileView, self).getMimeTypeIcon(self.context.file)
+diff --git a/plone/app/contenttypes/browser/templates/file.pt b/plone/app/contenttypes/browser/templates/file.pt
+index 3cfc525..547d748 100644
+--- a/plone/app/contenttypes/browser/templates/file.pt
++++ b/plone/app/contenttypes/browser/templates/file.pt
+@@ -11,10 +11,10 @@
+     <metal:content-core fill-slot="content-core">
+         <metal:block define-macro="content-core"
+                      tal:define="content_type context/file/contentType|nothing;
+-                                 v python:context.restrictedTraverse('contenttype_utils');">
++                                 download_url string:${context/absolute_url}/@@download/file/${context/file/filename}">
+             <p>
+-                <a tal:attributes="href string:${context/absolute_url}/@@download/file/${context/file/filename}">
+-                    <img tal:attributes="src python: v.getMimeTypeIcon(context.file);
++                <a tal:attributes="href download_url">
++                    <img tal:attributes="src view/get_mimetype_icon;
+                                          alt content_type;" border="0"  />
+                     <tal:name tal:content="context/file/filename" >Filename</tal:name>
+                 </a>
+@@ -24,6 +24,14 @@
+                       &mdash; <span tal:replace="kb" /> KB</span>
+             </p>
+ 
++            <video tal:condition="view/is_videotype" controls="controls">
++              <source tal:attributes="src download_url; type content_type"></source>
++            </video>
++
++            <audio tal:condition="view/is_audiotype" controls="controls">
++              <source tal:attributes="src download_url; type content_type"></source>
++            </audio>
++
+             <div tal:condition="python: content_type.startswith('text')">
+                 <h2 i18n:translate="heading_file_contents">File contents</h2>
+                 <pre tal:content="context/file/data|nothing" />
+diff --git a/plone/app/contenttypes/browser/utils.py b/plone/app/contenttypes/browser/utils.py
+index b816539..c4c7037 100644
+--- a/plone/app/contenttypes/browser/utils.py
++++ b/plone/app/contenttypes/browser/utils.py
+@@ -31,8 +31,11 @@ def getMimeTypeIcon(self, content_file):
+         )
+         portal_url = pstate.portal_url()
+         mtr = getToolByName(context, "mimetypes_registry")
+-        mime = list(mtr.lookup(content_file.contentType))
+-        mime.append(mtr.lookupExtension(content_file.filename))
++        mime = []
++        if content_file.contentType:
++            mime.append(mtr.lookup(content_file.contentType))
++        if content_file.filename:
++            mime.append(mtr.lookupExtension(content_file.filename))
+         mime.append(mtr.lookup("application/octet-stream")[0])
+         icon_paths = [m.icon_path for m in mime if hasattr(m, 'icon_path')]
+         if icon_paths:
+diff --git a/plone/app/contenttypes/tests/test_file.py b/plone/app/contenttypes/tests/test_file.py
+index ca359e6..b31fd86 100644
+--- a/plone/app/contenttypes/tests/test_file.py
++++ b/plone/app/contenttypes/tests/test_file.py
+@@ -23,6 +23,9 @@
+ from plone.app.testing import TEST_USER_ID, setRoles
+ from plone.app.z3cform.interfaces import IPloneFormLayer
+ 
++from plone.namedfile.file import NamedFile
++from plone.app.contenttypes.interfaces import IPloneAppContenttypesLayer
++
+ 
+ class FileIntegrationTest(unittest.TestCase):
+ 
+@@ -79,6 +82,37 @@ def test_view(self):
+         self.assertTrue('My File' in view())
+         self.assertTrue('This is my file.' in view())
+ 
++    def test_view_no_video_audio_tag(self):
++        self.portal.invokeFactory('File', 'file')
++        file = self.portal['file']
++        file.file = NamedFile()
++        file.file.contentType = 'application/pdf'
++        alsoProvides(self.request, IPloneAppContenttypesLayer)
++        view = file.restrictedTraverse('@@file_view')
++        rendered = view()
++        self.assertTrue('</audio>' not in rendered)
++        self.assertTrue('</video>' not in rendered)
++
++    def test_view_video_tag(self):
++        self.portal.invokeFactory('File', 'file')
++        file = self.portal['file']
++        file.file = NamedFile()
++        file.file.contentType = 'audio/mp3'
++        alsoProvides(self.request, IPloneAppContenttypesLayer)
++        view = file.restrictedTraverse('@@file_view')
++        rendered = view()
++        self.assertTrue('</audio>' in rendered)
++
++    def test_view_audio_tag(self):
++        self.portal.invokeFactory('File', 'file')
++        file = self.portal['file']
++        file.file = NamedFile()
++        file.file.contentType = 'video/ogv'
++        alsoProvides(self.request, IPloneAppContenttypesLayer)
++        view = file.restrictedTraverse('@@file_view')
++        rendered = view()
++        self.assertTrue('</video>' in rendered)
++
+ 
+ class FileFunctionalTest(unittest.TestCase):
+ 
 
 
