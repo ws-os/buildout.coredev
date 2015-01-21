@@ -1,248 +1,26 @@
-Repository: plone.app.caching
+Repository: plone.app.robotframework
 Branch: refs/heads/master
-Date: 2015-01-21T11:38:02+02:00
-Author: Alexandru Ghica (alecghica) <alec.ghica@eaudeweb.ro>
-Commit: https://github.com/plone/plone.app.caching/commit/a28176e64173a65f1de8a774cda47421ada49488
+Date: 2015-01-21T13:39:54+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.robotframework/commit/732e0081bf06bc1d980b607e4dddced74f730c2b
 
-Cleanup &amp; PEP8 fixes
+fix broken link
 
 Files changed:
-M plone/app/caching/utils.py
+M docs/source/index.rst
 
-diff --git a/plone/app/caching/utils.py b/plone/app/caching/utils.py
-index af64a75..a6b92ea 100644
---- a/plone/app/caching/utils.py
-+++ b/plone/app/caching/utils.py
-@@ -47,7 +47,8 @@ def getObjectDefaultView(context):
+diff --git a/docs/source/index.rst b/docs/source/index.rst
+index d7dcc91..1032189 100644
+--- a/docs/source/index.rst
++++ b/docs/source/index.rst
+@@ -49,7 +49,7 @@ tests:
+ * `Robot Framework built-in library documentation`__
+ * `Robot Framework Selenium2Library documentation`__
  
-     fti = context.getTypeInfo()
-     try:
--        # XXX: This isn't quite right since it assumes the action starts with ${object_url}
-+        # XXX: This isn't quite right since it assumes the action starts
-+        #with ${object_url}
-         action = fti.getActionInfo('object/view')['url'].split('/')[-1]
-     except ValueError:
-         # If the action doesn't exist, stop
-@@ -57,7 +58,8 @@ def getObjectDefaultView(context):
-     if action:
-         action = fti.queryMethodID(action, default = action, context = context)
-     else:
--        action = fti.queryMethodID('(Default)', default = action, context = context)
-+        action = fti.queryMethodID('(Default)', default = action,
-+                                   context = context)
- 
-     # Strip off leading / and/or @@
-     if action and action[0] == '/':
-@@ -65,5 +67,3 @@ def getObjectDefaultView(context):
-     if action and action.startswith('@@'):
-         action = action[2:]
-     return action
--
--
-
-
-Repository: plone.app.caching
-Branch: refs/heads/master
-Date: 2015-01-21T11:43:04+02:00
-Author: Alexandru Ghica (alecghica) <alec.ghica@eaudeweb.ro>
-Commit: https://github.com/plone/plone.app.caching/commit/dc87fa4c34b6d9ae57ad89ba9201091d99e911b9
-
-Fixed getObjectDefaultView method
-
-- Fixed getObjectDefaultView method to strip off leading / and/or @@.
-  [alecghica]
-
-Files changed:
-M CHANGES.rst
-M plone/app/caching/utils.py
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index af909ed..6c52e37 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 1.2.3 (unreleased)
- ------------------
- 
--- Nothing changed yet.
-+- Fixed getObjectDefaultView method to strip off leading / and/or @@.
-+  [alecghica]
+-__ http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html
++__ http://robotframework.org/robotframework/latest/libraries/BuiltIn.html
+ __ http://rtomac.github.com/robotframework-selenium2library/doc/Selenium2Library.html
  
  
- 1.2.2 (2014-10-23)
-diff --git a/plone/app/caching/utils.py b/plone/app/caching/utils.py
-index a6b92ea..ad37cc6 100644
---- a/plone/app/caching/utils.py
-+++ b/plone/app/caching/utils.py
-@@ -27,6 +27,17 @@ def isPurged(object):
- 
-     return (portal_type in settings.purgedContentTypes)
- 
-+def stripLeadingCharacters(name):
-+    """Strip off leading / and/or @@
-+    """
-+
-+    if name and name[0] == '/':
-+        name = name[1:]
-+    if name and name.startswith('@@'):
-+        name = name[2:]
-+
-+    return name
-+
- def getObjectDefaultView(context):
-     """Get the id of an object's default view
-     """
-@@ -37,7 +48,7 @@ def getObjectDefaultView(context):
- 
-     if browserDefault is not None:
-         try:
--            return browserDefault.defaultView()
-+            return stripLeadingCharacters(browserDefault.defaultView())
-         except AttributeError:
-             # Might happen if FTI didn't migrate yet.
-             pass
-@@ -61,9 +72,4 @@ def getObjectDefaultView(context):
-         action = fti.queryMethodID('(Default)', default = action,
-                                    context = context)
- 
--    # Strip off leading / and/or @@
--    if action and action[0] == '/':
--        action = action[1:]
--    if action and action.startswith('@@'):
--        action = action[2:]
--    return action
-+    return stripLeadingCharacters(action)
-
-
-Repository: plone.app.caching
-Branch: refs/heads/master
-Date: 2015-01-21T14:22:08+02:00
-Author: Alexandru Ghica (alecghica) <alec.ghica@eaudeweb.ro>
-Commit: https://github.com/plone/plone.app.caching/commit/d659e98faaa4f2aef148e2abd5b3f109647eac4b
-
-Added test for getObjectDefaultView fix
-
-Files changed:
-M plone/app/caching/tests/test_utils.py
-
-diff --git a/plone/app/caching/tests/test_utils.py b/plone/app/caching/tests/test_utils.py
-index b768054..86e6563 100644
---- a/plone/app/caching/tests/test_utils.py
-+++ b/plone/app/caching/tests/test_utils.py
-@@ -130,6 +130,10 @@ def test_browserdefault(self):
-         context = DummyContent()
-         self.assertEqual('defaultView', getObjectDefaultView(context))
- 
-+    def test_browserviewdefault(self):
-+        context = DummyContent(defaultView="@@defaultView")
-+        self.assertEqual('defaultView', getObjectDefaultView(context))
-+
-     def test_not_IBrowserDefault_methodid(self):
-         context = DummyNotBrowserDefault('testtype', 'string:${object_url}/view')
-         self.assertEqual('defaultView', getObjectDefaultView(context))
-
-
-Repository: plone.app.caching
-Branch: refs/heads/master
-Date: 2015-01-21T07:38:14-05:00
-Author: Eric Steele (esteele) <eric@esteele.net>
-Commit: https://github.com/plone/plone.app.caching/commit/031356bf0f26a37365c36a6b4b77ece396ed95a3
-
-Merge pull request #11 from alecghica/master
-
-Fixed getObjectDefaultView method to strip off leading / and/or @@
-
-Files changed:
-M CHANGES.rst
-M plone/app/caching/tests/test_utils.py
-M plone/app/caching/utils.py
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index af909ed..6c52e37 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 1.2.3 (unreleased)
- ------------------
- 
--- Nothing changed yet.
-+- Fixed getObjectDefaultView method to strip off leading / and/or @@.
-+  [alecghica]
- 
- 
- 1.2.2 (2014-10-23)
-diff --git a/plone/app/caching/tests/test_utils.py b/plone/app/caching/tests/test_utils.py
-index b768054..86e6563 100644
---- a/plone/app/caching/tests/test_utils.py
-+++ b/plone/app/caching/tests/test_utils.py
-@@ -130,6 +130,10 @@ def test_browserdefault(self):
-         context = DummyContent()
-         self.assertEqual('defaultView', getObjectDefaultView(context))
- 
-+    def test_browserviewdefault(self):
-+        context = DummyContent(defaultView="@@defaultView")
-+        self.assertEqual('defaultView', getObjectDefaultView(context))
-+
-     def test_not_IBrowserDefault_methodid(self):
-         context = DummyNotBrowserDefault('testtype', 'string:${object_url}/view')
-         self.assertEqual('defaultView', getObjectDefaultView(context))
-diff --git a/plone/app/caching/utils.py b/plone/app/caching/utils.py
-index af64a75..ad37cc6 100644
---- a/plone/app/caching/utils.py
-+++ b/plone/app/caching/utils.py
-@@ -27,6 +27,17 @@ def isPurged(object):
- 
-     return (portal_type in settings.purgedContentTypes)
- 
-+def stripLeadingCharacters(name):
-+    """Strip off leading / and/or @@
-+    """
-+
-+    if name and name[0] == '/':
-+        name = name[1:]
-+    if name and name.startswith('@@'):
-+        name = name[2:]
-+
-+    return name
-+
- def getObjectDefaultView(context):
-     """Get the id of an object's default view
-     """
-@@ -37,7 +48,7 @@ def getObjectDefaultView(context):
- 
-     if browserDefault is not None:
-         try:
--            return browserDefault.defaultView()
-+            return stripLeadingCharacters(browserDefault.defaultView())
-         except AttributeError:
-             # Might happen if FTI didn't migrate yet.
-             pass
-@@ -47,7 +58,8 @@ def getObjectDefaultView(context):
- 
-     fti = context.getTypeInfo()
-     try:
--        # XXX: This isn't quite right since it assumes the action starts with ${object_url}
-+        # XXX: This isn't quite right since it assumes the action starts
-+        #with ${object_url}
-         action = fti.getActionInfo('object/view')['url'].split('/')[-1]
-     except ValueError:
-         # If the action doesn't exist, stop
-@@ -57,13 +69,7 @@ def getObjectDefaultView(context):
-     if action:
-         action = fti.queryMethodID(action, default = action, context = context)
-     else:
--        action = fti.queryMethodID('(Default)', default = action, context = context)
--
--    # Strip off leading / and/or @@
--    if action and action[0] == '/':
--        action = action[1:]
--    if action and action.startswith('@@'):
--        action = action[2:]
--    return action
--
-+        action = fti.queryMethodID('(Default)', default = action,
-+                                   context = context)
- 
-+    return stripLeadingCharacters(action)
 
 
