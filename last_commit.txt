@@ -1,26 +1,288 @@
-Repository: plone.namedfile
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-22T15:46:03+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.namedfile/commit/3bb55d8146ce15c95a425e7878368339721935ea
+Date: 2015-01-22T15:55:34+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/ccf3864727c3dd515f044331f23005c1eb320ef5
 
-typo
+make code-analysis happy
 
 Files changed:
-M plone/namedfile/browser.py
+M plone/app/contenttypes/browser/file.py
+M plone/app/contenttypes/migration/__init__.py
+M plone/app/contenttypes/migration/browser.py
+M plone/app/contenttypes/migration/dxmigration.py
+M plone/app/contenttypes/migration/migration.py
+M plone/app/contenttypes/migration/topics.py
+M plone/app/contenttypes/migration/utils.py
+M plone/app/contenttypes/migration/vocabularies.py
+M plone/app/contenttypes/testing.py
+M plone/app/contenttypes/tests/test_migration.py
+M plone/app/contenttypes/tests/test_migration_topic.py
+M plone/app/contenttypes/tests/test_setup.py
 
-diff --git a/plone/namedfile/browser.py b/plone/namedfile/browser.py
-index 760ff19..4fadcc1 100644
---- a/plone/namedfile/browser.py
-+++ b/plone/namedfile/browser.py
-@@ -53,7 +53,7 @@ def _getFile(self):
-         if not self.fieldname:
-             info = IPrimaryFieldInfo(self.context, None)
-             if info is None:
--                # Ensure that we have at least a filedname
-+                # Ensure that we have at least a fieldname
-                 raise NotFound(self, '', self.request)
-             self.fieldname = info.fieldname
+diff --git a/plone/app/contenttypes/browser/file.py b/plone/app/contenttypes/browser/file.py
+index ad37107..a633498 100644
+--- a/plone/app/contenttypes/browser/file.py
++++ b/plone/app/contenttypes/browser/file.py
+@@ -1,3 +1,4 @@
++# -*- coding: utf-8 -*-
+ from plone.app.contenttypes.browser.utils import Utils
  
+ 
+diff --git a/plone/app/contenttypes/migration/__init__.py b/plone/app/contenttypes/migration/__init__.py
+index 311a3e7..1ed467b 100644
+--- a/plone/app/contenttypes/migration/__init__.py
++++ b/plone/app/contenttypes/migration/__init__.py
+@@ -1,3 +1,4 @@
++# -*- coding: utf-8 -*-
+ import pytz
+ 
+ 
+diff --git a/plone/app/contenttypes/migration/browser.py b/plone/app/contenttypes/migration/browser.py
+index 2f6191f..4b9beff 100644
+--- a/plone/app/contenttypes/migration/browser.py
++++ b/plone/app/contenttypes/migration/browser.py
+@@ -516,7 +516,8 @@ class FolderishCollection(Container):
+ 
+             <?xml version="1.0"?>
+             <object name="Collection" meta_type="Dexterity FTI">
+-             <property name="klass">my.package.content.FolderishCollection</property>
++             <property name="klass">my.package.content.FolderishCollection
++             </property>
+             </object>
+ 
+         """
+@@ -528,7 +529,7 @@ class FolderishCollection(Container):
+         behavior = 'plone.app.contenttypes.behaviors.collection.ICollection'
+         if fti and behavior in fti.behaviors:
+             logger.warn("You are trying to migrate topic to collection. "
+-                "Instead you need a type 'Collection'.")
++                        "Instead you need a type 'Collection'.")
+ 
+     def has_contentleadimage(self):
+         return HAS_CONTENTLEADIMAGE
+@@ -540,7 +541,6 @@ def installed_types(self):
+         results['installed_without_behavior'] = []
+         results['not_installed'] = []
+         behavior = 'plone.app.contenttypes.behaviors.leadimage.ILeadImage'
+-        portal_types = getToolByName(self.context, 'portal_types')
+         for type_name in DEFAULT_TYPES:
+             fti = queryUtility(IDexterityFTI, name=type_name)
+             if fti:
+diff --git a/plone/app/contenttypes/migration/dxmigration.py b/plone/app/contenttypes/migration/dxmigration.py
+index 419b028..4af24e4 100644
+--- a/plone/app/contenttypes/migration/dxmigration.py
++++ b/plone/app/contenttypes/migration/dxmigration.py
+@@ -6,8 +6,6 @@
+ from plone.app.contenttypes.interfaces import IEvent
+ from plone.app.contenttypes.migration import datetime_fixer
+ from plone.app.contenttypes.migration.utils import HAS_MULTILINGUAL
+-from plone.dexterity.content import Container
+-from plone.dexterity.content import Item
+ from plone.dexterity.interfaces import IDexterityContent
+ from plone.dexterity.interfaces import IDexterityFTI
+ from plone.event.utils import default_timezone
+diff --git a/plone/app/contenttypes/migration/migration.py b/plone/app/contenttypes/migration/migration.py
+index 5ca27e5..5737f6f 100644
+--- a/plone/app/contenttypes/migration/migration.py
++++ b/plone/app/contenttypes/migration/migration.py
+@@ -63,7 +63,7 @@ def migrate_portlets(src_obj, dst_obj):
+     """
+ 
+     # also take custom portlet managers into account
+-    managers = [reg.name for reg in getSiteManager().registeredUtilities() \
++    managers = [reg.name for reg in getSiteManager().registeredUtilities()
+                 if reg.provided == IPortletManager]
+     # faster, but no custom managers
+     # managers = [u'plone.leftcolumn', u'plone.rightcolumn']
+@@ -86,7 +86,8 @@ def migrate_portlets(src_obj, dst_obj):
+             if not hasattr(assignment, '__Broken_state__'):
+                 add_portlet(dst_obj, assignment, key, manager)
+             else:
+-                logger.warn(u'skipping broken portlet assignment {0} for manager {1}'.format(key, manager))
++                logger.warn(u'skipping broken portlet assignment {0} '
++                            'for manager {1}'.format(key, manager))
+ 
+ 
+ def refs(obj):
+diff --git a/plone/app/contenttypes/migration/topics.py b/plone/app/contenttypes/migration/topics.py
+index fa0aa36..7d8825c 100644
+--- a/plone/app/contenttypes/migration/topics.py
++++ b/plone/app/contenttypes/migration/topics.py
+@@ -9,7 +9,6 @@
+ """
+ 
+ from DateTime import DateTime
+-from Products.CMFCore.interfaces._content import IFolderish
+ from Products.CMFCore.utils import getToolByName
+ from Products.contentmigration.inplace import InplaceCMFFolderMigrator
+ from Products.contentmigration.inplace import InplaceCMFItemMigrator
+@@ -30,8 +29,8 @@
+ 
+ INVALID_OPERATION = 'Invalid operation %s for criterion: %s'
+ 
+-# Converters
+ 
++# Converters
+ class CriterionConverter(object):
+ 
+     # Last part of the code for the dotted operation method,
+@@ -536,7 +535,6 @@ def migrate_criteria(self):
+         if self._collection_query is not None:
+             adapted.query = self._collection_query
+ 
+-
+     def migrate_atctmetadata(self):
+         field = self.old.getField('excludeFromNav')
+         self.new.exclude_from_nav = field.get(self.old)
+@@ -649,7 +647,6 @@ def migrate_criteria(self):
+         if self._collection_query is not None:
+             adapted.query = self._collection_query
+ 
+-
+     def migrate_atctmetadata(self):
+         field = self.old.getField('excludeFromNav')
+         self.new.exclude_from_nav = field.get(self.old)
+diff --git a/plone/app/contenttypes/migration/utils.py b/plone/app/contenttypes/migration/utils.py
+index 20ae0d4..89813be 100644
+--- a/plone/app/contenttypes/migration/utils.py
++++ b/plone/app/contenttypes/migration/utils.py
+@@ -129,6 +129,7 @@ def add_portlet(context, assignment, portlet_key, columnName):
+                                         IPortletAssignmentMapping)
+     assignmentmapping[portlet_key] = assignment
+ 
++
+ def move_comments(source_object, target_object):
+     """Move comments by copying the annotation to the target
+     and then removing the comments from the source (not the annotation).
+@@ -146,6 +147,7 @@ def move_comments(source_object, target_object):
+             del source_conversation[comment.comment_id]
+         del source_annotations[DISCUSSION_KEY]
+ 
++
+ def copy_contentrules(source_object, target_object):
+     """Copy contentrules.
+     """
+@@ -160,6 +162,7 @@ def copy_contentrules(source_object, target_object):
+         for rule_id in source_assignable:
+             assign_rule(target_object, rule_id)
+ 
++
+ def migrate_leadimage(source_object, target_object):
+     """ Migrate images added using collective.contentleadimage to the
+     ILeadImage-behavior of plone.app.contenttypes if it is enabled.
+diff --git a/plone/app/contenttypes/migration/vocabularies.py b/plone/app/contenttypes/migration/vocabularies.py
+index 4b14d1d..279c46b 100644
+--- a/plone/app/contenttypes/migration/vocabularies.py
++++ b/plone/app/contenttypes/migration/vocabularies.py
+@@ -225,6 +225,7 @@ def __call__(self, context):
+         return SimpleVocabulary(
+             [SimpleVocabulary.createTerm(
+                 class_name, class_name,
+-                '{0} ({1})'.format(class_name, list_of_class_names[class_name]))
++                '{0} ({1})'.format(
++                    class_name, list_of_class_names[class_name]))
+              for class_name in list_of_class_names.keys()]
+         )
+diff --git a/plone/app/contenttypes/testing.py b/plone/app/contenttypes/testing.py
+index bc0bb91..d312241 100644
+--- a/plone/app/contenttypes/testing.py
++++ b/plone/app/contenttypes/testing.py
+@@ -45,12 +45,13 @@ def setUpZope(self, app, configurationContext):
+     def setUpPloneSite(self, portal):
+         applyProfile(portal, 'plone.app.contenttypes:default')
+ 
+-        # install and enable referenceablebehavior on Documents to be able to test
+-        # controlpanel to enable plone.app.linkintegrity checks
++        # install and enable referenceablebehavior on Documents to be able to
++        # test controlpanel to enable plone.app.linkintegrity checks
+         # XXX Disabled as it is causing test errors in comments
+         # see https://github.com/plone/Products.CMFPlone/issues/255
+-        #applyProfile(portal, 'plone.app.referenceablebehavior:default')
+-        #portal.portal_types.Document.behaviors += ('plone.app.referenceablebehavior.referenceable.IReferenceable',)
++        # applyProfile(portal, 'plone.app.referenceablebehavior:default')
++        # portal.portal_types.Document.behaviors += \
++        #   ('plone.app.referenceablebehavior.referenceable.IReferenceable',)
+ 
+         mtr = portal.mimetypes_registry
+         mime_doc = mtr.lookup('application/msword')[0]
+diff --git a/plone/app/contenttypes/tests/test_migration.py b/plone/app/contenttypes/tests/test_migration.py
+index 65e3a8e..a6020be 100644
+--- a/plone/app/contenttypes/tests/test_migration.py
++++ b/plone/app/contenttypes/tests/test_migration.py
+@@ -1293,7 +1293,6 @@ def test_migration_view_confirmation(self):
+         results = migration_view()
+         self.assertIn('@@migrate_from_atct?migrate=1', results)
+ 
+-
+     def test_portlets_are_migrated(self):
+         """add portlets and see if they're still available on the migrated
+         content including portlet settings.
+@@ -1350,7 +1349,7 @@ def get_portlets(context, columnName):
+ 
+         # add a portlet to the folder
+         portlet2 = StaticAssignment(u"Sample Folder Portlet",
+-                                   "<p>Do I get migrated?</p>")
++                                    "<p>Do I get migrated?</p>")
+         add_portlet(at_folder, portlet2, 'static-portlet',
+                     u'plone.rightcolumn')
+ 
+@@ -1473,14 +1472,16 @@ def test_dxmigration_migrate_item_to_container_add_object_inside(self):
+             migrate_base_class_to_new_class
+         migrate_base_class_to_new_class(self.portal.item)
+         self.portal.item.invokeFactory('Document', 'doc')
+-        self.assertEqual(len(self.portal.item.folderlistingFolderContents()), 1)
++        self.assertEqual(
++            len(self.portal.item.folderlistingFolderContents()), 1)
+ 
+     def test_dxmigration_migrate_list_of_objects_with_changed_base_class(self):
+         """Check list of objects with changed classes."""
+         from plone.app.contenttypes.migration.dxmigration import \
+             list_of_objects_with_changed_base_class
+         # We have already one changed object
+-        objects = [i for i in list_of_objects_with_changed_base_class(self.portal)]
++        objects = [i for i in
++                   list_of_objects_with_changed_base_class(self.portal)]
+         self.assertEqual(len(objects), 1)
+ 
+     def test_dxmigration_migrate_list_of_changed_base_class_names(self):
+diff --git a/plone/app/contenttypes/tests/test_migration_topic.py b/plone/app/contenttypes/tests/test_migration_topic.py
+index 0a07c00..d2aae89 100644
+--- a/plone/app/contenttypes/tests/test_migration_topic.py
++++ b/plone/app/contenttypes/tests/test_migration_topic.py
+@@ -17,8 +17,8 @@
+ 
+ @implementer(ICollection)
+ class FolderishCollection(Container):
+-   """Test subclass for folderish ``Collections``.
+-   """
++    """Test subclass for folderish ``Collections``.
++    """
+ 
+ 
+ class MigrateTopicsIntegrationTest(unittest.TestCase):
+@@ -102,7 +102,8 @@ def test_migrate_nested_topic(self):
+         # the content_meta_type attribute when klass has changed
+         fti._updateProperty(
+             'klass',
+-            'plone.app.contenttypes.tests.test_migration_topic.FolderishCollection')
++            'plone.app.contenttypes.tests.test_migration_topic.'
++            'FolderishCollection')
+         fti._updateProperty('allowed_content_types', ['Document', 'Folder'])
+         fti._updateProperty('filter_content_types', False)
+         self.run_migration()
+diff --git a/plone/app/contenttypes/tests/test_setup.py b/plone/app/contenttypes/tests/test_setup.py
+index 650c92b..e224560 100644
+--- a/plone/app/contenttypes/tests/test_setup.py
++++ b/plone/app/contenttypes/tests/test_setup.py
+@@ -41,6 +41,7 @@ def test_browserlayer_available(self):
+     def test_css_registered(self):
+         resreg = getattr(self.portal, 'portal_registry')
+         from Products.CMFPlone.interfaces import IResourceRegistry
+-        resources_ids = resreg.collectionOfInterface(IResourceRegistry, prefix="plone.resources").keys()
++        resources_ids = resreg.collectionOfInterface(
++            IResourceRegistry, prefix="plone.resources").keys()
+         self.assertTrue(
+             'resource-collection-css' in resources_ids)
 
 
