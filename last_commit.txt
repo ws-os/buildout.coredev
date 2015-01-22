@@ -1,70 +1,82 @@
 Repository: plone.app.content
 Branch: refs/heads/master
-Date: 2015-01-22T11:51:15+01:00
-Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/plone.app.content/commit/9e85bfcb314aaf0357e9282c1d72524a00f2c097
+Date: 2015-01-22T15:10:09+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.content/commit/02cc6a4a2c4487adadf40382979a6dcc443eb323
 
-Use the functional test layer for functional tests. Using the integration test layer for functional tests leads to test isolation problems. This fixes the test isolation problems between plone.app.content and plone.app.contentlisting.
+never use a paramenter called object
 
 Files changed:
-M plone/app/content/tests/test_actions.py
-M plone/app/content/tests/test_selectdefaultpage.py
+M plone/app/content/namechooser.py
 
-diff --git a/plone/app/content/tests/test_actions.py b/plone/app/content/tests/test_actions.py
-index 1401d39..135bc86 100644
---- a/plone/app/content/tests/test_actions.py
-+++ b/plone/app/content/tests/test_actions.py
-@@ -1,6 +1,6 @@
- # -*- coding: utf-8 -*-
--from plone.app.content.testing import PLONE_APP_CONTENT_AT_INTEGRATION_TESTING
--from plone.app.content.testing import PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
-+from plone.app.content.testing import PLONE_APP_CONTENT_AT_FUNCTIONAL_TESTING
-+from plone.app.content.testing import PLONE_APP_CONTENT_DX_FUNCTIONAL_TESTING
- from plone.app.testing import TEST_USER_ID
- from plone.app.testing import TEST_USER_NAME
- from plone.app.testing import login
-@@ -19,7 +19,7 @@
+diff --git a/plone/app/content/namechooser.py b/plone/app/content/namechooser.py
+index 5305650..b5fd297 100644
+--- a/plone/app/content/namechooser.py
++++ b/plone/app/content/namechooser.py
+@@ -26,39 +26,39 @@ class NormalizingNameChooser(object):
+     def __init__(self, context):
+         self.context = context
  
- class ActionsDXTestCase(unittest.TestCase):
+-    def checkName(self, name, object):
+-        return not self._getCheckId(object)(name, required=1)
++    def checkName(self, name, obj):
++        return not self._getCheckId(obj)(name, required=1)
  
--    layer = PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
-+    layer = PLONE_APP_CONTENT_DX_FUNCTIONAL_TESTING
+-    def chooseName(self, name, object):
++    def chooseName(self, name, obj):
+         container = aq_inner(self.context)
+         if not name:
+-            nameFromTitle = INameFromTitle(object, None)
++            nameFromTitle = INameFromTitle(obj, None)
+             if nameFromTitle is not None:
+                 name = nameFromTitle.title
+             if not name:
+-                name = getattr(aq_base(object), 'id', None)
++                name = getattr(aq_base(obj), 'id', None)
+             if not name:
+-                name = getattr(aq_base(object), 'portal_type', None)
++                name = getattr(aq_base(obj), 'portal_type', None)
+             if not name:
+-                name = object.__class__.__name__
++                name = obj.__class__.__name__
  
-     def setUp(self):
-         self.portal = self.layer['portal']
-@@ -256,4 +256,4 @@ def test_object_copy_and_paste_multiple_times(self):
+         if not isinstance(name, unicode):
+             name = unicode(name, 'utf-8')
  
- class ActionsATTestCase(ActionsDXTestCase):
+-        request = getattr(object.__of__(container), 'REQUEST', None)
++        request = getattr(obj.__of__(container), 'REQUEST', None)
+         if request is not None:
+             name = IUserPreferredURLNormalizer(request).normalize(name)
+         else:
+             name = getUtility(IURLNormalizer).normalize(name)
  
--    layer = PLONE_APP_CONTENT_AT_INTEGRATION_TESTING
-+    layer = PLONE_APP_CONTENT_AT_FUNCTIONAL_TESTING
-diff --git a/plone/app/content/tests/test_selectdefaultpage.py b/plone/app/content/tests/test_selectdefaultpage.py
-index ac465f2..4286d15 100644
---- a/plone/app/content/tests/test_selectdefaultpage.py
-+++ b/plone/app/content/tests/test_selectdefaultpage.py
-@@ -1,6 +1,6 @@
- # -*- coding: utf-8 -*-
--from plone.app.content.testing import PLONE_APP_CONTENT_AT_INTEGRATION_TESTING
--from plone.app.content.testing import PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
-+from plone.app.content.testing import PLONE_APP_CONTENT_AT_FUNCTIONAL_TESTING
-+from plone.app.content.testing import PLONE_APP_CONTENT_DX_FUNCTIONAL_TESTING
- from plone.app.testing import TEST_USER_ID
- from plone.app.testing import setRoles
- from plone.testing.z2 import Browser
-@@ -18,7 +18,7 @@
+-        return self._findUniqueName(name, object)
++        return self._findUniqueName(name, obj)
  
- class SelectDefaultPageDXTestCase(unittest.TestCase):
+-    def _findUniqueName(self, name, object):
++    def _findUniqueName(self, name, obj):
+         """Find a unique name in the parent folder, based on the given id, by
+         appending -n, where n is a number greater than 1, or just the id if
+         it's ok.
+         """
+-        check_id = self._getCheckId(object)
++        check_id = self._getCheckId(obj)
  
--    layer = PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
-+    layer = PLONE_APP_CONTENT_DX_FUNCTIONAL_TESTING
+         if not check_id(name, required=1):
+             return name
+@@ -88,11 +88,11 @@ def _findUniqueName(self, name, object):
+             )
+         )
  
-     def setUp(self):
-         self.portal = self.layer['portal']
-@@ -111,4 +111,4 @@ def test_default_page_action_save(self):
- 
- class SelectDefaultPageATTestCase(SelectDefaultPageDXTestCase):
- 
--    layer = PLONE_APP_CONTENT_AT_INTEGRATION_TESTING
-+    layer = PLONE_APP_CONTENT_AT_FUNCTIONAL_TESTING
+-    def _getCheckId(self, object):
++    def _getCheckId(self, obj):
+         """Return a function that can act as the check_id script.
+         """
+         parent = aq_inner(self.context)
+-        _check_id = getattr(object, 'check_id', None)
++        _check_id = getattr(obj, 'check_id', None)
+         if _check_id is not None:
+             def do_Plone_check(id, required):
+                 return _check_id(id, required=required, contained_by=parent)
 
 
