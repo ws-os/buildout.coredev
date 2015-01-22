@@ -1,321 +1,760 @@
-Repository: plone.app.layout
+Repository: Products.ATContentTypes
 Branch: refs/heads/master
-Date: 2015-01-22T16:20:35+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.layout/commit/814d98c1eabcba691bb242d535df41c21f48eae4
+Date: 2014-12-09T10:50:42+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/Products.ATContentTypes/commit/1c4aff0c57ff8ea2b0001b44d78f08f9083b0a8f
 
-support for site_logo from registry
-
-- Added support for site logos stored in the portal registry via the site
-  control panel for the logo viewlet with a fallback to the  ``OFS.Image``
-  based ``logo.png`` file. Removed support of long-gone
-  ``base_properties.props`` defined logo names.
+Allow addons to depend on ATContentTypes without installing the types.
 
 Files changed:
-M CHANGES.rst
-M plone/app/layout/viewlets/common.py
-M plone/app/layout/viewlets/tests/test_common.py
+A Products/ATContentTypes/profiles/base/componentregistry.xml
+A Products/ATContentTypes/profiles/base/metadata.xml
+A Products/ATContentTypes/profiles/base/rolemap.xml
+A Products/ATContentTypes/profiles/base/skins.xml
+A Products/ATContentTypes/profiles/base/toolset.xml
+M Products/ATContentTypes/configure.zcml
+M Products/ATContentTypes/profiles/default/metadata.xml
+M Products/ATContentTypes/profiles/default/types.xml
+D Products/ATContentTypes/profiles/default/componentregistry.xml
+D Products/ATContentTypes/profiles/default/rolemap.xml
+D Products/ATContentTypes/profiles/default/skins.xml
+D Products/ATContentTypes/profiles/default/toolset.xml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 0c09b37..ee37d4c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,12 @@ Changelog
- 2.5.4 (unreleased)
+diff --git a/Products/ATContentTypes/configure.zcml b/Products/ATContentTypes/configure.zcml
+index db7a6dd..1a5792a 100644
+--- a/Products/ATContentTypes/configure.zcml
++++ b/Products/ATContentTypes/configure.zcml
+@@ -60,6 +60,14 @@
+       provides="Products.GenericSetup.interfaces.EXTENSION"
+       />
+ 
++  <genericsetup:registerProfile
++      name="base"
++      title="Archetypes-tools without content-types"
++      directory="profiles/base"
++      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
++      provides="Products.GenericSetup.interfaces.EXTENSION"
++      />
++
+   <genericsetup:importStep
+       name="atct_content"
+       title="ATContentTypes default content"
+diff --git a/Products/ATContentTypes/profiles/base/componentregistry.xml b/Products/ATContentTypes/profiles/base/componentregistry.xml
+new file mode 100644
+index 0000000..7a4d865
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/componentregistry.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0"?>
++<componentregistry>
++ <utilities>
++  <utility
++     interface="Products.ATContentTypes.interface.IATCTTool"
++     object="portal_atct"/>
++ </utilities>
++</componentregistry>
+diff --git a/Products/ATContentTypes/profiles/base/metadata.xml b/Products/ATContentTypes/profiles/base/metadata.xml
+new file mode 100644
+index 0000000..964d111
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/metadata.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0"?>
++<metadata>
++  <version>1</version>
++  <dependencies>
++    <dependency>profile-Products.Archetypes:Archetypes</dependency>
++    <dependency>profile-Products.CMFFormController:CMFFormController</dependency>
++  </dependencies>
++</metadata>
+diff --git a/Products/ATContentTypes/profiles/base/rolemap.xml b/Products/ATContentTypes/profiles/base/rolemap.xml
+new file mode 100644
+index 0000000..ff91619
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/rolemap.xml
+@@ -0,0 +1,47 @@
++<?xml version="1.0"?>
++<rolemap>
++  <permissions>
++    <permission name="ATContentTypes: Add Document" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Event" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add File" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Folder" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Image" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Link" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add News Item" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++  </permissions>
++</rolemap>
+diff --git a/Products/ATContentTypes/profiles/base/skins.xml b/Products/ATContentTypes/profiles/base/skins.xml
+new file mode 100644
+index 0000000..4e2ae22
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/skins.xml
+@@ -0,0 +1,11 @@
++<?xml version="1.0"?>
++<object name="portal_skins" meta_type="Plone Skins Tool">
++ <object name="ATContentTypes" meta_type="Filesystem Directory View"
++    directory="Products.ATContentTypes:skins/ATContentTypes"/>
++ <object name="archetypes" meta_type="Filesystem Directory View"
++    directory="Products.Archetypes:skins/archetypes"/>
++ <skin-path name="*">
++  <layer name="ATContentTypes" insert-after="custom"/>
++  <layer name="archetypes" insert-after="custom"/>
++ </skin-path>
++</object>
+diff --git a/Products/ATContentTypes/profiles/base/toolset.xml b/Products/ATContentTypes/profiles/base/toolset.xml
+new file mode 100644
+index 0000000..6f6b568
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/toolset.xml
+@@ -0,0 +1,9 @@
++<?xml version="1.0"?>
++<tool-setup>
++ <required tool_id="portal_atct"
++           class="Products.ATContentTypes.tool.atct.ATCTTool"/>
++ <required tool_id="portal_factory"
++           class="Products.ATContentTypes.tool.factory.FactoryTool"/>
++ <required tool_id="portal_metadata"
++           class="Products.ATContentTypes.tool.metadata.MetadataTool"/>
++</tool-setup>
+diff --git a/Products/ATContentTypes/profiles/default/componentregistry.xml b/Products/ATContentTypes/profiles/default/componentregistry.xml
+deleted file mode 100644
+index 7a4d865..0000000
+--- a/Products/ATContentTypes/profiles/default/componentregistry.xml
++++ /dev/null
+@@ -1,8 +0,0 @@
+-<?xml version="1.0"?>
+-<componentregistry>
+- <utilities>
+-  <utility
+-     interface="Products.ATContentTypes.interface.IATCTTool"
+-     object="portal_atct"/>
+- </utilities>
+-</componentregistry>
+diff --git a/Products/ATContentTypes/profiles/default/metadata.xml b/Products/ATContentTypes/profiles/default/metadata.xml
+index 4410f5f..4ff0d5f 100644
+--- a/Products/ATContentTypes/profiles/default/metadata.xml
++++ b/Products/ATContentTypes/profiles/default/metadata.xml
+@@ -2,8 +2,7 @@
+ <metadata>
+   <version>1</version>
+   <dependencies>
+-    <dependency>profile-Products.Archetypes:Archetypes</dependency>
+-    <dependency>profile-Products.CMFFormController:CMFFormController</dependency>
++    <dependency>profile-Products.ATContentTypes:base</dependency>
+     <dependency>profile-plone.app.collection:default</dependency>
+     <dependency>profile-plone.app.imaging:default</dependency>
+     <dependency>profile-plone.app.widgets:default</dependency>
+diff --git a/Products/ATContentTypes/profiles/default/rolemap.xml b/Products/ATContentTypes/profiles/default/rolemap.xml
+deleted file mode 100644
+index ff91619..0000000
+--- a/Products/ATContentTypes/profiles/default/rolemap.xml
++++ /dev/null
+@@ -1,47 +0,0 @@
+-<?xml version="1.0"?>
+-<rolemap>
+-  <permissions>
+-    <permission name="ATContentTypes: Add Document" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Event" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add File" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Folder" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Image" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Link" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add News Item" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-  </permissions>
+-</rolemap>
+diff --git a/Products/ATContentTypes/profiles/default/skins.xml b/Products/ATContentTypes/profiles/default/skins.xml
+deleted file mode 100644
+index 4e2ae22..0000000
+--- a/Products/ATContentTypes/profiles/default/skins.xml
++++ /dev/null
+@@ -1,11 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="portal_skins" meta_type="Plone Skins Tool">
+- <object name="ATContentTypes" meta_type="Filesystem Directory View"
+-    directory="Products.ATContentTypes:skins/ATContentTypes"/>
+- <object name="archetypes" meta_type="Filesystem Directory View"
+-    directory="Products.Archetypes:skins/archetypes"/>
+- <skin-path name="*">
+-  <layer name="ATContentTypes" insert-after="custom"/>
+-  <layer name="archetypes" insert-after="custom"/>
+- </skin-path>
+-</object>
+diff --git a/Products/ATContentTypes/profiles/default/toolset.xml b/Products/ATContentTypes/profiles/default/toolset.xml
+deleted file mode 100644
+index 6f6b568..0000000
+--- a/Products/ATContentTypes/profiles/default/toolset.xml
++++ /dev/null
+@@ -1,9 +0,0 @@
+-<?xml version="1.0"?>
+-<tool-setup>
+- <required tool_id="portal_atct"
+-           class="Products.ATContentTypes.tool.atct.ATCTTool"/>
+- <required tool_id="portal_factory"
+-           class="Products.ATContentTypes.tool.factory.FactoryTool"/>
+- <required tool_id="portal_metadata"
+-           class="Products.ATContentTypes.tool.metadata.MetadataTool"/>
+-</tool-setup>
+diff --git a/Products/ATContentTypes/profiles/default/types.xml b/Products/ATContentTypes/profiles/default/types.xml
+index 325a6d1..5b36d62 100644
+--- a/Products/ATContentTypes/profiles/default/types.xml
++++ b/Products/ATContentTypes/profiles/default/types.xml
+@@ -2,6 +2,17 @@
+ <object name="portal_types" meta_type="Plone Types Tool">
+  <property
+     name="title">Controls the available content types in your portal</property>
++
++ <!-- We remove existing DX-Types if they exist -->
++ <object name="Collection" remove="True"/>
++ <object name="Document" remove="True"/>
++ <object name="Event" remove="True"/>
++ <object name="File" remove="True"/>
++ <object name="Folder" remove="True"/>
++ <object name="Image" remove="True"/>
++ <object name="Link" remove="True"/>
++ <object name="News Item" remove="True"/>
++
+  <object name="ATBooleanCriterion"
+     meta_type="Factory-based Type Information"/>
+  <object name="ATCurrentAuthorCriterion"
+
+
+Repository: Products.ATContentTypes
+Branch: refs/heads/master
+Date: 2014-12-27T21:26:10+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/Products.ATContentTypes/commit/2d4c1ca8c6197f4bcddc7cda7fd50541964217cd
+
+test base-profile
+
+Files changed:
+A Products/ATContentTypes/tests/test_base_profile.py
+M CHANGES.txt
+M Products/ATContentTypes/profiles/default/types.xml
+
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 39ff9c7..206fa13 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,7 +4,9 @@ Changelog
+ 2.2.3 (unreleased)
  ------------------
  
-+- Added support for site logos stored in the portal registry via the site
-+  control panel for the logo viewlet with a fallback to the ``OFS.Image``
-+  based ``logo.png`` file. Removed support of long-gone
-+  ``base_properties.props`` defined logo names.
-+  [thet]
-+
- - Updated markup for dashboard.
-   [davisagli]
- 
-diff --git a/plone/app/layout/viewlets/common.py b/plone/app/layout/viewlets/common.py
-index 0aeec85..0f65305 100644
---- a/plone/app/layout/viewlets/common.py
-+++ b/plone/app/layout/viewlets/common.py
-@@ -24,6 +24,8 @@
- 
- from plone.app.layout.globals.interfaces import IViewView
- from plone.protect.utils import addTokenToUrl
-+from plone.formwidget.namedfile.converter import b64decode_file
-+from plone.namedfile.file import NamedImage
+-- Nothing changed yet.
++- Add profile 'base' to allow addons to depend on ATContentTypes in Plone 5
++  without uninstalling the dexterity default-types.
++  [pbauer]
  
  
- class ViewletBase(BrowserView):
-@@ -191,18 +193,36 @@ class LogoViewlet(ViewletBase):
-     def update(self):
-         super(LogoViewlet, self).update()
+ 2.2.2 (2014-10-23)
+diff --git a/Products/ATContentTypes/profiles/default/types.xml b/Products/ATContentTypes/profiles/default/types.xml
+index 5b36d62..907c5b3 100644
+--- a/Products/ATContentTypes/profiles/default/types.xml
++++ b/Products/ATContentTypes/profiles/default/types.xml
+@@ -3,16 +3,6 @@
+  <property
+     name="title">Controls the available content types in your portal</property>
  
--        portal = self.portal_state.portal()
--        bprops = portal.restrictedTraverse('base_properties', None)
--        if bprops is not None:
--            logoName = bprops.logoName
--        else:
--            logoName = 'logo.png'
+- <!-- We remove existing DX-Types if they exist -->
+- <object name="Collection" remove="True"/>
+- <object name="Document" remove="True"/>
+- <object name="Event" remove="True"/>
+- <object name="File" remove="True"/>
+- <object name="Folder" remove="True"/>
+- <object name="Image" remove="True"/>
+- <object name="Link" remove="True"/>
+- <object name="News Item" remove="True"/>
 -
--        logoTitle = self.portal_state.portal_title()
--        self.logo_tag = portal.restrictedTraverse(
--            logoName).tag(title=logoTitle, alt=logoTitle)
-+        # TODO: should this be changed to settings.site_title?
-         self.navigation_root_title = self.portal_state.navigation_root_title()
- 
-+        registry = getUtility(IRegistry)
-+        settings = registry.forInterface(ISiteSchema, prefix="plone")
-+        logo_title = settings.site_title
+  <object name="ATBooleanCriterion"
+     meta_type="Factory-based Type Information"/>
+  <object name="ATCurrentAuthorCriterion"
+diff --git a/Products/ATContentTypes/tests/test_base_profile.py b/Products/ATContentTypes/tests/test_base_profile.py
+new file mode 100644
+index 0000000..2c34d1e
+--- /dev/null
++++ b/Products/ATContentTypes/tests/test_base_profile.py
+@@ -0,0 +1,20 @@
++# -*- coding: UTF-8 -*-
++from Products.PloneTestCase.PloneTestCase import PloneTestCase
++from Products.CMFCore.utils import getToolByName
++from Products.CMFDynamicViewFTI.interfaces import IDynamicViewTypeInformation
 +
-+        if getattr(settings, 'site_logo', False):
-+            filename, data = b64decode_file(settings.site_logo)
-+            data = NamedImage(data=data, filename=filename)
-+            width, height = data.getImageSize()
-+            img_src = '{}/@@site-logo/{}'.format(
-+                self.navigation_root_url, filename)
-+            self.logo_tag = u'<img src="{img_src}" '\
-+                u'width="{width}" height="{height}"'\
-+                u'alt="{logo_title}" title="{logo_title}"/>'.format(
-+                    img_src=img_src,
-+                    width=width,
-+                    height=height,
-+                    logo_title=logo_title
-+                )
-+        else:
-+            portal = self.portal_state.navigation_root()
-+            # Support for OFS.Image/skin layer based logos
-+            logo_name = 'logo.png'
-+            self.logo_tag = portal.restrictedTraverse(
-+                logo_name).tag(title=logo_title, alt=logo_title)
-+            # TODO: deprecate the skin layer based logo above and use one
-+            #       defined as browser or plone resource.
 +
- 
- class GlobalSectionsViewlet(ViewletBase):
-     index = ViewPageTemplateFile('sections.pt')
-diff --git a/plone/app/layout/viewlets/tests/test_common.py b/plone/app/layout/viewlets/tests/test_common.py
-index cbe2650..b7abe32 100644
---- a/plone/app/layout/viewlets/tests/test_common.py
-+++ b/plone/app/layout/viewlets/tests/test_common.py
-@@ -1,17 +1,24 @@
-+# -*- coding: utf-8 -*-
-+from Products.CMFPlone.interfaces import INonStructuralFolder
-+from Products.CMFPlone.interfaces import ISiteSchema
-+from plone.app.layout.navigation.interfaces import INavigationRoot
-+from plone.app.layout.viewlets.common import ContentViewsViewlet
-+from plone.app.layout.viewlets.common import LogoViewlet
-+from plone.app.layout.viewlets.common import TitleViewlet
-+from plone.app.layout.viewlets.common import ViewletBase
-+from plone.app.layout.viewlets.tests.base import ViewletsTestCase
-+from plone.protect import authenticator as auth
-+from plone.registry.interfaces import IRegistry
-+from zope.component import getUtility
- from zope.interface import alsoProvides
- from zope.interface import directlyProvides
- from zope.interface import noLongerProvides
- 
--from Products.CMFPlone.interfaces import INonStructuralFolder
- 
--from plone.app.layout.viewlets.tests.base import ViewletsTestCase
--from plone.app.layout.viewlets.common import (
--    ViewletBase, LogoViewlet, TitleViewlet)
--
--from plone.app.layout.viewlets.common import ContentViewsViewlet
--from plone.app.layout.navigation.interfaces import INavigationRoot
--
--from plone.protect import authenticator as auth
-+# Red pixel with filename pixel.png
-+SITE_LOGO_BASE64 = 'filenameb64:cGl4ZWwucG5n;datab64:iVBORw0KGgoAAAANSUhEUgAA'\
-+                   'AAEAAAABCAIAAACQd1PeAAAADElEQVQI12P4z8AAAAMBAQAY3Y2wAAAAA'\
-+                   'ElFTkSuQmCC'
- 
- 
- class TestViewletBase(ViewletsTestCase):
-@@ -119,7 +126,7 @@ def testTitleViewletInPortalfactory(self):
-         self.assertEqual(viewlet.site_title,
-                          u'Add Page &mdash; Folder')
- 
--    def testLogoViewlet(self):
-+    def testLogoViewletDefault(self):
-         """Logo links towards navigation root
-         """
-         self._invalidateRequestMemoizations()
-@@ -131,3 +138,17 @@ def testLogoViewlet(self):
-         self.assertEqual(viewlet.navigation_root_title, "Folder")
-         # there is no theme yet in Plone 5, so we see the old png logo
-         self.assertTrue("http://nohost/plone/logo.png" in viewlet.logo_tag)
++class TestBaseProfile(PloneTestCase):
 +
-+    def testLogoViewletRegistry(self):
-+        """If logo is defined in plone.app.registry, use that one.
-+        """
-+        registry = getUtility(IRegistry)
-+        settings = registry.forInterface(ISiteSchema, prefix='plone')
-+        settings.site_logo = SITE_LOGO_BASE64
++    def afterSetUp(self):
++        self.loginAsPortalOwner()
++        qi = self.portal.portal_quickinstaller
++        qi.uninstallProducts(['ATContentTypes'])
++        portal_setup = self.portal.portal_setup
++        portal_setup.runAllImportStepsFromProfile('profile-Products.ATContentTypes:base')
 +
-+        viewlet = LogoViewlet(self.folder.test, self.app.REQUEST, None)
-+        viewlet.update()
-+        self.assertTrue(
-+            '<img src="http://nohost/plone/@@site-logo/pixel.png"'
-+            ' width="1" height="1"alt="Plone site" title="Plone site"/>'
-+            in viewlet.logo_tag)
++    def test_attypes_not_installed(self):
++        tt = getToolByName(self.portal, 'portal_types')
++        types = tt.listTypeInfo()
++        for t in types:
++            self.assertNotEqual(t.product, 'ATContentTypes')
 
 
-Repository: plone.app.layout
+Repository: Products.ATContentTypes
 Branch: refs/heads/master
-Date: 2015-01-22T16:40:45+01:00
+Date: 2014-12-27T21:28:08+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/Products.ATContentTypes/commit/12d8eb84ffe158885c334cec8f44b4acfc7c4f01
+
+cleanup
+
+Files changed:
+M Products/ATContentTypes/profiles/default/types.xml
+
+diff --git a/Products/ATContentTypes/profiles/default/types.xml b/Products/ATContentTypes/profiles/default/types.xml
+index 907c5b3..325a6d1 100644
+--- a/Products/ATContentTypes/profiles/default/types.xml
++++ b/Products/ATContentTypes/profiles/default/types.xml
+@@ -2,7 +2,6 @@
+ <object name="portal_types" meta_type="Plone Types Tool">
+  <property
+     name="title">Controls the available content types in your portal</property>
+-
+  <object name="ATBooleanCriterion"
+     meta_type="Factory-based Type Information"/>
+  <object name="ATCurrentAuthorCriterion"
+
+
+Repository: Products.ATContentTypes
+Branch: refs/heads/master
+Date: 2014-12-28T14:19:40+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/Products.ATContentTypes/commit/2d28233585f419551aaee39e2edeec76f13f2e13
+
+Remove old FTIs on install to allow use in clean Plone 5
+
+Files changed:
+M Products/ATContentTypes/profiles/default/types.xml
+
+diff --git a/Products/ATContentTypes/profiles/default/types.xml b/Products/ATContentTypes/profiles/default/types.xml
+index 325a6d1..10a5c78 100644
+--- a/Products/ATContentTypes/profiles/default/types.xml
++++ b/Products/ATContentTypes/profiles/default/types.xml
+@@ -1,5 +1,15 @@
+ <?xml version="1.0"?>
+ <object name="portal_types" meta_type="Plone Types Tool">
++ <!-- We remove existing FTIs since they could be Dexterity-based and would
++ not be compatible in that case -->
++ <object name="Document" remove="True"/>
++ <object name="Event" remove="True"/>
++ <object name="File" remove="True"/>
++ <object name="Folder" remove="True"/>
++ <object name="Image" remove="True"/>
++ <object name="Link" remove="True"/>
++ <object name="News Item" remove="True"/>
++
+  <property
+     name="title">Controls the available content types in your portal</property>
+  <object name="ATBooleanCriterion"
+
+
+Repository: Products.ATContentTypes
+Branch: refs/heads/master
+Date: 2015-01-22T16:49:11+01:00
 Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
-Commit: https://github.com/plone/plone.app.layout/commit/3049a17d4fbc28a9731eeb619d75a89ad98238b1
+Commit: https://github.com/plone/Products.ATContentTypes/commit/5b6f03c8d7d3fc9ab317aa896790ef1fe938af6e
 
-Merge pull request #38 from plone/thet-sitelogo
+Merge pull request #11 from starzel/master
 
-support for site_logo from registry
+Add profile 'base' to allow addons to depend on ATContentTypes in Plone 5
 
 Files changed:
-M CHANGES.rst
-M plone/app/layout/viewlets/common.py
-M plone/app/layout/viewlets/tests/test_common.py
+A Products/ATContentTypes/profiles/base/componentregistry.xml
+A Products/ATContentTypes/profiles/base/metadata.xml
+A Products/ATContentTypes/profiles/base/rolemap.xml
+A Products/ATContentTypes/profiles/base/skins.xml
+A Products/ATContentTypes/profiles/base/toolset.xml
+A Products/ATContentTypes/tests/test_base_profile.py
+M CHANGES.txt
+M Products/ATContentTypes/configure.zcml
+M Products/ATContentTypes/profiles/default/metadata.xml
+M Products/ATContentTypes/profiles/default/types.xml
+D Products/ATContentTypes/profiles/default/componentregistry.xml
+D Products/ATContentTypes/profiles/default/rolemap.xml
+D Products/ATContentTypes/profiles/default/skins.xml
+D Products/ATContentTypes/profiles/default/toolset.xml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 0c09b37..ee37d4c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,12 @@ Changelog
- 2.5.4 (unreleased)
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 39ff9c7..206fa13 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,7 +4,9 @@ Changelog
+ 2.2.3 (unreleased)
  ------------------
  
-+- Added support for site logos stored in the portal registry via the site
-+  control panel for the logo viewlet with a fallback to the ``OFS.Image``
-+  based ``logo.png`` file. Removed support of long-gone
-+  ``base_properties.props`` defined logo names.
-+  [thet]
+-- Nothing changed yet.
++- Add profile 'base' to allow addons to depend on ATContentTypes in Plone 5
++  without uninstalling the dexterity default-types.
++  [pbauer]
+ 
+ 
+ 2.2.2 (2014-10-23)
+diff --git a/Products/ATContentTypes/configure.zcml b/Products/ATContentTypes/configure.zcml
+index db7a6dd..1a5792a 100644
+--- a/Products/ATContentTypes/configure.zcml
++++ b/Products/ATContentTypes/configure.zcml
+@@ -60,6 +60,14 @@
+       provides="Products.GenericSetup.interfaces.EXTENSION"
+       />
+ 
++  <genericsetup:registerProfile
++      name="base"
++      title="Archetypes-tools without content-types"
++      directory="profiles/base"
++      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
++      provides="Products.GenericSetup.interfaces.EXTENSION"
++      />
 +
- - Updated markup for dashboard.
-   [davisagli]
- 
-diff --git a/plone/app/layout/viewlets/common.py b/plone/app/layout/viewlets/common.py
-index 0aeec85..0f65305 100644
---- a/plone/app/layout/viewlets/common.py
-+++ b/plone/app/layout/viewlets/common.py
-@@ -24,6 +24,8 @@
- 
- from plone.app.layout.globals.interfaces import IViewView
- from plone.protect.utils import addTokenToUrl
-+from plone.formwidget.namedfile.converter import b64decode_file
-+from plone.namedfile.file import NamedImage
- 
- 
- class ViewletBase(BrowserView):
-@@ -191,18 +193,36 @@ class LogoViewlet(ViewletBase):
-     def update(self):
-         super(LogoViewlet, self).update()
- 
--        portal = self.portal_state.portal()
--        bprops = portal.restrictedTraverse('base_properties', None)
--        if bprops is not None:
--            logoName = bprops.logoName
--        else:
--            logoName = 'logo.png'
--
--        logoTitle = self.portal_state.portal_title()
--        self.logo_tag = portal.restrictedTraverse(
--            logoName).tag(title=logoTitle, alt=logoTitle)
-+        # TODO: should this be changed to settings.site_title?
-         self.navigation_root_title = self.portal_state.navigation_root_title()
- 
-+        registry = getUtility(IRegistry)
-+        settings = registry.forInterface(ISiteSchema, prefix="plone")
-+        logo_title = settings.site_title
+   <genericsetup:importStep
+       name="atct_content"
+       title="ATContentTypes default content"
+diff --git a/Products/ATContentTypes/profiles/base/componentregistry.xml b/Products/ATContentTypes/profiles/base/componentregistry.xml
+new file mode 100644
+index 0000000..7a4d865
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/componentregistry.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0"?>
++<componentregistry>
++ <utilities>
++  <utility
++     interface="Products.ATContentTypes.interface.IATCTTool"
++     object="portal_atct"/>
++ </utilities>
++</componentregistry>
+diff --git a/Products/ATContentTypes/profiles/base/metadata.xml b/Products/ATContentTypes/profiles/base/metadata.xml
+new file mode 100644
+index 0000000..964d111
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/metadata.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0"?>
++<metadata>
++  <version>1</version>
++  <dependencies>
++    <dependency>profile-Products.Archetypes:Archetypes</dependency>
++    <dependency>profile-Products.CMFFormController:CMFFormController</dependency>
++  </dependencies>
++</metadata>
+diff --git a/Products/ATContentTypes/profiles/base/rolemap.xml b/Products/ATContentTypes/profiles/base/rolemap.xml
+new file mode 100644
+index 0000000..ff91619
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/rolemap.xml
+@@ -0,0 +1,47 @@
++<?xml version="1.0"?>
++<rolemap>
++  <permissions>
++    <permission name="ATContentTypes: Add Document" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Event" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add File" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Folder" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Image" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Link" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add News Item" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++  </permissions>
++</rolemap>
+diff --git a/Products/ATContentTypes/profiles/base/skins.xml b/Products/ATContentTypes/profiles/base/skins.xml
+new file mode 100644
+index 0000000..4e2ae22
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/skins.xml
+@@ -0,0 +1,11 @@
++<?xml version="1.0"?>
++<object name="portal_skins" meta_type="Plone Skins Tool">
++ <object name="ATContentTypes" meta_type="Filesystem Directory View"
++    directory="Products.ATContentTypes:skins/ATContentTypes"/>
++ <object name="archetypes" meta_type="Filesystem Directory View"
++    directory="Products.Archetypes:skins/archetypes"/>
++ <skin-path name="*">
++  <layer name="ATContentTypes" insert-after="custom"/>
++  <layer name="archetypes" insert-after="custom"/>
++ </skin-path>
++</object>
+diff --git a/Products/ATContentTypes/profiles/base/toolset.xml b/Products/ATContentTypes/profiles/base/toolset.xml
+new file mode 100644
+index 0000000..6f6b568
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/base/toolset.xml
+@@ -0,0 +1,9 @@
++<?xml version="1.0"?>
++<tool-setup>
++ <required tool_id="portal_atct"
++           class="Products.ATContentTypes.tool.atct.ATCTTool"/>
++ <required tool_id="portal_factory"
++           class="Products.ATContentTypes.tool.factory.FactoryTool"/>
++ <required tool_id="portal_metadata"
++           class="Products.ATContentTypes.tool.metadata.MetadataTool"/>
++</tool-setup>
+diff --git a/Products/ATContentTypes/profiles/default/componentregistry.xml b/Products/ATContentTypes/profiles/default/componentregistry.xml
+deleted file mode 100644
+index 7a4d865..0000000
+--- a/Products/ATContentTypes/profiles/default/componentregistry.xml
++++ /dev/null
+@@ -1,8 +0,0 @@
+-<?xml version="1.0"?>
+-<componentregistry>
+- <utilities>
+-  <utility
+-     interface="Products.ATContentTypes.interface.IATCTTool"
+-     object="portal_atct"/>
+- </utilities>
+-</componentregistry>
+diff --git a/Products/ATContentTypes/profiles/default/metadata.xml b/Products/ATContentTypes/profiles/default/metadata.xml
+index 4410f5f..4ff0d5f 100644
+--- a/Products/ATContentTypes/profiles/default/metadata.xml
++++ b/Products/ATContentTypes/profiles/default/metadata.xml
+@@ -2,8 +2,7 @@
+ <metadata>
+   <version>1</version>
+   <dependencies>
+-    <dependency>profile-Products.Archetypes:Archetypes</dependency>
+-    <dependency>profile-Products.CMFFormController:CMFFormController</dependency>
++    <dependency>profile-Products.ATContentTypes:base</dependency>
+     <dependency>profile-plone.app.collection:default</dependency>
+     <dependency>profile-plone.app.imaging:default</dependency>
+     <dependency>profile-plone.app.widgets:default</dependency>
+diff --git a/Products/ATContentTypes/profiles/default/rolemap.xml b/Products/ATContentTypes/profiles/default/rolemap.xml
+deleted file mode 100644
+index ff91619..0000000
+--- a/Products/ATContentTypes/profiles/default/rolemap.xml
++++ /dev/null
+@@ -1,47 +0,0 @@
+-<?xml version="1.0"?>
+-<rolemap>
+-  <permissions>
+-    <permission name="ATContentTypes: Add Document" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Event" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add File" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Folder" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Image" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Link" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add News Item" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-  </permissions>
+-</rolemap>
+diff --git a/Products/ATContentTypes/profiles/default/skins.xml b/Products/ATContentTypes/profiles/default/skins.xml
+deleted file mode 100644
+index 4e2ae22..0000000
+--- a/Products/ATContentTypes/profiles/default/skins.xml
++++ /dev/null
+@@ -1,11 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="portal_skins" meta_type="Plone Skins Tool">
+- <object name="ATContentTypes" meta_type="Filesystem Directory View"
+-    directory="Products.ATContentTypes:skins/ATContentTypes"/>
+- <object name="archetypes" meta_type="Filesystem Directory View"
+-    directory="Products.Archetypes:skins/archetypes"/>
+- <skin-path name="*">
+-  <layer name="ATContentTypes" insert-after="custom"/>
+-  <layer name="archetypes" insert-after="custom"/>
+- </skin-path>
+-</object>
+diff --git a/Products/ATContentTypes/profiles/default/toolset.xml b/Products/ATContentTypes/profiles/default/toolset.xml
+deleted file mode 100644
+index 6f6b568..0000000
+--- a/Products/ATContentTypes/profiles/default/toolset.xml
++++ /dev/null
+@@ -1,9 +0,0 @@
+-<?xml version="1.0"?>
+-<tool-setup>
+- <required tool_id="portal_atct"
+-           class="Products.ATContentTypes.tool.atct.ATCTTool"/>
+- <required tool_id="portal_factory"
+-           class="Products.ATContentTypes.tool.factory.FactoryTool"/>
+- <required tool_id="portal_metadata"
+-           class="Products.ATContentTypes.tool.metadata.MetadataTool"/>
+-</tool-setup>
+diff --git a/Products/ATContentTypes/profiles/default/types.xml b/Products/ATContentTypes/profiles/default/types.xml
+index 325a6d1..10a5c78 100644
+--- a/Products/ATContentTypes/profiles/default/types.xml
++++ b/Products/ATContentTypes/profiles/default/types.xml
+@@ -1,5 +1,15 @@
+ <?xml version="1.0"?>
+ <object name="portal_types" meta_type="Plone Types Tool">
++ <!-- We remove existing FTIs since they could be Dexterity-based and would
++ not be compatible in that case -->
++ <object name="Document" remove="True"/>
++ <object name="Event" remove="True"/>
++ <object name="File" remove="True"/>
++ <object name="Folder" remove="True"/>
++ <object name="Image" remove="True"/>
++ <object name="Link" remove="True"/>
++ <object name="News Item" remove="True"/>
 +
-+        if getattr(settings, 'site_logo', False):
-+            filename, data = b64decode_file(settings.site_logo)
-+            data = NamedImage(data=data, filename=filename)
-+            width, height = data.getImageSize()
-+            img_src = '{}/@@site-logo/{}'.format(
-+                self.navigation_root_url, filename)
-+            self.logo_tag = u'<img src="{img_src}" '\
-+                u'width="{width}" height="{height}"'\
-+                u'alt="{logo_title}" title="{logo_title}"/>'.format(
-+                    img_src=img_src,
-+                    width=width,
-+                    height=height,
-+                    logo_title=logo_title
-+                )
-+        else:
-+            portal = self.portal_state.navigation_root()
-+            # Support for OFS.Image/skin layer based logos
-+            logo_name = 'logo.png'
-+            self.logo_tag = portal.restrictedTraverse(
-+                logo_name).tag(title=logo_title, alt=logo_title)
-+            # TODO: deprecate the skin layer based logo above and use one
-+            #       defined as browser or plone resource.
+  <property
+     name="title">Controls the available content types in your portal</property>
+  <object name="ATBooleanCriterion"
+diff --git a/Products/ATContentTypes/tests/test_base_profile.py b/Products/ATContentTypes/tests/test_base_profile.py
+new file mode 100644
+index 0000000..2c34d1e
+--- /dev/null
++++ b/Products/ATContentTypes/tests/test_base_profile.py
+@@ -0,0 +1,20 @@
++# -*- coding: UTF-8 -*-
++from Products.PloneTestCase.PloneTestCase import PloneTestCase
++from Products.CMFCore.utils import getToolByName
++from Products.CMFDynamicViewFTI.interfaces import IDynamicViewTypeInformation
 +
- 
- class GlobalSectionsViewlet(ViewletBase):
-     index = ViewPageTemplateFile('sections.pt')
-diff --git a/plone/app/layout/viewlets/tests/test_common.py b/plone/app/layout/viewlets/tests/test_common.py
-index cbe2650..b7abe32 100644
---- a/plone/app/layout/viewlets/tests/test_common.py
-+++ b/plone/app/layout/viewlets/tests/test_common.py
-@@ -1,17 +1,24 @@
-+# -*- coding: utf-8 -*-
-+from Products.CMFPlone.interfaces import INonStructuralFolder
-+from Products.CMFPlone.interfaces import ISiteSchema
-+from plone.app.layout.navigation.interfaces import INavigationRoot
-+from plone.app.layout.viewlets.common import ContentViewsViewlet
-+from plone.app.layout.viewlets.common import LogoViewlet
-+from plone.app.layout.viewlets.common import TitleViewlet
-+from plone.app.layout.viewlets.common import ViewletBase
-+from plone.app.layout.viewlets.tests.base import ViewletsTestCase
-+from plone.protect import authenticator as auth
-+from plone.registry.interfaces import IRegistry
-+from zope.component import getUtility
- from zope.interface import alsoProvides
- from zope.interface import directlyProvides
- from zope.interface import noLongerProvides
- 
--from Products.CMFPlone.interfaces import INonStructuralFolder
- 
--from plone.app.layout.viewlets.tests.base import ViewletsTestCase
--from plone.app.layout.viewlets.common import (
--    ViewletBase, LogoViewlet, TitleViewlet)
--
--from plone.app.layout.viewlets.common import ContentViewsViewlet
--from plone.app.layout.navigation.interfaces import INavigationRoot
--
--from plone.protect import authenticator as auth
-+# Red pixel with filename pixel.png
-+SITE_LOGO_BASE64 = 'filenameb64:cGl4ZWwucG5n;datab64:iVBORw0KGgoAAAANSUhEUgAA'\
-+                   'AAEAAAABCAIAAACQd1PeAAAADElEQVQI12P4z8AAAAMBAQAY3Y2wAAAAA'\
-+                   'ElFTkSuQmCC'
- 
- 
- class TestViewletBase(ViewletsTestCase):
-@@ -119,7 +126,7 @@ def testTitleViewletInPortalfactory(self):
-         self.assertEqual(viewlet.site_title,
-                          u'Add Page &mdash; Folder')
- 
--    def testLogoViewlet(self):
-+    def testLogoViewletDefault(self):
-         """Logo links towards navigation root
-         """
-         self._invalidateRequestMemoizations()
-@@ -131,3 +138,17 @@ def testLogoViewlet(self):
-         self.assertEqual(viewlet.navigation_root_title, "Folder")
-         # there is no theme yet in Plone 5, so we see the old png logo
-         self.assertTrue("http://nohost/plone/logo.png" in viewlet.logo_tag)
 +
-+    def testLogoViewletRegistry(self):
-+        """If logo is defined in plone.app.registry, use that one.
-+        """
-+        registry = getUtility(IRegistry)
-+        settings = registry.forInterface(ISiteSchema, prefix='plone')
-+        settings.site_logo = SITE_LOGO_BASE64
++class TestBaseProfile(PloneTestCase):
 +
-+        viewlet = LogoViewlet(self.folder.test, self.app.REQUEST, None)
-+        viewlet.update()
-+        self.assertTrue(
-+            '<img src="http://nohost/plone/@@site-logo/pixel.png"'
-+            ' width="1" height="1"alt="Plone site" title="Plone site"/>'
-+            in viewlet.logo_tag)
++    def afterSetUp(self):
++        self.loginAsPortalOwner()
++        qi = self.portal.portal_quickinstaller
++        qi.uninstallProducts(['ATContentTypes'])
++        portal_setup = self.portal.portal_setup
++        portal_setup.runAllImportStepsFromProfile('profile-Products.ATContentTypes:base')
++
++    def test_attypes_not_installed(self):
++        tt = getToolByName(self.portal, 'portal_types')
++        types = tt.listTypeInfo()
++        for t in types:
++            self.assertNotEqual(t.product, 'ATContentTypes')
 
 
