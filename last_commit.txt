@@ -1,633 +1,321 @@
-Repository: Products.CMFPlone
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2015-01-22T16:32:43+01:00
+Date: 2015-01-22T16:20:35+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/f52dfeadda5c976f7ab141d318f3e6dd322a7d71
+Commit: https://github.com/plone/plone.app.layout/commit/814d98c1eabcba691bb242d535df41c21f48eae4
 
-site_logo in controlpanel + @@sitelogo view
+support for site_logo from registry
 
-- Caching for ``@@site-logo``.
-
-- Support for portal site logos stored in the portal registry by uploading via
-  the site control panel. Add a ``@@site-logo`` view for downloading the logo.
+- Added support for site logos stored in the portal registry via the site
+  control panel for the logo viewlet with a fallback to the  ``OFS.Image``
+  based ``logo.png`` file. Removed support of long-gone
+  ``base_properties.props`` defined logo names.
 
 Files changed:
-A Products/CMFPlone/browser/caching.zcml
-A Products/CMFPlone/browser/sitelogo.py
-A Products/CMFPlone/tests/test_sitelogo.py
 M CHANGES.rst
-M Products/CMFPlone/browser/admin.zcml
-M Products/CMFPlone/browser/configure.zcml
-M Products/CMFPlone/controlpanel/bbb/site.py
-M Products/CMFPlone/controlpanel/browser/site.py
-M Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py
-M Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py
-M Products/CMFPlone/interfaces/controlpanel.py
+M plone/app/layout/viewlets/common.py
+M plone/app/layout/viewlets/tests/test_common.py
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 3ada11c..5d00a9b 100644
+index 0c09b37..ee37d4c 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -8,6 +8,13 @@ Changelog
- 5.0b1 (unreleased)
+@@ -4,6 +4,12 @@ Changelog
+ 2.5.4 (unreleased)
  ------------------
  
-+- Caching for ``@@site-logo``.
++- Added support for site logos stored in the portal registry via the site
++  control panel for the logo viewlet with a fallback to the ``OFS.Image``
++  based ``logo.png`` file. Removed support of long-gone
++  ``base_properties.props`` defined logo names.
 +  [thet]
 +
-+- Support for portal site logos stored in the portal registry by uploading via
-+  the site control panel. Add a ``@@site-logo`` view for downloading the logo.
-+  [thet]
-+
- - Fix the resource registry to save the automatically generated filepath to the
-   compiled resource on the bundle object after compilation. The filepath is
-   always in the '++plone++static/' namespace. This fix makes custom bundles
-diff --git a/Products/CMFPlone/browser/admin.zcml b/Products/CMFPlone/browser/admin.zcml
-index ce1a52c..f85c035 100644
---- a/Products/CMFPlone/browser/admin.zcml
-+++ b/Products/CMFPlone/browser/admin.zcml
-@@ -57,11 +57,6 @@
-   <adapter factory=".admin.AppTraverser" />
+ - Updated markup for dashboard.
+   [davisagli]
  
-   <browser:resource
--      file="plone-logo.png"
--      name="plone-logo.png"
--      />
--
--  <browser:resource
-       file="plone-admin-ui.css"
-       name="plone-admin-ui.css"
-       />
-diff --git a/Products/CMFPlone/browser/caching.zcml b/Products/CMFPlone/browser/caching.zcml
-new file mode 100644
-index 0000000..36e37ef
---- /dev/null
-+++ b/Products/CMFPlone/browser/caching.zcml
-@@ -0,0 +1,14 @@
-+<configure
-+    xmlns="http://namespaces.zope.org/zope"
-+    xmlns:cache="http://namespaces.zope.org/cache"
-+    i18n_domain="plone">
-+
-+    <include package="z3c.caching" />
-+    <include package="z3c.caching" file="meta.zcml" />
-+
-+    <cache:ruleset
-+        for=".sitelogo.SiteLogo"
-+        ruleset="plone.stableResource"
-+        />
-+
-+</configure>
-diff --git a/Products/CMFPlone/browser/configure.zcml b/Products/CMFPlone/browser/configure.zcml
-index b5a97f9..53561b2 100644
---- a/Products/CMFPlone/browser/configure.zcml
-+++ b/Products/CMFPlone/browser/configure.zcml
-@@ -1,8 +1,11 @@
- <configure xmlns="http://namespaces.zope.org/zope"
-            xmlns:browser="http://namespaces.zope.org/browser"
--           xmlns:five="http://namespaces.zope.org/five">
-+           xmlns:i18n="http://namespaces.zope.org/i18n"
-+           xmlns:zcml="http://namespaces.zope.org/zcml"
-+           i18n_domain="plone">
+diff --git a/plone/app/layout/viewlets/common.py b/plone/app/layout/viewlets/common.py
+index 0aeec85..0f65305 100644
+--- a/plone/app/layout/viewlets/common.py
++++ b/plone/app/layout/viewlets/common.py
+@@ -24,6 +24,8 @@
  
-   <include file="admin.zcml" />
-+  <include file="caching.zcml" zcml:condition="installed z3c.caching"/>
- 
-   <class class="Products.CMFPlone.Portal.PloneSite">
-     <implements interface="plone.app.layout.navigation.interfaces.INavigationRoot" />
-@@ -16,6 +19,18 @@
-     id="Products.CMFPlone.AllowSendto"
-     title="Allow sendto" />
- 
-+  <browser:resource
-+      file="plone-logo.png"
-+      name="plone-logo.png"
-+      />
-+
-+  <browser:page
-+      for="*"
-+      name="site-logo"
-+      class=".sitelogo.SiteLogo"
-+      permission="zope.Public"
-+      />
-+
-   <browser:page
-       for="*"
-       name="sendto_form"
-diff --git a/Products/CMFPlone/browser/sitelogo.py b/Products/CMFPlone/browser/sitelogo.py
-new file mode 100644
-index 0000000..838eecb
---- /dev/null
-+++ b/Products/CMFPlone/browser/sitelogo.py
-@@ -0,0 +1,26 @@
-+from Products.CMFPlone.interfaces import ISiteSchema
+ from plone.app.layout.globals.interfaces import IViewView
+ from plone.protect.utils import addTokenToUrl
 +from plone.formwidget.namedfile.converter import b64decode_file
-+from plone.namedfile.browser import Download
 +from plone.namedfile.file import NamedImage
-+from plone.registry.interfaces import IRegistry
-+from zope.component import getUtility
-+
-+
-+class SiteLogo(Download):
-+
-+    def __init__(self, context, request):
-+        super(SiteLogo, self).__init__(context, request)
-+        self.filename = None
-+        self.data = None
-+
+ 
+ 
+ class ViewletBase(BrowserView):
+@@ -191,18 +193,36 @@ class LogoViewlet(ViewletBase):
+     def update(self):
+         super(LogoViewlet, self).update()
+ 
+-        portal = self.portal_state.portal()
+-        bprops = portal.restrictedTraverse('base_properties', None)
+-        if bprops is not None:
+-            logoName = bprops.logoName
+-        else:
+-            logoName = 'logo.png'
+-
+-        logoTitle = self.portal_state.portal_title()
+-        self.logo_tag = portal.restrictedTraverse(
+-            logoName).tag(title=logoTitle, alt=logoTitle)
++        # TODO: should this be changed to settings.site_title?
+         self.navigation_root_title = self.portal_state.navigation_root_title()
+ 
 +        registry = getUtility(IRegistry)
 +        settings = registry.forInterface(ISiteSchema, prefix="plone")
++        logo_title = settings.site_title
++
 +        if getattr(settings, 'site_logo', False):
 +            filename, data = b64decode_file(settings.site_logo)
 +            data = NamedImage(data=data, filename=filename)
-+            self.data = data
-+            self.filename = filename
-+            # self.width, self.height = self.data.getImageSize()
-+
-+    def _getFile(self):
-+        return self.data
-diff --git a/Products/CMFPlone/controlpanel/bbb/site.py b/Products/CMFPlone/controlpanel/bbb/site.py
-index 834b921..240a79d 100644
---- a/Products/CMFPlone/controlpanel/bbb/site.py
-+++ b/Products/CMFPlone/controlpanel/bbb/site.py
-@@ -36,5 +36,6 @@ def set_webstats_js(self, value):
-     site_title = property(get_site_title, set_site_title)
-     webstats_js = property(get_webstats_js, set_webstats_js)
- 
-+    site_logo = ProxyFieldProperty(ISiteSchema['site_logo'])
-     enable_sitemap = ProxyFieldProperty(ISiteSchema['enable_sitemap'])
-     exposeDCMetaTags = ProxyFieldProperty(ISiteSchema['exposeDCMetaTags'])
-diff --git a/Products/CMFPlone/controlpanel/browser/site.py b/Products/CMFPlone/controlpanel/browser/site.py
-index cad5292..c1fc0d7 100644
---- a/Products/CMFPlone/controlpanel/browser/site.py
-+++ b/Products/CMFPlone/controlpanel/browser/site.py
-@@ -2,6 +2,7 @@
- from Products.CMFPlone import PloneMessageFactory as _
- from Products.CMFPlone.interfaces import ISiteSchema
- from plone.app.registry.browser import controlpanel
-+from plone.formwidget.namedfile.widget import NamedImageFieldWidget
- 
- 
- class SiteControlPanelForm(controlpanel.RegistryEditForm):
-@@ -12,6 +13,10 @@ class SiteControlPanelForm(controlpanel.RegistryEditForm):
-     schema = ISiteSchema
-     schema_prefix = "plone"
- 
-+    def updateFields(self):
-+        super(SiteControlPanelForm, self).updateFields()
-+        self.fields['site_logo'].widgetFactory = NamedImageFieldWidget
++            width, height = data.getImageSize()
++            img_src = '{}/@@site-logo/{}'.format(
++                self.navigation_root_url, filename)
++            self.logo_tag = u'<img src="{img_src}" '\
++                u'width="{width}" height="{height}"'\
++                u'alt="{logo_title}" title="{logo_title}"/>'.format(
++                    img_src=img_src,
++                    width=width,
++                    height=height,
++                    logo_title=logo_title
++                )
++        else:
++            portal = self.portal_state.navigation_root()
++            # Support for OFS.Image/skin layer based logos
++            logo_name = 'logo.png'
++            self.logo_tag = portal.restrictedTraverse(
++                logo_name).tag(title=logo_title, alt=logo_title)
++            # TODO: deprecate the skin layer based logo above and use one
++            #       defined as browser or plone resource.
 +
  
- class SiteControlPanel(controlpanel.ControlPanelFormWrapper):
-     form = SiteControlPanelForm
-diff --git a/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py b/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py
-index 9c88b61..ba2a8a4 100644
---- a/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py
-+++ b/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py
-@@ -1,6 +1,7 @@
- # -*- coding: utf-8 -*-
- from Products.CMFPlone.interfaces import ISiteSchema
- from Products.CMFPlone.testing import PRODUCTS_CMFPLONE_FUNCTIONAL_TESTING
-+from StringIO import StringIO
- from plone.app.testing import SITE_OWNER_NAME, SITE_OWNER_PASSWORD
- from plone.registry.interfaces import IRegistry
- from plone.testing.z2 import Browser
-@@ -8,6 +9,15 @@
- from zope.component import getUtility
- import unittest2 as unittest
- 
-+# Red pixel with filename pixel.png
-+SITE_LOGO_BASE64 = 'filenameb64:cGl4ZWwucG5n;datab64:iVBORw0KGgoAAAANSUhEUgAA'\
-+                   'AAEAAAABCAIAAACQd1PeAAAADElEQVQI12P4z8AAAAMBAQAY3Y2wAAAAA'\
-+                   'ElFTkSuQmCC'
-+SITE_LOGO_HEX = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00'\
-+                '\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDAT'\
-+                '\x08\xd7c\xf8\xcf\xc0\x00\x00\x03\x01\x01\x00\x18\xdd\x8d'\
-+                '\xb0\x00\x00\x00\x00IEND\xaeB`\x82'
-+
- 
- class SiteControlPanelFunctionalTest(unittest.TestCase):
-     """Test that changes in the site control panel are actually
-@@ -84,6 +94,17 @@ def test_site_title_can_be_looked_up_by_portal_title(self):
-         self.assertEqual(self.portal.title, u'My Site')
-         self.assertEqual(self.portal.Title(), u'My Site')
- 
-+    def test_site_logo_is_stored_in_registry(self):
-+        self.browser.open(
-+            "%s/@@site-controlpanel" % self.portal_url)
-+        ctrl = self.browser.getControl(name="form.widgets.site_logo")
-+        ctrl.add_file(StringIO(SITE_LOGO_HEX), 'image/png', 'pixel.png')
-+        self.browser.getControl('Save').click()
-+
-+        registry = getUtility(IRegistry)
-+        settings = registry.forInterface(ISiteSchema, prefix='plone')
-+        self.assertEqual(settings.site_logo, SITE_LOGO_BASE64)
-+
-     def test_exposeDCMetaTags(self):
-         self.browser.open(
-             "%s/@@site-controlpanel" % self.portal_url)
-diff --git a/Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py b/Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py
-index 2b36b61..bdc5bec 100644
---- a/Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py
-+++ b/Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py
-@@ -38,6 +38,9 @@ def test_search_in_controlpanel(self):
-     def test_site_title_setting(self):
-         self.assertTrue(hasattr(self.settings, 'site_title'))
- 
-+    def test_site_logo_setting(self):
-+        self.assertTrue(hasattr(self.settings, 'site_logo'))
-+
-     def test_exposeDCMetaTags_setting(self):
-         self.assertTrue(hasattr(self.settings, 'exposeDCMetaTags'))
- 
-diff --git a/Products/CMFPlone/interfaces/controlpanel.py b/Products/CMFPlone/interfaces/controlpanel.py
-index 068ff04..212524d 100644
---- a/Products/CMFPlone/interfaces/controlpanel.py
-+++ b/Products/CMFPlone/interfaces/controlpanel.py
-@@ -3,10 +3,10 @@
- from Products.CMFPlone.utils import validate_json
- from basetool import IPloneBaseTool
- from plone.locking.interfaces import ILockSettings
-+from zope import schema
- from zope.interface import Interface
- from zope.schema.vocabulary import SimpleTerm
- from zope.schema.vocabulary import SimpleVocabulary
--from zope import schema
- 
- 
- class IControlPanel(IPloneBaseTool):
-@@ -866,6 +866,12 @@ class ISiteSchema(ILockSettings):
-             u"browsers and in syndication feeds."),
-         default=u'Plone site')
- 
-+    site_logo = schema.ASCII(
-+        title=_(u"Site Logo"),
-+        description=_(u"This shows a custom Logo on your Site."),
-+        required=False,
-+    )
-+
-     exposeDCMetaTags = schema.Bool(
-         title=_(u"Expose Dublin Core metadata"),
-         description=_(u"Exposes the Dublin Core properties as metatags."),
-diff --git a/Products/CMFPlone/tests/test_sitelogo.py b/Products/CMFPlone/tests/test_sitelogo.py
-new file mode 100644
-index 0000000..52d3567
---- /dev/null
-+++ b/Products/CMFPlone/tests/test_sitelogo.py
-@@ -0,0 +1,39 @@
+ class GlobalSectionsViewlet(ViewletBase):
+     index = ViewPageTemplateFile('sections.pt')
+diff --git a/plone/app/layout/viewlets/tests/test_common.py b/plone/app/layout/viewlets/tests/test_common.py
+index cbe2650..b7abe32 100644
+--- a/plone/app/layout/viewlets/tests/test_common.py
++++ b/plone/app/layout/viewlets/tests/test_common.py
+@@ -1,17 +1,24 @@
 +# -*- coding: utf-8 -*-
++from Products.CMFPlone.interfaces import INonStructuralFolder
 +from Products.CMFPlone.interfaces import ISiteSchema
-+from Products.CMFPlone.testing import PRODUCTS_CMFPLONE_INTEGRATION_TESTING
++from plone.app.layout.navigation.interfaces import INavigationRoot
++from plone.app.layout.viewlets.common import ContentViewsViewlet
++from plone.app.layout.viewlets.common import LogoViewlet
++from plone.app.layout.viewlets.common import TitleViewlet
++from plone.app.layout.viewlets.common import ViewletBase
++from plone.app.layout.viewlets.tests.base import ViewletsTestCase
++from plone.protect import authenticator as auth
 +from plone.registry.interfaces import IRegistry
 +from zope.component import getUtility
-+import unittest2 as unittest
-+
+ from zope.interface import alsoProvides
+ from zope.interface import directlyProvides
+ from zope.interface import noLongerProvides
+ 
+-from Products.CMFPlone.interfaces import INonStructuralFolder
+ 
+-from plone.app.layout.viewlets.tests.base import ViewletsTestCase
+-from plone.app.layout.viewlets.common import (
+-    ViewletBase, LogoViewlet, TitleViewlet)
+-
+-from plone.app.layout.viewlets.common import ContentViewsViewlet
+-from plone.app.layout.navigation.interfaces import INavigationRoot
+-
+-from plone.protect import authenticator as auth
 +# Red pixel with filename pixel.png
 +SITE_LOGO_BASE64 = 'filenameb64:cGl4ZWwucG5n;datab64:iVBORw0KGgoAAAANSUhEUgAA'\
 +                   'AAEAAAABCAIAAACQd1PeAAAADElEQVQI12P4z8AAAAMBAQAY3Y2wAAAAA'\
 +                   'ElFTkSuQmCC'
-+SITE_LOGO_HEX = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00'\
-+                '\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDAT'\
-+                '\x08\xd7c\xf8\xcf\xc0\x00\x00\x03\x01\x01\x00\x18\xdd\x8d'\
-+                '\xb0\x00\x00\x00\x00IEND\xaeB`\x82'
+ 
+ 
+ class TestViewletBase(ViewletsTestCase):
+@@ -119,7 +126,7 @@ def testTitleViewletInPortalfactory(self):
+         self.assertEqual(viewlet.site_title,
+                          u'Add Page &mdash; Folder')
+ 
+-    def testLogoViewlet(self):
++    def testLogoViewletDefault(self):
+         """Logo links towards navigation root
+         """
+         self._invalidateRequestMemoizations()
+@@ -131,3 +138,17 @@ def testLogoViewlet(self):
+         self.assertEqual(viewlet.navigation_root_title, "Folder")
+         # there is no theme yet in Plone 5, so we see the old png logo
+         self.assertTrue("http://nohost/plone/logo.png" in viewlet.logo_tag)
 +
-+
-+class SiteLogoFunctionalTest(unittest.TestCase):
-+    """Test the site logo view.
-+    """
-+    layer = PRODUCTS_CMFPLONE_INTEGRATION_TESTING
-+
-+    def setUp(self):
-+        self.portal = self.layer['portal']
-+
-+    def test_sitelogo_view(self):
++    def testLogoViewletRegistry(self):
++        """If logo is defined in plone.app.registry, use that one.
++        """
 +        registry = getUtility(IRegistry)
 +        settings = registry.forInterface(ISiteSchema, prefix='plone')
 +        settings.site_logo = SITE_LOGO_BASE64
-+        view = self.portal.restrictedTraverse('@@site-logo')
-+        self.assertTrue(view(), SITE_LOGO_HEX)
-+        view.request.response
-+        headers = view.request.response
-+        self.assertTrue(headers['content-type'], 'image/png')
-+        self.assertTrue(headers['content-length'], '69')
++
++        viewlet = LogoViewlet(self.folder.test, self.app.REQUEST, None)
++        viewlet.update()
 +        self.assertTrue(
-+            headers['content-disposition'],
-+            "attachment; filename*=UTF-8''pixel.png"
-+        )
++            '<img src="http://nohost/plone/@@site-logo/pixel.png"'
++            ' width="1" height="1"alt="Plone site" title="Plone site"/>'
++            in viewlet.logo_tag)
 
 
-Repository: Products.CMFPlone
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2015-01-22T16:38:23+01:00
+Date: 2015-01-22T16:40:45+01:00
 Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/2ce65aecd64a899737d72b1328ee7cb6a40b92ea
+Commit: https://github.com/plone/plone.app.layout/commit/3049a17d4fbc28a9731eeb619d75a89ad98238b1
 
-Merge pull request #355 from plone/thet-sitelogo
+Merge pull request #38 from plone/thet-sitelogo
 
-site_logo in controlpanel + @@sitelogo view
+support for site_logo from registry
 
 Files changed:
-A Products/CMFPlone/browser/caching.zcml
-A Products/CMFPlone/browser/sitelogo.py
-A Products/CMFPlone/tests/test_sitelogo.py
 M CHANGES.rst
-M Products/CMFPlone/browser/admin.zcml
-M Products/CMFPlone/browser/configure.zcml
-M Products/CMFPlone/controlpanel/bbb/site.py
-M Products/CMFPlone/controlpanel/browser/site.py
-M Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py
-M Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py
-M Products/CMFPlone/interfaces/controlpanel.py
+M plone/app/layout/viewlets/common.py
+M plone/app/layout/viewlets/tests/test_common.py
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 3ada11c..5d00a9b 100644
+index 0c09b37..ee37d4c 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -8,6 +8,13 @@ Changelog
- 5.0b1 (unreleased)
+@@ -4,6 +4,12 @@ Changelog
+ 2.5.4 (unreleased)
  ------------------
  
-+- Caching for ``@@site-logo``.
++- Added support for site logos stored in the portal registry via the site
++  control panel for the logo viewlet with a fallback to the ``OFS.Image``
++  based ``logo.png`` file. Removed support of long-gone
++  ``base_properties.props`` defined logo names.
 +  [thet]
 +
-+- Support for portal site logos stored in the portal registry by uploading via
-+  the site control panel. Add a ``@@site-logo`` view for downloading the logo.
-+  [thet]
-+
- - Fix the resource registry to save the automatically generated filepath to the
-   compiled resource on the bundle object after compilation. The filepath is
-   always in the '++plone++static/' namespace. This fix makes custom bundles
-diff --git a/Products/CMFPlone/browser/admin.zcml b/Products/CMFPlone/browser/admin.zcml
-index ce1a52c..f85c035 100644
---- a/Products/CMFPlone/browser/admin.zcml
-+++ b/Products/CMFPlone/browser/admin.zcml
-@@ -57,11 +57,6 @@
-   <adapter factory=".admin.AppTraverser" />
+ - Updated markup for dashboard.
+   [davisagli]
  
-   <browser:resource
--      file="plone-logo.png"
--      name="plone-logo.png"
--      />
--
--  <browser:resource
-       file="plone-admin-ui.css"
-       name="plone-admin-ui.css"
-       />
-diff --git a/Products/CMFPlone/browser/caching.zcml b/Products/CMFPlone/browser/caching.zcml
-new file mode 100644
-index 0000000..36e37ef
---- /dev/null
-+++ b/Products/CMFPlone/browser/caching.zcml
-@@ -0,0 +1,14 @@
-+<configure
-+    xmlns="http://namespaces.zope.org/zope"
-+    xmlns:cache="http://namespaces.zope.org/cache"
-+    i18n_domain="plone">
-+
-+    <include package="z3c.caching" />
-+    <include package="z3c.caching" file="meta.zcml" />
-+
-+    <cache:ruleset
-+        for=".sitelogo.SiteLogo"
-+        ruleset="plone.stableResource"
-+        />
-+
-+</configure>
-diff --git a/Products/CMFPlone/browser/configure.zcml b/Products/CMFPlone/browser/configure.zcml
-index b5a97f9..53561b2 100644
---- a/Products/CMFPlone/browser/configure.zcml
-+++ b/Products/CMFPlone/browser/configure.zcml
-@@ -1,8 +1,11 @@
- <configure xmlns="http://namespaces.zope.org/zope"
-            xmlns:browser="http://namespaces.zope.org/browser"
--           xmlns:five="http://namespaces.zope.org/five">
-+           xmlns:i18n="http://namespaces.zope.org/i18n"
-+           xmlns:zcml="http://namespaces.zope.org/zcml"
-+           i18n_domain="plone">
+diff --git a/plone/app/layout/viewlets/common.py b/plone/app/layout/viewlets/common.py
+index 0aeec85..0f65305 100644
+--- a/plone/app/layout/viewlets/common.py
++++ b/plone/app/layout/viewlets/common.py
+@@ -24,6 +24,8 @@
  
-   <include file="admin.zcml" />
-+  <include file="caching.zcml" zcml:condition="installed z3c.caching"/>
- 
-   <class class="Products.CMFPlone.Portal.PloneSite">
-     <implements interface="plone.app.layout.navigation.interfaces.INavigationRoot" />
-@@ -16,6 +19,18 @@
-     id="Products.CMFPlone.AllowSendto"
-     title="Allow sendto" />
- 
-+  <browser:resource
-+      file="plone-logo.png"
-+      name="plone-logo.png"
-+      />
-+
-+  <browser:page
-+      for="*"
-+      name="site-logo"
-+      class=".sitelogo.SiteLogo"
-+      permission="zope.Public"
-+      />
-+
-   <browser:page
-       for="*"
-       name="sendto_form"
-diff --git a/Products/CMFPlone/browser/sitelogo.py b/Products/CMFPlone/browser/sitelogo.py
-new file mode 100644
-index 0000000..838eecb
---- /dev/null
-+++ b/Products/CMFPlone/browser/sitelogo.py
-@@ -0,0 +1,26 @@
-+from Products.CMFPlone.interfaces import ISiteSchema
+ from plone.app.layout.globals.interfaces import IViewView
+ from plone.protect.utils import addTokenToUrl
 +from plone.formwidget.namedfile.converter import b64decode_file
-+from plone.namedfile.browser import Download
 +from plone.namedfile.file import NamedImage
-+from plone.registry.interfaces import IRegistry
-+from zope.component import getUtility
-+
-+
-+class SiteLogo(Download):
-+
-+    def __init__(self, context, request):
-+        super(SiteLogo, self).__init__(context, request)
-+        self.filename = None
-+        self.data = None
-+
+ 
+ 
+ class ViewletBase(BrowserView):
+@@ -191,18 +193,36 @@ class LogoViewlet(ViewletBase):
+     def update(self):
+         super(LogoViewlet, self).update()
+ 
+-        portal = self.portal_state.portal()
+-        bprops = portal.restrictedTraverse('base_properties', None)
+-        if bprops is not None:
+-            logoName = bprops.logoName
+-        else:
+-            logoName = 'logo.png'
+-
+-        logoTitle = self.portal_state.portal_title()
+-        self.logo_tag = portal.restrictedTraverse(
+-            logoName).tag(title=logoTitle, alt=logoTitle)
++        # TODO: should this be changed to settings.site_title?
+         self.navigation_root_title = self.portal_state.navigation_root_title()
+ 
 +        registry = getUtility(IRegistry)
 +        settings = registry.forInterface(ISiteSchema, prefix="plone")
++        logo_title = settings.site_title
++
 +        if getattr(settings, 'site_logo', False):
 +            filename, data = b64decode_file(settings.site_logo)
 +            data = NamedImage(data=data, filename=filename)
-+            self.data = data
-+            self.filename = filename
-+            # self.width, self.height = self.data.getImageSize()
-+
-+    def _getFile(self):
-+        return self.data
-diff --git a/Products/CMFPlone/controlpanel/bbb/site.py b/Products/CMFPlone/controlpanel/bbb/site.py
-index 834b921..240a79d 100644
---- a/Products/CMFPlone/controlpanel/bbb/site.py
-+++ b/Products/CMFPlone/controlpanel/bbb/site.py
-@@ -36,5 +36,6 @@ def set_webstats_js(self, value):
-     site_title = property(get_site_title, set_site_title)
-     webstats_js = property(get_webstats_js, set_webstats_js)
- 
-+    site_logo = ProxyFieldProperty(ISiteSchema['site_logo'])
-     enable_sitemap = ProxyFieldProperty(ISiteSchema['enable_sitemap'])
-     exposeDCMetaTags = ProxyFieldProperty(ISiteSchema['exposeDCMetaTags'])
-diff --git a/Products/CMFPlone/controlpanel/browser/site.py b/Products/CMFPlone/controlpanel/browser/site.py
-index cad5292..c1fc0d7 100644
---- a/Products/CMFPlone/controlpanel/browser/site.py
-+++ b/Products/CMFPlone/controlpanel/browser/site.py
-@@ -2,6 +2,7 @@
- from Products.CMFPlone import PloneMessageFactory as _
- from Products.CMFPlone.interfaces import ISiteSchema
- from plone.app.registry.browser import controlpanel
-+from plone.formwidget.namedfile.widget import NamedImageFieldWidget
- 
- 
- class SiteControlPanelForm(controlpanel.RegistryEditForm):
-@@ -12,6 +13,10 @@ class SiteControlPanelForm(controlpanel.RegistryEditForm):
-     schema = ISiteSchema
-     schema_prefix = "plone"
- 
-+    def updateFields(self):
-+        super(SiteControlPanelForm, self).updateFields()
-+        self.fields['site_logo'].widgetFactory = NamedImageFieldWidget
++            width, height = data.getImageSize()
++            img_src = '{}/@@site-logo/{}'.format(
++                self.navigation_root_url, filename)
++            self.logo_tag = u'<img src="{img_src}" '\
++                u'width="{width}" height="{height}"'\
++                u'alt="{logo_title}" title="{logo_title}"/>'.format(
++                    img_src=img_src,
++                    width=width,
++                    height=height,
++                    logo_title=logo_title
++                )
++        else:
++            portal = self.portal_state.navigation_root()
++            # Support for OFS.Image/skin layer based logos
++            logo_name = 'logo.png'
++            self.logo_tag = portal.restrictedTraverse(
++                logo_name).tag(title=logo_title, alt=logo_title)
++            # TODO: deprecate the skin layer based logo above and use one
++            #       defined as browser or plone resource.
 +
  
- class SiteControlPanel(controlpanel.ControlPanelFormWrapper):
-     form = SiteControlPanelForm
-diff --git a/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py b/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py
-index 9c88b61..ba2a8a4 100644
---- a/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py
-+++ b/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_site.py
-@@ -1,6 +1,7 @@
- # -*- coding: utf-8 -*-
- from Products.CMFPlone.interfaces import ISiteSchema
- from Products.CMFPlone.testing import PRODUCTS_CMFPLONE_FUNCTIONAL_TESTING
-+from StringIO import StringIO
- from plone.app.testing import SITE_OWNER_NAME, SITE_OWNER_PASSWORD
- from plone.registry.interfaces import IRegistry
- from plone.testing.z2 import Browser
-@@ -8,6 +9,15 @@
- from zope.component import getUtility
- import unittest2 as unittest
- 
-+# Red pixel with filename pixel.png
-+SITE_LOGO_BASE64 = 'filenameb64:cGl4ZWwucG5n;datab64:iVBORw0KGgoAAAANSUhEUgAA'\
-+                   'AAEAAAABCAIAAACQd1PeAAAADElEQVQI12P4z8AAAAMBAQAY3Y2wAAAAA'\
-+                   'ElFTkSuQmCC'
-+SITE_LOGO_HEX = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00'\
-+                '\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDAT'\
-+                '\x08\xd7c\xf8\xcf\xc0\x00\x00\x03\x01\x01\x00\x18\xdd\x8d'\
-+                '\xb0\x00\x00\x00\x00IEND\xaeB`\x82'
-+
- 
- class SiteControlPanelFunctionalTest(unittest.TestCase):
-     """Test that changes in the site control panel are actually
-@@ -84,6 +94,17 @@ def test_site_title_can_be_looked_up_by_portal_title(self):
-         self.assertEqual(self.portal.title, u'My Site')
-         self.assertEqual(self.portal.Title(), u'My Site')
- 
-+    def test_site_logo_is_stored_in_registry(self):
-+        self.browser.open(
-+            "%s/@@site-controlpanel" % self.portal_url)
-+        ctrl = self.browser.getControl(name="form.widgets.site_logo")
-+        ctrl.add_file(StringIO(SITE_LOGO_HEX), 'image/png', 'pixel.png')
-+        self.browser.getControl('Save').click()
-+
-+        registry = getUtility(IRegistry)
-+        settings = registry.forInterface(ISiteSchema, prefix='plone')
-+        self.assertEqual(settings.site_logo, SITE_LOGO_BASE64)
-+
-     def test_exposeDCMetaTags(self):
-         self.browser.open(
-             "%s/@@site-controlpanel" % self.portal_url)
-diff --git a/Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py b/Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py
-index 2b36b61..bdc5bec 100644
---- a/Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py
-+++ b/Products/CMFPlone/controlpanel/tests/test_controlpanel_site.py
-@@ -38,6 +38,9 @@ def test_search_in_controlpanel(self):
-     def test_site_title_setting(self):
-         self.assertTrue(hasattr(self.settings, 'site_title'))
- 
-+    def test_site_logo_setting(self):
-+        self.assertTrue(hasattr(self.settings, 'site_logo'))
-+
-     def test_exposeDCMetaTags_setting(self):
-         self.assertTrue(hasattr(self.settings, 'exposeDCMetaTags'))
- 
-diff --git a/Products/CMFPlone/interfaces/controlpanel.py b/Products/CMFPlone/interfaces/controlpanel.py
-index 068ff04..212524d 100644
---- a/Products/CMFPlone/interfaces/controlpanel.py
-+++ b/Products/CMFPlone/interfaces/controlpanel.py
-@@ -3,10 +3,10 @@
- from Products.CMFPlone.utils import validate_json
- from basetool import IPloneBaseTool
- from plone.locking.interfaces import ILockSettings
-+from zope import schema
- from zope.interface import Interface
- from zope.schema.vocabulary import SimpleTerm
- from zope.schema.vocabulary import SimpleVocabulary
--from zope import schema
- 
- 
- class IControlPanel(IPloneBaseTool):
-@@ -866,6 +866,12 @@ class ISiteSchema(ILockSettings):
-             u"browsers and in syndication feeds."),
-         default=u'Plone site')
- 
-+    site_logo = schema.ASCII(
-+        title=_(u"Site Logo"),
-+        description=_(u"This shows a custom Logo on your Site."),
-+        required=False,
-+    )
-+
-     exposeDCMetaTags = schema.Bool(
-         title=_(u"Expose Dublin Core metadata"),
-         description=_(u"Exposes the Dublin Core properties as metatags."),
-diff --git a/Products/CMFPlone/tests/test_sitelogo.py b/Products/CMFPlone/tests/test_sitelogo.py
-new file mode 100644
-index 0000000..52d3567
---- /dev/null
-+++ b/Products/CMFPlone/tests/test_sitelogo.py
-@@ -0,0 +1,39 @@
+ class GlobalSectionsViewlet(ViewletBase):
+     index = ViewPageTemplateFile('sections.pt')
+diff --git a/plone/app/layout/viewlets/tests/test_common.py b/plone/app/layout/viewlets/tests/test_common.py
+index cbe2650..b7abe32 100644
+--- a/plone/app/layout/viewlets/tests/test_common.py
++++ b/plone/app/layout/viewlets/tests/test_common.py
+@@ -1,17 +1,24 @@
 +# -*- coding: utf-8 -*-
++from Products.CMFPlone.interfaces import INonStructuralFolder
 +from Products.CMFPlone.interfaces import ISiteSchema
-+from Products.CMFPlone.testing import PRODUCTS_CMFPLONE_INTEGRATION_TESTING
++from plone.app.layout.navigation.interfaces import INavigationRoot
++from plone.app.layout.viewlets.common import ContentViewsViewlet
++from plone.app.layout.viewlets.common import LogoViewlet
++from plone.app.layout.viewlets.common import TitleViewlet
++from plone.app.layout.viewlets.common import ViewletBase
++from plone.app.layout.viewlets.tests.base import ViewletsTestCase
++from plone.protect import authenticator as auth
 +from plone.registry.interfaces import IRegistry
 +from zope.component import getUtility
-+import unittest2 as unittest
-+
+ from zope.interface import alsoProvides
+ from zope.interface import directlyProvides
+ from zope.interface import noLongerProvides
+ 
+-from Products.CMFPlone.interfaces import INonStructuralFolder
+ 
+-from plone.app.layout.viewlets.tests.base import ViewletsTestCase
+-from plone.app.layout.viewlets.common import (
+-    ViewletBase, LogoViewlet, TitleViewlet)
+-
+-from plone.app.layout.viewlets.common import ContentViewsViewlet
+-from plone.app.layout.navigation.interfaces import INavigationRoot
+-
+-from plone.protect import authenticator as auth
 +# Red pixel with filename pixel.png
 +SITE_LOGO_BASE64 = 'filenameb64:cGl4ZWwucG5n;datab64:iVBORw0KGgoAAAANSUhEUgAA'\
 +                   'AAEAAAABCAIAAACQd1PeAAAADElEQVQI12P4z8AAAAMBAQAY3Y2wAAAAA'\
 +                   'ElFTkSuQmCC'
-+SITE_LOGO_HEX = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00'\
-+                '\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDAT'\
-+                '\x08\xd7c\xf8\xcf\xc0\x00\x00\x03\x01\x01\x00\x18\xdd\x8d'\
-+                '\xb0\x00\x00\x00\x00IEND\xaeB`\x82'
+ 
+ 
+ class TestViewletBase(ViewletsTestCase):
+@@ -119,7 +126,7 @@ def testTitleViewletInPortalfactory(self):
+         self.assertEqual(viewlet.site_title,
+                          u'Add Page &mdash; Folder')
+ 
+-    def testLogoViewlet(self):
++    def testLogoViewletDefault(self):
+         """Logo links towards navigation root
+         """
+         self._invalidateRequestMemoizations()
+@@ -131,3 +138,17 @@ def testLogoViewlet(self):
+         self.assertEqual(viewlet.navigation_root_title, "Folder")
+         # there is no theme yet in Plone 5, so we see the old png logo
+         self.assertTrue("http://nohost/plone/logo.png" in viewlet.logo_tag)
 +
-+
-+class SiteLogoFunctionalTest(unittest.TestCase):
-+    """Test the site logo view.
-+    """
-+    layer = PRODUCTS_CMFPLONE_INTEGRATION_TESTING
-+
-+    def setUp(self):
-+        self.portal = self.layer['portal']
-+
-+    def test_sitelogo_view(self):
++    def testLogoViewletRegistry(self):
++        """If logo is defined in plone.app.registry, use that one.
++        """
 +        registry = getUtility(IRegistry)
 +        settings = registry.forInterface(ISiteSchema, prefix='plone')
 +        settings.site_logo = SITE_LOGO_BASE64
-+        view = self.portal.restrictedTraverse('@@site-logo')
-+        self.assertTrue(view(), SITE_LOGO_HEX)
-+        view.request.response
-+        headers = view.request.response
-+        self.assertTrue(headers['content-type'], 'image/png')
-+        self.assertTrue(headers['content-length'], '69')
++
++        viewlet = LogoViewlet(self.folder.test, self.app.REQUEST, None)
++        viewlet.update()
 +        self.assertTrue(
-+            headers['content-disposition'],
-+            "attachment; filename*=UTF-8''pixel.png"
-+        )
++            '<img src="http://nohost/plone/@@site-logo/pixel.png"'
++            ' width="1" height="1"alt="Plone site" title="Plone site"/>'
++            in viewlet.logo_tag)
 
 
