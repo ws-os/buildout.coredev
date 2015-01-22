@@ -1,46 +1,26 @@
-Repository: Products.CMFPlone
+Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2015-01-22T21:39:28+01:00
+Date: 2015-01-22T21:48:47+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/71fccbbe251878014086146a1d82e27e12ff2e37
+Commit: https://github.com/plone/plone.app.controlpanel/commit/793ae0f54bce06104f175ebc79751b61c65a2de2
 
-Add functional test for redirect_links setting in the types control panel.
+Comment out types functional tests. This test has been moved to P.CMFPlone.
 
 Files changed:
-M Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_types.py
+M plone/app/controlpanel/tests/test_doctests.py
 
-diff --git a/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_types.py b/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_types.py
-index 3d40917..8c2303e 100644
---- a/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_types.py
-+++ b/Products/CMFPlone/controlpanel/tests/test_controlpanel_browser_types.py
-@@ -68,6 +68,28 @@ def test_standard_type_allow_commenting(self):
-             self.browser.contents
-         )
- 
-+    def test_standard_types_redirect_links(self):
-+        self.browser.open(self.types_url)
-+        self.browser.getControl(name='type_id').value = ['Link']
-+        self.browser.getForm(action=self.types_url).submit()
-+        self.browser.getControl(
-+            'Redirect immediately to link target'
-+        ).selected = True
-+        self.browser.getControl('Apply Changes').click()
-+
-+        # Check if settings got saved correctly
-+        self.browser.open(self.types_url)
-+        self.browser.getControl(name='type_id').value = ['Link']
-+        self.browser.getForm(action=self.types_url).submit()
-+        self.assertTrue(
-+            'Redirect immediately to link target' in self.browser.contents
-+        )
-+        self.assertEquals(
-+            self.browser.getControl(
-+                'Redirect immediately to link target').selected,
-+            True
-+        )
-+
-     def test_set_no_default_workflow(self):
-         # references http://dev.plone.org/plone/ticket/11901
-         self.browser.open(self.types_url)
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 5765214..44d1099 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -20,7 +20,7 @@ def test_suite():
+         # 'site.txt',
+         # 'skins.txt',
+         # 'navigation.txt',
+-        'types.txt',
++        # 'types.txt',
+         'syndication.txt'
+     ]
+     suite = TestSuite()
 
 
