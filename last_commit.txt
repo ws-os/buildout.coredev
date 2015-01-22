@@ -1,33 +1,26 @@
-Repository: plone.app.contenttypes
+Repository: plone.namedfile
 Branch: refs/heads/master
-Date: 2015-01-22T15:21:15+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/0b85ecb10af7e829797c158a4be3b28bf3c0bb70
+Date: 2015-01-22T15:46:03+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.namedfile/commit/3bb55d8146ce15c95a425e7878368339721935ea
 
-update changelog
+typo
 
 Files changed:
-M docs/CHANGES.rst
+M plone/namedfile/browser.py
 
-diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
-index 46974f2..9cffa9d 100644
---- a/docs/CHANGES.rst
-+++ b/docs/CHANGES.rst
-@@ -13,6 +13,15 @@ Changelog
-   types.
-   [thet]
- 
-+- Add migration for images added with collective.contentleadimage.
-+  [pbauer]
-+
-+- Add migration for contentrules.
-+  [pbauer]
-+
-+- Fix folder_full_view_item and allow overriding with jbot (fix #162).
-+  [pbauer]
-+
- - Migrate comments created with plone.app.discussion.
-   [gbastien, pbauer]
+diff --git a/plone/namedfile/browser.py b/plone/namedfile/browser.py
+index 760ff19..4fadcc1 100644
+--- a/plone/namedfile/browser.py
++++ b/plone/namedfile/browser.py
+@@ -53,7 +53,7 @@ def _getFile(self):
+         if not self.fieldname:
+             info = IPrimaryFieldInfo(self.context, None)
+             if info is None:
+-                # Ensure that we have at least a filedname
++                # Ensure that we have at least a fieldname
+                 raise NotFound(self, '', self.request)
+             self.fieldname = info.fieldname
  
 
 
