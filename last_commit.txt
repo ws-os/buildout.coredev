@@ -1,76 +1,116 @@
-Repository: Products.CMFPlone
+Repository: plone.app.textfield
 Branch: refs/heads/master
-Date: 2015-01-22T17:37:16+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/3b671ad2e4252c6445fee12524b08389332787a8
+Date: 2015-01-22T18:01:44+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.textfield/commit/2a9117a9577d7e6b10319260a3cb73010c06d97d
 
-add robot test for site_logo in site control panel
+Revert "Fix marshaler decode to always set raw value as unicode"
 
 Files changed:
-A Products/CMFPlone/tests/robot/pixel.png
-A Products/CMFPlone/tests/robot/variables.py
-M Products/CMFPlone/tests/robot/test_controlpanel_site.robot
+M docs/HISTORY.rst
+M plone/app/textfield/marshaler.py
 
-diff --git a/Products/CMFPlone/tests/robot/pixel.png b/Products/CMFPlone/tests/robot/pixel.png
-new file mode 100644
-index 0000000..a7045ed
-Binary files /dev/null and b/Products/CMFPlone/tests/robot/pixel.png differ
-diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_site.robot b/Products/CMFPlone/tests/robot/test_controlpanel_site.robot
-index 6045727..ae08038 100644
---- a/Products/CMFPlone/tests/robot/test_controlpanel_site.robot
-+++ b/Products/CMFPlone/tests/robot/test_controlpanel_site.robot
-@@ -6,6 +6,7 @@ Documentation
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index 4fae0b8..7da4a34 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -4,20 +4,6 @@ Changelog
+ 1.2.5 (unreleased)
+ ------------------
  
- Resource  plone/app/robotframework/keywords.robot
- Resource  plone/app/robotframework/saucelabs.robot
-+Variables  Products/CMFPlone/tests/robot/variables.py
+-- Fix marshaler decode to always decode raw value into unicode
+-  [datakurre]
+-
+-- Remove utils.getSiteEncoding, which was deprecated and not used anywhere.
+-  [thet]
+-
+-- For Plone 5, support getting markup control panel settings from the registry,
+-  while still supporting normal portal_properties access for Plone < 5.
+-  [thet]
+-
+-- Resolved an interesting circular import case, which wasnt effective because
+-  of sort order of imports
+-  [thet]
+-
+ - For Plone 5, support getting markup control panel settings from the registry,
+   while still supporting normal portal_properties access for Plone < 5.
+   [thet]
+diff --git a/plone/app/textfield/marshaler.py b/plone/app/textfield/marshaler.py
+index baf0bdb..482647e 100644
+--- a/plone/app/textfield/marshaler.py
++++ b/plone/app/textfield/marshaler.py
+@@ -32,12 +32,8 @@ def decode(
+                 charset='utf-8',
+                 contentType=None,
+                 primary=False):
+-            try:
+-                unicode_value = value.decode(charset)
+-            except UnicodeEncodeError:
+-                unicode_value = value  # was already unicode
+             return RichTextValue(
+-                raw=unicode_value,
++                raw=value,
+                 mimeType=contentType or self.field.default_mime_type,
+                 outputMimeType=self.field.output_mime_type,
+                 encoding=charset
+
+
+Repository: plone.app.textfield
+Branch: refs/heads/master
+Date: 2015-01-22T18:01:54+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.textfield/commit/23bc04dde24be84b7e733593007c244880a06073
+
+Merge pull request #14 from plone/revert-13-datakurre-fix-decode
+
+Revert "Fix marshaler decode to always set raw value as unicode"
+
+Files changed:
+M docs/HISTORY.rst
+M plone/app/textfield/marshaler.py
+
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index 4fae0b8..7da4a34 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -4,20 +4,6 @@ Changelog
+ 1.2.5 (unreleased)
+ ------------------
  
- Library  Remote  ${PLONE_URL}/RobotRemote
- 
-@@ -23,6 +24,12 @@ Scenario: Set Site Title in the Site Control Panel
-    When I set the site title to 'My Site'
-    Then the site title should be set to 'My Site'
- 
-+Scenario: Set Site Logo in the Site Control Panel
-+  Given a logged-in site administrator
-+    and the site control panel
-+   When I set a custom logo
-+   Then the site logo should be set to the custom logo
-+
- Scenario: Enable Dublin Core Metadata in the Site Control Panel
-   Given a logged-in site administrator
-     and the site control panel
-@@ -63,6 +70,11 @@ I set the site title to '${site_title}'
-   Click Button  Save
-   Wait until page contains  Changes saved
- 
-+I set a custom logo
-+  Choose File  name=form.widgets.site_logo  ${PATH_TO_TEST_FILES}/pixel.png
-+  Click Button  Save
-+  Wait until page contains  Changes saved
-+
- I enable dublin core metadata
-   Select Checkbox  form.widgets.exposeDCMetaTags:list
-   Click Button  Save
-@@ -81,6 +93,10 @@ the site title should be set to '${expected_site_title}'
-   ${actual_site_title}=  Get title
-   Should be equal  ${actual_site_title}  ${expected_site_title}
- 
-+the site logo should be set to the custom logo
-+  Go To  ${PLONE_URL}
-+  Page should contain element  //*[@id="portal-logo"]/img[contains(@src,'@@site-logo/pixel.png')]
-+  
- then I can see a sitemap
-   Go to  ${PLONE_URL}/sitemap.xml.gz
-   # We need a 'Download file' selenium2library keyword to test this:
-diff --git a/Products/CMFPlone/tests/robot/variables.py b/Products/CMFPlone/tests/robot/variables.py
-new file mode 100644
-index 0000000..a32e833
---- /dev/null
-+++ b/Products/CMFPlone/tests/robot/variables.py
-@@ -0,0 +1,3 @@
-+import os
-+
-+PATH_TO_TEST_FILES = os.path.join(os.path.dirname(__file__))  # noqa
+-- Fix marshaler decode to always decode raw value into unicode
+-  [datakurre]
+-
+-- Remove utils.getSiteEncoding, which was deprecated and not used anywhere.
+-  [thet]
+-
+-- For Plone 5, support getting markup control panel settings from the registry,
+-  while still supporting normal portal_properties access for Plone < 5.
+-  [thet]
+-
+-- Resolved an interesting circular import case, which wasnt effective because
+-  of sort order of imports
+-  [thet]
+-
+ - For Plone 5, support getting markup control panel settings from the registry,
+   while still supporting normal portal_properties access for Plone < 5.
+   [thet]
+diff --git a/plone/app/textfield/marshaler.py b/plone/app/textfield/marshaler.py
+index baf0bdb..482647e 100644
+--- a/plone/app/textfield/marshaler.py
++++ b/plone/app/textfield/marshaler.py
+@@ -32,12 +32,8 @@ def decode(
+                 charset='utf-8',
+                 contentType=None,
+                 primary=False):
+-            try:
+-                unicode_value = value.decode(charset)
+-            except UnicodeEncodeError:
+-                unicode_value = value  # was already unicode
+             return RichTextValue(
+-                raw=unicode_value,
++                raw=value,
+                 mimeType=contentType or self.field.default_mime_type,
+                 outputMimeType=self.field.output_mime_type,
+                 encoding=charset
 
 
