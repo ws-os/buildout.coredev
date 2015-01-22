@@ -1,38 +1,1822 @@
-Repository: mockup
+Repository: plone.app.controlpanel
 Branch: refs/heads/master
-Date: 2015-01-22T09:14:08-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/9d7e48e496a7de84ca4760ae5e4004ada70fc630
+Date: 2015-01-22T13:48:20+01:00
+Author: Kees Hink (khink) <keeshink@gmail.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/71000f4f545735a33299584263674ec5df017878
 
-change browser matrix
+Remove commented-out code that was already moved to Products.CMFPlone
 
 Files changed:
-M .travis.yml
+M plone/app/controlpanel/tests/test_doctests.py
+D plone/app/controlpanel/maintenance.pt
+D plone/app/controlpanel/maintenance.py
+D plone/app/controlpanel/tests/maintenance.txt
 
-diff --git a/.travis.yml b/.travis.yml
-index 25c3b51..a659066 100644
---- a/.travis.yml
-+++ b/.travis.yml
-@@ -8,8 +8,9 @@ env:
-     - secure: lLMAD0VmG1/SpfuJKwOT9xn4lV1pUq71WszWjpF8TgxJfIgRBYLp9QkRTXQ6pfTwXTL22YSsc8N5yhJsALKV2V57Og6Pfta6jQqRIzJU6maIZBBLqW6LQThuazF6tmEcTpty1j1LdFf3tuNVchsbsii2eRhXNdIPXLjBliMJkuo=
-     - SAUCE_CONNECT_READY_FILE=/tmp/sauce-connect-ready
-   matrix:
--    - BROWSERS="SL_Chrome,SL_Firefox"
--    - BROWSERS="SL_IE_8,SL_IE_9"
-+    - BROWSERS="SL_Chrome"
-+    - BROWSERS="SL_Firefox"
-+    - BROWSERS="SL_IE_9"
-     - BROWSERS="SL_IE_10,SL_IE_11"
-     - BROWSERS="SL_Opera,SL_Safari"
-     - BROWSERS="SL_IPhone"
-@@ -32,7 +33,7 @@ after_success:
- matrix:
-   fast_finish: true
-   allow_failures:
--    - env: BROWSERS="SL_IE_8,SL_IE_9"
-+    - env: BROWSERS="SL_IE_9"
-     - env: BROWSERS="SL_IE_10,SL_IE_11"
-     - env: BROWSERS="SL_Opera,SL_Safari"
-     - env: BROWSERS="SL_IPhone"
+diff --git a/plone/app/controlpanel/maintenance.pt b/plone/app/controlpanel/maintenance.pt
+deleted file mode 100644
+index 7dc4de9..0000000
+--- a/plone/app/controlpanel/maintenance.pt
++++ /dev/null
+@@ -1,196 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      xml:lang="en" lang="en"
+-      metal:use-macro="context/prefs_main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:main fill-slot="prefs_configlet_main">
+-
+-    <metal:form define-macro="form" tal:condition="view/available">
+-
+-         <metal:block define-macro="header">
+-
+-             <div class="portalMessage info"
+-                  tal:define="status view/status"
+-                  tal:condition="status">
+-                 <strong i18n:translate="">
+-                     Info
+-                 </strong>
+-                 <span tal:replace="view/status" />
+-             </div>
+-
+-         </metal:block>
+-
+-         <h1 class="documentFirstHeading"
+-             i18n:translate=""
+-             tal:condition="view/label"
+-             tal:content="view/label"
+-             metal:define-slot="heading">
+-             Do something
+-         </h1>
+-
+-         <div class="documentDescription" i18n:translate=""
+-            tal:condition="view/description"
+-            tal:content="view/description">
+-             Description
+-         </div>
+-
+-        <div id="content-core">
+-
+-            <form action="."
+-                  tal:attributes="action request/URL"
+-                  method="post"
+-                  class="edit-form"
+-                  enctype="multipart/form-data">
+-
+-                <fieldset>
+-                    <legend i18n:translate="heading_zope_server">
+-                        Zope Server
+-                    </legend>
+-
+-                    <p i18n:translate="text_zope_server_uptime">
+-                        Zope Server uptime: <span i18n:name="time" tal:replace="view/processTime" />
+-                    </p>
+-
+-                    <div id="actionsView" class="formControls">
+-                        <span class="actionButtons">
+-                            <input type="submit"
+-                                   id="form.actions.shutdown"
+-                                   name="form.actions.shutdown"
+-                                   value="Shut down"
+-                                   i18n:attributes="value"
+-                                   class="standalone" />
+-
+-                            <input tal:condition="view/isRestartable"
+-                                   type="submit"
+-                                   id="form.actions.restart"
+-                                   name="form.actions.restart"
+-                                   value="Restart"
+-                                   i18n:attributes="value"
+-                                   class="standalone" />
+-
+-                        </span>
+-                    </div>
+-
+-                </fieldset>
+-
+-                <input tal:replace="structure context/@@authenticator/authenticator" />
+-
+-            </form>
+-            <br><br>
+-            <form action="."
+-                  metal:define-macro="master"
+-                  tal:attributes="action request/URL"
+-                  method="post"
+-                  class="edit-form"
+-                  enctype="multipart/form-data"
+-                  id="zc.page.browser_form">
+-
+-                <div metal:define-slot="extra_info" tal:replace="nothing">
+-                </div>
+-
+-                <fieldset>
+-                    <legend tal:define="form_name view/form_name|nothing"
+-                            tal:condition="form_name"
+-                            tal:content="form_name">Form name</legend>
+-
+-                    <p i18n:translate="text_zope_database_size">
+-                        <strong>Current database size:</strong> <span i18n:name="size" tal:replace="view/dbSize" />
+-                    </p>
+-
+-                    <tal:block tal:repeat="widget view/widgets">
+-
+-                      <div class="field"
+-                           tal:define="description widget/hint;
+-                                       error widget/error"
+-                           tal:attributes="class python:'field'+(error and ' error' or '')">
+-
+-                          <label tal:attributes="for widget/name">
+-                            <span i18n:translate="" tal:replace="widget/label">
+-                              label
+-                            </span> <span class="required"
+-                                  title="Required"
+-                                  i18n:attributes="title title_required;"
+-                                  i18n:translate="label_required"
+-                                  tal:condition="widget/required">&nbsp;</span>
+-                          </label>
+-                            <div class="formHelp"
+-                                 i18n:translate=""
+-                                 tal:content="description"
+-                                 tal:condition="description">
+-                                field description
+-                            </div>
+-
+-
+-                          <div tal:condition="error"
+-                               tal:content="structure error">
+-                              The Error
+-                          </div>
+-
+-                          <div class="widget" tal:content="structure widget">
+-                              <input type="text" />
+-                          </div>
+-                      </div>
+-
+-                    </tal:block>
+-
+-                    <metal:block define-slot="above_buttons" />
+-
+-
+-                    <div id="actionsView" class="formControls">
+-                        <span class="actionButtons">
+-                            <input type="submit"
+-                                   id="form.actions.pack"
+-                                   name="form.actions.pack"
+-                                   value="Pack database now"
+-                                   i18n:attributes="value"
+-                                   class="context" />
+-                        </span>
+-                    </div>
+-
+-                </fieldset>
+-
+-                <input tal:replace="structure context/@@authenticator/authenticator" />
+-
+-            </form>
+-
+-            <script type="text/javascript"
+-                tal:define="extra_script view/extra_script | nothing"
+-                tal:condition="extra_script"
+-                tal:content="structure extra_script">
+-            </script>
+-        </div>
+-
+-    </metal:form>
+-
+-    <metal:block tal:condition="not: view/available">
+-         <h1 class="documentFirstHeading"
+-             i18n:translate=""
+-             tal:condition="view/label"
+-             tal:content="view/label">
+-             Do something
+-         </h1>
+-
+-         <div class="documentDescription" i18n:translate="text_not_allowed_manage_server"
+-            tal:condition="view/description">
+-             You are not allowed to manage the Zope server.
+-         </div>
+-
+-         <div id="content-core">
+-             <a href=""
+-                class="link-parent"
+-                tal:attributes="href string:$portal_url/plone_control_panel"
+-                i18n:translate="label_up_to_plone_setup">
+-                 Up to Site Setup
+-             </a>
+-         </div>
+-    </metal:block>
+-
+-
+-</metal:main>
+-</body>
+-</html>
+diff --git a/plone/app/controlpanel/maintenance.py b/plone/app/controlpanel/maintenance.py
+deleted file mode 100644
+index 4c87b60..0000000
+--- a/plone/app/controlpanel/maintenance.py
++++ /dev/null
+@@ -1,142 +0,0 @@
+-import os
+-from cgi import escape
+-
+-from plone.app.form.validators import null_validator
+-from plone.fieldsets.form import FieldsetsEditForm
+-from zope.component import adapts
+-from zope.formlib import form
+-from zope.interface import Interface
+-from zope.interface import implements
+-from zope.schema import Int
+-
+-from AccessControl import getSecurityManager
+-from AccessControl.Permissions import view_management_screens
+-from Acquisition import aq_inner
+-from Products.CMFCore.utils import getToolByName
+-from Products.CMFDefault.formlib.schema import SchemaAdapterBase
+-from Products.CMFPlone import PloneMessageFactory as _
+-from Products.CMFPlone.interfaces import IPloneSiteRoot
+-from Products.Five.browser.pagetemplatefile import ZopeTwoPageTemplateFile
+-
+-from plone.app.controlpanel.interfaces import IPloneControlPanelForm
+-
+-from plone.protect import CheckAuthenticator
+-
+-
+-class IMaintenanceSchema(Interface):
+-
+-    days = Int(title=_(u"Days of object history to keep after packing"),
+-        description=_(u"You should pack your database regularly. This number "
+-                       "indicates how many days of undo history you want to "
+-                       "keep. It is unrelated to versioning, so even if you "
+-                       "pack the database, the history of the content changes "
+-                       "will be kept. Recommended value is 7 days."),
+-        default=7,
+-        required=True)
+-
+-
+-class MaintenanceControlPanelAdapter(SchemaAdapterBase):
+-
+-    adapts(IPloneSiteRoot)
+-    implements(IMaintenanceSchema)
+-
+-    def __init__(self, context):
+-        pprop = getToolByName(context, 'portal_properties')
+-        self.context = pprop.site_properties
+-
+-    def get_days(self):
+-        return self.context.number_of_days_to_keep
+-
+-    def set_days(self, value):
+-        if isinstance(value, basestring):
+-            value = int(value)
+-        self.context.number_of_days_to_keep = value
+-
+-    days = property(get_days, set_days)
+-
+-
+-class MaintenanceControlPanel(FieldsetsEditForm):
+-    """A simple form to pack the databases."""
+-
+-    implements(IPloneControlPanelForm)
+-
+-    template = ZopeTwoPageTemplateFile('maintenance.pt')
+-    form_fields = form.FormFields(IMaintenanceSchema)
+-    label = _(u'Maintenance')
+-    description = _(u"Zope server and site maintenance options.")
+-    form_name = _(u'Zope Database Packing')
+-
+-    @form.action(_(u'Pack database now'), name=u'pack')
+-    def handle_edit_action(self, action, data):
+-        CheckAuthenticator(self.request)
+-        if not self.available():
+-            self.status = _(u'text_not_allowed_manage_server',
+-                            default=u'You are not allowed to manage the Zope server.')
+-            return
+-        form.applyChanges(self.context, self.form_fields, data, self.adapters)
+-        value = data.get('days', None)
+-        # skip the actual pack method in tests
+-        if value is not None and isinstance(value, int) and value >= 0:
+-            context = aq_inner(self.context)
+-            cpanel = context.unrestrictedTraverse('/Control_Panel')
+-            cpanel.manage_pack(days=value, REQUEST=None)
+-        self.status = _(u'Packed the database.')
+-
+-    @form.action(_(u'Shut down'), validator=null_validator, name=u'shutdown')
+-    def handle_shutdown_action(self, action, data):
+-        CheckAuthenticator(self.request)
+-        if not self.available():
+-            self.status = _(u'text_not_allowed_manage_server',
+-                            default=u'You are not allowed to manage the Zope server.')
+-            return
+-        context = aq_inner(self.context)
+-        cpanel = context.unrestrictedTraverse('/Control_Panel')
+-        result = cpanel.manage_shutdown()
+-        return result
+-
+-    @form.action(_(u'Restart'), validator=null_validator)
+-    def handle_restart_action(self, action, data):
+-        CheckAuthenticator(self.request)
+-        if not self.available():
+-            self.status = _(u'text_not_allowed_manage_server',
+-                            default=u'You are not allowed to manage the Zope server.')
+-            return
+-        context = aq_inner(self.context)
+-        cpanel = context.unrestrictedTraverse('/Control_Panel')
+-        url = self.request.get('URL')
+-        cpanel.manage_restart(url)
+-        return """<html>
+-        <head><meta HTTP-EQUIV=REFRESH CONTENT="30; URL=%s">
+-        </head>
+-        <body>Zope is restarting. This page will refresh in 30 seconds...</body></html>
+-        """ % escape(url, 1)
+-
+-    def available(self):
+-        root = aq_inner(self.context).getPhysicalRoot()
+-        sm = getSecurityManager()
+-        return sm.checkPermission(view_management_screens, root)
+-
+-    def isRestartable(self):
+-        if os.environ.has_key('ZMANAGED'):
+-            return True
+-        return False
+-
+-    def isDevelopmentMode(self):
+-        qi = getToolByName(self.context, 'portal_quickinstaller')
+-        return qi.isDevelopmentMode()
+-
+-    def coreVersions(self):
+-        mt = getToolByName(self.context, 'portal_migration')
+-        versions = mt.coreVersions()
+-        versions['Instance'] = versions['Plone Instance']
+-        return versions
+-
+-    def processTime(self):
+-        context = aq_inner(self.context)
+-        cpanel = context.unrestrictedTraverse('/Control_Panel')
+-        return cpanel.process_time()
+-
+-    def dbSize(self):
+-        context = aq_inner(self.context)
+-        cpanel = context.unrestrictedTraverse('/Control_Panel')
+-        return cpanel.db_size()
+diff --git a/plone/app/controlpanel/tests/maintenance.txt b/plone/app/controlpanel/tests/maintenance.txt
+deleted file mode 100644
+index d4492be..0000000
+--- a/plone/app/controlpanel/tests/maintenance.txt
++++ /dev/null
+@@ -1,51 +0,0 @@
+-Maintenance control panel
+-=========================
+-
+-First some initial setup code:
+-
+-    >>> self.loginAsManager()
+-
+-Viewing the maintenance control panel
+--------------------------------------
+-
+-    >>> self.browser.open('http://nohost/plone/@@maintenance-controlpanel')
+-    >>> self.browser.url.endswith('maintenance-controlpanel')
+-    True
+-
+-While we have manage permisssions inside the site, we don't have them at the
+-Zope root:
+-
+-    >>> 'You are not allowed to manage the Zope server' in self.browser.contents
+-    True
+-
+-Let's create a manager at the Zope root:
+-
+-    >>> self.app.acl_users.userFolderAddUser('app', 'secret', ['Manager'], [])
+-
+-And log in as that user instead:
+-
+-    >>> self.browser.open('http://nohost/plone/')
+-    >>> self.browser.getLink('Log out').click()
+-    >>> self.loginAsManager(user='app')
+-
+-See if we can manage the server now:
+-
+-    >>> self.browser.open('http://nohost/plone/@@maintenance-controlpanel')
+-    >>> self.browser.url.endswith('maintenance-controlpanel')
+-    True
+-
+-    >>> 'Zope Database' in self.browser.contents
+-    True
+-
+-While we cannot test the actual packaging during tests, we can skip the actual
+-manage_pack method by providing a negative value for days:
+-
+-    >>> self.browser.getControl(name='form.days').value = '-1'
+-    >>> self.browser.getControl(name="form.actions.pack").click()
+-    >>> self.browser.url.endswith('maintenance-controlpanel')
+-    True
+-
+-We should get a status message:
+-
+-    >>> 'Packed the database.' in self.browser.contents
+-    True
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 7682db1..6a05665 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -5,8 +5,6 @@
+ from Testing.ZopeTestCase import FunctionalDocFileSuite
+ 
+ from plone.app.controlpanel.tests.cptc import ControlPanelTestCase
+-from plone.app.controlpanel.tests.cptc import UserGroupsControlPanelTestCase
+-from plone.app.controlpanel.tests.cptc import EmailLoginSecurityControlPanelTestCase
+ 
+ setupPloneSite()
+ 
+@@ -18,7 +16,6 @@ def test_suite():
+ #            'editing.txt',
+              'filter.txt',
+ #             'mail.txt',
+-#             'maintenance.txt',
+ #             'security_enable_user_folder.txt',
+ #             'search.txt',
+ #             'site.txt',
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2015-01-22T13:48:20+01:00
+Author: Kees Hink (khink) <keeshink@gmail.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/b0e3ae1847133827d231ebd82b1fa1ee95ebcabb
+
+pep8
+
+Files changed:
+M plone/app/controlpanel/tests/test_doctests.py
+
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 6a05665..a26dff9 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -13,22 +13,23 @@
+ 
+ def test_suite():
+     tests = [
+-#            'editing.txt',
+-             'filter.txt',
+-#             'mail.txt',
+-#             'security_enable_user_folder.txt',
+-#             'search.txt',
+-#             'site.txt',
+-#             'skins.txt',
+-#             'markup.txt',
+-#             'navigation.txt',
+-             'types.txt',
+-             'syndication.txt'
+-             ]
++        # 'editing.txt',
++        'filter.txt',
++        # 'mail.txt',
++        # 'security_enable_user_folder.txt',
++        # 'search.txt',
++        # 'site.txt',
++        # 'skins.txt',
++        # 'markup.txt',
++        # 'navigation.txt',
++        'types.txt',
++        'syndication.txt'
++    ]
+     suite = TestSuite()
+ 
+     for test in tests:
+-        suite.addTest(FunctionalDocFileSuite(test,
++        suite.addTest(FunctionalDocFileSuite(
++            test,
+             optionflags=OPTIONFLAGS,
+             package="plone.app.controlpanel.tests",
+             test_class=ControlPanelTestCase))
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2015-01-22T13:57:15+01:00
+Author: Kees Hink (khink) <keeshink@gmail.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/754878c37f722557d55529422008a7693c27c96d
+
+Remove unused test markup.txt
+
+Files changed:
+M plone/app/controlpanel/tests/test_doctests.py
+D plone/app/controlpanel/tests/markup.txt
+
+diff --git a/plone/app/controlpanel/tests/markup.txt b/plone/app/controlpanel/tests/markup.txt
+deleted file mode 100644
+index eb2d42f..0000000
+--- a/plone/app/controlpanel/tests/markup.txt
++++ /dev/null
+@@ -1,63 +0,0 @@
+-Markup control panel
+-====================
+-
+-Viewing the markup control panel
+---------------------------------
+-
+-    >>> self.loginAsManager()
+-    >>> self.login('root')  # need to login with test fixture too to get right token
+-    >>> from plone.protect.authenticator import createToken
+-
+-It is only necessary in the test here to add the token.
+-
+-    >>> self.browser.open('http://nohost/plone/@@markup-controlpanel?_authenticator=' + createToken())
+-    >>> self.browser.url
+-    'http://nohost/plone/@@markup-controlpanel...'
+-
+-We have two controls, one for the default type and a multi selection for
+-alternative formats:
+-
+-    >>> self.browser.getControl(name='form.default_type').value
+-    ['text/html']
+-    >>> self.browser.getControl(name='form.allowed_types').value
+-    ['text/html', 'text/x-web-textile']
+-
+-Click the save button without making any changes:
+-
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> self.browser.url.endswith('markup-controlpanel')
+-    True
+-
+-We should get a status message:
+-
+-    >>> 'Changes saved.' in self.browser.contents
+-    True
+-
+-Now click the cancel button:
+-
+-    >>> self.browser.getControl(name="form.actions.cancel").click()
+-    >>> self.browser.url.endswith('plone_control_panel')
+-    True
+-
+-There should be still no changes:
+-
+-    >>> 'Changes canceled.' in self.browser.contents
+-    True
+-
+-Modifying values
+-----------------
+-
+-    >>> self.browser.open('http://nohost/plone/@@markup-controlpanel')
+-    >>> self.browser.getControl(name='form.default_type').value = ['text/x-web-textile',]
+-    >>> self.browser.getControl(name='form.allowed_types').value = ['text/html', 'text/x-web-textile']
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> 'Changes saved' in self.browser.contents
+-    True
+-
+-Verify, that the settings have actually been changed:
+-
+-    >>> self.portal.portal_properties.site_properties.default_contenttype
+-    'text/x-web-textile'
+-    >>> forbidden_types = self.portal.portal_properties.site_properties.forbidden_contenttypes
+-    >>> set(self.portal.portal_transforms.listAvailableTextInputs()) - set(forbidden_types)
+-    set(['text/html', 'text/x-web-textile'])
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index a26dff9..9be4542 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -20,7 +20,6 @@ def test_suite():
+         # 'search.txt',
+         # 'site.txt',
+         # 'skins.txt',
+-        # 'markup.txt',
+         # 'navigation.txt',
+         'types.txt',
+         'syndication.txt'
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2015-01-22T14:05:55+01:00
+Author: Kees Hink (khink) <keeshink@gmail.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/d19a74a000294d0dcebde4e0e77fae032d048fe4
+
+Remove controlpanel definition from markup.py (already migrated to Products.CMFPlone)
+
+Files changed:
+M plone/app/controlpanel/markup.py
+
+diff --git a/plone/app/controlpanel/markup.py b/plone/app/controlpanel/markup.py
+index a076c46..64a6eab 100644
+--- a/plone/app/controlpanel/markup.py
++++ b/plone/app/controlpanel/markup.py
+@@ -1,7 +1,6 @@
+ from plone.fieldsets.fieldsets import FormFieldsets
+ 
+ from zope.interface import Interface
+-from zope.component import adapts
+ from zope.interface import implements
+ from zope.schema import Choice
+ from zope.schema import Tuple
+@@ -11,20 +10,16 @@
+ from zope.schema.vocabulary import SimpleTerm
+ 
+ from Products.CMFCore.utils import getToolByName
+-from Products.CMFDefault.formlib.schema import SchemaAdapterBase
+ from Products.CMFPlone import PloneMessageFactory as _
+-from Products.CMFPlone.interfaces import IPloneSiteRoot
+ 
+ from plone.app.controlpanel.form import ControlPanelForm
+ from plone.app.controlpanel.widgets import AllowedTypesWidget
+ from plone.app.controlpanel.widgets import MultiCheckBoxVocabularyWidget
+ 
+ from persistent import Persistent
+-from zope.annotation.interfaces import IAnnotations
+ 
+ try:
+     from wicked.plone.registration import basic_type_regs as wicked_basic_type_regs
+-    from wicked.txtfilter import BrackettedWickedFilter
+ except ImportError:
+     HAS_WICKED = False
+ else:
+@@ -114,115 +109,6 @@ class IMarkupSchema(ITextMarkupSchema, IWikiMarkupSchema):
+ else:
+     IMarkupSchema = ITextMarkupSchema
+ 
+-class MarkupControlPanelAdapter(SchemaAdapterBase):
+-
+-    adapts(IPloneSiteRoot)
+-    implements(IMarkupSchema)
+-
+-    def __init__(self, context):
+-        super(MarkupControlPanelAdapter, self).__init__(context)
+-        self.context = context
+-        self.toggle_mediawiki = False
+-
+-    # Text markup settings
+-
+-    def get_default_type(self):
+-        portal_properties = getToolByName(self.context, 'portal_properties', None)
+-        if portal_properties is not None:
+-            site_properties = getattr(portal_properties, 'site_properties', None)
+-            if site_properties is not None:
+-                return site_properties.getProperty('default_contenttype')
+-        return 'text/plain'
+-
+-    def set_default_type(self, value):
+-        portal_properties = getToolByName(self.context, 'portal_properties', None)
+-        if portal_properties is not None:
+-            site_properties = getattr(portal_properties, 'site_properties', None)
+-            if site_properties is not None:
+-                site_properties.manage_changeProperties(default_contenttype=value)
+-
+-    default_type = property(get_default_type, set_default_type)
+-
+-    def _get_allowable_types(self):
+-        portal_transforms = getToolByName(self.context, 'portal_transforms')
+-        return portal_transforms.listAvailableTextInputs()
+-
+-    def _get_forbidden_types(self, forbidden_contenttypes=None):
+-        if forbidden_contenttypes is None:
+-            forbidden_contenttypes = []
+-        portal_properties = getToolByName(self.context, 'portal_properties', None)
+-        if portal_properties is not None:
+-            site_properties = getattr(portal_properties, 'site_properties', None)
+-            if site_properties is not None:
+-                if site_properties.hasProperty('forbidden_contenttypes'):
+-                    return list(site_properties.getProperty('forbidden_contenttypes'))
+-        return []
+-
+-    def get_allowed_types(self):
+-        allowable_types = self._get_allowable_types()
+-        forbidden_types = self._get_forbidden_types()
+-        allowed_types = [type for type in allowable_types if type not in forbidden_types]
+-        return allowed_types
+-
+-    def set_allowed_types(self, value):
+-        # The menu pretends to be a whitelist, but we are storing a blacklist
+-        # so that new types are available by default. So, we inverse the list.
+-        allowable_types = self._get_allowable_types()
+-        forbidden_types = [t for t in allowable_types if t not in value]
+-
+-        portal_properties = getToolByName(self.context, 'portal_properties', None)
+-        if portal_properties is not None:
+-            site_properties = getattr(portal_properties, 'site_properties', None)
+-            if site_properties is not None:
+-                site_properties.manage_changeProperties(forbidden_contenttypes=tuple(forbidden_types))
+-
+-    allowed_types = property(get_allowed_types, set_allowed_types)
+-
+-    # Wiki settings
+-
+-    if HAS_WICKED:
+-        def get_enable_mediawiki(self):
+-            return self.wicked_settings.enable_mediawiki
+-
+-        def set_enable_mediawiki(self, value):
+-            settings = self.wicked_settings
+-            if settings.enable_mediawiki != value:
+-                self.toggle_mediawiki = True
+-                settings.enable_mediawiki = value
+-
+-        enable_mediawiki = property(get_enable_mediawiki, set_enable_mediawiki)
+-
+-        def get_wiki_enabled_types(self):
+-            return self.wicked_settings.types_enabled
+-
+-        def set_wiki_enabled_types(self, value):
+-            settings = self.wicked_settings
+-            if not self.toggle_mediawiki and value == settings.types_enabled:
+-                return
+-
+-            self.unregister_wicked_types() # @@ use sets to avoid thrashing
+-            for name in value:
+-                reg = wicked_type_regs[name](self.context)
+-                if self.enable_mediawiki:
+-                    reg.txtfilter = BrackettedWickedFilter
+-                reg.handle()
+-
+-            self.toggle_mediawiki = False
+-            settings.types_enabled = value
+-
+-        wiki_enabled_types = property(get_wiki_enabled_types,
+-                                      set_wiki_enabled_types)
+-
+-        @property
+-        def wicked_settings(self):
+-            ann = IAnnotations(self.context)
+-            return ann.setdefault(WICKED_SETTING_KEY, WickedSettings())
+-
+-        def unregister_wicked_types(self):
+-            """Unregisters all previous registration objects
+-            """
+-            for name in wicked_type_regs.keys():
+-                wicked_type_regs[name](self.context).handle(unregister=True)
+ 
+ textset = FormFieldsets(ITextMarkupSchema)
+ textset.id = 'textmarkup'
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2015-01-22T14:14:42+01:00
+Author: Kees Hink (khink) <keeshink@gmail.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/7705673f3b47859c1351c01eaf19603e1d95d566
+
+Remove commented out test search.txt
+
+Files changed:
+M plone/app/controlpanel/tests/test_doctests.py
+D plone/app/controlpanel/tests/search.txt
+
+diff --git a/plone/app/controlpanel/tests/search.txt b/plone/app/controlpanel/tests/search.txt
+deleted file mode 100644
+index 719cfd5..0000000
+--- a/plone/app/controlpanel/tests/search.txt
++++ /dev/null
+@@ -1,86 +0,0 @@
+-Search control panel
+-====================
+-
+-First some initial setup code:
+-
+-    >>> from Products.CMFCore.utils import getToolByName
+-    >>> jstool = getToolByName(self.portal, 'portal_javascripts')
+-    >>> self.loginAsManager()
+-
+-Viewing the search control panel
+---------------------------------
+-
+-    >>> self.browser.open('http://nohost/plone/@@search-controlpanel')
+-    >>> self.browser.url.endswith('search-controlpanel')
+-    True
+-
+-Click the save button without making any changes:
+-
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> self.browser.url.endswith('search-controlpanel')
+-    True
+-
+-We should get a status message:
+-
+-    >>> 'Changes saved.' in self.browser.contents
+-    True
+-
+-Now click the cancel button:
+-
+-    >>> self.browser.getControl(name="form.actions.cancel").click()
+-    >>> self.browser.url.endswith('plone_control_panel')
+-    True
+-
+-There should be still no changes:
+-
+-    >>> 'Changes canceled.' in self.browser.contents
+-    True
+-
+-Make some changes
+------------------
+-
+-    >>> self.browser.open('http://nohost/plone/@@search-controlpanel')
+-    >>> self.browser.url.endswith('search-controlpanel')
+-    True
+-
+-    >>> self.browser.getControl(name='form.enable_livesearch').value = False
+-    >>> self.browser.getControl(name='form.types_not_searched').value = \
+-    ...     ['Event', 'Document']
+-
+-
+-Click the save button:
+-
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> self.browser.url.endswith('search-controlpanel')
+-    True
+-
+-We should be informed that something has changed:
+-
+-    >>> 'Changes saved.' in self.browser.contents
+-    True
+-
+-Make sure the changes have been applied correctly to the tool:
+-
+-    >>> self.site_props.enable_livesearch
+-    False
+-
+-    >>> jstool.getResource('livesearch.js').getEnabled()
+-    False
+-
+-    >>> 'Event' not in self.site_props.types_not_searched
+-    True
+-
+-    >>> 'Document' not in self.site_props.types_not_searched
+-    True
+-
+-    >>> 'File' in self.site_props.types_not_searched
+-    True
+-
+-So called 'bad types' are not listed in the search panel, but they
+-should still be listed in the site_properties as not searchable:
+-
+-    >>> from plone.app.vocabularies.types import BAD_TYPES
+-    >>> [bad for bad in BAD_TYPES if bad not in self.site_props.types_not_searched]
+-    []
+-
+-
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 9be4542..5765214 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -17,7 +17,6 @@ def test_suite():
+         'filter.txt',
+         # 'mail.txt',
+         # 'security_enable_user_folder.txt',
+-        # 'search.txt',
+         # 'site.txt',
+         # 'skins.txt',
+         # 'navigation.txt',
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2015-01-22T14:17:26+01:00
+Author: Kees Hink (khink) <keeshink@gmail.com>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/4bc67a79060ec4c6d129b6d227012331f4225dea
+
+Remove search controlpanel definition that was moved to CMFPlone
+
+Files changed:
+M plone/app/controlpanel/search.py
+
+diff --git a/plone/app/controlpanel/search.py b/plone/app/controlpanel/search.py
+index 649e7d0..650823f 100644
+--- a/plone/app/controlpanel/search.py
++++ b/plone/app/controlpanel/search.py
+@@ -1,19 +1,12 @@
+ from plone.fieldsets.fieldsets import FormFieldsets
+ from zope.interface import Interface
+-from zope.interface import implements
+-from zope.component import adapts
+ from zope.schema import Bool
+ from zope.schema import Choice
+ from zope.schema import Tuple
+ from zope.schema.vocabulary import SimpleTerm
+ from zope.schema.vocabulary import SimpleVocabulary
+ 
+-from Products.CMFCore.utils import getToolByName
+-from Products.CMFDefault.formlib.schema import SchemaAdapterBase
+ from Products.CMFPlone import PloneMessageFactory as _
+-from Products.CMFPlone.interfaces import IPloneSiteRoot
+-
+-from plone.app.vocabularies.types import BAD_TYPES
+ 
+ from form import ControlPanelForm
+ from widgets import MultiCheckBoxThreeColumnWidget as MCBThreeColumnWidget
+@@ -55,49 +48,6 @@ class ISearchSchema(IBaseSearchSchema):
+     ''' Base search form options '''
+ 
+ 
+-class SearchControlPanelAdapter(SchemaAdapterBase):
+-
+-    adapts(IPloneSiteRoot)
+-    implements(ISearchSchema)
+-
+-    def __init__(self, context):
+-        super(SearchControlPanelAdapter, self).__init__(context)
+-        pprop = getToolByName(context, 'portal_properties')
+-        self.context = pprop.site_properties
+-        self.jstool = getToolByName(context, 'portal_javascripts')
+-        self.ttool = getToolByName(context, 'portal_types')
+-
+-    def get_enable_livesearch(self):
+-        return self.context.enable_livesearch
+-
+-    def set_enable_livesearch(self, value):
+-        if value:
+-            self.context.manage_changeProperties(enable_livesearch=True)
+-            self.jstool.getResource('livesearch.js').setEnabled(True)
+-        else:
+-            self.context.manage_changeProperties(enable_livesearch=False)
+-            self.jstool.getResource('livesearch.js').setEnabled(False)
+-        self.jstool.cookResources()
+-
+-    enable_livesearch = property(get_enable_livesearch, set_enable_livesearch)
+-
+-    def get_types_not_searched(self):
+-        # Note: we do not show BAD_TYPES.
+-        return [t for t in self.ttool.listContentTypes()
+-                        if t not in self.context.types_not_searched and
+-                           t not in BAD_TYPES]
+-
+-    def set_types_not_searched(self, value):
+-        # Note: we add BAD_TYPES to the value list.
+-        value = [t for t in self.ttool.listContentTypes() if t not in value
+-                   or t in BAD_TYPES]
+-        self.context._updateProperty('types_not_searched', value)
+-
+-    # This also defines the user friendly types
+-    types_not_searched = property(get_types_not_searched,
+-                                  set_types_not_searched)
+-
+-
+ searchset = FormFieldsets(IBaseSearchSchema)
+ searchset.id = 'search'
+ searchset.label = _("Search settings")
+
+
+Repository: plone.app.controlpanel
+Branch: refs/heads/master
+Date: 2015-01-22T16:28:06+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.controlpanel/commit/529cc9eed5d9ba2a742604dc84e19140805886fc
+
+Merge pull request #41 from plone/plip10359-migrate-to-cmfplone
+
+Plip10359 remove unused code
+
+Files changed:
+M plone/app/controlpanel/markup.py
+M plone/app/controlpanel/search.py
+M plone/app/controlpanel/tests/test_doctests.py
+D plone/app/controlpanel/maintenance.pt
+D plone/app/controlpanel/maintenance.py
+D plone/app/controlpanel/tests/maintenance.txt
+D plone/app/controlpanel/tests/markup.txt
+D plone/app/controlpanel/tests/search.txt
+
+diff --git a/plone/app/controlpanel/maintenance.pt b/plone/app/controlpanel/maintenance.pt
+deleted file mode 100644
+index 7dc4de9..0000000
+--- a/plone/app/controlpanel/maintenance.pt
++++ /dev/null
+@@ -1,196 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      xml:lang="en" lang="en"
+-      metal:use-macro="context/prefs_main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:main fill-slot="prefs_configlet_main">
+-
+-    <metal:form define-macro="form" tal:condition="view/available">
+-
+-         <metal:block define-macro="header">
+-
+-             <div class="portalMessage info"
+-                  tal:define="status view/status"
+-                  tal:condition="status">
+-                 <strong i18n:translate="">
+-                     Info
+-                 </strong>
+-                 <span tal:replace="view/status" />
+-             </div>
+-
+-         </metal:block>
+-
+-         <h1 class="documentFirstHeading"
+-             i18n:translate=""
+-             tal:condition="view/label"
+-             tal:content="view/label"
+-             metal:define-slot="heading">
+-             Do something
+-         </h1>
+-
+-         <div class="documentDescription" i18n:translate=""
+-            tal:condition="view/description"
+-            tal:content="view/description">
+-             Description
+-         </div>
+-
+-        <div id="content-core">
+-
+-            <form action="."
+-                  tal:attributes="action request/URL"
+-                  method="post"
+-                  class="edit-form"
+-                  enctype="multipart/form-data">
+-
+-                <fieldset>
+-                    <legend i18n:translate="heading_zope_server">
+-                        Zope Server
+-                    </legend>
+-
+-                    <p i18n:translate="text_zope_server_uptime">
+-                        Zope Server uptime: <span i18n:name="time" tal:replace="view/processTime" />
+-                    </p>
+-
+-                    <div id="actionsView" class="formControls">
+-                        <span class="actionButtons">
+-                            <input type="submit"
+-                                   id="form.actions.shutdown"
+-                                   name="form.actions.shutdown"
+-                                   value="Shut down"
+-                                   i18n:attributes="value"
+-                                   class="standalone" />
+-
+-                            <input tal:condition="view/isRestartable"
+-                                   type="submit"
+-                                   id="form.actions.restart"
+-                                   name="form.actions.restart"
+-                                   value="Restart"
+-                                   i18n:attributes="value"
+-                                   class="standalone" />
+-
+-                        </span>
+-                    </div>
+-
+-                </fieldset>
+-
+-                <input tal:replace="structure context/@@authenticator/authenticator" />
+-
+-            </form>
+-            <br><br>
+-            <form action="."
+-                  metal:define-macro="master"
+-                  tal:attributes="action request/URL"
+-                  method="post"
+-                  class="edit-form"
+-                  enctype="multipart/form-data"
+-                  id="zc.page.browser_form">
+-
+-                <div metal:define-slot="extra_info" tal:replace="nothing">
+-                </div>
+-
+-                <fieldset>
+-                    <legend tal:define="form_name view/form_name|nothing"
+-                            tal:condition="form_name"
+-                            tal:content="form_name">Form name</legend>
+-
+-                    <p i18n:translate="text_zope_database_size">
+-                        <strong>Current database size:</strong> <span i18n:name="size" tal:replace="view/dbSize" />
+-                    </p>
+-
+-                    <tal:block tal:repeat="widget view/widgets">
+-
+-                      <div class="field"
+-                           tal:define="description widget/hint;
+-                                       error widget/error"
+-                           tal:attributes="class python:'field'+(error and ' error' or '')">
+-
+-                          <label tal:attributes="for widget/name">
+-                            <span i18n:translate="" tal:replace="widget/label">
+-                              label
+-                            </span> <span class="required"
+-                                  title="Required"
+-                                  i18n:attributes="title title_required;"
+-                                  i18n:translate="label_required"
+-                                  tal:condition="widget/required">&nbsp;</span>
+-                          </label>
+-                            <div class="formHelp"
+-                                 i18n:translate=""
+-                                 tal:content="description"
+-                                 tal:condition="description">
+-                                field description
+-                            </div>
+-
+-
+-                          <div tal:condition="error"
+-                               tal:content="structure error">
+-                              The Error
+-                          </div>
+-
+-                          <div class="widget" tal:content="structure widget">
+-                              <input type="text" />
+-                          </div>
+-                      </div>
+-
+-                    </tal:block>
+-
+-                    <metal:block define-slot="above_buttons" />
+-
+-
+-                    <div id="actionsView" class="formControls">
+-                        <span class="actionButtons">
+-                            <input type="submit"
+-                                   id="form.actions.pack"
+-                                   name="form.actions.pack"
+-                                   value="Pack database now"
+-                                   i18n:attributes="value"
+-                                   class="context" />
+-                        </span>
+-                    </div>
+-
+-                </fieldset>
+-
+-                <input tal:replace="structure context/@@authenticator/authenticator" />
+-
+-            </form>
+-
+-            <script type="text/javascript"
+-                tal:define="extra_script view/extra_script | nothing"
+-                tal:condition="extra_script"
+-                tal:content="structure extra_script">
+-            </script>
+-        </div>
+-
+-    </metal:form>
+-
+-    <metal:block tal:condition="not: view/available">
+-         <h1 class="documentFirstHeading"
+-             i18n:translate=""
+-             tal:condition="view/label"
+-             tal:content="view/label">
+-             Do something
+-         </h1>
+-
+-         <div class="documentDescription" i18n:translate="text_not_allowed_manage_server"
+-            tal:condition="view/description">
+-             You are not allowed to manage the Zope server.
+-         </div>
+-
+-         <div id="content-core">
+-             <a href=""
+-                class="link-parent"
+-                tal:attributes="href string:$portal_url/plone_control_panel"
+-                i18n:translate="label_up_to_plone_setup">
+-                 Up to Site Setup
+-             </a>
+-         </div>
+-    </metal:block>
+-
+-
+-</metal:main>
+-</body>
+-</html>
+diff --git a/plone/app/controlpanel/maintenance.py b/plone/app/controlpanel/maintenance.py
+deleted file mode 100644
+index 4c87b60..0000000
+--- a/plone/app/controlpanel/maintenance.py
++++ /dev/null
+@@ -1,142 +0,0 @@
+-import os
+-from cgi import escape
+-
+-from plone.app.form.validators import null_validator
+-from plone.fieldsets.form import FieldsetsEditForm
+-from zope.component import adapts
+-from zope.formlib import form
+-from zope.interface import Interface
+-from zope.interface import implements
+-from zope.schema import Int
+-
+-from AccessControl import getSecurityManager
+-from AccessControl.Permissions import view_management_screens
+-from Acquisition import aq_inner
+-from Products.CMFCore.utils import getToolByName
+-from Products.CMFDefault.formlib.schema import SchemaAdapterBase
+-from Products.CMFPlone import PloneMessageFactory as _
+-from Products.CMFPlone.interfaces import IPloneSiteRoot
+-from Products.Five.browser.pagetemplatefile import ZopeTwoPageTemplateFile
+-
+-from plone.app.controlpanel.interfaces import IPloneControlPanelForm
+-
+-from plone.protect import CheckAuthenticator
+-
+-
+-class IMaintenanceSchema(Interface):
+-
+-    days = Int(title=_(u"Days of object history to keep after packing"),
+-        description=_(u"You should pack your database regularly. This number "
+-                       "indicates how many days of undo history you want to "
+-                       "keep. It is unrelated to versioning, so even if you "
+-                       "pack the database, the history of the content changes "
+-                       "will be kept. Recommended value is 7 days."),
+-        default=7,
+-        required=True)
+-
+-
+-class MaintenanceControlPanelAdapter(SchemaAdapterBase):
+-
+-    adapts(IPloneSiteRoot)
+-    implements(IMaintenanceSchema)
+-
+-    def __init__(self, context):
+-        pprop = getToolByName(context, 'portal_properties')
+-        self.context = pprop.site_properties
+-
+-    def get_days(self):
+-        return self.context.number_of_days_to_keep
+-
+-    def set_days(self, value):
+-        if isinstance(value, basestring):
+-            value = int(value)
+-        self.context.number_of_days_to_keep = value
+-
+-    days = property(get_days, set_days)
+-
+-
+-class MaintenanceControlPanel(FieldsetsEditForm):
+-    """A simple form to pack the databases."""
+-
+-    implements(IPloneControlPanelForm)
+-
+-    template = ZopeTwoPageTemplateFile('maintenance.pt')
+-    form_fields = form.FormFields(IMaintenanceSchema)
+-    label = _(u'Maintenance')
+-    description = _(u"Zope server and site maintenance options.")
+-    form_name = _(u'Zope Database Packing')
+-
+-    @form.action(_(u'Pack database now'), name=u'pack')
+-    def handle_edit_action(self, action, data):
+-        CheckAuthenticator(self.request)
+-        if not self.available():
+-            self.status = _(u'text_not_allowed_manage_server',
+-                            default=u'You are not allowed to manage the Zope server.')
+-            return
+-        form.applyChanges(self.context, self.form_fields, data, self.adapters)
+-        value = data.get('days', None)
+-        # skip the actual pack method in tests
+-        if value is not None and isinstance(value, int) and value >= 0:
+-            context = aq_inner(self.context)
+-            cpanel = context.unrestrictedTraverse('/Control_Panel')
+-            cpanel.manage_pack(days=value, REQUEST=None)
+-        self.status = _(u'Packed the database.')
+-
+-    @form.action(_(u'Shut down'), validator=null_validator, name=u'shutdown')
+-    def handle_shutdown_action(self, action, data):
+-        CheckAuthenticator(self.request)
+-        if not self.available():
+-            self.status = _(u'text_not_allowed_manage_server',
+-                            default=u'You are not allowed to manage the Zope server.')
+-            return
+-        context = aq_inner(self.context)
+-        cpanel = context.unrestrictedTraverse('/Control_Panel')
+-        result = cpanel.manage_shutdown()
+-        return result
+-
+-    @form.action(_(u'Restart'), validator=null_validator)
+-    def handle_restart_action(self, action, data):
+-        CheckAuthenticator(self.request)
+-        if not self.available():
+-            self.status = _(u'text_not_allowed_manage_server',
+-                            default=u'You are not allowed to manage the Zope server.')
+-            return
+-        context = aq_inner(self.context)
+-        cpanel = context.unrestrictedTraverse('/Control_Panel')
+-        url = self.request.get('URL')
+-        cpanel.manage_restart(url)
+-        return """<html>
+-        <head><meta HTTP-EQUIV=REFRESH CONTENT="30; URL=%s">
+-        </head>
+-        <body>Zope is restarting. This page will refresh in 30 seconds...</body></html>
+-        """ % escape(url, 1)
+-
+-    def available(self):
+-        root = aq_inner(self.context).getPhysicalRoot()
+-        sm = getSecurityManager()
+-        return sm.checkPermission(view_management_screens, root)
+-
+-    def isRestartable(self):
+-        if os.environ.has_key('ZMANAGED'):
+-            return True
+-        return False
+-
+-    def isDevelopmentMode(self):
+-        qi = getToolByName(self.context, 'portal_quickinstaller')
+-        return qi.isDevelopmentMode()
+-
+-    def coreVersions(self):
+-        mt = getToolByName(self.context, 'portal_migration')
+-        versions = mt.coreVersions()
+-        versions['Instance'] = versions['Plone Instance']
+-        return versions
+-
+-    def processTime(self):
+-        context = aq_inner(self.context)
+-        cpanel = context.unrestrictedTraverse('/Control_Panel')
+-        return cpanel.process_time()
+-
+-    def dbSize(self):
+-        context = aq_inner(self.context)
+-        cpanel = context.unrestrictedTraverse('/Control_Panel')
+-        return cpanel.db_size()
+diff --git a/plone/app/controlpanel/markup.py b/plone/app/controlpanel/markup.py
+index a076c46..64a6eab 100644
+--- a/plone/app/controlpanel/markup.py
++++ b/plone/app/controlpanel/markup.py
+@@ -1,7 +1,6 @@
+ from plone.fieldsets.fieldsets import FormFieldsets
+ 
+ from zope.interface import Interface
+-from zope.component import adapts
+ from zope.interface import implements
+ from zope.schema import Choice
+ from zope.schema import Tuple
+@@ -11,20 +10,16 @@
+ from zope.schema.vocabulary import SimpleTerm
+ 
+ from Products.CMFCore.utils import getToolByName
+-from Products.CMFDefault.formlib.schema import SchemaAdapterBase
+ from Products.CMFPlone import PloneMessageFactory as _
+-from Products.CMFPlone.interfaces import IPloneSiteRoot
+ 
+ from plone.app.controlpanel.form import ControlPanelForm
+ from plone.app.controlpanel.widgets import AllowedTypesWidget
+ from plone.app.controlpanel.widgets import MultiCheckBoxVocabularyWidget
+ 
+ from persistent import Persistent
+-from zope.annotation.interfaces import IAnnotations
+ 
+ try:
+     from wicked.plone.registration import basic_type_regs as wicked_basic_type_regs
+-    from wicked.txtfilter import BrackettedWickedFilter
+ except ImportError:
+     HAS_WICKED = False
+ else:
+@@ -114,115 +109,6 @@ class IMarkupSchema(ITextMarkupSchema, IWikiMarkupSchema):
+ else:
+     IMarkupSchema = ITextMarkupSchema
+ 
+-class MarkupControlPanelAdapter(SchemaAdapterBase):
+-
+-    adapts(IPloneSiteRoot)
+-    implements(IMarkupSchema)
+-
+-    def __init__(self, context):
+-        super(MarkupControlPanelAdapter, self).__init__(context)
+-        self.context = context
+-        self.toggle_mediawiki = False
+-
+-    # Text markup settings
+-
+-    def get_default_type(self):
+-        portal_properties = getToolByName(self.context, 'portal_properties', None)
+-        if portal_properties is not None:
+-            site_properties = getattr(portal_properties, 'site_properties', None)
+-            if site_properties is not None:
+-                return site_properties.getProperty('default_contenttype')
+-        return 'text/plain'
+-
+-    def set_default_type(self, value):
+-        portal_properties = getToolByName(self.context, 'portal_properties', None)
+-        if portal_properties is not None:
+-            site_properties = getattr(portal_properties, 'site_properties', None)
+-            if site_properties is not None:
+-                site_properties.manage_changeProperties(default_contenttype=value)
+-
+-    default_type = property(get_default_type, set_default_type)
+-
+-    def _get_allowable_types(self):
+-        portal_transforms = getToolByName(self.context, 'portal_transforms')
+-        return portal_transforms.listAvailableTextInputs()
+-
+-    def _get_forbidden_types(self, forbidden_contenttypes=None):
+-        if forbidden_contenttypes is None:
+-            forbidden_contenttypes = []
+-        portal_properties = getToolByName(self.context, 'portal_properties', None)
+-        if portal_properties is not None:
+-            site_properties = getattr(portal_properties, 'site_properties', None)
+-            if site_properties is not None:
+-                if site_properties.hasProperty('forbidden_contenttypes'):
+-                    return list(site_properties.getProperty('forbidden_contenttypes'))
+-        return []
+-
+-    def get_allowed_types(self):
+-        allowable_types = self._get_allowable_types()
+-        forbidden_types = self._get_forbidden_types()
+-        allowed_types = [type for type in allowable_types if type not in forbidden_types]
+-        return allowed_types
+-
+-    def set_allowed_types(self, value):
+-        # The menu pretends to be a whitelist, but we are storing a blacklist
+-        # so that new types are available by default. So, we inverse the list.
+-        allowable_types = self._get_allowable_types()
+-        forbidden_types = [t for t in allowable_types if t not in value]
+-
+-        portal_properties = getToolByName(self.context, 'portal_properties', None)
+-        if portal_properties is not None:
+-            site_properties = getattr(portal_properties, 'site_properties', None)
+-            if site_properties is not None:
+-                site_properties.manage_changeProperties(forbidden_contenttypes=tuple(forbidden_types))
+-
+-    allowed_types = property(get_allowed_types, set_allowed_types)
+-
+-    # Wiki settings
+-
+-    if HAS_WICKED:
+-        def get_enable_mediawiki(self):
+-            return self.wicked_settings.enable_mediawiki
+-
+-        def set_enable_mediawiki(self, value):
+-            settings = self.wicked_settings
+-            if settings.enable_mediawiki != value:
+-                self.toggle_mediawiki = True
+-                settings.enable_mediawiki = value
+-
+-        enable_mediawiki = property(get_enable_mediawiki, set_enable_mediawiki)
+-
+-        def get_wiki_enabled_types(self):
+-            return self.wicked_settings.types_enabled
+-
+-        def set_wiki_enabled_types(self, value):
+-            settings = self.wicked_settings
+-            if not self.toggle_mediawiki and value == settings.types_enabled:
+-                return
+-
+-            self.unregister_wicked_types() # @@ use sets to avoid thrashing
+-            for name in value:
+-                reg = wicked_type_regs[name](self.context)
+-                if self.enable_mediawiki:
+-                    reg.txtfilter = BrackettedWickedFilter
+-                reg.handle()
+-
+-            self.toggle_mediawiki = False
+-            settings.types_enabled = value
+-
+-        wiki_enabled_types = property(get_wiki_enabled_types,
+-                                      set_wiki_enabled_types)
+-
+-        @property
+-        def wicked_settings(self):
+-            ann = IAnnotations(self.context)
+-            return ann.setdefault(WICKED_SETTING_KEY, WickedSettings())
+-
+-        def unregister_wicked_types(self):
+-            """Unregisters all previous registration objects
+-            """
+-            for name in wicked_type_regs.keys():
+-                wicked_type_regs[name](self.context).handle(unregister=True)
+ 
+ textset = FormFieldsets(ITextMarkupSchema)
+ textset.id = 'textmarkup'
+diff --git a/plone/app/controlpanel/search.py b/plone/app/controlpanel/search.py
+index 649e7d0..650823f 100644
+--- a/plone/app/controlpanel/search.py
++++ b/plone/app/controlpanel/search.py
+@@ -1,19 +1,12 @@
+ from plone.fieldsets.fieldsets import FormFieldsets
+ from zope.interface import Interface
+-from zope.interface import implements
+-from zope.component import adapts
+ from zope.schema import Bool
+ from zope.schema import Choice
+ from zope.schema import Tuple
+ from zope.schema.vocabulary import SimpleTerm
+ from zope.schema.vocabulary import SimpleVocabulary
+ 
+-from Products.CMFCore.utils import getToolByName
+-from Products.CMFDefault.formlib.schema import SchemaAdapterBase
+ from Products.CMFPlone import PloneMessageFactory as _
+-from Products.CMFPlone.interfaces import IPloneSiteRoot
+-
+-from plone.app.vocabularies.types import BAD_TYPES
+ 
+ from form import ControlPanelForm
+ from widgets import MultiCheckBoxThreeColumnWidget as MCBThreeColumnWidget
+@@ -55,49 +48,6 @@ class ISearchSchema(IBaseSearchSchema):
+     ''' Base search form options '''
+ 
+ 
+-class SearchControlPanelAdapter(SchemaAdapterBase):
+-
+-    adapts(IPloneSiteRoot)
+-    implements(ISearchSchema)
+-
+-    def __init__(self, context):
+-        super(SearchControlPanelAdapter, self).__init__(context)
+-        pprop = getToolByName(context, 'portal_properties')
+-        self.context = pprop.site_properties
+-        self.jstool = getToolByName(context, 'portal_javascripts')
+-        self.ttool = getToolByName(context, 'portal_types')
+-
+-    def get_enable_livesearch(self):
+-        return self.context.enable_livesearch
+-
+-    def set_enable_livesearch(self, value):
+-        if value:
+-            self.context.manage_changeProperties(enable_livesearch=True)
+-            self.jstool.getResource('livesearch.js').setEnabled(True)
+-        else:
+-            self.context.manage_changeProperties(enable_livesearch=False)
+-            self.jstool.getResource('livesearch.js').setEnabled(False)
+-        self.jstool.cookResources()
+-
+-    enable_livesearch = property(get_enable_livesearch, set_enable_livesearch)
+-
+-    def get_types_not_searched(self):
+-        # Note: we do not show BAD_TYPES.
+-        return [t for t in self.ttool.listContentTypes()
+-                        if t not in self.context.types_not_searched and
+-                           t not in BAD_TYPES]
+-
+-    def set_types_not_searched(self, value):
+-        # Note: we add BAD_TYPES to the value list.
+-        value = [t for t in self.ttool.listContentTypes() if t not in value
+-                   or t in BAD_TYPES]
+-        self.context._updateProperty('types_not_searched', value)
+-
+-    # This also defines the user friendly types
+-    types_not_searched = property(get_types_not_searched,
+-                                  set_types_not_searched)
+-
+-
+ searchset = FormFieldsets(IBaseSearchSchema)
+ searchset.id = 'search'
+ searchset.label = _("Search settings")
+diff --git a/plone/app/controlpanel/tests/maintenance.txt b/plone/app/controlpanel/tests/maintenance.txt
+deleted file mode 100644
+index d4492be..0000000
+--- a/plone/app/controlpanel/tests/maintenance.txt
++++ /dev/null
+@@ -1,51 +0,0 @@
+-Maintenance control panel
+-=========================
+-
+-First some initial setup code:
+-
+-    >>> self.loginAsManager()
+-
+-Viewing the maintenance control panel
+--------------------------------------
+-
+-    >>> self.browser.open('http://nohost/plone/@@maintenance-controlpanel')
+-    >>> self.browser.url.endswith('maintenance-controlpanel')
+-    True
+-
+-While we have manage permisssions inside the site, we don't have them at the
+-Zope root:
+-
+-    >>> 'You are not allowed to manage the Zope server' in self.browser.contents
+-    True
+-
+-Let's create a manager at the Zope root:
+-
+-    >>> self.app.acl_users.userFolderAddUser('app', 'secret', ['Manager'], [])
+-
+-And log in as that user instead:
+-
+-    >>> self.browser.open('http://nohost/plone/')
+-    >>> self.browser.getLink('Log out').click()
+-    >>> self.loginAsManager(user='app')
+-
+-See if we can manage the server now:
+-
+-    >>> self.browser.open('http://nohost/plone/@@maintenance-controlpanel')
+-    >>> self.browser.url.endswith('maintenance-controlpanel')
+-    True
+-
+-    >>> 'Zope Database' in self.browser.contents
+-    True
+-
+-While we cannot test the actual packaging during tests, we can skip the actual
+-manage_pack method by providing a negative value for days:
+-
+-    >>> self.browser.getControl(name='form.days').value = '-1'
+-    >>> self.browser.getControl(name="form.actions.pack").click()
+-    >>> self.browser.url.endswith('maintenance-controlpanel')
+-    True
+-
+-We should get a status message:
+-
+-    >>> 'Packed the database.' in self.browser.contents
+-    True
+diff --git a/plone/app/controlpanel/tests/markup.txt b/plone/app/controlpanel/tests/markup.txt
+deleted file mode 100644
+index eb2d42f..0000000
+--- a/plone/app/controlpanel/tests/markup.txt
++++ /dev/null
+@@ -1,63 +0,0 @@
+-Markup control panel
+-====================
+-
+-Viewing the markup control panel
+---------------------------------
+-
+-    >>> self.loginAsManager()
+-    >>> self.login('root')  # need to login with test fixture too to get right token
+-    >>> from plone.protect.authenticator import createToken
+-
+-It is only necessary in the test here to add the token.
+-
+-    >>> self.browser.open('http://nohost/plone/@@markup-controlpanel?_authenticator=' + createToken())
+-    >>> self.browser.url
+-    'http://nohost/plone/@@markup-controlpanel...'
+-
+-We have two controls, one for the default type and a multi selection for
+-alternative formats:
+-
+-    >>> self.browser.getControl(name='form.default_type').value
+-    ['text/html']
+-    >>> self.browser.getControl(name='form.allowed_types').value
+-    ['text/html', 'text/x-web-textile']
+-
+-Click the save button without making any changes:
+-
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> self.browser.url.endswith('markup-controlpanel')
+-    True
+-
+-We should get a status message:
+-
+-    >>> 'Changes saved.' in self.browser.contents
+-    True
+-
+-Now click the cancel button:
+-
+-    >>> self.browser.getControl(name="form.actions.cancel").click()
+-    >>> self.browser.url.endswith('plone_control_panel')
+-    True
+-
+-There should be still no changes:
+-
+-    >>> 'Changes canceled.' in self.browser.contents
+-    True
+-
+-Modifying values
+-----------------
+-
+-    >>> self.browser.open('http://nohost/plone/@@markup-controlpanel')
+-    >>> self.browser.getControl(name='form.default_type').value = ['text/x-web-textile',]
+-    >>> self.browser.getControl(name='form.allowed_types').value = ['text/html', 'text/x-web-textile']
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> 'Changes saved' in self.browser.contents
+-    True
+-
+-Verify, that the settings have actually been changed:
+-
+-    >>> self.portal.portal_properties.site_properties.default_contenttype
+-    'text/x-web-textile'
+-    >>> forbidden_types = self.portal.portal_properties.site_properties.forbidden_contenttypes
+-    >>> set(self.portal.portal_transforms.listAvailableTextInputs()) - set(forbidden_types)
+-    set(['text/html', 'text/x-web-textile'])
+diff --git a/plone/app/controlpanel/tests/search.txt b/plone/app/controlpanel/tests/search.txt
+deleted file mode 100644
+index 719cfd5..0000000
+--- a/plone/app/controlpanel/tests/search.txt
++++ /dev/null
+@@ -1,86 +0,0 @@
+-Search control panel
+-====================
+-
+-First some initial setup code:
+-
+-    >>> from Products.CMFCore.utils import getToolByName
+-    >>> jstool = getToolByName(self.portal, 'portal_javascripts')
+-    >>> self.loginAsManager()
+-
+-Viewing the search control panel
+---------------------------------
+-
+-    >>> self.browser.open('http://nohost/plone/@@search-controlpanel')
+-    >>> self.browser.url.endswith('search-controlpanel')
+-    True
+-
+-Click the save button without making any changes:
+-
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> self.browser.url.endswith('search-controlpanel')
+-    True
+-
+-We should get a status message:
+-
+-    >>> 'Changes saved.' in self.browser.contents
+-    True
+-
+-Now click the cancel button:
+-
+-    >>> self.browser.getControl(name="form.actions.cancel").click()
+-    >>> self.browser.url.endswith('plone_control_panel')
+-    True
+-
+-There should be still no changes:
+-
+-    >>> 'Changes canceled.' in self.browser.contents
+-    True
+-
+-Make some changes
+------------------
+-
+-    >>> self.browser.open('http://nohost/plone/@@search-controlpanel')
+-    >>> self.browser.url.endswith('search-controlpanel')
+-    True
+-
+-    >>> self.browser.getControl(name='form.enable_livesearch').value = False
+-    >>> self.browser.getControl(name='form.types_not_searched').value = \
+-    ...     ['Event', 'Document']
+-
+-
+-Click the save button:
+-
+-    >>> self.browser.getControl(name="form.actions.save").click()
+-    >>> self.browser.url.endswith('search-controlpanel')
+-    True
+-
+-We should be informed that something has changed:
+-
+-    >>> 'Changes saved.' in self.browser.contents
+-    True
+-
+-Make sure the changes have been applied correctly to the tool:
+-
+-    >>> self.site_props.enable_livesearch
+-    False
+-
+-    >>> jstool.getResource('livesearch.js').getEnabled()
+-    False
+-
+-    >>> 'Event' not in self.site_props.types_not_searched
+-    True
+-
+-    >>> 'Document' not in self.site_props.types_not_searched
+-    True
+-
+-    >>> 'File' in self.site_props.types_not_searched
+-    True
+-
+-So called 'bad types' are not listed in the search panel, but they
+-should still be listed in the site_properties as not searchable:
+-
+-    >>> from plone.app.vocabularies.types import BAD_TYPES
+-    >>> [bad for bad in BAD_TYPES if bad not in self.site_props.types_not_searched]
+-    []
+-
+-
+diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
+index 7682db1..5765214 100644
+--- a/plone/app/controlpanel/tests/test_doctests.py
++++ b/plone/app/controlpanel/tests/test_doctests.py
+@@ -5,8 +5,6 @@
+ from Testing.ZopeTestCase import FunctionalDocFileSuite
+ 
+ from plone.app.controlpanel.tests.cptc import ControlPanelTestCase
+-from plone.app.controlpanel.tests.cptc import UserGroupsControlPanelTestCase
+-from plone.app.controlpanel.tests.cptc import EmailLoginSecurityControlPanelTestCase
+ 
+ setupPloneSite()
+ 
+@@ -15,23 +13,21 @@
+ 
+ def test_suite():
+     tests = [
+-#            'editing.txt',
+-             'filter.txt',
+-#             'mail.txt',
+-#             'maintenance.txt',
+-#             'security_enable_user_folder.txt',
+-#             'search.txt',
+-#             'site.txt',
+-#             'skins.txt',
+-#             'markup.txt',
+-#             'navigation.txt',
+-             'types.txt',
+-             'syndication.txt'
+-             ]
++        # 'editing.txt',
++        'filter.txt',
++        # 'mail.txt',
++        # 'security_enable_user_folder.txt',
++        # 'site.txt',
++        # 'skins.txt',
++        # 'navigation.txt',
++        'types.txt',
++        'syndication.txt'
++    ]
+     suite = TestSuite()
+ 
+     for test in tests:
+-        suite.addTest(FunctionalDocFileSuite(test,
++        suite.addTest(FunctionalDocFileSuite(
++            test,
+             optionflags=OPTIONFLAGS,
+             package="plone.app.controlpanel.tests",
+             test_class=ControlPanelTestCase))
 
 
