@@ -1,194 +1,70 @@
-Repository: mockup
+Repository: plone.app.content
 Branch: refs/heads/master
-Date: 2015-01-21T18:10:47+01:00
-Author: Mathieu Le Marec - Pasquet (kiorky) <kiorky@cryptelium.net>
-Commit: https://github.com/plone/mockup/commit/f52fdb1905549cfd5b0245bc54760a2ad84a4237
+Date: 2015-01-22T11:51:15+01:00
+Author: Timo Stollenwerk () <contact@timostollenwerk.net>
+Commit: https://github.com/plone/plone.app.content/commit/9e85bfcb314aaf0357e9282c1d72524a00f2c097
 
-jsi18n -&gt; plonejsi18n
-
-This refs #4b397c3
+Use the functional test layer for functional tests. Using the integration test layer for functional tests leads to test isolation problems. This fixes the test isolation problems between plone.app.content and plone.app.contentlisting.
 
 Files changed:
-M mockup/js/i18n-wrapper.js
-M mockup/js/i18n.js
-M mockup/tests/i18n-test.js
+M plone/app/content/tests/test_actions.py
+M plone/app/content/tests/test_selectdefaultpage.py
 
-diff --git a/mockup/js/i18n-wrapper.js b/mockup/js/i18n-wrapper.js
-index 72c174b..f9cb00b 100644
---- a/mockup/js/i18n-wrapper.js
-+++ b/mockup/js/i18n-wrapper.js
-@@ -2,9 +2,9 @@
-  *
-  * This is a singleton.
-  * Configuration is done on the body tag data-i18ncatalogurl attribute
-- *     <body data-i18ncatalogurl="/jsi18n">
-+ *     <body data-i18ncatalogurl="/plonejsi18n">
-  *
-- *  Or, it'll default to "/jsi18n"
-+ *  Or, it'll default to "/plonejsi18n"
-  */
+diff --git a/plone/app/content/tests/test_actions.py b/plone/app/content/tests/test_actions.py
+index 1401d39..135bc86 100644
+--- a/plone/app/content/tests/test_actions.py
++++ b/plone/app/content/tests/test_actions.py
+@@ -1,6 +1,6 @@
+ # -*- coding: utf-8 -*-
+-from plone.app.content.testing import PLONE_APP_CONTENT_AT_INTEGRATION_TESTING
+-from plone.app.content.testing import PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
++from plone.app.content.testing import PLONE_APP_CONTENT_AT_FUNCTIONAL_TESTING
++from plone.app.content.testing import PLONE_APP_CONTENT_DX_FUNCTIONAL_TESTING
+ from plone.app.testing import TEST_USER_ID
+ from plone.app.testing import TEST_USER_NAME
+ from plone.app.testing import login
+@@ -19,7 +19,7 @@
  
- define([
-diff --git a/mockup/js/i18n.js b/mockup/js/i18n.js
-index 6161195..cd9cc36 100644
---- a/mockup/js/i18n.js
-+++ b/mockup/js/i18n.js
-@@ -2,9 +2,9 @@
-  *
-  * This is a singleton.
-  * Configuration is done on the body tag data-i18ncatalogurl attribute
-- *     <body data-i18ncatalogurl="/jsi18n">
-+ *     <body data-i18ncatalogurl="/plonejsi18n">
-  *
-- *  Or, it'll default to "/jsi18n"
-+ *  Or, it'll default to "/plonejsi18n"
-  */
+ class ActionsDXTestCase(unittest.TestCase):
  
- /* global portal_url:true */
-@@ -20,7 +20,7 @@ define([
+-    layer = PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
++    layer = PLONE_APP_CONTENT_DX_FUNCTIONAL_TESTING
  
-     self.baseUrl = $('body').attr('data-i18ncatalogurl');
-     if (!self.baseUrl) {
--      self.baseUrl = '/jsi18n';
-+      self.baseUrl = '/plonejsi18n';
-     }
-     self.currentLanguage = $('html').attr('lang') || 'en';
-     self.storage = null;
-diff --git a/mockup/tests/i18n-test.js b/mockup/tests/i18n-test.js
-index 31f1677..d2b9259 100644
---- a/mockup/tests/i18n-test.js
-+++ b/mockup/tests/i18n-test.js
-@@ -20,7 +20,7 @@ define([
-       it('baseUrl', function() {
-         i18n.configure({ baseUrl: '/something' });
-         expect(i18n.baseUrl).to.be('/something');
--        i18n.configure({ baseUrl: '/jsi18n' });
-+        i18n.configure({ baseUrl: '/plonejsi18n' });
-       });
-     });
+     def setUp(self):
+         self.portal = self.layer['portal']
+@@ -256,4 +256,4 @@ def test_object_copy_and_paste_multiple_times(self):
  
-@@ -29,7 +29,7 @@ define([
-       it('correct params', function() {
-         i18n.configure({ baseUrl: '/foobar' });
-         expect(i18n.getUrl('foobar', 'es')).to.be('/foobar?domain=foobar&language=es');
--        i18n.configure({ baseUrl: '/jsi18n' });
-+        i18n.configure({ baseUrl: '/plonejsi18n' });
-       });
-     });
+ class ActionsATTestCase(ActionsDXTestCase):
  
-@@ -64,14 +64,14 @@ define([
-         server.autoRespond = true;
-         var clock = sinon.useFakeTimers();
+-    layer = PLONE_APP_CONTENT_AT_INTEGRATION_TESTING
++    layer = PLONE_APP_CONTENT_AT_FUNCTIONAL_TESTING
+diff --git a/plone/app/content/tests/test_selectdefaultpage.py b/plone/app/content/tests/test_selectdefaultpage.py
+index ac465f2..4286d15 100644
+--- a/plone/app/content/tests/test_selectdefaultpage.py
++++ b/plone/app/content/tests/test_selectdefaultpage.py
+@@ -1,6 +1,6 @@
+ # -*- coding: utf-8 -*-
+-from plone.app.content.testing import PLONE_APP_CONTENT_AT_INTEGRATION_TESTING
+-from plone.app.content.testing import PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
++from plone.app.content.testing import PLONE_APP_CONTENT_AT_FUNCTIONAL_TESTING
++from plone.app.content.testing import PLONE_APP_CONTENT_DX_FUNCTIONAL_TESTING
+ from plone.app.testing import TEST_USER_ID
+ from plone.app.testing import setRoles
+ from plone.testing.z2 import Browser
+@@ -18,7 +18,7 @@
  
--        server.respondWith('GET', /jsi18n/, function (xhr) {
-+        server.respondWith('GET', /plonejsi18n/, function (xhr) {
-           xhr.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({
-             foo: 'bar',
-           }));
-         });
-         i18n.configure({
-           currentLanguage: 'en',
--          baseUrl: '/jsi18n'
-+          baseUrl: '/plonejsi18n'
-         });
-         i18n.loadCatalog('foobar');
-         clock.tick(500);
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2015-01-21T11:43:30-06:00
-Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/6b05b51a1df221f32980aaceca3f0294969cfee1
-
-Merge pull request #458 from plone/jsi18n
-
-jsi18n -&gt; plonejsi18n
-
-Files changed:
-M mockup/js/i18n-wrapper.js
-M mockup/js/i18n.js
-M mockup/tests/i18n-test.js
-
-diff --git a/mockup/js/i18n-wrapper.js b/mockup/js/i18n-wrapper.js
-index 72c174b..f9cb00b 100644
---- a/mockup/js/i18n-wrapper.js
-+++ b/mockup/js/i18n-wrapper.js
-@@ -2,9 +2,9 @@
-  *
-  * This is a singleton.
-  * Configuration is done on the body tag data-i18ncatalogurl attribute
-- *     <body data-i18ncatalogurl="/jsi18n">
-+ *     <body data-i18ncatalogurl="/plonejsi18n">
-  *
-- *  Or, it'll default to "/jsi18n"
-+ *  Or, it'll default to "/plonejsi18n"
-  */
+ class SelectDefaultPageDXTestCase(unittest.TestCase):
  
- define([
-diff --git a/mockup/js/i18n.js b/mockup/js/i18n.js
-index 6161195..cd9cc36 100644
---- a/mockup/js/i18n.js
-+++ b/mockup/js/i18n.js
-@@ -2,9 +2,9 @@
-  *
-  * This is a singleton.
-  * Configuration is done on the body tag data-i18ncatalogurl attribute
-- *     <body data-i18ncatalogurl="/jsi18n">
-+ *     <body data-i18ncatalogurl="/plonejsi18n">
-  *
-- *  Or, it'll default to "/jsi18n"
-+ *  Or, it'll default to "/plonejsi18n"
-  */
+-    layer = PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
++    layer = PLONE_APP_CONTENT_DX_FUNCTIONAL_TESTING
  
- /* global portal_url:true */
-@@ -20,7 +20,7 @@ define([
+     def setUp(self):
+         self.portal = self.layer['portal']
+@@ -111,4 +111,4 @@ def test_default_page_action_save(self):
  
-     self.baseUrl = $('body').attr('data-i18ncatalogurl');
-     if (!self.baseUrl) {
--      self.baseUrl = '/jsi18n';
-+      self.baseUrl = '/plonejsi18n';
-     }
-     self.currentLanguage = $('html').attr('lang') || 'en';
-     self.storage = null;
-diff --git a/mockup/tests/i18n-test.js b/mockup/tests/i18n-test.js
-index 31f1677..d2b9259 100644
---- a/mockup/tests/i18n-test.js
-+++ b/mockup/tests/i18n-test.js
-@@ -20,7 +20,7 @@ define([
-       it('baseUrl', function() {
-         i18n.configure({ baseUrl: '/something' });
-         expect(i18n.baseUrl).to.be('/something');
--        i18n.configure({ baseUrl: '/jsi18n' });
-+        i18n.configure({ baseUrl: '/plonejsi18n' });
-       });
-     });
+ class SelectDefaultPageATTestCase(SelectDefaultPageDXTestCase):
  
-@@ -29,7 +29,7 @@ define([
-       it('correct params', function() {
-         i18n.configure({ baseUrl: '/foobar' });
-         expect(i18n.getUrl('foobar', 'es')).to.be('/foobar?domain=foobar&language=es');
--        i18n.configure({ baseUrl: '/jsi18n' });
-+        i18n.configure({ baseUrl: '/plonejsi18n' });
-       });
-     });
- 
-@@ -64,14 +64,14 @@ define([
-         server.autoRespond = true;
-         var clock = sinon.useFakeTimers();
- 
--        server.respondWith('GET', /jsi18n/, function (xhr) {
-+        server.respondWith('GET', /plonejsi18n/, function (xhr) {
-           xhr.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({
-             foo: 'bar',
-           }));
-         });
-         i18n.configure({
-           currentLanguage: 'en',
--          baseUrl: '/jsi18n'
-+          baseUrl: '/plonejsi18n'
-         });
-         i18n.loadCatalog('foobar');
-         clock.tick(500);
+-    layer = PLONE_APP_CONTENT_AT_INTEGRATION_TESTING
++    layer = PLONE_APP_CONTENT_AT_FUNCTIONAL_TESTING
 
 
