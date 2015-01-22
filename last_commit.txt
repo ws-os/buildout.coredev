@@ -1,82 +1,666 @@
-Repository: plone.app.content
+Repository: Products.ATContentTypes
 Branch: refs/heads/master
-Date: 2015-01-22T19:06:03+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.content/commit/4986347956ac0886e48c9755757ca9f2188a8855
+Date: 2015-01-22T19:26:40+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/Products.ATContentTypes/commit/88b3aecae92d8e7b8b60bd7562abe6aaa85d4743
 
-Use INameChooser for new id when renaming objects
+Revert "Add profile 'base' to allow addons to depend on ATContentTypes in Plone 5"
 
 Files changed:
-M CHANGES.rst
-M plone/app/content/browser/actions.py
-M plone/app/content/tests/test_actions.py
+A Products/ATContentTypes/profiles/default/componentregistry.xml
+A Products/ATContentTypes/profiles/default/rolemap.xml
+A Products/ATContentTypes/profiles/default/skins.xml
+A Products/ATContentTypes/profiles/default/toolset.xml
+M CHANGES.txt
+M Products/ATContentTypes/configure.zcml
+M Products/ATContentTypes/profiles/default/metadata.xml
+M Products/ATContentTypes/profiles/default/types.xml
+D Products/ATContentTypes/profiles/base/componentregistry.xml
+D Products/ATContentTypes/profiles/base/metadata.xml
+D Products/ATContentTypes/profiles/base/rolemap.xml
+D Products/ATContentTypes/profiles/base/skins.xml
+D Products/ATContentTypes/profiles/base/toolset.xml
+D Products/ATContentTypes/tests/test_base_profile.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 941d44c..c21c4f2 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,9 +4,14 @@ Changelog
- 3.0.2 (unreleased)
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 206fa13..39ff9c7 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,9 +4,7 @@ Changelog
+ 2.2.3 (unreleased)
  ------------------
  
-+- Use INameChooser for new id when renaming objects.
-+  Fix https://github.com/plone/plone.app.dexterity/issues/73
-+  [pbauer]
-+
- - Allow folderish types as default_page as long as users cannot add content
-   to them.
-   [pbauer]
-+
- - fix removing tags with non-ascii characters in folder_contents
-   [petschki]
+-- Add profile 'base' to allow addons to depend on ATContentTypes in Plone 5
+-  without uninstalling the dexterity default-types.
+-  [pbauer]
++- Nothing changed yet.
  
-diff --git a/plone/app/content/browser/actions.py b/plone/app/content/browser/actions.py
-index 7fc996f..e2ae3c2 100644
---- a/plone/app/content/browser/actions.py
-+++ b/plone/app/content/browser/actions.py
-@@ -17,6 +17,7 @@
- from zope import schema
- from zope.component import getMultiAdapter
- from zope.component import queryMultiAdapter
-+from zope.container.interfaces import INameChooser
- from zope.event import notify
- from zope.interface import Interface
- from zope.lifecycleevent import ObjectModifiedEvent
-@@ -117,6 +118,7 @@ def handle_rename(self, action):
  
-         oldid = self.context.getId()
-         newid = data['new_id']
-+        newid = INameChooser(parent).chooseName(newid, self.context)
+ 2.2.2 (2014-10-23)
+diff --git a/Products/ATContentTypes/configure.zcml b/Products/ATContentTypes/configure.zcml
+index 1a5792a..db7a6dd 100644
+--- a/Products/ATContentTypes/configure.zcml
++++ b/Products/ATContentTypes/configure.zcml
+@@ -60,14 +60,6 @@
+       provides="Products.GenericSetup.interfaces.EXTENSION"
+       />
  
-         # Requires cmf.ModifyPortalContent permission
-         self.context.title = data['new_title']
-diff --git a/plone/app/content/tests/test_actions.py b/plone/app/content/tests/test_actions.py
-index 135bc86..e16d0c6 100644
---- a/plone/app/content/tests/test_actions.py
-+++ b/plone/app/content/tests/test_actions.py
-@@ -118,6 +118,23 @@ def test_rename_form(self):
-         self.portal.manage_delObjects(ids='f2')
-         transaction.commit()
+-  <genericsetup:registerProfile
+-      name="base"
+-      title="Archetypes-tools without content-types"
+-      directory="profiles/base"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      provides="Products.GenericSetup.interfaces.EXTENSION"
+-      />
+-
+   <genericsetup:importStep
+       name="atct_content"
+       title="ATContentTypes default content"
+diff --git a/Products/ATContentTypes/profiles/base/componentregistry.xml b/Products/ATContentTypes/profiles/base/componentregistry.xml
+deleted file mode 100644
+index 7a4d865..0000000
+--- a/Products/ATContentTypes/profiles/base/componentregistry.xml
++++ /dev/null
+@@ -1,8 +0,0 @@
+-<?xml version="1.0"?>
+-<componentregistry>
+- <utilities>
+-  <utility
+-     interface="Products.ATContentTypes.interface.IATCTTool"
+-     object="portal_atct"/>
+- </utilities>
+-</componentregistry>
+diff --git a/Products/ATContentTypes/profiles/base/metadata.xml b/Products/ATContentTypes/profiles/base/metadata.xml
+deleted file mode 100644
+index 964d111..0000000
+--- a/Products/ATContentTypes/profiles/base/metadata.xml
++++ /dev/null
+@@ -1,8 +0,0 @@
+-<?xml version="1.0"?>
+-<metadata>
+-  <version>1</version>
+-  <dependencies>
+-    <dependency>profile-Products.Archetypes:Archetypes</dependency>
+-    <dependency>profile-Products.CMFFormController:CMFFormController</dependency>
+-  </dependencies>
+-</metadata>
+diff --git a/Products/ATContentTypes/profiles/base/rolemap.xml b/Products/ATContentTypes/profiles/base/rolemap.xml
+deleted file mode 100644
+index ff91619..0000000
+--- a/Products/ATContentTypes/profiles/base/rolemap.xml
++++ /dev/null
+@@ -1,47 +0,0 @@
+-<?xml version="1.0"?>
+-<rolemap>
+-  <permissions>
+-    <permission name="ATContentTypes: Add Document" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Event" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add File" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Folder" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Image" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Link" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add News Item" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-  </permissions>
+-</rolemap>
+diff --git a/Products/ATContentTypes/profiles/base/skins.xml b/Products/ATContentTypes/profiles/base/skins.xml
+deleted file mode 100644
+index 4e2ae22..0000000
+--- a/Products/ATContentTypes/profiles/base/skins.xml
++++ /dev/null
+@@ -1,11 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="portal_skins" meta_type="Plone Skins Tool">
+- <object name="ATContentTypes" meta_type="Filesystem Directory View"
+-    directory="Products.ATContentTypes:skins/ATContentTypes"/>
+- <object name="archetypes" meta_type="Filesystem Directory View"
+-    directory="Products.Archetypes:skins/archetypes"/>
+- <skin-path name="*">
+-  <layer name="ATContentTypes" insert-after="custom"/>
+-  <layer name="archetypes" insert-after="custom"/>
+- </skin-path>
+-</object>
+diff --git a/Products/ATContentTypes/profiles/base/toolset.xml b/Products/ATContentTypes/profiles/base/toolset.xml
+deleted file mode 100644
+index 6f6b568..0000000
+--- a/Products/ATContentTypes/profiles/base/toolset.xml
++++ /dev/null
+@@ -1,9 +0,0 @@
+-<?xml version="1.0"?>
+-<tool-setup>
+- <required tool_id="portal_atct"
+-           class="Products.ATContentTypes.tool.atct.ATCTTool"/>
+- <required tool_id="portal_factory"
+-           class="Products.ATContentTypes.tool.factory.FactoryTool"/>
+- <required tool_id="portal_metadata"
+-           class="Products.ATContentTypes.tool.metadata.MetadataTool"/>
+-</tool-setup>
+diff --git a/Products/ATContentTypes/profiles/default/componentregistry.xml b/Products/ATContentTypes/profiles/default/componentregistry.xml
+new file mode 100644
+index 0000000..7a4d865
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/componentregistry.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0"?>
++<componentregistry>
++ <utilities>
++  <utility
++     interface="Products.ATContentTypes.interface.IATCTTool"
++     object="portal_atct"/>
++ </utilities>
++</componentregistry>
+diff --git a/Products/ATContentTypes/profiles/default/metadata.xml b/Products/ATContentTypes/profiles/default/metadata.xml
+index 4ff0d5f..4410f5f 100644
+--- a/Products/ATContentTypes/profiles/default/metadata.xml
++++ b/Products/ATContentTypes/profiles/default/metadata.xml
+@@ -2,7 +2,8 @@
+ <metadata>
+   <version>1</version>
+   <dependencies>
+-    <dependency>profile-Products.ATContentTypes:base</dependency>
++    <dependency>profile-Products.Archetypes:Archetypes</dependency>
++    <dependency>profile-Products.CMFFormController:CMFFormController</dependency>
+     <dependency>profile-plone.app.collection:default</dependency>
+     <dependency>profile-plone.app.imaging:default</dependency>
+     <dependency>profile-plone.app.widgets:default</dependency>
+diff --git a/Products/ATContentTypes/profiles/default/rolemap.xml b/Products/ATContentTypes/profiles/default/rolemap.xml
+new file mode 100644
+index 0000000..ff91619
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/rolemap.xml
+@@ -0,0 +1,47 @@
++<?xml version="1.0"?>
++<rolemap>
++  <permissions>
++    <permission name="ATContentTypes: Add Document" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Event" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add File" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Folder" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Image" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Link" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add News Item" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++  </permissions>
++</rolemap>
+diff --git a/Products/ATContentTypes/profiles/default/skins.xml b/Products/ATContentTypes/profiles/default/skins.xml
+new file mode 100644
+index 0000000..4e2ae22
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/skins.xml
+@@ -0,0 +1,11 @@
++<?xml version="1.0"?>
++<object name="portal_skins" meta_type="Plone Skins Tool">
++ <object name="ATContentTypes" meta_type="Filesystem Directory View"
++    directory="Products.ATContentTypes:skins/ATContentTypes"/>
++ <object name="archetypes" meta_type="Filesystem Directory View"
++    directory="Products.Archetypes:skins/archetypes"/>
++ <skin-path name="*">
++  <layer name="ATContentTypes" insert-after="custom"/>
++  <layer name="archetypes" insert-after="custom"/>
++ </skin-path>
++</object>
+diff --git a/Products/ATContentTypes/profiles/default/toolset.xml b/Products/ATContentTypes/profiles/default/toolset.xml
+new file mode 100644
+index 0000000..6f6b568
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/toolset.xml
+@@ -0,0 +1,9 @@
++<?xml version="1.0"?>
++<tool-setup>
++ <required tool_id="portal_atct"
++           class="Products.ATContentTypes.tool.atct.ATCTTool"/>
++ <required tool_id="portal_factory"
++           class="Products.ATContentTypes.tool.factory.FactoryTool"/>
++ <required tool_id="portal_metadata"
++           class="Products.ATContentTypes.tool.metadata.MetadataTool"/>
++</tool-setup>
+diff --git a/Products/ATContentTypes/profiles/default/types.xml b/Products/ATContentTypes/profiles/default/types.xml
+index 10a5c78..325a6d1 100644
+--- a/Products/ATContentTypes/profiles/default/types.xml
++++ b/Products/ATContentTypes/profiles/default/types.xml
+@@ -1,15 +1,5 @@
+ <?xml version="1.0"?>
+ <object name="portal_types" meta_type="Plone Types Tool">
+- <!-- We remove existing FTIs since they could be Dexterity-based and would
+- not be compatible in that case -->
+- <object name="Document" remove="True"/>
+- <object name="Event" remove="True"/>
+- <object name="File" remove="True"/>
+- <object name="Folder" remove="True"/>
+- <object name="Image" remove="True"/>
+- <object name="Link" remove="True"/>
+- <object name="News Item" remove="True"/>
+-
+  <property
+     name="title">Controls the available content types in your portal</property>
+  <object name="ATBooleanCriterion"
+diff --git a/Products/ATContentTypes/tests/test_base_profile.py b/Products/ATContentTypes/tests/test_base_profile.py
+deleted file mode 100644
+index 2c34d1e..0000000
+--- a/Products/ATContentTypes/tests/test_base_profile.py
++++ /dev/null
+@@ -1,20 +0,0 @@
+-# -*- coding: UTF-8 -*-
+-from Products.PloneTestCase.PloneTestCase import PloneTestCase
+-from Products.CMFCore.utils import getToolByName
+-from Products.CMFDynamicViewFTI.interfaces import IDynamicViewTypeInformation
+-
+-
+-class TestBaseProfile(PloneTestCase):
+-
+-    def afterSetUp(self):
+-        self.loginAsPortalOwner()
+-        qi = self.portal.portal_quickinstaller
+-        qi.uninstallProducts(['ATContentTypes'])
+-        portal_setup = self.portal.portal_setup
+-        portal_setup.runAllImportStepsFromProfile('profile-Products.ATContentTypes:base')
+-
+-    def test_attypes_not_installed(self):
+-        tt = getToolByName(self.portal, 'portal_types')
+-        types = tt.listTypeInfo()
+-        for t in types:
+-            self.assertNotEqual(t.product, 'ATContentTypes')
+
+
+Repository: Products.ATContentTypes
+Branch: refs/heads/master
+Date: 2015-01-22T19:26:48+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/Products.ATContentTypes/commit/389c8f4620a2710bd465104112377c07b9359cc9
+
+Merge pull request #12 from plone/revert-11-master
+
+Revert "Add profile 'base' to allow addons to depend on ATContentTypes i...
+
+Files changed:
+A Products/ATContentTypes/profiles/default/componentregistry.xml
+A Products/ATContentTypes/profiles/default/rolemap.xml
+A Products/ATContentTypes/profiles/default/skins.xml
+A Products/ATContentTypes/profiles/default/toolset.xml
+M CHANGES.txt
+M Products/ATContentTypes/configure.zcml
+M Products/ATContentTypes/profiles/default/metadata.xml
+M Products/ATContentTypes/profiles/default/types.xml
+D Products/ATContentTypes/profiles/base/componentregistry.xml
+D Products/ATContentTypes/profiles/base/metadata.xml
+D Products/ATContentTypes/profiles/base/rolemap.xml
+D Products/ATContentTypes/profiles/base/skins.xml
+D Products/ATContentTypes/profiles/base/toolset.xml
+D Products/ATContentTypes/tests/test_base_profile.py
+
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 206fa13..39ff9c7 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,9 +4,7 @@ Changelog
+ 2.2.3 (unreleased)
+ ------------------
  
-+    def test_create_safe_id_on_renaming(self):
-+        logout()
-+        folder = self.portal['f1']
-+
-+        # We need zope2.CopyOrMove permission to rename content
-+        self.browser.open(folder.absolute_url() + '/folder_rename')
-+        self.browser.getControl(name='form.widgets.new_id').value = ' ? f4 4 '
-+        self.browser.getControl(name='form.widgets.new_title').value = ' F2 '
-+        self.browser.getControl(name='form.buttons.Rename').click()
-+        self.assertEqual(folder.getId(), 'f4-4')
-+        self.assertEqual(folder.Title(), 'F2')
-+        self.assertEqual(self.browser.url, folder.absolute_url())
-+
-+        login(self.portal, TEST_USER_NAME)
-+        self.portal.manage_delObjects(ids='f4-4')
-+        transaction.commit()
-+
-     def test_rename_form_cancel(self):
-         folder = self.portal['f1']
+-- Add profile 'base' to allow addons to depend on ATContentTypes in Plone 5
+-  without uninstalling the dexterity default-types.
+-  [pbauer]
++- Nothing changed yet.
  
+ 
+ 2.2.2 (2014-10-23)
+diff --git a/Products/ATContentTypes/configure.zcml b/Products/ATContentTypes/configure.zcml
+index 1a5792a..db7a6dd 100644
+--- a/Products/ATContentTypes/configure.zcml
++++ b/Products/ATContentTypes/configure.zcml
+@@ -60,14 +60,6 @@
+       provides="Products.GenericSetup.interfaces.EXTENSION"
+       />
+ 
+-  <genericsetup:registerProfile
+-      name="base"
+-      title="Archetypes-tools without content-types"
+-      directory="profiles/base"
+-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+-      provides="Products.GenericSetup.interfaces.EXTENSION"
+-      />
+-
+   <genericsetup:importStep
+       name="atct_content"
+       title="ATContentTypes default content"
+diff --git a/Products/ATContentTypes/profiles/base/componentregistry.xml b/Products/ATContentTypes/profiles/base/componentregistry.xml
+deleted file mode 100644
+index 7a4d865..0000000
+--- a/Products/ATContentTypes/profiles/base/componentregistry.xml
++++ /dev/null
+@@ -1,8 +0,0 @@
+-<?xml version="1.0"?>
+-<componentregistry>
+- <utilities>
+-  <utility
+-     interface="Products.ATContentTypes.interface.IATCTTool"
+-     object="portal_atct"/>
+- </utilities>
+-</componentregistry>
+diff --git a/Products/ATContentTypes/profiles/base/metadata.xml b/Products/ATContentTypes/profiles/base/metadata.xml
+deleted file mode 100644
+index 964d111..0000000
+--- a/Products/ATContentTypes/profiles/base/metadata.xml
++++ /dev/null
+@@ -1,8 +0,0 @@
+-<?xml version="1.0"?>
+-<metadata>
+-  <version>1</version>
+-  <dependencies>
+-    <dependency>profile-Products.Archetypes:Archetypes</dependency>
+-    <dependency>profile-Products.CMFFormController:CMFFormController</dependency>
+-  </dependencies>
+-</metadata>
+diff --git a/Products/ATContentTypes/profiles/base/rolemap.xml b/Products/ATContentTypes/profiles/base/rolemap.xml
+deleted file mode 100644
+index ff91619..0000000
+--- a/Products/ATContentTypes/profiles/base/rolemap.xml
++++ /dev/null
+@@ -1,47 +0,0 @@
+-<?xml version="1.0"?>
+-<rolemap>
+-  <permissions>
+-    <permission name="ATContentTypes: Add Document" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Event" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add File" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Folder" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Image" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add Link" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-    <permission name="ATContentTypes: Add News Item" acquire="True">
+-      <role name="Manager"/>
+-      <role name="Site Administrator"/>
+-      <role name="Owner"/>
+-      <role name="Contributor"/>
+-    </permission>
+-  </permissions>
+-</rolemap>
+diff --git a/Products/ATContentTypes/profiles/base/skins.xml b/Products/ATContentTypes/profiles/base/skins.xml
+deleted file mode 100644
+index 4e2ae22..0000000
+--- a/Products/ATContentTypes/profiles/base/skins.xml
++++ /dev/null
+@@ -1,11 +0,0 @@
+-<?xml version="1.0"?>
+-<object name="portal_skins" meta_type="Plone Skins Tool">
+- <object name="ATContentTypes" meta_type="Filesystem Directory View"
+-    directory="Products.ATContentTypes:skins/ATContentTypes"/>
+- <object name="archetypes" meta_type="Filesystem Directory View"
+-    directory="Products.Archetypes:skins/archetypes"/>
+- <skin-path name="*">
+-  <layer name="ATContentTypes" insert-after="custom"/>
+-  <layer name="archetypes" insert-after="custom"/>
+- </skin-path>
+-</object>
+diff --git a/Products/ATContentTypes/profiles/base/toolset.xml b/Products/ATContentTypes/profiles/base/toolset.xml
+deleted file mode 100644
+index 6f6b568..0000000
+--- a/Products/ATContentTypes/profiles/base/toolset.xml
++++ /dev/null
+@@ -1,9 +0,0 @@
+-<?xml version="1.0"?>
+-<tool-setup>
+- <required tool_id="portal_atct"
+-           class="Products.ATContentTypes.tool.atct.ATCTTool"/>
+- <required tool_id="portal_factory"
+-           class="Products.ATContentTypes.tool.factory.FactoryTool"/>
+- <required tool_id="portal_metadata"
+-           class="Products.ATContentTypes.tool.metadata.MetadataTool"/>
+-</tool-setup>
+diff --git a/Products/ATContentTypes/profiles/default/componentregistry.xml b/Products/ATContentTypes/profiles/default/componentregistry.xml
+new file mode 100644
+index 0000000..7a4d865
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/componentregistry.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0"?>
++<componentregistry>
++ <utilities>
++  <utility
++     interface="Products.ATContentTypes.interface.IATCTTool"
++     object="portal_atct"/>
++ </utilities>
++</componentregistry>
+diff --git a/Products/ATContentTypes/profiles/default/metadata.xml b/Products/ATContentTypes/profiles/default/metadata.xml
+index 4ff0d5f..4410f5f 100644
+--- a/Products/ATContentTypes/profiles/default/metadata.xml
++++ b/Products/ATContentTypes/profiles/default/metadata.xml
+@@ -2,7 +2,8 @@
+ <metadata>
+   <version>1</version>
+   <dependencies>
+-    <dependency>profile-Products.ATContentTypes:base</dependency>
++    <dependency>profile-Products.Archetypes:Archetypes</dependency>
++    <dependency>profile-Products.CMFFormController:CMFFormController</dependency>
+     <dependency>profile-plone.app.collection:default</dependency>
+     <dependency>profile-plone.app.imaging:default</dependency>
+     <dependency>profile-plone.app.widgets:default</dependency>
+diff --git a/Products/ATContentTypes/profiles/default/rolemap.xml b/Products/ATContentTypes/profiles/default/rolemap.xml
+new file mode 100644
+index 0000000..ff91619
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/rolemap.xml
+@@ -0,0 +1,47 @@
++<?xml version="1.0"?>
++<rolemap>
++  <permissions>
++    <permission name="ATContentTypes: Add Document" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Event" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add File" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Folder" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Image" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add Link" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++    <permission name="ATContentTypes: Add News Item" acquire="True">
++      <role name="Manager"/>
++      <role name="Site Administrator"/>
++      <role name="Owner"/>
++      <role name="Contributor"/>
++    </permission>
++  </permissions>
++</rolemap>
+diff --git a/Products/ATContentTypes/profiles/default/skins.xml b/Products/ATContentTypes/profiles/default/skins.xml
+new file mode 100644
+index 0000000..4e2ae22
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/skins.xml
+@@ -0,0 +1,11 @@
++<?xml version="1.0"?>
++<object name="portal_skins" meta_type="Plone Skins Tool">
++ <object name="ATContentTypes" meta_type="Filesystem Directory View"
++    directory="Products.ATContentTypes:skins/ATContentTypes"/>
++ <object name="archetypes" meta_type="Filesystem Directory View"
++    directory="Products.Archetypes:skins/archetypes"/>
++ <skin-path name="*">
++  <layer name="ATContentTypes" insert-after="custom"/>
++  <layer name="archetypes" insert-after="custom"/>
++ </skin-path>
++</object>
+diff --git a/Products/ATContentTypes/profiles/default/toolset.xml b/Products/ATContentTypes/profiles/default/toolset.xml
+new file mode 100644
+index 0000000..6f6b568
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/toolset.xml
+@@ -0,0 +1,9 @@
++<?xml version="1.0"?>
++<tool-setup>
++ <required tool_id="portal_atct"
++           class="Products.ATContentTypes.tool.atct.ATCTTool"/>
++ <required tool_id="portal_factory"
++           class="Products.ATContentTypes.tool.factory.FactoryTool"/>
++ <required tool_id="portal_metadata"
++           class="Products.ATContentTypes.tool.metadata.MetadataTool"/>
++</tool-setup>
+diff --git a/Products/ATContentTypes/profiles/default/types.xml b/Products/ATContentTypes/profiles/default/types.xml
+index 10a5c78..325a6d1 100644
+--- a/Products/ATContentTypes/profiles/default/types.xml
++++ b/Products/ATContentTypes/profiles/default/types.xml
+@@ -1,15 +1,5 @@
+ <?xml version="1.0"?>
+ <object name="portal_types" meta_type="Plone Types Tool">
+- <!-- We remove existing FTIs since they could be Dexterity-based and would
+- not be compatible in that case -->
+- <object name="Document" remove="True"/>
+- <object name="Event" remove="True"/>
+- <object name="File" remove="True"/>
+- <object name="Folder" remove="True"/>
+- <object name="Image" remove="True"/>
+- <object name="Link" remove="True"/>
+- <object name="News Item" remove="True"/>
+-
+  <property
+     name="title">Controls the available content types in your portal</property>
+  <object name="ATBooleanCriterion"
+diff --git a/Products/ATContentTypes/tests/test_base_profile.py b/Products/ATContentTypes/tests/test_base_profile.py
+deleted file mode 100644
+index 2c34d1e..0000000
+--- a/Products/ATContentTypes/tests/test_base_profile.py
++++ /dev/null
+@@ -1,20 +0,0 @@
+-# -*- coding: UTF-8 -*-
+-from Products.PloneTestCase.PloneTestCase import PloneTestCase
+-from Products.CMFCore.utils import getToolByName
+-from Products.CMFDynamicViewFTI.interfaces import IDynamicViewTypeInformation
+-
+-
+-class TestBaseProfile(PloneTestCase):
+-
+-    def afterSetUp(self):
+-        self.loginAsPortalOwner()
+-        qi = self.portal.portal_quickinstaller
+-        qi.uninstallProducts(['ATContentTypes'])
+-        portal_setup = self.portal.portal_setup
+-        portal_setup.runAllImportStepsFromProfile('profile-Products.ATContentTypes:base')
+-
+-    def test_attypes_not_installed(self):
+-        tt = getToolByName(self.portal, 'portal_types')
+-        types = tt.listTypeInfo()
+-        for t in types:
+-            self.assertNotEqual(t.product, 'ATContentTypes')
 
 
