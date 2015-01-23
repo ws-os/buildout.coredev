@@ -1,25 +1,264 @@
-Repository: plone.dexterity
+Repository: plone.app.content
 Branch: refs/heads/master
-Date: 2015-01-23T12:28:34+01:00
-Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/plone.dexterity/commit/bcc5962ef11ffce9e12a4f8f6a77dde824ec6898
+Date: 2015-01-23T13:33:00+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.content/commit/6ceac4113f4913e0008845b365154f19bed50399
 
-Add missing mock dependency.
+Keep default_page when renaming objects
 
 Files changed:
-M setup.py
+M CHANGES.rst
+M plone/app/content/browser/actions.py
+M plone/app/content/browser/folder.py
+M plone/app/content/tests/test_actions.py
+M plone/app/content/tests/test_folder.py
 
-diff --git a/setup.py b/setup.py
-index 705c32f..ebca41e 100644
---- a/setup.py
-+++ b/setup.py
-@@ -69,6 +69,7 @@
-         'test': [
-             'plone.mocktestcase>=1.0b3',
-             'plone.testing',
-+            'mock',
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 1e0de22..4b87c62 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ Changelog
+ 3.0.2 (unreleased)
+ ------------------
+ 
++- Keep default_page when renaming objects.
++  [pbauer]
++
+ - Use INameChooser for new id when renaming objects using folder_rename or
+   object_rename. Fix https://github.com/plone/plone.app.dexterity/issues/73
+   [pbauer]
+diff --git a/plone/app/content/browser/actions.py b/plone/app/content/browser/actions.py
+index e2ae3c2..c5dc0bc 100644
+--- a/plone/app/content/browser/actions.py
++++ b/plone/app/content/browser/actions.py
+@@ -120,6 +120,10 @@ def handle_rename(self, action):
+         newid = data['new_id']
+         newid = INameChooser(parent).chooseName(newid, self.context)
+ 
++        context_state = getMultiAdapter(
++            (self.context, self.request), name='plone_context_state')
++        if context_state.is_default_page():
++            parent.setDefaultPage(newid)
+         # Requires cmf.ModifyPortalContent permission
+         self.context.title = data['new_title']
+         # Requires zope2.CopyOrMove permission
+diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
+index 46f0370..56ee9f7 100644
+--- a/plone/app/content/browser/folder.py
++++ b/plone/app/content/browser/folder.py
+@@ -310,8 +310,13 @@ def __call__(self):
+                     notify(ObjectModifiedEvent(obj))
+                 if newid and obid != newid:
+                     parent = aq_parent(aq_inner(obj))
+-                    # make the new id safe
++                    # Make sure newid is safe
+                     newid = INameChooser(parent).chooseName(newid, obj)
++                    # Update the default_page on the parent.
++                    context_state = getMultiAdapter(
++                        (obj, self.request), name='plone_context_state')
++                    if context_state.is_default_page():
++                        parent.setDefaultPage(newid)
+                     parent.manage_renameObjects((obid, ), (newid, ))
+                 elif change_title:
+                     # the rename will have already triggered a reindex
+diff --git a/plone/app/content/tests/test_actions.py b/plone/app/content/tests/test_actions.py
+index e16d0c6..de4db77 100644
+--- a/plone/app/content/tests/test_actions.py
++++ b/plone/app/content/tests/test_actions.py
+@@ -135,6 +135,23 @@ def test_create_safe_id_on_renaming(self):
+         self.portal.manage_delObjects(ids='f4-4')
+         transaction.commit()
+ 
++    def test_default_page_updated_on_rename(self):
++        login(self.portal, TEST_USER_NAME)
++        folder = self.portal['f1']
++        folder.invokeFactory(type_name='Document', id='d1', title='A Doc')
++        doc = folder['d1']
++        folder.setDefaultPage('d1')
++        transaction.commit()
++        self.assertEqual(folder.default_page, 'd1')
++
++        # We need zope2.CopyOrMove permission to rename content
++        self.browser.open(doc.absolute_url() + '/object_rename')
++        self.browser.getControl(name='form.widgets.new_id').value = ' ?renamed'
++        self.browser.getControl(name='form.widgets.new_title').value = 'Doc'
++        self.browser.getControl(name='form.buttons.Rename').click()
++        self.assertEqual(folder.getFolderContents()[0].id, 'renamed')
++        self.assertEqual(folder.default_page, 'renamed')
++
+     def test_rename_form_cancel(self):
+         folder = self.portal['f1']
+ 
+diff --git a/plone/app/content/tests/test_folder.py b/plone/app/content/tests/test_folder.py
+index d6323fc..911af47 100644
+--- a/plone/app/content/tests/test_folder.py
++++ b/plone/app/content/tests/test_folder.py
+@@ -188,11 +188,11 @@ class RenameTest(BaseTest):
+     def test_folder_rename_objects(self):
+         from plone.app.content.browser.folder import RenameAction
+         uid = IUUID(self.portal.page)
+-        self.portal.invokeFactory('Document', id="page2", title="2nd page")
++        self.portal.invokeFactory('Document', id='page2', title='2nd page')
+         uid2 = IUUID(self.portal.page2)
+         items = [
+-            {"UID": uid, "newid": "I am UnSafe! ", "newtitle": "New!"},
+-            {"UID": uid2, "newid": ". ,;new id : _! ", "newtitle": "Newer!"},
++            {'UID': uid, 'newid': 'I am UnSafe! ', 'newtitle': 'New!'},
++            {'UID': uid2, 'newid': '. ,;new id : _! ', 'newtitle': 'Newer!'},
          ]
-     },
-     entry_points="""
+         self.request.form['torename'] = json.dumps(items)
+         view = RenameAction(self.portal, self.request)
+@@ -200,6 +200,18 @@ def test_folder_rename_objects(self):
+         self.assertEqual(self.portal['i-am-unsafe'].title, "New!")
+         self.assertEqual(self.portal['new-id-_'].title, "Newer!")
+ 
++    def test_default_page_updated_on_rename_objects(self):
++        from plone.app.content.browser.folder import RenameAction
++        self.portal.setDefaultPage('page')
++        uid = IUUID(self.portal.page)
++        items = [
++            {'UID': uid, 'newid': 'page-renamed', 'newtitle': 'Page'},
++        ]
++        self.request.form['torename'] = json.dumps(items)
++        view = RenameAction(self.portal, self.request)
++        view()
++        self.assertEqual(self.portal.default_page, 'page-renamed')
++
+ 
+ class ContextInfoTest(BaseTest):
+ 
+
+
+Repository: plone.app.content
+Branch: refs/heads/master
+Date: 2015-01-23T13:48:10+01:00
+Author: Daniel Widerin (saily) <daniel@widerin.net>
+Commit: https://github.com/plone/plone.app.content/commit/ba34a9d38c6f4e2bc020ef23de7ffe29dbe5b57d
+
+Merge pull request #24 from plone/keep_default_page_on_rename
+
+Keep default_page when renaming objects
+
+Files changed:
+M CHANGES.rst
+M plone/app/content/browser/actions.py
+M plone/app/content/browser/folder.py
+M plone/app/content/tests/test_actions.py
+M plone/app/content/tests/test_folder.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 1e0de22..4b87c62 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ Changelog
+ 3.0.2 (unreleased)
+ ------------------
+ 
++- Keep default_page when renaming objects.
++  [pbauer]
++
+ - Use INameChooser for new id when renaming objects using folder_rename or
+   object_rename. Fix https://github.com/plone/plone.app.dexterity/issues/73
+   [pbauer]
+diff --git a/plone/app/content/browser/actions.py b/plone/app/content/browser/actions.py
+index e2ae3c2..c5dc0bc 100644
+--- a/plone/app/content/browser/actions.py
++++ b/plone/app/content/browser/actions.py
+@@ -120,6 +120,10 @@ def handle_rename(self, action):
+         newid = data['new_id']
+         newid = INameChooser(parent).chooseName(newid, self.context)
+ 
++        context_state = getMultiAdapter(
++            (self.context, self.request), name='plone_context_state')
++        if context_state.is_default_page():
++            parent.setDefaultPage(newid)
+         # Requires cmf.ModifyPortalContent permission
+         self.context.title = data['new_title']
+         # Requires zope2.CopyOrMove permission
+diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
+index 46f0370..56ee9f7 100644
+--- a/plone/app/content/browser/folder.py
++++ b/plone/app/content/browser/folder.py
+@@ -310,8 +310,13 @@ def __call__(self):
+                     notify(ObjectModifiedEvent(obj))
+                 if newid and obid != newid:
+                     parent = aq_parent(aq_inner(obj))
+-                    # make the new id safe
++                    # Make sure newid is safe
+                     newid = INameChooser(parent).chooseName(newid, obj)
++                    # Update the default_page on the parent.
++                    context_state = getMultiAdapter(
++                        (obj, self.request), name='plone_context_state')
++                    if context_state.is_default_page():
++                        parent.setDefaultPage(newid)
+                     parent.manage_renameObjects((obid, ), (newid, ))
+                 elif change_title:
+                     # the rename will have already triggered a reindex
+diff --git a/plone/app/content/tests/test_actions.py b/plone/app/content/tests/test_actions.py
+index e16d0c6..de4db77 100644
+--- a/plone/app/content/tests/test_actions.py
++++ b/plone/app/content/tests/test_actions.py
+@@ -135,6 +135,23 @@ def test_create_safe_id_on_renaming(self):
+         self.portal.manage_delObjects(ids='f4-4')
+         transaction.commit()
+ 
++    def test_default_page_updated_on_rename(self):
++        login(self.portal, TEST_USER_NAME)
++        folder = self.portal['f1']
++        folder.invokeFactory(type_name='Document', id='d1', title='A Doc')
++        doc = folder['d1']
++        folder.setDefaultPage('d1')
++        transaction.commit()
++        self.assertEqual(folder.default_page, 'd1')
++
++        # We need zope2.CopyOrMove permission to rename content
++        self.browser.open(doc.absolute_url() + '/object_rename')
++        self.browser.getControl(name='form.widgets.new_id').value = ' ?renamed'
++        self.browser.getControl(name='form.widgets.new_title').value = 'Doc'
++        self.browser.getControl(name='form.buttons.Rename').click()
++        self.assertEqual(folder.getFolderContents()[0].id, 'renamed')
++        self.assertEqual(folder.default_page, 'renamed')
++
+     def test_rename_form_cancel(self):
+         folder = self.portal['f1']
+ 
+diff --git a/plone/app/content/tests/test_folder.py b/plone/app/content/tests/test_folder.py
+index d6323fc..911af47 100644
+--- a/plone/app/content/tests/test_folder.py
++++ b/plone/app/content/tests/test_folder.py
+@@ -188,11 +188,11 @@ class RenameTest(BaseTest):
+     def test_folder_rename_objects(self):
+         from plone.app.content.browser.folder import RenameAction
+         uid = IUUID(self.portal.page)
+-        self.portal.invokeFactory('Document', id="page2", title="2nd page")
++        self.portal.invokeFactory('Document', id='page2', title='2nd page')
+         uid2 = IUUID(self.portal.page2)
+         items = [
+-            {"UID": uid, "newid": "I am UnSafe! ", "newtitle": "New!"},
+-            {"UID": uid2, "newid": ". ,;new id : _! ", "newtitle": "Newer!"},
++            {'UID': uid, 'newid': 'I am UnSafe! ', 'newtitle': 'New!'},
++            {'UID': uid2, 'newid': '. ,;new id : _! ', 'newtitle': 'Newer!'},
+         ]
+         self.request.form['torename'] = json.dumps(items)
+         view = RenameAction(self.portal, self.request)
+@@ -200,6 +200,18 @@ def test_folder_rename_objects(self):
+         self.assertEqual(self.portal['i-am-unsafe'].title, "New!")
+         self.assertEqual(self.portal['new-id-_'].title, "Newer!")
+ 
++    def test_default_page_updated_on_rename_objects(self):
++        from plone.app.content.browser.folder import RenameAction
++        self.portal.setDefaultPage('page')
++        uid = IUUID(self.portal.page)
++        items = [
++            {'UID': uid, 'newid': 'page-renamed', 'newtitle': 'Page'},
++        ]
++        self.request.form['torename'] = json.dumps(items)
++        view = RenameAction(self.portal, self.request)
++        view()
++        self.assertEqual(self.portal.default_page, 'page-renamed')
++
+ 
+ class ContextInfoTest(BaseTest):
+ 
 
 
