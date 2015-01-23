@@ -1,26 +1,180 @@
-Repository: plone.app.controlpanel
+Repository: plone.app.textfield
 Branch: refs/heads/master
-Date: 2015-01-22T21:48:47+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/793ae0f54bce06104f175ebc79751b61c65a2de2
+Date: 2015-01-22T20:44:38+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/plone.app.textfield/commit/d44e18619c20cc5822604ee9569960ba26480536
 
-Comment out types functional tests. This test has been moved to P.CMFPlone.
+Fix marshaler decode to decode raw value as unicode (IText)
 
 Files changed:
-M plone/app/controlpanel/tests/test_doctests.py
+M docs/HISTORY.rst
+M plone/app/textfield/marshaler.py
+M plone/app/textfield/marshaler.rst
 
-diff --git a/plone/app/controlpanel/tests/test_doctests.py b/plone/app/controlpanel/tests/test_doctests.py
-index 5765214..44d1099 100644
---- a/plone/app/controlpanel/tests/test_doctests.py
-+++ b/plone/app/controlpanel/tests/test_doctests.py
-@@ -20,7 +20,7 @@ def test_suite():
-         # 'site.txt',
-         # 'skins.txt',
-         # 'navigation.txt',
--        'types.txt',
-+        # 'types.txt',
-         'syndication.txt'
-     ]
-     suite = TestSuite()
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index 7da4a34..4fae0b8 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -4,6 +4,20 @@ Changelog
+ 1.2.5 (unreleased)
+ ------------------
+ 
++- Fix marshaler decode to always decode raw value into unicode
++  [datakurre]
++
++- Remove utils.getSiteEncoding, which was deprecated and not used anywhere.
++  [thet]
++
++- For Plone 5, support getting markup control panel settings from the registry,
++  while still supporting normal portal_properties access for Plone < 5.
++  [thet]
++
++- Resolved an interesting circular import case, which wasnt effective because
++  of sort order of imports
++  [thet]
++
+ - For Plone 5, support getting markup control panel settings from the registry,
+   while still supporting normal portal_properties access for Plone < 5.
+   [thet]
+diff --git a/plone/app/textfield/marshaler.py b/plone/app/textfield/marshaler.py
+index 482647e..baf0bdb 100644
+--- a/plone/app/textfield/marshaler.py
++++ b/plone/app/textfield/marshaler.py
+@@ -32,8 +32,12 @@ def decode(
+                 charset='utf-8',
+                 contentType=None,
+                 primary=False):
++            try:
++                unicode_value = value.decode(charset)
++            except UnicodeEncodeError:
++                unicode_value = value  # was already unicode
+             return RichTextValue(
+-                raw=value,
++                raw=unicode_value,
+                 mimeType=contentType or self.field.default_mime_type,
+                 outputMimeType=self.field.output_mime_type,
+                 encoding=charset
+diff --git a/plone/app/textfield/marshaler.rst b/plone/app/textfield/marshaler.rst
+index a7c7cb8..1f6ee3d 100644
+--- a/plone/app/textfield/marshaler.rst
++++ b/plone/app/textfield/marshaler.rst
+@@ -53,7 +53,7 @@ We can now look up and test the marshaler:
+     'Some \xc3\x98 plain text'
+     >>> decoded = marshaler.decode('Some \xc3\x98 plain text', charset='utf-8', contentType='text/plain')
+     >>> decoded.raw
+-    'Some \xc3\x98 plain text'
++    u'Some \xd8 plain text'
+     >>> decoded.mimeType
+     'text/plain'
+     >>> decoded.outputMimeType
+@@ -72,7 +72,7 @@ default type is used.
+ 
+     >>> decoded = marshaler.decode('Some \xc3\x98 plain text')
+     >>> decoded.raw
+-    'Some \xc3\x98 plain text'
++    u'Some \xd8 plain text'
+     >>> decoded.mimeType
+     'text/plain'
+     >>> decoded.outputMimeType
+@@ -108,7 +108,7 @@ Let's now use this message to construct a new object.
+     >>> from plone.rfc822 import initializeObjectFromSchema
+     >>> initializeObjectFromSchema(newContent, ITestContent, inputMessage)
+     >>> newContent._text.raw
+-    'Some \xc3\x98 plain text'
++    u'Some \xd8 plain text'
+     >>> newContent._text.mimeType
+     'text/plain'
+     >>> newContent._text.outputMimeType
+
+
+Repository: plone.app.textfield
+Branch: refs/heads/master
+Date: 2015-01-23T08:32:50+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.textfield/commit/2235261859c7ce8e00eb9934c09eb23695915590
+
+Merge pull request #15 from plone/datakurre-fix-decode
+
+Fix marshaler decode to decode raw value as unicode (IText)
+
+Files changed:
+M docs/HISTORY.rst
+M plone/app/textfield/marshaler.py
+M plone/app/textfield/marshaler.rst
+
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index 7da4a34..4fae0b8 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -4,6 +4,20 @@ Changelog
+ 1.2.5 (unreleased)
+ ------------------
+ 
++- Fix marshaler decode to always decode raw value into unicode
++  [datakurre]
++
++- Remove utils.getSiteEncoding, which was deprecated and not used anywhere.
++  [thet]
++
++- For Plone 5, support getting markup control panel settings from the registry,
++  while still supporting normal portal_properties access for Plone < 5.
++  [thet]
++
++- Resolved an interesting circular import case, which wasnt effective because
++  of sort order of imports
++  [thet]
++
+ - For Plone 5, support getting markup control panel settings from the registry,
+   while still supporting normal portal_properties access for Plone < 5.
+   [thet]
+diff --git a/plone/app/textfield/marshaler.py b/plone/app/textfield/marshaler.py
+index 482647e..baf0bdb 100644
+--- a/plone/app/textfield/marshaler.py
++++ b/plone/app/textfield/marshaler.py
+@@ -32,8 +32,12 @@ def decode(
+                 charset='utf-8',
+                 contentType=None,
+                 primary=False):
++            try:
++                unicode_value = value.decode(charset)
++            except UnicodeEncodeError:
++                unicode_value = value  # was already unicode
+             return RichTextValue(
+-                raw=value,
++                raw=unicode_value,
+                 mimeType=contentType or self.field.default_mime_type,
+                 outputMimeType=self.field.output_mime_type,
+                 encoding=charset
+diff --git a/plone/app/textfield/marshaler.rst b/plone/app/textfield/marshaler.rst
+index a7c7cb8..1f6ee3d 100644
+--- a/plone/app/textfield/marshaler.rst
++++ b/plone/app/textfield/marshaler.rst
+@@ -53,7 +53,7 @@ We can now look up and test the marshaler:
+     'Some \xc3\x98 plain text'
+     >>> decoded = marshaler.decode('Some \xc3\x98 plain text', charset='utf-8', contentType='text/plain')
+     >>> decoded.raw
+-    'Some \xc3\x98 plain text'
++    u'Some \xd8 plain text'
+     >>> decoded.mimeType
+     'text/plain'
+     >>> decoded.outputMimeType
+@@ -72,7 +72,7 @@ default type is used.
+ 
+     >>> decoded = marshaler.decode('Some \xc3\x98 plain text')
+     >>> decoded.raw
+-    'Some \xc3\x98 plain text'
++    u'Some \xd8 plain text'
+     >>> decoded.mimeType
+     'text/plain'
+     >>> decoded.outputMimeType
+@@ -108,7 +108,7 @@ Let's now use this message to construct a new object.
+     >>> from plone.rfc822 import initializeObjectFromSchema
+     >>> initializeObjectFromSchema(newContent, ITestContent, inputMessage)
+     >>> newContent._text.raw
+-    'Some \xc3\x98 plain text'
++    u'Some \xd8 plain text'
+     >>> newContent._text.mimeType
+     'text/plain'
+     >>> newContent._text.outputMimeType
 
 
