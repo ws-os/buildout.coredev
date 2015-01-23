@@ -1,122 +1,71 @@
-Repository: plone.app.content
+Repository: plone.dexterity
 Branch: refs/heads/master
-Date: 2015-01-23T10:43:57+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.content/commit/057e3aee196d97fbcb2af6a3b4631b2ec0d7ac12
+Date: 2015-01-23T11:44:35+01:00
+Author: Timo Stollenwerk () <contact@timostollenwerk.net>
+Commit: https://github.com/plone/plone.dexterity/commit/04013c60aeb7715704a0d3642e84b5be1b4db404
 
-use INameChooser fir ids when renaming multiple objects in folder_contents
+Mock Zope DateTime for test_content tests. There seems to be a test isolation problem that occurs only on Jenkins. See https://github.com/plone/Products.CMFPlone/issues/356 for details.
 
 Files changed:
-M CHANGES.rst
-M plone/app/content/browser/folder.py
-M plone/app/content/tests/test_folder.py
+M plone/dexterity/tests/test_content.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index c21c4f2..1e0de22 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,8 +4,8 @@ Changelog
- 3.0.2 (unreleased)
- ------------------
+diff --git a/plone/dexterity/tests/test_content.py b/plone/dexterity/tests/test_content.py
+index 7a9851f..7755aec 100644
+--- a/plone/dexterity/tests/test_content.py
++++ b/plone/dexterity/tests/test_content.py
+@@ -628,7 +628,16 @@ def test_name_unicode_id_str(self):
+         self.assertTrue(isinstance(i.getId(), str))
  
--- Use INameChooser for new id when renaming objects.
--  Fix https://github.com/plone/plone.app.dexterity/issues/73
-+- Use INameChooser for new id when renaming objects using folder_rename or
-+  object_rename. Fix https://github.com/plone/plone.app.dexterity/issues/73
-   [pbauer]
+     def test_item_dublincore(self):
+-        from DateTime.DateTime import DateTime
++        from DateTime import DateTime
++        # Mock Zope DateTime
++        import mock
++        import plone.dexterity
++        datetime_patcher = mock.patch.object(
++            plone.dexterity.content, 'DateTime'
++        )
++        mocked_datetime = datetime_patcher.start()
++        mocked_datetime.return_value = DateTime(2013, 11, 7)
++        self.addCleanup(datetime_patcher.stop)
  
- - Allow folderish types as default_page as long as users cannot add content
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index c4c1140..46f0370 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -1,30 +1,32 @@
--import transaction
-+from .interfaces import IFolderContentsView
- from AccessControl import Unauthorized
- from AccessControl import getSecurityManager
- from Acquisition import aq_inner
- from Acquisition import aq_parent
--from zope.component import getMultiAdapter
--from zope.component import getUtility
-+from DateTime import DateTime
- from OFS.CopySupport import CopyError
-+from Products.CMFCore.interfaces._content import IFolderish
- from Products.CMFCore.utils import getToolByName
--from Products.Five import BrowserView
--from Products.CMFPlone import utils
- from Products.CMFPlone import PloneMessageFactory as _
--from plone.protect.postonly import check as checkpost
-+from Products.CMFPlone import utils
-+from Products.CMFPlone.interfaces.siteroot import IPloneSiteRoot
-+from Products.Five import BrowserView
- from ZODB.POSException import ConflictError
-+from plone.dexterity.interfaces import IDexterityContent
-+from plone.folder.interfaces import IExplicitOrdering
-+from plone.protect.postonly import check as checkpost
-+from plone.uuid.interfaces import IUUID
-+from zope.browsermenu.interfaces import IBrowserMenu
-+from zope.component import getMultiAdapter
-+from zope.component import getUtility
- from zope.component.hooks import getSite
-+from zope.container.interfaces import INameChooser
- from zope.event import notify
-+from zope.interface import implements
- from zope.lifecycleevent import ObjectModifiedEvent
--from plone.folder.interfaces import IExplicitOrdering
--from Products.CMFPlone.interfaces.siteroot import IPloneSiteRoot
--from DateTime import DateTime
--from Products.CMFCore.interfaces._content import IFolderish
--from zope.browsermenu.interfaces import IBrowserMenu
-+
- import json
--from plone.dexterity.interfaces import IDexterityContent
--from .interfaces import IFolderContentsView
--from zope.interface import implements
--from plone.uuid.interfaces import IUUID
-+import transaction
+         i = Item(
+             title=u"Emperor Penguin",
+@@ -675,7 +684,16 @@ def test_item_dublincore(self):
+         self.assertEqual(i.Identifier(), i.absolute_url())
  
- try:
-     from plone.app.widgets.browser.file import TUS_ENABLED
-@@ -308,6 +310,8 @@ def __call__(self):
-                     notify(ObjectModifiedEvent(obj))
-                 if newid and obid != newid:
-                     parent = aq_parent(aq_inner(obj))
-+                    # make the new id safe
-+                    newid = INameChooser(parent).chooseName(newid, obj)
-                     parent.manage_renameObjects((obid, ), (newid, ))
-                 elif change_title:
-                     # the rename will have already triggered a reindex
-diff --git a/plone/app/content/tests/test_folder.py b/plone/app/content/tests/test_folder.py
-index 1af71d8..d6323fc 100644
---- a/plone/app/content/tests/test_folder.py
-+++ b/plone/app/content/tests/test_folder.py
-@@ -181,6 +181,26 @@ def testStateChange(self):
-             'published')
+     def test_item_dublincore_date(self):
+-        from DateTime.DateTime import DateTime
++        from DateTime import DateTime
++        # Mock Zope DateTime
++        import mock
++        import plone.dexterity
++        datetime_patcher = mock.patch.object(
++            plone.dexterity.content, 'DateTime'
++        )
++        mocked_datetime = datetime_patcher.start()
++        mocked_datetime.return_value = DateTime(2013, 11, 7)
++        self.addCleanup(datetime_patcher.stop)
  
+         i = Item(
+             title=u"Emperor Penguin",
+@@ -707,7 +725,16 @@ def test_item_dublincore_date(self):
+         self.assertEqual(i.Date(), i.EffectiveDate())
  
-+class RenameTest(BaseTest):
-+
-+    layer = PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
-+
-+    def test_folder_rename_objects(self):
-+        from plone.app.content.browser.folder import RenameAction
-+        uid = IUUID(self.portal.page)
-+        self.portal.invokeFactory('Document', id="page2", title="2nd page")
-+        uid2 = IUUID(self.portal.page2)
-+        items = [
-+            {"UID": uid, "newid": "I am UnSafe! ", "newtitle": "New!"},
-+            {"UID": uid2, "newid": ". ,;new id : _! ", "newtitle": "Newer!"},
-+        ]
-+        self.request.form['torename'] = json.dumps(items)
-+        view = RenameAction(self.portal, self.request)
-+        view()
-+        self.assertEqual(self.portal['i-am-unsafe'].title, "New!")
-+        self.assertEqual(self.portal['new-id-_'].title, "Newer!")
-+
-+
- class ContextInfoTest(BaseTest):
+     def test_item_dublincore_datetime(self):
+-        from DateTime.DateTime import DateTime
++        from DateTime import DateTime
++        # Mock Zope DateTime
++        import mock
++        import plone.dexterity
++        datetime_patcher = mock.patch.object(
++            plone.dexterity.content, 'DateTime'
++        )
++        mocked_datetime = datetime_patcher.start()
++        mocked_datetime.return_value = DateTime(2013, 11, 7)
++        self.addCleanup(datetime_patcher.stop)
  
-     layer = PLONE_APP_CONTENT_DX_INTEGRATION_TESTING
+         i = Item(
+             title=u"Emperor Penguin",
 
 
