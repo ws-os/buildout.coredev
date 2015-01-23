@@ -1,264 +1,775 @@
-Repository: plone.app.content
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-23T13:33:00+01:00
+Date: 2015-01-23T16:13:18+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.content/commit/6ceac4113f4913e0008845b365154f19bed50399
+Commit: https://github.com/plone/plone.app.contenttypes/commit/793d5a3ffc4ae665d1821be6a09337d782781a02
 
-Keep default_page when renaming objects
-
-Files changed:
-M CHANGES.rst
-M plone/app/content/browser/actions.py
-M plone/app/content/browser/folder.py
-M plone/app/content/tests/test_actions.py
-M plone/app/content/tests/test_folder.py
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 1e0de22..4b87c62 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 3.0.2 (unreleased)
- ------------------
- 
-+- Keep default_page when renaming objects.
-+  [pbauer]
-+
- - Use INameChooser for new id when renaming objects using folder_rename or
-   object_rename. Fix https://github.com/plone/plone.app.dexterity/issues/73
-   [pbauer]
-diff --git a/plone/app/content/browser/actions.py b/plone/app/content/browser/actions.py
-index e2ae3c2..c5dc0bc 100644
---- a/plone/app/content/browser/actions.py
-+++ b/plone/app/content/browser/actions.py
-@@ -120,6 +120,10 @@ def handle_rename(self, action):
-         newid = data['new_id']
-         newid = INameChooser(parent).chooseName(newid, self.context)
- 
-+        context_state = getMultiAdapter(
-+            (self.context, self.request), name='plone_context_state')
-+        if context_state.is_default_page():
-+            parent.setDefaultPage(newid)
-         # Requires cmf.ModifyPortalContent permission
-         self.context.title = data['new_title']
-         # Requires zope2.CopyOrMove permission
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index 46f0370..56ee9f7 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -310,8 +310,13 @@ def __call__(self):
-                     notify(ObjectModifiedEvent(obj))
-                 if newid and obid != newid:
-                     parent = aq_parent(aq_inner(obj))
--                    # make the new id safe
-+                    # Make sure newid is safe
-                     newid = INameChooser(parent).chooseName(newid, obj)
-+                    # Update the default_page on the parent.
-+                    context_state = getMultiAdapter(
-+                        (obj, self.request), name='plone_context_state')
-+                    if context_state.is_default_page():
-+                        parent.setDefaultPage(newid)
-                     parent.manage_renameObjects((obid, ), (newid, ))
-                 elif change_title:
-                     # the rename will have already triggered a reindex
-diff --git a/plone/app/content/tests/test_actions.py b/plone/app/content/tests/test_actions.py
-index e16d0c6..de4db77 100644
---- a/plone/app/content/tests/test_actions.py
-+++ b/plone/app/content/tests/test_actions.py
-@@ -135,6 +135,23 @@ def test_create_safe_id_on_renaming(self):
-         self.portal.manage_delObjects(ids='f4-4')
-         transaction.commit()
- 
-+    def test_default_page_updated_on_rename(self):
-+        login(self.portal, TEST_USER_NAME)
-+        folder = self.portal['f1']
-+        folder.invokeFactory(type_name='Document', id='d1', title='A Doc')
-+        doc = folder['d1']
-+        folder.setDefaultPage('d1')
-+        transaction.commit()
-+        self.assertEqual(folder.default_page, 'd1')
-+
-+        # We need zope2.CopyOrMove permission to rename content
-+        self.browser.open(doc.absolute_url() + '/object_rename')
-+        self.browser.getControl(name='form.widgets.new_id').value = ' ?renamed'
-+        self.browser.getControl(name='form.widgets.new_title').value = 'Doc'
-+        self.browser.getControl(name='form.buttons.Rename').click()
-+        self.assertEqual(folder.getFolderContents()[0].id, 'renamed')
-+        self.assertEqual(folder.default_page, 'renamed')
-+
-     def test_rename_form_cancel(self):
-         folder = self.portal['f1']
- 
-diff --git a/plone/app/content/tests/test_folder.py b/plone/app/content/tests/test_folder.py
-index d6323fc..911af47 100644
---- a/plone/app/content/tests/test_folder.py
-+++ b/plone/app/content/tests/test_folder.py
-@@ -188,11 +188,11 @@ class RenameTest(BaseTest):
-     def test_folder_rename_objects(self):
-         from plone.app.content.browser.folder import RenameAction
-         uid = IUUID(self.portal.page)
--        self.portal.invokeFactory('Document', id="page2", title="2nd page")
-+        self.portal.invokeFactory('Document', id='page2', title='2nd page')
-         uid2 = IUUID(self.portal.page2)
-         items = [
--            {"UID": uid, "newid": "I am UnSafe! ", "newtitle": "New!"},
--            {"UID": uid2, "newid": ". ,;new id : _! ", "newtitle": "Newer!"},
-+            {'UID': uid, 'newid': 'I am UnSafe! ', 'newtitle': 'New!'},
-+            {'UID': uid2, 'newid': '. ,;new id : _! ', 'newtitle': 'Newer!'},
-         ]
-         self.request.form['torename'] = json.dumps(items)
-         view = RenameAction(self.portal, self.request)
-@@ -200,6 +200,18 @@ def test_folder_rename_objects(self):
-         self.assertEqual(self.portal['i-am-unsafe'].title, "New!")
-         self.assertEqual(self.portal['new-id-_'].title, "Newer!")
- 
-+    def test_default_page_updated_on_rename_objects(self):
-+        from plone.app.content.browser.folder import RenameAction
-+        self.portal.setDefaultPage('page')
-+        uid = IUUID(self.portal.page)
-+        items = [
-+            {'UID': uid, 'newid': 'page-renamed', 'newtitle': 'Page'},
-+        ]
-+        self.request.form['torename'] = json.dumps(items)
-+        view = RenameAction(self.portal, self.request)
-+        view()
-+        self.assertEqual(self.portal.default_page, 'page-renamed')
-+
- 
- class ContextInfoTest(BaseTest):
- 
-
-
-Repository: plone.app.content
-Branch: refs/heads/master
-Date: 2015-01-23T13:48:10+01:00
-Author: Daniel Widerin (saily) <daniel@widerin.net>
-Commit: https://github.com/plone/plone.app.content/commit/ba34a9d38c6f4e2bc020ef23de7ffe29dbe5b57d
-
-Merge pull request #24 from plone/keep_default_page_on_rename
-
-Keep default_page when renaming objects
+Rework the buildout to actually work in Plone 5
 
 Files changed:
-M CHANGES.rst
-M plone/app/content/browser/actions.py
-M plone/app/content/browser/folder.py
-M plone/app/content/tests/test_actions.py
-M plone/app/content/tests/test_folder.py
+A buildout.d/base.cfg
+A buildout.d/checkouts.cfg
+A buildout.d/development.cfg
+A buildout.d/jenkins.cfg
+A buildout.d/sources.cfg
+A buildout.d/versions.cfg
+M bootstrap.py
+M buildout.cfg
+M jenkins.cfg
+M plone/app/contenttypes/migration/topics.py
+M travis.cfg
+D dev.cfg
+D sphinx.cfg
+D test-plone-4.3.x.cfg
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 1e0de22..4b87c62 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 3.0.2 (unreleased)
- ------------------
+diff --git a/bootstrap.py b/bootstrap.py
+index 1cce2ce..a629566 100644
+--- a/bootstrap.py
++++ b/bootstrap.py
+@@ -18,75 +18,14 @@
+ use the -c option to specify an alternate configuration file.
+ """
  
-+- Keep default_page when renaming objects.
-+  [pbauer]
+-import os, shutil, sys, tempfile, urllib, urllib2, subprocess
++import os
++import shutil
++import sys
++import tempfile
 +
- - Use INameChooser for new id when renaming objects using folder_rename or
-   object_rename. Fix https://github.com/plone/plone.app.dexterity/issues/73
-   [pbauer]
-diff --git a/plone/app/content/browser/actions.py b/plone/app/content/browser/actions.py
-index e2ae3c2..c5dc0bc 100644
---- a/plone/app/content/browser/actions.py
-+++ b/plone/app/content/browser/actions.py
-@@ -120,6 +120,10 @@ def handle_rename(self, action):
-         newid = data['new_id']
-         newid = INameChooser(parent).chooseName(newid, self.context)
+ from optparse import OptionParser
  
-+        context_state = getMultiAdapter(
-+            (self.context, self.request), name='plone_context_state')
-+        if context_state.is_default_page():
-+            parent.setDefaultPage(newid)
-         # Requires cmf.ModifyPortalContent permission
-         self.context.title = data['new_title']
-         # Requires zope2.CopyOrMove permission
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index 46f0370..56ee9f7 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -310,8 +310,13 @@ def __call__(self):
-                     notify(ObjectModifiedEvent(obj))
-                 if newid and obid != newid:
-                     parent = aq_parent(aq_inner(obj))
--                    # make the new id safe
-+                    # Make sure newid is safe
-                     newid = INameChooser(parent).chooseName(newid, obj)
-+                    # Update the default_page on the parent.
-+                    context_state = getMultiAdapter(
-+                        (obj, self.request), name='plone_context_state')
-+                    if context_state.is_default_page():
-+                        parent.setDefaultPage(newid)
-                     parent.manage_renameObjects((obid, ), (newid, ))
-                 elif change_title:
-                     # the rename will have already triggered a reindex
-diff --git a/plone/app/content/tests/test_actions.py b/plone/app/content/tests/test_actions.py
-index e16d0c6..de4db77 100644
---- a/plone/app/content/tests/test_actions.py
-+++ b/plone/app/content/tests/test_actions.py
-@@ -135,6 +135,23 @@ def test_create_safe_id_on_renaming(self):
-         self.portal.manage_delObjects(ids='f4-4')
-         transaction.commit()
+-if sys.platform == 'win32':
+-    def quote(c):
+-        if ' ' in c:
+-            return '"%s"' % c  # work around spawn lamosity on windows
+-        else:
+-            return c
+-else:
+-    quote = str
+-
+-# See zc.buildout.easy_install._has_broken_dash_S for motivation and comments.
+-stdout, stderr = subprocess.Popen(
+-    [sys.executable, '-Sc',
+-     'try:\n'
+-     '    import ConfigParser\n'
+-     'except ImportError:\n'
+-     '    print 1\n'
+-     'else:\n'
+-     '    print 0\n'],
+-    stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+-has_broken_dash_S = bool(int(stdout.strip()))
+-
+-# In order to be more robust in the face of system Pythons, we want to
+-# run without site-packages loaded.  This is somewhat tricky, in
+-# particular because Python 2.6's distutils imports site, so starting
+-# with the -S flag is not sufficient.  However, we'll start with that:
+-if not has_broken_dash_S and 'site' in sys.modules:
+-    # We will restart with python -S.
+-    args = sys.argv[:]
+-    args[0:0] = [sys.executable, '-S']
+-    args = map(quote, args)
+-    os.execv(sys.executable, args)
+-# Now we are running with -S.  We'll get the clean sys.path, import site
+-# because distutils will do it later, and then reset the path and clean
+-# out any namespace packages from site-packages that might have been
+-# loaded by .pth files.
+-clean_path = sys.path[:]
+-import site  # imported because of its side effects
+-sys.path[:] = clean_path
+-for k, v in sys.modules.items():
+-    if k in ('setuptools', 'pkg_resources') or (
+-        hasattr(v, '__path__') and
+-        len(v.__path__) == 1 and
+-        not os.path.exists(os.path.join(v.__path__[0], '__init__.py'))):
+-        # This is a namespace package.  Remove it.
+-        sys.modules.pop(k)
+-
+-is_jython = sys.platform.startswith('java')
+-
+-setuptools_source = 'http://peak.telecommunity.com/dist/ez_setup.py'
+-distribute_source = 'http://python-distribute.org/distribute_setup.py'
+-
+-
+-# parsing arguments
+-def normalize_to_url(option, opt_str, value, parser):
+-    if value:
+-        if '://' not in value:  # It doesn't smell like a URL.
+-            value = 'file://%s' % (
+-                urllib.pathname2url(
+-                    os.path.abspath(os.path.expanduser(value))),)
+-        if opt_str == '--download-base' and not value.endswith('/'):
+-            # Download base needs a trailing slash to make the world happy.
+-            value += '/'
+-    else:
+-        value = None
+-    name = opt_str[2:].replace('-', '_')
+-    setattr(parser.values, name, value)
++tmpeggs = tempfile.mkdtemp()
  
-+    def test_default_page_updated_on_rename(self):
-+        login(self.portal, TEST_USER_NAME)
-+        folder = self.portal['f1']
-+        folder.invokeFactory(type_name='Document', id='d1', title='A Doc')
-+        doc = folder['d1']
-+        folder.setDefaultPage('d1')
-+        transaction.commit()
-+        self.assertEqual(folder.default_page, 'd1')
+ usage = '''\
+ [DESIRED PYTHON FOR BUILDOUT] bootstrap.py [options]
+@@ -96,31 +35,13 @@ def normalize_to_url(option, opt_str, value, parser):
+ Simply run this script in a directory containing a buildout.cfg, using the
+ Python that you want bin/buildout to use.
+ 
+-Note that by using --setup-source and --download-base to point to
+-local resources, you can keep this script from going over the network.
++Note that by using --find-links to point to local resources, you can keep
++this script from going over the network.
+ '''
+ 
+ parser = OptionParser(usage=usage)
+-parser.add_option("-v", "--version", dest="version",
+-                          help="use a specific zc.buildout version")
+-parser.add_option("-d", "--distribute",
+-                   action="store_true", dest="use_distribute", default=False,
+-                   help="Use Distribute rather than Setuptools.")
+-parser.add_option("--setup-source", action="callback", dest="setup_source",
+-                  callback=normalize_to_url, nargs=1, type="string",
+-                  help=("Specify a URL or file location for the setup file. "
+-                        "If you use Setuptools, this will default to " +
+-                        setuptools_source + "; if you use Distribute, this "
+-                        "will default to " + distribute_source + "."))
+-parser.add_option("--download-base", action="callback", dest="download_base",
+-                  callback=normalize_to_url, nargs=1, type="string",
+-                  help=("Specify a URL or directory for downloading "
+-                        "zc.buildout and either Setuptools or Distribute. "
+-                        "Defaults to PyPI."))
+-parser.add_option("--eggs",
+-                  help=("Specify a directory for storing eggs.  Defaults to "
+-                        "a temporary directory that is deleted when the "
+-                        "bootstrap script completes."))
++parser.add_option("-v", "--version", help="use a specific zc.buildout version")
 +
-+        # We need zope2.CopyOrMove permission to rename content
-+        self.browser.open(doc.absolute_url() + '/object_rename')
-+        self.browser.getControl(name='form.widgets.new_id').value = ' ?renamed'
-+        self.browser.getControl(name='form.widgets.new_title').value = 'Doc'
-+        self.browser.getControl(name='form.buttons.Rename').click()
-+        self.assertEqual(folder.getFolderContents()[0].id, 'renamed')
-+        self.assertEqual(folder.default_page, 'renamed')
+ parser.add_option("-t", "--accept-buildout-test-releases",
+                   dest='accept_buildout_test_releases',
+                   action="store_true", default=False,
+@@ -130,80 +51,80 @@ def normalize_to_url(option, opt_str, value, parser):
+                         "extensions for you.  If you use this flag, "
+                         "bootstrap and buildout will get the newest releases "
+                         "even if they are alphas or betas."))
+-parser.add_option("-c", None, action="store", dest="config_file",
+-                   help=("Specify the path to the buildout configuration "
+-                         "file to be used."))
+-
+-options, args = parser.parse_args()
++parser.add_option("-c", "--config-file",
++                  help=("Specify the path to the buildout configuration "
++                        "file to be used."))
++parser.add_option("-f", "--find-links",
++                  help=("Specify a URL to search for buildout releases"))
++parser.add_option("--allow-site-packages",
++                  action="store_true", default=False,
++                  help=("Let bootstrap.py use existing site packages"))
++parser.add_option("--setuptools-version",
++                  help="use a specific setuptools version")
+ 
+-if options.eggs:
+-    eggs_dir = os.path.abspath(os.path.expanduser(options.eggs))
+-else:
+-    eggs_dir = tempfile.mkdtemp()
+ 
+-if options.setup_source is None:
+-    if options.use_distribute:
+-        options.setup_source = distribute_source
+-    else:
+-        options.setup_source = setuptools_source
++options, args = parser.parse_args()
+ 
+-if options.accept_buildout_test_releases:
+-    args.insert(0, 'buildout:accept-buildout-test-releases=true')
++######################################################################
++# load/install setuptools
+ 
+ try:
+-    import pkg_resources
+-    import setuptools  # A flag.  Sometimes pkg_resources is installed alone.
+-    if not hasattr(pkg_resources, '_distribute'):
+-        raise ImportError
++    if options.allow_site_packages:
++        import setuptools
++        import pkg_resources
++    from urllib.request import urlopen
+ except ImportError:
+-    ez_code = urllib2.urlopen(
+-        options.setup_source).read().replace('\r\n', '\n')
+-    ez = {}
+-    exec ez_code in ez
+-    setup_args = dict(to_dir=eggs_dir, download_delay=0)
+-    if options.download_base:
+-        setup_args['download_base'] = options.download_base
+-    if options.use_distribute:
+-        setup_args['no_fake'] = True
+-        if sys.version_info[:2] == (2, 4):
+-            setup_args['version'] = '0.6.32'
+-    ez['use_setuptools'](**setup_args)
+-    if 'pkg_resources' in sys.modules:
+-        reload(sys.modules['pkg_resources'])
+-    import pkg_resources
+-    # This does not (always?) update the default working set.  We will
+-    # do it.
+-    for path in sys.path:
+-        if path not in pkg_resources.working_set.entries:
+-            pkg_resources.working_set.add_entry(path)
+-
+-cmd = [quote(sys.executable),
+-       '-c',
+-       quote('from setuptools.command.easy_install import main; main()'),
+-       '-mqNxd',
+-       quote(eggs_dir)]
+-
+-if not has_broken_dash_S:
+-    cmd.insert(1, '-S')
+-
+-find_links = options.download_base
+-if not find_links:
+-    find_links = os.environ.get('bootstrap-testing-find-links')
+-if not find_links and options.accept_buildout_test_releases:
+-    find_links = 'http://downloads.buildout.org/'
+-if find_links:
+-    cmd.extend(['-f', quote(find_links)])
++    from urllib2 import urlopen
 +
-     def test_rename_form_cancel(self):
-         folder = self.portal['f1']
- 
-diff --git a/plone/app/content/tests/test_folder.py b/plone/app/content/tests/test_folder.py
-index d6323fc..911af47 100644
---- a/plone/app/content/tests/test_folder.py
-+++ b/plone/app/content/tests/test_folder.py
-@@ -188,11 +188,11 @@ class RenameTest(BaseTest):
-     def test_folder_rename_objects(self):
-         from plone.app.content.browser.folder import RenameAction
-         uid = IUUID(self.portal.page)
--        self.portal.invokeFactory('Document', id="page2", title="2nd page")
-+        self.portal.invokeFactory('Document', id='page2', title='2nd page')
-         uid2 = IUUID(self.portal.page2)
-         items = [
--            {"UID": uid, "newid": "I am UnSafe! ", "newtitle": "New!"},
--            {"UID": uid2, "newid": ". ,;new id : _! ", "newtitle": "Newer!"},
-+            {'UID': uid, 'newid': 'I am UnSafe! ', 'newtitle': 'New!'},
-+            {'UID': uid2, 'newid': '. ,;new id : _! ', 'newtitle': 'Newer!'},
-         ]
-         self.request.form['torename'] = json.dumps(items)
-         view = RenameAction(self.portal, self.request)
-@@ -200,6 +200,18 @@ def test_folder_rename_objects(self):
-         self.assertEqual(self.portal['i-am-unsafe'].title, "New!")
-         self.assertEqual(self.portal['new-id-_'].title, "Newer!")
- 
-+    def test_default_page_updated_on_rename_objects(self):
-+        from plone.app.content.browser.folder import RenameAction
-+        self.portal.setDefaultPage('page')
-+        uid = IUUID(self.portal.page)
-+        items = [
-+            {'UID': uid, 'newid': 'page-renamed', 'newtitle': 'Page'},
-+        ]
-+        self.request.form['torename'] = json.dumps(items)
-+        view = RenameAction(self.portal, self.request)
-+        view()
-+        self.assertEqual(self.portal.default_page, 'page-renamed')
++ez = {}
++exec(urlopen('https://bootstrap.pypa.io/ez_setup.py').read(), ez)
 +
++if not options.allow_site_packages:
++    # ez_setup imports site, which adds site packages
++    # this will remove them from the path to ensure that incompatible versions
++    # of setuptools are not in the path
++    import site
++    # inside a virtualenv, there is no 'getsitepackages'.
++    # We can't remove these reliably
++    if hasattr(site, 'getsitepackages'):
++        for sitepackage_path in site.getsitepackages():
++            sys.path[:] = [x for x in sys.path if sitepackage_path not in x]
++
++setup_args = dict(to_dir=tmpeggs, download_delay=0)
++
++if options.setuptools_version is not None:
++    setup_args['version'] = options.setuptools_version
++
++ez['use_setuptools'](**setup_args)
++import setuptools
++import pkg_resources
++
++# This does not (always?) update the default working set.  We will
++# do it.
++for path in sys.path:
++    if path not in pkg_resources.working_set.entries:
++        pkg_resources.working_set.add_entry(path)
++
++######################################################################
++# Install buildout
  
- class ContextInfoTest(BaseTest):
+-if options.use_distribute:
+-    setup_requirement = 'distribute'
+-else:
+-    setup_requirement = 'setuptools'
+ ws = pkg_resources.working_set
+-setup_requirement_path = ws.find(
+-    pkg_resources.Requirement.parse(setup_requirement)).location
+-env = dict(
+-    os.environ,
+-    PYTHONPATH=setup_requirement_path)
++
++cmd = [sys.executable, '-c',
++       'from setuptools.command.easy_install import main; main()',
++       '-mZqNxd', tmpeggs]
++
++find_links = os.environ.get(
++    'bootstrap-testing-find-links',
++    options.find_links or
++    ('http://downloads.buildout.org/'
++     if options.accept_buildout_test_releases else None)
++    )
++if find_links:
++    cmd.extend(['-f', find_links])
++
++setuptools_path = ws.find(
++    pkg_resources.Requirement.parse('setuptools')).location
  
+ requirement = 'zc.buildout'
+ version = options.version
+@@ -213,12 +134,17 @@ def normalize_to_url(option, opt_str, value, parser):
+     _final_parts = '*final-', '*final'
+ 
+     def _final_version(parsed_version):
+-        for part in parsed_version:
+-            if (part[:1] == '*') and (part not in _final_parts):
+-                return False
+-        return True
++        try:
++            return not parsed_version.is_prerelease
++        except AttributeError:
++            # Older setuptools
++            for part in parsed_version:
++                if (part[:1] == '*') and (part not in _final_parts):
++                    return False
++            return True
++
+     index = setuptools.package_index.PackageIndex(
+-        search_path=[setup_requirement_path])
++        search_path=[setuptools_path])
+     if find_links:
+         index.add_find_links((find_links,))
+     req = pkg_resources.Requirement.parse(requirement)
+@@ -227,8 +153,6 @@ def _final_version(parsed_version):
+         bestv = None
+         for dist in index[req.project_name]:
+             distv = dist.parsed_version
+-            if distv >= pkg_resources.parse_version('2dev'):
+-                continue
+             if _final_version(distv):
+                 if bestv is None or distv > bestv:
+                     best = [dist]
+@@ -238,40 +162,28 @@ def _final_version(parsed_version):
+         if best:
+             best.sort()
+             version = best[-1].version
+-
+ if version:
+-    requirement += '=='+version
+-else:
+-    requirement += '<2dev'
+-
++    requirement = '=='.join((requirement, version))
+ cmd.append(requirement)
+ 
+-if is_jython:
+-    import subprocess
+-    exitcode = subprocess.Popen(cmd, env=env).wait()
+-else:  # Windows prefers this, apparently; otherwise we would prefer subprocess
+-    exitcode = os.spawnle(*([os.P_WAIT, sys.executable] + cmd + [env]))
+-if exitcode != 0:
+-    sys.stdout.flush()
+-    sys.stderr.flush()
+-    print ("An error occurred when trying to install zc.buildout. "
+-           "Look above this message for any errors that "
+-           "were output by easy_install.")
+-    sys.exit(exitcode)
+-
+-ws.add_entry(eggs_dir)
++import subprocess
++if subprocess.call(cmd, env=dict(os.environ, PYTHONPATH=setuptools_path)) != 0:
++    raise Exception(
++        "Failed to execute command:\n%s" % repr(cmd)[1:-1])
++
++######################################################################
++# Import and run buildout
++
++ws.add_entry(tmpeggs)
+ ws.require(requirement)
+ import zc.buildout.buildout
+ 
+-# If there isn't already a command in the args, add bootstrap
+ if not [a for a in args if '=' not in a]:
+     args.append('bootstrap')
+ 
+-
+-# if -c was provided, we push it back into args for buildout's main function
++# if -c was provided, we push it back into args for buildout' main function
+ if options.config_file is not None:
+     args[0:0] = ['-c', options.config_file]
+ 
+ zc.buildout.buildout.main(args)
+-if not options.eggs:  # clean up temporary egg directory
+-    shutil.rmtree(eggs_dir)
++shutil.rmtree(tmpeggs)
+diff --git a/buildout.cfg b/buildout.cfg
+index ff66b9f..3def417 100644
+--- a/buildout.cfg
++++ b/buildout.cfg
+@@ -1,2 +1,2 @@
+ [buildout]
+-extends = test-plone-4.3.x.cfg
++extends = buildout.d/development.cfg
+diff --git a/buildout.d/base.cfg b/buildout.d/base.cfg
+new file mode 100644
+index 0000000..2c60554
+--- /dev/null
++++ b/buildout.d/base.cfg
+@@ -0,0 +1,22 @@
++[buildout]
++package-name = plone.app.contenttypes
++package-extras = [test]
++
++extends =
++    https://raw.github.com/collective/buildout.plonetest/master/plone-5.0.x.cfg
++    https://raw.github.com/collective/buildout.plonetest/master/qa.cfg
++    checkouts.cfg
++    sources.cfg
++    versions.cfg
++
++parts += createcoverage
++
++develop = .
++
++eggs +=
++    Pillow
++
++[code-analysis]
++recipe = plone.recipe.codeanalysis
++directory = ${buildout:directory}/plone
++flake8-ignore = E123,E124,E501,E126,E127,E128
+diff --git a/buildout.d/checkouts.cfg b/buildout.d/checkouts.cfg
+new file mode 100644
+index 0000000..d5798b1
+--- /dev/null
++++ b/buildout.d/checkouts.cfg
+@@ -0,0 +1,3 @@
++[buildout]
++always-checkout = force
++auto-checkout +=
+diff --git a/buildout.d/development.cfg b/buildout.d/development.cfg
+new file mode 100644
+index 0000000..ae61c81
+--- /dev/null
++++ b/buildout.d/development.cfg
+@@ -0,0 +1,38 @@
++[buildout]
++extends =
++    base.cfg
++
++eggs +=
++    plone.reload
++    Products.PDBDebugMode
++    Products.DocFinderTab
++    aws.zope2zcmldoc
++    collective.profiler
++
++extensions +=
++    mr.developer
++
++parts +=
++    omelette
++    test
++    robot
++
++show-picked-versions = true
++
++[omelette]
++recipe = collective.recipe.omelette
++eggs = ${test:eggs}
++
++[test]
++recipe = zc.recipe.testrunner
++eggs =
++    ${buildout:eggs}
++    ${buildout:package-name} ${buildout:package-extras}
++defaults = ['-s', '${buildout:package-name}', '--auto-color', '--auto-progress']
++
++[robot]
++recipe = zc.recipe.egg
++eggs =
++    Pillow
++    ${test:eggs}
++    plone.app.robotframework[ride,reload]
+diff --git a/buildout.d/jenkins.cfg b/buildout.d/jenkins.cfg
+new file mode 100644
+index 0000000..34fa93f
+--- /dev/null
++++ b/buildout.d/jenkins.cfg
+@@ -0,0 +1,24 @@
++[buildout]
++extends =
++    base.cfg
++    https://raw.github.com/plone/buildout.jenkins/master/jenkins.cfg
++    https://raw.github.com/plone/buildout.jenkins/master/jenkins-code-analysis.cfg
++
++jenkins-test-eggs = ${buildout:package-name} ${buildout:package-extras}
++jenkins-test-directories = src/plone/app/contenttypes
++
++parts += pylint
++
++[pylint]
++recipe = zc.recipe.egg
++eggs = pylint
++       ${buildout:eggs}
++scripts = pylint
++entry-points = pylint=pylint.lint:Run
++arguments = [
++    '--output-format=parseable',
++    '--zope=y',
++    '--reports=y',
++    '--disable=E0611,F0401,W0232,E1101,C0103,C0111,R0201,W0201,R0911,R0904,F0220,E1103,R0901,E0211,E0213,E1002,W0622,C0301,W0212,R0903',
++    '--generated-members=objects',
++    ] + (sys.argv[1:] or ["${buildout:jenkins-test-directories}"])
+diff --git a/buildout.d/sources.cfg b/buildout.d/sources.cfg
+new file mode 100644
+index 0000000..d253567
+--- /dev/null
++++ b/buildout.d/sources.cfg
+@@ -0,0 +1,7 @@
++[remotes]
++collective = git://github.com/collective
++collective_push = git@github.com:collective
++plone = git://github.com/plone
++plone_push = git@github.com:plone
++
++[sources]
+diff --git a/buildout.d/versions.cfg b/buildout.d/versions.cfg
+new file mode 100644
+index 0000000..88aafe4
+--- /dev/null
++++ b/buildout.d/versions.cfg
+@@ -0,0 +1,10 @@
++[versions]
++setuptools = 6.1
++zc.buildout = 2.2.5
++zc.recipe.egg = 2.0.1
++
++robotframework = 2.8.4
++robotframework-ride = 1.3
++robotframework-selenium2library = 1.6.0
++robotsuite = 1.6.1
++selenium = 2.44.0
+diff --git a/dev.cfg b/dev.cfg
+deleted file mode 100644
+index 5eaf2dd..0000000
+--- a/dev.cfg
++++ /dev/null
+@@ -1,15 +0,0 @@
+-[buildout]
+-extends =
+-    buildout.cfg
+-
+-[instance]
+-eggs +=
+-    Pillow
+-    plone.app.debugtoolbar
+-    plone.reload
+-#    Products.PDBDebugMode
+-#    bpython
+-#    Products.PrintingMailHost
+-#    ipdb
+-
+-#demo-storage = on
+diff --git a/jenkins.cfg b/jenkins.cfg
+index 3cf872c..870651f 100644
+--- a/jenkins.cfg
++++ b/jenkins.cfg
+@@ -1,6 +1,6 @@
+ [buildout]
+ extends =
+-    test-plone-4.3.x.cfg
++    buildout.d/base.cfg
+     https://raw.github.com/plone/buildout.jenkins/master/jenkins.cfg
+     https://raw.github.com/plone/buildout.jenkins/master/jenkins-code-analysis.cfg
+ parts += code-analysis
+diff --git a/plone/app/contenttypes/migration/topics.py b/plone/app/contenttypes/migration/topics.py
+index 7d8825c..56fefe5 100644
+--- a/plone/app/contenttypes/migration/topics.py
++++ b/plone/app/contenttypes/migration/topics.py
+@@ -200,7 +200,7 @@ class ATDateCriteriaConverter(CriterionConverter):
+     values ourselves instead of translating the values back and forth.
+     """
+ 
+-    def __call__(self, formquery, criterion, registry):
++    def __call__(self, formquery, criterion, registry):  # noqa
+         if criterion.value is None:
+             logger.warn("Ignoring empty criterion %s.", criterion)
+             return
+diff --git a/sphinx.cfg b/sphinx.cfg
+deleted file mode 100644
+index f2ae811..0000000
+--- a/sphinx.cfg
++++ /dev/null
+@@ -1,20 +0,0 @@
+-[buildout]
+-parts +=
+-    sphinxbuilder
+-    sphinxupload
+-
+-[sphinxbuilder]
+-recipe = collective.recipe.sphinxbuilder
+-eggs = sphinxcontrib-robotdoc
+-#outputs =
+-#    html
+-#    latex
+-#    pdf
+-
+-[sphinxupload]
+-recipe = collective.recipe.template
+-input = inline:
+-    #!/bin/sh
+-    bin/zopepy setup.py upload_sphinx
+-output = ${buildout:directory}/bin/sphinxupload
+-mode = 755
+diff --git a/test-plone-4.3.x.cfg b/test-plone-4.3.x.cfg
+deleted file mode 100644
+index 39683d3..0000000
+--- a/test-plone-4.3.x.cfg
++++ /dev/null
+@@ -1,138 +0,0 @@
+-[buildout]
+-extends =
+-    http://dist.plone.org/release/4.3-latest/versions.cfg
+-    sphinx.cfg
+-extensions = mr.developer
+-develop = .
+-always-checkout = force
+-auto-checkout =
+-     Products.contentmigration
+-#    plone.app.event
+-parts +=
+-    instance
+-    test
+-    coverage
+-    test-coverage
+-    code-analysis
+-    omelette
+-    autopep8
+-    releaser
+-    zopepy
+-    robot
+-versions = versions
+-
+-[instance]
+-recipe = plone.recipe.zope2instance
+-http-address = 8080
+-user = admin:admin
+-eggs =
+-    Plone
+-    plone.app.contenttypes [test]
+-
+-[test]
+-recipe = zc.recipe.testrunner
+-defaults = ['--auto-color', '--auto-progress']
+-eggs =
+-    plone.app.contenttypes [test]
+-
+-[coverage]
+-recipe = zc.recipe.egg
+-eggs = coverage
+-
+-[test-coverage]
+-recipe = collective.recipe.template
+-input = inline:
+-    #!/bin/bash
+-    ${buildout:directory}/bin/coverage run --source=${buildout:directory}/plone/app/contenttypes bin/test --all
+-    ${buildout:directory}/bin/coverage report -m
+-output = ${buildout:directory}/bin/test-coverage
+-mode = 755
+-
+-[code-analysis]
+-recipe = plone.recipe.codeanalysis
+-directory = ${buildout:directory}/plone/app/contenttypes
+-flake8-max-complexity = 10
+-zptlint = True
+-utf8-header = True
+-
+-[omelette]
+-recipe = collective.recipe.omelette
+-eggs = ${instance:eggs}
+-packages = ${instance:location}/lib/python ./
+-
+-[releaser]
+-recipe = zc.recipe.egg
+-eggs = jarn.mkrelease
+-
+-[autopep8]
+-recipe = zc.recipe.egg
+-eggs = autopep8
+-
+-[zopepy]
+-recipe = zc.recipe.egg
+-eggs = ${instance:eggs}
+-interpreter = zopepy
+-scripts = zopepy
+-
+-[sources]
+-collective.i18nreport = git https://github.com/collective/collective.i18nreport.git
+-collective.xmltestreport = git https://github.com/collective/collective.xmltestreport.git pushurl=git@github.com:collective/collective.xmltestreport.git
+-plone.app.dexterity = git https://github.com/plone/plone.app.dexterity.git pushurl=git@github.com:plone/plone.app.dexterity.git
+-plone.dexterity = git https://github.com/plone/plone.dexterity.git pushurl=git@github.com:plone/plone.dexterity.git
+-Products.CMFPlone = git https://github.com/plone/Products.CMFPlone.git pushurl=git@github.com:plone/Products.CMFPlone.git branch=plip-12344-plone.app.contenttypes
+-Products.ATContentTypes = git https://github.com/plone/Products.ATContentTypes.git pushurl=git@github.com:plone/Products.ATContentTypes.git branch=davisagli-optional-archetypes
+-Products.contentmigration = git https://github.com/plone/Products.contentmigration pushurl=git@github.com:plone/Products.contentmigration.git
+-plone.app.collection = git https://github.com/plone/plone.app.collection.git pushurl=git@github.com:plone/plone.app.collection.git
+-plone.app.discussion = git https://github.com/plone/plone.app.discussion.git pushurl=git@github.com:plone/plone.app.discussion.git
+-plone.app.event = git https://github.com/plone/plone.app.event.git pushurl=git@github.com:plone/plone.app.event.git
+-plone.event = git https://github.com/plone/plone.event.git pushurl=git@github.com:plone/plone.event.git
+-plone.formwidget.datetime = git https://github.com/plone/plone.formwidget.datetime.git pushurl=git@github.com:plone/plone.formwidget.datetime.git
+-plone.app.querystring = git https://github.com/plone/plone.app.querystring.git pushurl=git@github.com:plone/plone.app.querystring.git
+-# Points to a fork until the pull request is reviewed and merged
+-plone.app.testing = git https://github.com/do3cc/plone.app.testing.git pushurl=git@github.com:do3cc/plone.app.testing.git branch=4.2.x
+-plone.formwidget.querystring = git https://github.com/plone/plone.formwidget.querystring.git pushurl=git@github.com:plone/plone.formwidget.querystring.git
+-plone.app.relationfield = git https://github.com/plone/plone.app.relationfield.git pushurl=git@github.com:plone/plone.app.relationfield.git
+-Products.contentmigration = git git://github.com/plone/Products.contentmigration.git pushurl=git@github.com:plone/Products.contentmigration.git
+-plone.app.versioningbehavior = git https://github.com/plone/plone.app.versioningbehavior.git pushurl=git@github.com:plone/plone.app.versioningbehavior.git
+-plone.app.referenceablebehavior = git https://github.com/plone/plone.app.referenceablebehavior.git pushurl=git@github.com:plone/plone.app.referenceablebehavior.git
+-collective.dexteritydiff = git https://github.com/collective/collective.dexteritydiff.git pushurl=git@github.com:collective/collective.dexteritydiff.git
+-plone.app.layout = git https://github.com/plone/plone.app.layout.git pushurl=git@github.com:plone/plone.app.layout.git branch=2.3.x
+-plone.recipe.codeanalysis = git git@github.com:plone/plone.recipe.codeanalysis.git
+-
+-[versions]
+-# dexterity support
+-plone.app.layout = 2.3.10
+-plone.dexterity = 2.2.1
+-plone.app.dexterity = 2.0.11
+-plone.schemaeditor = 1.3.5
+-plone.app.querystring = 1.1.0
+-plone.app.vocabularies = 2.1.12
+-
+-# event
+-plone.app.portlets = 2.5a1
+-plone.app.event = 1.1b1
+-plone.app.jquery = 1.8.3
+-
+-# testing
+-plone.app.testing = 4.2.4
+-plone.app.robotframework = 0.9.5
+-robotframework = 2.8.4
+-robotframework-selenium2library = 1.5.0
+-robotsuite = 1.4.3
+-selenium = 2.43.0
+-robotframework-selenium2screenshots = 0.4.0
+-sphinxcontrib-robotframework = 0.4.3
+-Pygments = 1.6
+-
+-# misc
+-pytz = 2013.9
+-
+-[robot]
+-recipe = zc.recipe.egg
+-eggs =
+-    Pillow
+-    ${test:eggs}
+-    plone.app.robotframework
+-scripts =
+-    robot-server
+-    robot
+diff --git a/travis.cfg b/travis.cfg
+index d712fe3..1c8726a 100644
+--- a/travis.cfg
++++ b/travis.cfg
+@@ -1,17 +1,11 @@
+ [buildout]
+-extends = test-plone-4.3.x.cfg
+-parts +=
+-   download
+-   install
+-   test
+-eggs-directory = buildout-cache/eggs
+-download-cache = buildout-cache/downloads
++extends =
++    https://raw.github.com/collective/buildout.plonetest/master/travis-5.x.cfg
++    buildout.d/base.cfg
+ 
+-[download]
+-recipe = hexagonit.recipe.download
+-url = https://launchpad.net/plone/4.3/4.3.2/+download/Plone-4.3.2-UnifiedInstaller.tgz
+-
+-[install]
+-recipe = collective.recipe.cmd
+-on_install = true
+-cmds = tar jxvf ${download:location}/Plone-4.3.2-UnifiedInstaller/packages/buildout-cache.tar.bz2 1>/dev/null
++parts =
++    download
++    install
++    test
++    createcoverage
++    code-analysis
 
 
