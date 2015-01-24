@@ -1,52 +1,176 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-24T05:36:45-06:00
+Date: 2015-01-24T05:54:47-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/dfad2c986f74d0d66c977723bbef9352f716f588
+Commit: https://github.com/plone/mockup/commit/87e14e16f33ca00d99ed3bfd8a79f8c057811c61
 
-fix auto focus test failures
+reapply fixes that were reverted
 
 Files changed:
-M mockup/patterns/formautofocus/pattern.js
-M mockup/tests/pattern-formautofocus-test.js
+M .travis.yml
+M mockup/patterns/structure/js/views/properties.js
+M mockup/patterns/structure/js/views/table.js
+M mockup/patterns/structure/js/views/upload.js
+M mockup/patterns/structure/pattern.js
+M mockup/patterns/structure/templates/tablerow.xml
+M mockup/patterns/upload/less/pattern.upload.less
+M mockup/patterns/upload/pattern.js
 
-diff --git a/mockup/patterns/formautofocus/pattern.js b/mockup/patterns/formautofocus/pattern.js
-index 43b62f4..8e41ec1 100644
---- a/mockup/patterns/formautofocus/pattern.js
-+++ b/mockup/patterns/formautofocus/pattern.js
-@@ -29,9 +29,9 @@ define([
-     init: function() {
-       var self = this;
-       if ($(self.options.condition, self.$el).size() !== 0) {
--        $(self.options.target, self.$el).focus();
-+        $(self.options.target, self.$el).focusin();
-       } else {
--        $(self.options.always, self.$el).focus();
-+        $(self.options.always, self.$el).focusin();
+diff --git a/.travis.yml b/.travis.yml
+index a659066..fecbab8 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -6,7 +6,6 @@ env:
+     - secure: "fPRKgxcbSXyiLqkUjAjPkn5eGBqMqf6c5haTZ9x76sDl1792nDyiL2FXSpiv2s8PeOqMbWgcXly0r+CLXypYkWba9nIxb4bhvtXyDoYAaoBV0lG1NbBakuOwqW/u60WpPJS1qTqmEUSEbSxdntqk7HF1yG6MdMi3PdubxMyw9h0="
+     - secure: VFB17+mogAMLzk1RkwQo4qY8jgc8tD8lUWV6j2xtqDBG6gdkUl+mhuUm8ibbD910/kjQJc47FAHiZi4xrRW1vDmOizw7K48Fq+V180bf+2fAvAJNakI6Z4uuPcA7VnuRYoNfUPXAmWgtvMzgMAF+sXeV+jhgha6Kx02xj39LjD0=
+     - secure: lLMAD0VmG1/SpfuJKwOT9xn4lV1pUq71WszWjpF8TgxJfIgRBYLp9QkRTXQ6pfTwXTL22YSsc8N5yhJsALKV2V57Og6Pfta6jQqRIzJU6maIZBBLqW6LQThuazF6tmEcTpty1j1LdFf3tuNVchsbsii2eRhXNdIPXLjBliMJkuo=
+-    - SAUCE_CONNECT_READY_FILE=/tmp/sauce-connect-ready
+   matrix:
+     - BROWSERS="SL_Chrome"
+     - BROWSERS="SL_Firefox"
+@@ -25,14 +24,13 @@ install:
+   - git config --global user.name "Travis CI"
+ script:
+   - make test-once
+-  - make bundles
+-  - if [ "$TRAVIS_BRANCH" == "master" ]; then make test-ci; fi
+   - make docs
+ after_success:
+-  - if [ "$BROWSERS" == "SL_Chrome,SL_Firefox" ]; then ./node_modules/.bin/lcov-result-merger "coverage/**/lcov.info" | ./node_modules/.bin/coveralls; fi
++  - if [ "$BROWSERS" == "SL_Chrome" ]; then ./node_modules/.bin/lcov-result-merger "coverage/**/lcov.info" | ./node_modules/.bin/coveralls; fi
+ matrix:
+   fast_finish: true
+   allow_failures:
++    - env: BROWSERS="SL_Firefox"
+     - env: BROWSERS="SL_IE_9"
+     - env: BROWSERS="SL_IE_10,SL_IE_11"
+     - env: BROWSERS="SL_Opera,SL_Safari"
+diff --git a/mockup/patterns/structure/js/views/properties.js b/mockup/patterns/structure/js/views/properties.js
+index 4090dd8..1ed4de9 100644
+--- a/mockup/patterns/structure/js/views/properties.js
++++ b/mockup/patterns/structure/js/views/properties.js
+@@ -77,10 +77,10 @@ define([
+     },
+     applyButtonClicked: function(e) {
+       var data = {
+-        effectiveDate: this.effectivePickADate.$date.attr('value'),
+-        effectiveTime: this.effectivePickADate.$time.attr('value'),
+-        expirationDate: this.expirationPickADate.$date.attr('value'),
+-        expirationTime: this.expirationPickADate.$time.attr('value'),
++        effectiveDate: this.effectivePickADate.$date.val(),
++        effectiveTime: this.effectivePickADate.$time.val(),
++        expirationDate: this.expirationPickADate.$date.val(),
++        expirationTime: this.expirationPickADate.$time.val(),
+         copyright: this.$copyright.val(),
+         contributors: JSON.stringify(this.$contributors.select2('data')),
+         creators: JSON.stringify(this.$creators.select2('data'))
+diff --git a/mockup/patterns/structure/js/views/table.js b/mockup/patterns/structure/js/views/table.js
+index e598087..7d4f476 100644
+--- a/mockup/patterns/structure/js/views/table.js
++++ b/mockup/patterns/structure/js/views/table.js
+@@ -101,7 +101,7 @@ define([
        }
  
+       self.moment = new Moment(self.$el, {
+-        selector: '.ModificationDate,.EffectiveDate,.CreationDate',
++        selector: '.ModificationDate,.EffectiveDate,.CreationDate,.ExpirationDate',
+         format: 'relative'
+       });
+       self.addReordering();
+diff --git a/mockup/patterns/structure/js/views/upload.js b/mockup/patterns/structure/js/views/upload.js
+index 68cb636..5f03a70 100644
+--- a/mockup/patterns/structure/js/views/upload.js
++++ b/mockup/patterns/structure/js/views/upload.js
+@@ -54,7 +54,7 @@ define([
+         } else {
+           relatedItems.$el.select2('data', [self.currentPathData.object]);
+         }
+-        self.upload.currentPath = currentPath;
++        self.upload.setPath(currentPath);
+       }
      }
-diff --git a/mockup/tests/pattern-formautofocus-test.js b/mockup/tests/pattern-formautofocus-test.js
-index 406db72..9f8d3de 100644
---- a/mockup/tests/pattern-formautofocus-test.js
-+++ b/mockup/tests/pattern-formautofocus-test.js
-@@ -46,7 +46,7 @@ define([
-         '</div>')
-         .appendTo('body');
-       expect($('input#first-input').is(':focus')).to.be.equal(false);
--      $('input').on('focus', function() {
-+      $('input').on('focusin', function() {
-         expect($(this).attr('id')).to.equal('input1-inside-error');
-         expect($('input#first-input-should-not-focus').is(':focus')).to.be.equal(false);
-         expect($('input#input-inside-error-should-not-focus').is(':focus')).to.be.equal(false);
-@@ -65,7 +65,7 @@ define([
-         '</div>')
-         .appendTo('body');
-       expect($('input#first-input').is(':focus')).to.be.equal(false);
--      $('input').on('focus', function() {
-+      $('input').on('focusin', function() {
-         expect($(this).attr('id')).to.equal('first-input');
-         expect($('input#first-input-should-not-focus').is(':focus')).to.be.equal(false);
-         expect($('input#input-inside-error-should-not-focus').is(':focus')).to.be.equal(false);
+ 
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index ea9fe66..9f80fe5 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -65,6 +65,7 @@ define([
+       availableColumns: {
+         'ModificationDate': _t('Last modified'),
+         'EffectiveDate': _t('Published'),
++        'ExpirationDate': _t('Expiration'),
+         'CreationDate': _t('Created'),
+         'review_state': _t('Review state'),
+         'Subject': _t('Tags'),
+diff --git a/mockup/patterns/structure/templates/tablerow.xml b/mockup/patterns/structure/templates/tablerow.xml
+index 8583088..4714066 100644
+--- a/mockup/patterns/structure/templates/tablerow.xml
++++ b/mockup/patterns/structure/templates/tablerow.xml
+@@ -1,14 +1,6 @@
+ <td class="selection"><input type="checkbox" <% if(selected){ %> checked="checked" <% } %>/></td>
+ <td class="title">
+-  <a href="<%- getURL %>">
+-    <% if(['File', 'Image'].indexOf(attributes.Type) !== -1){ %>
+-      <span class="glyphicon glyphicon-file"></span>
+-    <% } %>
+-    <% if(attributes.is_folderish) { %>
+-      <span class="glyphicon glyphicon-folder-open"></span>
+-    <% } %>
+-    <%- Title %>
+-  </a>
++  <a href="<%- getURL %>" class="state-<%- review_state %> contenttype-<%- Type.toLowerCase() %>">
+ </td>
+ <% _.each(activeColumns, function(column){ %>
+   <% if(_.has(availableColumns, column)) { %>
+diff --git a/mockup/patterns/upload/less/pattern.upload.less b/mockup/patterns/upload/less/pattern.upload.less
+index 7184337..24767cb 100644
+--- a/mockup/patterns/upload/less/pattern.upload.less
++++ b/mockup/patterns/upload/less/pattern.upload.less
+@@ -26,9 +26,9 @@
+             padding-top: 10px;
+         }
+         .previews{
+-            margin-top: 2em;
+-            .item{ padding: 5px 0; }
+-            .title{ padding-left: 0; }
++            margin-top: 4em;
++            .item{ padding: 5px 0; clear: both;}
++            .title{ padding-left: 3px; }
+             .info img {
+                 width: 32px;
+                 height: 32px;
+diff --git a/mockup/patterns/upload/pattern.js b/mockup/patterns/upload/pattern.js
+index 1f84094..87375fa 100644
+--- a/mockup/patterns/upload/pattern.js
++++ b/mockup/patterns/upload/pattern.js
+@@ -391,6 +391,12 @@ define([
+       return Math.round(mb / 1024) + ' GB';
+     },
+ 
++    setPath: function(path){
++      var self = this;
++      self.currentPath = path;
++      self.options.url = self.dropzone.options.url = self.getUrl();
++    },
++
+     setupRelatedItems: function($input) {
+       var self = this;
+       var options = self.options.relatedItems;
+@@ -400,12 +406,11 @@ define([
+       var ri = new RelatedItems($input, options);
+       ri.$el.on('change', function() {
+         var result = $(this).select2('data');
++        var path = null;
+         if (result.length > 0){
+-          self.currentPath = result[0].path;
+-        } else {
+-          self.currentPath = null;
++          path = result[0].path;
+         }
+-        self.options.url = self.dropzone.options.url = self.getUrl();
++        self.setPath(path);
+       });
+       return ri;
+     }
 
 
