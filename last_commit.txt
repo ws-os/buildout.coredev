@@ -1,26 +1,25 @@
-Repository: mockup
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-24T07:10:45-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/826643d6a948469c03ab559052f2119f6c6b83c3
+Date: 2015-01-24T10:11:25+01:00
+Author: Philip Bauer (pbauer) <bauer@starzel.de>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/79e8dff7b188c3577dabb80b9a66092968ba6d4d
 
-upgrade mockup core
+fix bug in topic-migration with of multiple values for one criteria
 
 Files changed:
-M mockup/bower.json
+M plone/app/contenttypes/migration/topics.py
 
-diff --git a/mockup/bower.json b/mockup/bower.json
-index da5915a..13a69e2 100644
---- a/mockup/bower.json
-+++ b/mockup/bower.json
-@@ -14,7 +14,7 @@
-     "jquery-form": "3.46.0",
-     "jquery.cookie": "1.4.1",
-     "lodash": "2.4.1",
--    "mockup-core": "1.2.15",
-+    "mockup-core": "1.2.16",
-     "moment": "2.8.3",
-     "pickadate": "3.4.0",
-     "requirejs-text": "2.0.12",
+diff --git a/plone/app/contenttypes/migration/topics.py b/plone/app/contenttypes/migration/topics.py
+index 56fefe5..c710577 100644
+--- a/plone/app/contenttypes/migration/topics.py
++++ b/plone/app/contenttypes/migration/topics.py
+@@ -99,7 +99,6 @@ def switch_type_to_portal_type(self, value, criterion):
+                     logger.warn("Cannot switch Type %r to portal_type.", Type)
+                     continue
+             new_values.append(portal_type)
+-        new_values = tuple(new_values)
+         if isinstance(value, dict):
+             value['query'] = new_values
+         else:
 
 
