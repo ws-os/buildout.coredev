@@ -1,35 +1,52 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-24T05:26:29-06:00
+Date: 2015-01-24T05:36:45-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/dee53113293e84924565a640b507cd470cc788fa
+Commit: https://github.com/plone/mockup/commit/dfad2c986f74d0d66c977723bbef9352f716f588
 
-let's make it full width
+fix auto focus test failures
 
 Files changed:
-M mockup/patterns/relateditems/pattern.js
+M mockup/patterns/formautofocus/pattern.js
+M mockup/tests/pattern-formautofocus-test.js
 
-diff --git a/mockup/patterns/relateditems/pattern.js b/mockup/patterns/relateditems/pattern.js
-index fed64eb..4b3a8ab 100644
---- a/mockup/patterns/relateditems/pattern.js
-+++ b/mockup/patterns/relateditems/pattern.js
-@@ -28,7 +28,7 @@
-  *    separator(string): Select2 option. String which separates multiple items. (',')
-  *    tokenSeparators(array): Select2 option, refer to select2 documentation.
-  *    ([",", " "])
-- *    width(string): Specify a width for the widget. ('300px')
-+ *    width(string): Specify a width for the widget. ('100%')
-  *
-  * Documentation:
-  *    The Related Items pattern is based on Select2 so many of the same options will work here as well.
-@@ -87,7 +87,7 @@ define([
-     currentPath: null,
-     defaults: {
-       vocabularyUrl: null, // must be set to work
--      width: '300px',
-+      width: '100%',
-       multiple: true,
-       tokenSeparators: [',', ' '],
-       separator: ',',
+diff --git a/mockup/patterns/formautofocus/pattern.js b/mockup/patterns/formautofocus/pattern.js
+index 43b62f4..8e41ec1 100644
+--- a/mockup/patterns/formautofocus/pattern.js
++++ b/mockup/patterns/formautofocus/pattern.js
+@@ -29,9 +29,9 @@ define([
+     init: function() {
+       var self = this;
+       if ($(self.options.condition, self.$el).size() !== 0) {
+-        $(self.options.target, self.$el).focus();
++        $(self.options.target, self.$el).focusin();
+       } else {
+-        $(self.options.always, self.$el).focus();
++        $(self.options.always, self.$el).focusin();
+       }
+ 
+     }
+diff --git a/mockup/tests/pattern-formautofocus-test.js b/mockup/tests/pattern-formautofocus-test.js
+index 406db72..9f8d3de 100644
+--- a/mockup/tests/pattern-formautofocus-test.js
++++ b/mockup/tests/pattern-formautofocus-test.js
+@@ -46,7 +46,7 @@ define([
+         '</div>')
+         .appendTo('body');
+       expect($('input#first-input').is(':focus')).to.be.equal(false);
+-      $('input').on('focus', function() {
++      $('input').on('focusin', function() {
+         expect($(this).attr('id')).to.equal('input1-inside-error');
+         expect($('input#first-input-should-not-focus').is(':focus')).to.be.equal(false);
+         expect($('input#input-inside-error-should-not-focus').is(':focus')).to.be.equal(false);
+@@ -65,7 +65,7 @@ define([
+         '</div>')
+         .appendTo('body');
+       expect($('input#first-input').is(':focus')).to.be.equal(false);
+-      $('input').on('focus', function() {
++      $('input').on('focusin', function() {
+         expect($(this).attr('id')).to.equal('first-input');
+         expect($('input#first-input-should-not-focus').is(':focus')).to.be.equal(false);
+         expect($('input#input-inside-error-should-not-focus').is(':focus')).to.be.equal(false);
 
 
