@@ -1,324 +1,35 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-21T15:26:53+01:00
-Author: benniboy (benniboy) <bs@kleinundpartner.at>
-Commit: https://github.com/plone/mockup/commit/3bf8e71a599040f188288edb01587e5a48695164
+Date: 2015-01-24T05:26:29-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/dee53113293e84924565a640b507cd470cc788fa
 
-added npm and bower to makefile
-
-Files changed:
-M mockup/Makefile
-
-diff --git a/mockup/Makefile b/mockup/Makefile
-index a27bbdb..24e9538 100644
---- a/mockup/Makefile
-+++ b/mockup/Makefile
-@@ -21,6 +21,13 @@ endif
- 
- all: test-once bundles docs
- 
-+stamp-npm: package.json
-+    npm install
-+    touch stamp-npm
-+stamp-bower: stamp-npm bower.json
-+    $(BOWER) install
-+    touch stamp-bower
-+
- bundles: bundle-widgets bundle-structure bundle-plone
- 	# ----------------------------------------------------------------------- #
- 	# cp build/widgets* path/to/plone.app.widgets/plone/app/widgets/static
-@@ -95,6 +102,8 @@ clean:
- 	rm -rf build
- 	rm -rf node_modules
- 	rm -rf bower_components
-+	rm -f stamp-npm stamp-bower
-+	rm -rf node_modules src/bower_components
- 
- clean-deep: clean
- 	if test -f $(BOWER); then $(BOWER) cache clean; fi
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2015-01-21T16:10:10+01:00
-Author: benniboy (benniboy) <bs@kleinundpartner.at>
-Commit: https://github.com/plone/mockup/commit/1760111e4fa36db5651b64c5915811f31980e13e
-
-added tab instead of spaces
+let's make it full width
 
 Files changed:
-M mockup/Makefile
+M mockup/patterns/relateditems/pattern.js
 
-diff --git a/mockup/Makefile b/mockup/Makefile
-index 24e9538..f598091 100644
---- a/mockup/Makefile
-+++ b/mockup/Makefile
-@@ -22,11 +22,12 @@ endif
- all: test-once bundles docs
- 
- stamp-npm: package.json
--    npm install
--    touch stamp-npm
-+	npm install
-+	touch stamp-npm
-+
- stamp-bower: stamp-npm bower.json
--    $(BOWER) install
--    touch stamp-bower
-+	$(BOWER) install
-+	touch stamp-bower
- 
- bundles: bundle-widgets bundle-structure bundle-plone
- 	# ----------------------------------------------------------------------- #
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2015-01-21T16:47:48+01:00
-Author: benniboy (benniboy) <bs@kleinundpartner.at>
-Commit: https://github.com/plone/mockup/commit/63c5e32a161570f33434075d4db40c0e202bb1e4
-
-modified gitignore
-
-Files changed:
-M .gitignore
-M mockup/Makefile
-M mockup/package.json
-
-diff --git a/.gitignore b/.gitignore
-index 3489b3d..7e4e7ad 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -9,3 +9,5 @@ nixenv/
- node_modules/
- sauce_connect.log*
- test-results.xml
-+stamp-bower
-+stamp-npm
-diff --git a/mockup/Makefile b/mockup/Makefile
-index f598091..f5e173b 100644
---- a/mockup/Makefile
-+++ b/mockup/Makefile
-@@ -29,7 +29,7 @@ stamp-bower: stamp-npm bower.json
- 	$(BOWER) install
- 	touch stamp-bower
- 
--bundles: bundle-widgets bundle-structure bundle-plone
-+bundles: stamp-bower bundle-widgets bundle-structure bundle-plone
- 	# ----------------------------------------------------------------------- #
- 	# cp build/widgets* path/to/plone.app.widgets/plone/app/widgets/static
- 	# cp build/structure* path/to/wildcard.foldercontents/wildcard/foldercontents/static
-@@ -89,7 +89,7 @@ watch:
- test:
- 	NODE_PATH=$(NODE_PATH) $(GRUNT) test $(DEBUG) $(VERBOSE) --pattern=$(pattern)
- 
--test-once:
-+test-once: stamp-bower
- 	NODE_PATH=$(NODE_PATH) $(GRUNT) test_once $(DEBUG) $(VERBOSE) --pattern=$(pattern)
- 
- test-dev:
-diff --git a/mockup/package.json b/mockup/package.json
-index c36cee5..2e0fbfb 100644
---- a/mockup/package.json
-+++ b/mockup/package.json
-@@ -26,9 +26,11 @@
-     "karma-requirejs": "~0.2.1",
-     "karma-sauce-launcher": "~0.2.10",
-     "karma-script-launcher": "~0.1.0",
-+    "karma-spec-reporter": "0.0.16",
-     "lcov-result-merger": "~0.0.2",
-     "less": "~1.7.0",
-     "mocha": "~1.18.2",
-+    "phantomjs": "^1.9.13",
-     "requirejs": "~2.1.11"
-   },
-   "maintainers": [
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2015-01-21T16:48:15+01:00
-Author: benniboy (benniboy) <bs@kleinundpartner.at>
-Commit: https://github.com/plone/mockup/commit/86d1ca1537e390fdad8b3acee9db787f3aef3baf
-
-Revert "Revert "fix test failure""
-
-This reverts commit f4d926966132e1139232dd23d06331f188d4d9fe.
-
-Files changed:
-M mockup/tests/pattern-markspeciallinks-test.js
-
-diff --git a/mockup/tests/pattern-markspeciallinks-test.js b/mockup/tests/pattern-markspeciallinks-test.js
-index a2a2e5f..e60e7b2 100644
---- a/mockup/tests/pattern-markspeciallinks-test.js
-+++ b/mockup/tests/pattern-markspeciallinks-test.js
-@@ -52,29 +52,29 @@ define([
-     it('normal external links have target=_blank', function() {
-       registry.scan(this.$el);
-       var link = this.$el.find('a');
--      expect(link.eq(0).attr("target")===undefined).to.be.equal(true);
--      expect(link.eq(1).attr("target")===undefined).to.be.equal(true);
--      expect(link.eq(2).attr("target")).to.be.equal("_blank");
--      expect(link.eq(3).attr("target")===undefined).to.be.equal(true);
--      expect(link.eq(0).parent("i").length).to.be.equal(1);
--      expect(link.eq(1).parent("i").length).to.be.equal(0);
--      expect(link.eq(4).parent("i").length).to.be.equal(0);
--      expect(link.eq(5).parent("i").length).to.be.equal(0);
-+      expect(link.eq(0).attr('target')===undefined).to.be.equal(true);
-+      expect(link.eq(1).attr('target')===undefined).to.be.equal(true);
-+      expect(link.eq(2).attr('target')).to.be.equal('_blank');
-+      expect(link.eq(3).attr('target')===undefined).to.be.equal(true);
-+      expect(link.eq(0).prev()[0].tagName).to.be.equal('I');
-+      expect(link.eq(1).prev()[0].tagName).not.to.equal('I');
-+      expect(link.eq(4).prev().length).to.be.equal(0);
-+      expect(link.eq(5).prev()[0].tagName).not.to.equal('I');
-     });
-     it('check for correct icon classes per protocol', function() {
-       registry.scan(this.$el);
-       var listel = this.$el.next('.icons').find('li');
--      expect(listel.eq(0).find("i").hasClass('link-external')).to.be.equal(true);
--      expect(listel.eq(1).find("i").hasClass('link-https')).to.be.equal(true);
--      expect(listel.eq(2).find("i").hasClass('link-mailto')).to.be.equal(true);
--      expect(listel.eq(3).find("i").hasClass('link-ftp')).to.be.equal(true);
--      expect(listel.eq(4).find("i").hasClass('link-news')).to.be.equal(true);
--      expect(listel.eq(5).find("i").hasClass('link-irc')).to.be.equal(true);
--      expect(listel.eq(6).find("i").hasClass('link-h323')).to.be.equal(true);
--      expect(listel.eq(7).find("i").hasClass('link-sip')).to.be.equal(true);
--      expect(listel.eq(8).find("i").hasClass('link-callto')).to.be.equal(true);
--      expect(listel.eq(9).find("i").hasClass('link-feed')).to.be.equal(true);
--      expect(listel.eq(10).find("i").hasClass('link-webcal')).to.be.equal(true);
-+      expect(listel.eq(0).find('i').hasClass('link-external')).to.be.equal(true);
-+      expect(listel.eq(1).find('i').hasClass('link-https')).to.be.equal(true);
-+      expect(listel.eq(2).find('i').hasClass('link-mailto')).to.be.equal(true);
-+      expect(listel.eq(3).find('i').hasClass('link-ftp')).to.be.equal(true);
-+      expect(listel.eq(4).find('i').hasClass('link-news')).to.be.equal(true);
-+      expect(listel.eq(5).find('i').hasClass('link-irc')).to.be.equal(true);
-+      expect(listel.eq(6).find('i').hasClass('link-h323')).to.be.equal(true);
-+      expect(listel.eq(7).find('i').hasClass('link-sip')).to.be.equal(true);
-+      expect(listel.eq(8).find('i').hasClass('link-callto')).to.be.equal(true);
-+      expect(listel.eq(9).find('i').hasClass('link-feed')).to.be.equal(true);
-+      expect(listel.eq(10).find('i').hasClass('link-webcal')).to.be.equal(true);
-     });
-   });
- });
-
-
-Repository: mockup
-Branch: refs/heads/master
-Date: 2015-01-23T09:33:24-06:00
-Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/92d7f7c50d9ab55a7dd5906195f3e5a8c9ed757f
-
-Merge pull request #459 from plone/makefile_rework
-
-Makefile rework
-
-Files changed:
-M .gitignore
-M mockup/Makefile
-M mockup/tests/pattern-markspeciallinks-test.js
-
-diff --git a/.gitignore b/.gitignore
-index 3489b3d..7e4e7ad 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -9,3 +9,5 @@ nixenv/
- node_modules/
- sauce_connect.log*
- test-results.xml
-+stamp-bower
-+stamp-npm
-diff --git a/mockup/Makefile b/mockup/Makefile
-index a27bbdb..f5e173b 100644
---- a/mockup/Makefile
-+++ b/mockup/Makefile
-@@ -21,7 +21,15 @@ endif
- 
- all: test-once bundles docs
- 
--bundles: bundle-widgets bundle-structure bundle-plone
-+stamp-npm: package.json
-+	npm install
-+	touch stamp-npm
-+
-+stamp-bower: stamp-npm bower.json
-+	$(BOWER) install
-+	touch stamp-bower
-+
-+bundles: stamp-bower bundle-widgets bundle-structure bundle-plone
- 	# ----------------------------------------------------------------------- #
- 	# cp build/widgets* path/to/plone.app.widgets/plone/app/widgets/static
- 	# cp build/structure* path/to/wildcard.foldercontents/wildcard/foldercontents/static
-@@ -81,7 +89,7 @@ watch:
- test:
- 	NODE_PATH=$(NODE_PATH) $(GRUNT) test $(DEBUG) $(VERBOSE) --pattern=$(pattern)
- 
--test-once:
-+test-once: stamp-bower
- 	NODE_PATH=$(NODE_PATH) $(GRUNT) test_once $(DEBUG) $(VERBOSE) --pattern=$(pattern)
- 
- test-dev:
-@@ -95,6 +103,8 @@ clean:
- 	rm -rf build
- 	rm -rf node_modules
- 	rm -rf bower_components
-+	rm -f stamp-npm stamp-bower
-+	rm -rf node_modules src/bower_components
- 
- clean-deep: clean
- 	if test -f $(BOWER); then $(BOWER) cache clean; fi
-diff --git a/mockup/tests/pattern-markspeciallinks-test.js b/mockup/tests/pattern-markspeciallinks-test.js
-index a2a2e5f..e60e7b2 100644
---- a/mockup/tests/pattern-markspeciallinks-test.js
-+++ b/mockup/tests/pattern-markspeciallinks-test.js
-@@ -52,29 +52,29 @@ define([
-     it('normal external links have target=_blank', function() {
-       registry.scan(this.$el);
-       var link = this.$el.find('a');
--      expect(link.eq(0).attr("target")===undefined).to.be.equal(true);
--      expect(link.eq(1).attr("target")===undefined).to.be.equal(true);
--      expect(link.eq(2).attr("target")).to.be.equal("_blank");
--      expect(link.eq(3).attr("target")===undefined).to.be.equal(true);
--      expect(link.eq(0).parent("i").length).to.be.equal(1);
--      expect(link.eq(1).parent("i").length).to.be.equal(0);
--      expect(link.eq(4).parent("i").length).to.be.equal(0);
--      expect(link.eq(5).parent("i").length).to.be.equal(0);
-+      expect(link.eq(0).attr('target')===undefined).to.be.equal(true);
-+      expect(link.eq(1).attr('target')===undefined).to.be.equal(true);
-+      expect(link.eq(2).attr('target')).to.be.equal('_blank');
-+      expect(link.eq(3).attr('target')===undefined).to.be.equal(true);
-+      expect(link.eq(0).prev()[0].tagName).to.be.equal('I');
-+      expect(link.eq(1).prev()[0].tagName).not.to.equal('I');
-+      expect(link.eq(4).prev().length).to.be.equal(0);
-+      expect(link.eq(5).prev()[0].tagName).not.to.equal('I');
-     });
-     it('check for correct icon classes per protocol', function() {
-       registry.scan(this.$el);
-       var listel = this.$el.next('.icons').find('li');
--      expect(listel.eq(0).find("i").hasClass('link-external')).to.be.equal(true);
--      expect(listel.eq(1).find("i").hasClass('link-https')).to.be.equal(true);
--      expect(listel.eq(2).find("i").hasClass('link-mailto')).to.be.equal(true);
--      expect(listel.eq(3).find("i").hasClass('link-ftp')).to.be.equal(true);
--      expect(listel.eq(4).find("i").hasClass('link-news')).to.be.equal(true);
--      expect(listel.eq(5).find("i").hasClass('link-irc')).to.be.equal(true);
--      expect(listel.eq(6).find("i").hasClass('link-h323')).to.be.equal(true);
--      expect(listel.eq(7).find("i").hasClass('link-sip')).to.be.equal(true);
--      expect(listel.eq(8).find("i").hasClass('link-callto')).to.be.equal(true);
--      expect(listel.eq(9).find("i").hasClass('link-feed')).to.be.equal(true);
--      expect(listel.eq(10).find("i").hasClass('link-webcal')).to.be.equal(true);
-+      expect(listel.eq(0).find('i').hasClass('link-external')).to.be.equal(true);
-+      expect(listel.eq(1).find('i').hasClass('link-https')).to.be.equal(true);
-+      expect(listel.eq(2).find('i').hasClass('link-mailto')).to.be.equal(true);
-+      expect(listel.eq(3).find('i').hasClass('link-ftp')).to.be.equal(true);
-+      expect(listel.eq(4).find('i').hasClass('link-news')).to.be.equal(true);
-+      expect(listel.eq(5).find('i').hasClass('link-irc')).to.be.equal(true);
-+      expect(listel.eq(6).find('i').hasClass('link-h323')).to.be.equal(true);
-+      expect(listel.eq(7).find('i').hasClass('link-sip')).to.be.equal(true);
-+      expect(listel.eq(8).find('i').hasClass('link-callto')).to.be.equal(true);
-+      expect(listel.eq(9).find('i').hasClass('link-feed')).to.be.equal(true);
-+      expect(listel.eq(10).find('i').hasClass('link-webcal')).to.be.equal(true);
-     });
-   });
- });
+diff --git a/mockup/patterns/relateditems/pattern.js b/mockup/patterns/relateditems/pattern.js
+index fed64eb..4b3a8ab 100644
+--- a/mockup/patterns/relateditems/pattern.js
++++ b/mockup/patterns/relateditems/pattern.js
+@@ -28,7 +28,7 @@
+  *    separator(string): Select2 option. String which separates multiple items. (',')
+  *    tokenSeparators(array): Select2 option, refer to select2 documentation.
+  *    ([",", " "])
+- *    width(string): Specify a width for the widget. ('300px')
++ *    width(string): Specify a width for the widget. ('100%')
+  *
+  * Documentation:
+  *    The Related Items pattern is based on Select2 so many of the same options will work here as well.
+@@ -87,7 +87,7 @@ define([
+     currentPath: null,
+     defaults: {
+       vocabularyUrl: null, // must be set to work
+-      width: '300px',
++      width: '100%',
+       multiple: true,
+       tokenSeparators: [',', ' '],
+       separator: ',',
 
 
