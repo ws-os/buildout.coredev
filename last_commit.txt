@@ -1,33 +1,26 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-24T06:56:57-06:00
+Date: 2015-01-24T07:10:45-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/1fae6020d1bbdfd0edecaf4b8643b5bdc3119948
+Commit: https://github.com/plone/mockup/commit/826643d6a948469c03ab559052f2119f6c6b83c3
 
-set content prior, trying to fix ie10 test failure
+upgrade mockup core
 
 Files changed:
-M mockup/tests/pattern-tinymce-test.js
+M mockup/bower.json
 
-diff --git a/mockup/tests/pattern-tinymce-test.js b/mockup/tests/pattern-tinymce-test.js
-index 118ca95..0ec57c4 100644
---- a/mockup/tests/pattern-tinymce-test.js
-+++ b/mockup/tests/pattern-tinymce-test.js
-@@ -244,6 +244,7 @@ define([
-     it('test adds data attributes', function() {
-       var pattern = createTinymce();
- 
-+      pattern.tiny.setContent('<p>blah</p>');
-       pattern.addLinkClicked();
-       pattern.linkModal.linkTypes.internal.$input.select2('data', {
-         UID: 'foobar',
-@@ -251,7 +252,6 @@ define([
-         Title: 'Foobar',
-         path: '/foobar'
-       });
--      pattern.tiny.setContent('<p>blah</p>');
-       pattern.linkModal.focusElement(pattern.tiny.dom.getRoot().getElementsByTagName('p')[0]);
-       pattern.linkModal.$button.trigger('click');
-       expect(pattern.tiny.getContent()).to.contain('data-val="foobar"');
+diff --git a/mockup/bower.json b/mockup/bower.json
+index da5915a..13a69e2 100644
+--- a/mockup/bower.json
++++ b/mockup/bower.json
+@@ -14,7 +14,7 @@
+     "jquery-form": "3.46.0",
+     "jquery.cookie": "1.4.1",
+     "lodash": "2.4.1",
+-    "mockup-core": "1.2.15",
++    "mockup-core": "1.2.16",
+     "moment": "2.8.3",
+     "pickadate": "3.4.0",
+     "requirejs-text": "2.0.12",
 
 
