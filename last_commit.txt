@@ -1,25 +1,26 @@
 Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-24T10:11:25+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/79e8dff7b188c3577dabb80b9a66092968ba6d4d
+Date: 2015-01-24T15:57:19+01:00
+Author: Kees Hink (khink) <keeshink@gmail.com>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/d0b6aff4e3a3a671a8c8f6ad9fb93fa061a891bd
 
-fix bug in topic-migration with of multiple values for one criteria
+Fix test
 
 Files changed:
-M plone/app/contenttypes/migration/topics.py
+M plone/app/contenttypes/tests/test_migration_topic.py
 
-diff --git a/plone/app/contenttypes/migration/topics.py b/plone/app/contenttypes/migration/topics.py
-index 56fefe5..c710577 100644
---- a/plone/app/contenttypes/migration/topics.py
-+++ b/plone/app/contenttypes/migration/topics.py
-@@ -99,7 +99,6 @@ def switch_type_to_portal_type(self, value, criterion):
-                     logger.warn("Cannot switch Type %r to portal_type.", Type)
-                     continue
-             new_values.append(portal_type)
--        new_values = tuple(new_values)
-         if isinstance(value, dict):
-             value['query'] = new_values
-         else:
+diff --git a/plone/app/contenttypes/tests/test_migration_topic.py b/plone/app/contenttypes/tests/test_migration_topic.py
+index d2aae89..d52fbdd 100644
+--- a/plone/app/contenttypes/tests/test_migration_topic.py
++++ b/plone/app/contenttypes/tests/test_migration_topic.py
+@@ -600,7 +600,7 @@ def test_ATSelectionCriterionForTypeTitle(self):
+         self.assertEqual(query,
+                          [{'i': 'portal_type',
+                            'o': 'plone.app.querystring.operation.selection.is',
+-                           'v': ('Document', 'Folder')}])
++                           'v': ['Document', 'Folder']}])
+ 
+         # Check that the resulting query does not give an error.
+         self.portal.topic.getQuery()
 
 
