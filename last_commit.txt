@@ -1,27 +1,113 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-26T10:38:00+01:00
-Author: JC Brand (jcbrand) <jc@opkode.com>
-Commit: https://github.com/plone/mockup/commit/47b18353d1987c097c3759e9d410e2c7fe4f3d56
+Date: 2015-01-26T13:50:33+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/mockup/commit/ee6b2d38403a49ac2912bbcd45ea606e1f0df0dc
 
-The next release should definitely be a major release
-
-Due to backward incompatible changes because of Patternslib integration.
+add missing changelog entry and upgrade notice
 
 Files changed:
-M mockup/package.json
+M CHANGES.rst
+M mockup/GETTING_STARTED.md
 
-diff --git a/mockup/package.json b/mockup/package.json
-index 9da756d..7c2c5f7 100644
---- a/mockup/package.json
-+++ b/mockup/package.json
-@@ -1,6 +1,6 @@
- {
-   "name": "mockup",
--  "version": "1.8.2",
-+  "version": "2.0.0",
-   "description": "A collection of client side patterns for faster and easier web development",
-   "homepage": "http://plone.github.io/mockup",
-   "devDependencies": {
+diff --git a/CHANGES.rst b/CHANGES.rst
+index ed528de..23f197c 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -1,7 +1,17 @@
+ Changelog
+ =========
+ 
+-1.8.3 (unreleased)
++2.0.0 (unreleased)
++------------------
++
++- Patternslib merge: Use Patternslib's scanner and registry.  This allows us
++  to: Use Patternslib patterns with Mockup/Plone and use Mockup patterns with
++  Patternslib outside of Plone. For changes required to patterns, see:
++  mockup/GETTING_STARTED.md . Refs: #460.
++  [jcbrand]
++
++
++1.8.3 (2015-01-26)
+ ------------------
+ 
+ New patterns:
+@@ -26,6 +36,22 @@ New patterns:
+ 
+ Fixes and enhancements:
+ 
++- Test fixes.
++  [vangheem]
++
++- Various structure pattern fixes.
++  [vangheem]
++
++- Make relateditems fullwidth.
++  [vangheem]
++
++- Add npm and bower tasks to Makefile.
++  [benniboy]
++
++- TinyMCE pattern fix: Don't append scale to generated image url, if no scale
++  is given.
++  [frapell]
++
+ - In the resource registry bundle detail view, add the fields
+   ``last_compilation``, ``jscompilation`` and ``csscompilation`` for display.
+   This gives more insight about the state of each bundle.
+@@ -36,6 +62,9 @@ Fixes and enhancements:
+   ``disabled`` states.
+   [thet]
+ 
++- Relicensing from MIT to BSD. Refs #24
++  [thet]
++
+ - Modal Pattern: If ``data-base-url`` attribute is available on the body, use
+   it. Otherwise search for a ``<base>`` tag. Plone 5 dropped the usage of base
+   tags.
+diff --git a/mockup/GETTING_STARTED.md b/mockup/GETTING_STARTED.md
+index 1ec0e5e..90b0522 100644
+--- a/mockup/GETTING_STARTED.md
++++ b/mockup/GETTING_STARTED.md
+@@ -131,6 +131,7 @@ After that, access the served site in a webbrowser under the url:
+ 
+     http://localhost:8000
+ 
++
+ # Including a local mockup-core checkout for developing
+ 
+ If you want to also hack on mockup-core together with mockup and not push the
+@@ -141,3 +142,30 @@ Just replace the mockup-core line in bower.json with:
+ 
+ Please note, you have to commit the changes on mockup-core before running
+ ``make bootstrap``.
++
++
++# Upgrade from pre-2.0 to 2.0 based Mockup patterns
++
++Since version 2.0, Mockup uses the Patternslib scanner and it's registry. This
++allows us to: Use Patternslib patterns with Mockup/Plone and use Mockup
++patterns with Patternslib outside of Plone. The integration with Patternslib
++require that some small changes be made to newly developed Mockup patterns:
++
++1. Patterns should now use pat-registry as dependency instead of
++   mockup-registry.
++
++        define([
++            'jquery'
++            'mockup-patterns-base',
++            'pat-registry'
++        ], function($, Base, registry) {
++
++2. Patterns' selectors are now explicitly specified via the trigger attribute.
++   For example:
++
++       var Modal = Base.extend({
++         name: 'modal',
++         trigger: '.pat-modal',
++
++3. Because of change 2, patterns now fire events via the emit method, instead
++   of the trigger method.
 
 
