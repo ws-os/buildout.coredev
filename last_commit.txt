@@ -1,113 +1,220 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-26T13:50:33+01:00
+Date: 2015-01-26T14:02:32+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/mockup/commit/ee6b2d38403a49ac2912bbcd45ea606e1f0df0dc
+Commit: https://github.com/plone/Products.CMFPlone/commit/c161218567d1930dbd1b7e18a8b091d8e8bffae9
 
-add missing changelog entry and upgrade notice
+pep8
 
 Files changed:
-M CHANGES.rst
-M mockup/GETTING_STARTED.md
+M Products/CMFPlone/__init__.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index ed528de..23f197c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -1,7 +1,17 @@
- Changelog
- =========
+diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
+index 5a27eba..418d5bf 100644
+--- a/Products/CMFPlone/__init__.py
++++ b/Products/CMFPlone/__init__.py
+@@ -1,6 +1,6 @@
+-import sys
+-import os
+ from App.ImageFile import ImageFile
++import os
++import sys
  
--1.8.3 (unreleased)
-+2.0.0 (unreleased)
-+------------------
-+
-+- Patternslib merge: Use Patternslib's scanner and registry.  This allows us
-+  to: Use Patternslib patterns with Mockup/Plone and use Mockup patterns with
-+  Patternslib outside of Plone. For changes required to patterns, see:
-+  mockup/GETTING_STARTED.md . Refs: #460.
-+  [jcbrand]
-+
-+
-+1.8.3 (2015-01-26)
- ------------------
+ cmfplone_globals = globals()
+ this_module = sys.modules[__name__]
+@@ -8,8 +8,8 @@
  
- New patterns:
-@@ -26,6 +36,22 @@ New patterns:
+ ADD_CONTENT_PERMISSION = 'Add portal content'
+ misc_ = {'plone_icon': ImageFile(
+-                       os.path.join('skins', 'plone_images', 'logoIcon.png'),
+-                       cmfplone_globals)}
++    os.path.join('skins', 'plone_images', 'logoIcon.png'),
++    cmfplone_globals)}
  
- Fixes and enhancements:
  
-+- Test fixes.
-+  [vangheem]
-+
-+- Various structure pattern fixes.
-+  [vangheem]
-+
-+- Make relateditems fullwidth.
-+  [vangheem]
-+
-+- Add npm and bower tasks to Makefile.
-+  [benniboy]
-+
-+- TinyMCE pattern fix: Don't append scale to generated image url, if no scale
-+  is given.
-+  [frapell]
-+
- - In the resource registry bundle detail view, add the fields
-   ``last_compilation``, ``jscompilation`` and ``csscompilation`` for display.
-   This gives more insight about the state of each bundle.
-@@ -36,6 +62,9 @@ Fixes and enhancements:
-   ``disabled`` states.
-   [thet]
+ def initialize(context):
+@@ -21,12 +21,14 @@ def initialize(context):
+     # it does speed up import *significantly*.
  
-+- Relicensing from MIT to BSD. Refs #24
-+  [thet]
-+
- - Modal Pattern: If ``data-base-url`` attribute is available on the body, use
-   it. Otherwise search for a ``<base>`` tag. Plone 5 dropped the usage of base
-   tags.
-diff --git a/mockup/GETTING_STARTED.md b/mockup/GETTING_STARTED.md
-index 1ec0e5e..90b0522 100644
---- a/mockup/GETTING_STARTED.md
-+++ b/mockup/GETTING_STARTED.md
-@@ -131,6 +131,7 @@ After that, access the served site in a webbrowser under the url:
+     from AccessControl import ModuleSecurityInfo
+-    from AccessControl import allow_module, allow_class
++    from AccessControl import allow_class
++    from AccessControl import allow_module
  
-     http://localhost:8000
+     # protect OFS.ObjectManager
+     ModuleSecurityInfo('OFS.ObjectManager').setDefaultAccess(0)
+     ModuleSecurityInfo('OFS.ObjectManager').declareObjectPrivate()
+-    ModuleSecurityInfo('OFS.ObjectManager').declarePublic('BeforeDeleteException')
++    ModuleSecurityInfo('OFS.ObjectManager').declarePublic(
++        'BeforeDeleteException')
  
-+
- # Including a local mockup-core checkout for developing
+     # allow logging
+     ModuleSecurityInfo('logging').declarePublic('getLogger')
+@@ -40,19 +42,20 @@ def initialize(context):
+     allow_module('Products.CMFPlone.utils')
  
- If you want to also hack on mockup-core together with mockup and not push the
-@@ -141,3 +142,30 @@ Just replace the mockup-core line in bower.json with:
+     # For content_status_modify
+-    from Products.CMFCore.WorkflowCore import ObjectMoved, ObjectDeleted, \
+-                                              WorkflowException
+-    ModuleSecurityInfo('Products.CMFCore.WorkflowCore') \
+-        .declarePublic('ObjectMoved')
+-    ModuleSecurityInfo('Products.CMFCore.WorkflowCore') \
+-        .declarePublic('ObjectDeleted')
+-    ModuleSecurityInfo('Products.CMFCore.WorkflowCore') \
+-        .declarePublic('WorkflowException')
+-    allow_class(ObjectMoved)
++    from Products.CMFCore.WorkflowCore import ObjectDeleted
++    from Products.CMFCore.WorkflowCore import ObjectMoved
++    from Products.CMFCore.WorkflowCore import WorkflowException
++    ModuleSecurityInfo(
++        'Products.CMFCore.WorkflowCore').declarePublic('ObjectDeleted')
++    ModuleSecurityInfo(
++        'Products.CMFCore.WorkflowCore').declarePublic('ObjectMoved')
++    ModuleSecurityInfo(
++        'Products.CMFCore.WorkflowCore').declarePublic('WorkflowException')
+     allow_class(ObjectDeleted)
++    allow_class(ObjectMoved)
+     allow_class(WorkflowException)
  
- Please note, you have to commit the changes on mockup-core before running
- ``make bootstrap``.
+-    from PloneBatch import Batch
++    from .PloneBatch import Batch
+     allow_class(Batch)
+ 
+     # Make Batch available at module level
+@@ -106,16 +109,16 @@ def initialize(context):
+     ModuleSecurityInfo('cgi').declarePublic('escape')
+ 
+     # Apply monkey patches
+-    import patches
++    from . import patches  # noqa
+ 
+     # Register unicode splitter w/ ZCTextIndex
+     # pipeline registry
+-    import UnicodeSplitter
++    from . import UnicodeSplitter  # noqa
+ 
+     # Plone content
+ 
+     # Usage of PloneFolder is discouraged.
+-    import PloneFolder
++    from . import PloneFolder
+ 
+     contentClasses = (PloneFolder.PloneFolder, )
+     contentConstructors = (PloneFolder.addPloneFolder, )
+@@ -124,54 +127,57 @@ def initialize(context):
+     from Products.CMFCore import CachingPolicyManager
+ 
+     # Plone tools
+-    import PloneTool
+-    import MigrationTool
+-    import PloneControlPanel
+-    import WorkflowTool
+-    import URLTool
+-    import RegistrationTool
+-    import PropertiesTool
+-    import ActionsTool
+-    import TypesTool
+-    import CatalogTool
+-    import SkinsTool
+-    import QuickInstallerTool
+-    import TranslationServiceTool
+-
+-    tools = (PloneTool.PloneTool,
+-             WorkflowTool.WorkflowTool,
+-             CachingPolicyManager.CachingPolicyManager,
+-             PropertiesTool.PropertiesTool,
+-             MigrationTool.MigrationTool,
+-             PloneControlPanel.PloneControlPanel,
+-             RegistrationTool.RegistrationTool,
+-             URLTool.URLTool,
+-             ActionsTool.ActionsTool,
+-             TypesTool.TypesTool,
+-             CatalogTool.CatalogTool,
+-             SkinsTool.SkinsTool,
+-             QuickInstallerTool.QuickInstallerTool,
+-             TranslationServiceTool.TranslationServiceTool,
+-            )
++    from . import PloneTool
++    from . import MigrationTool
++    from . import PloneControlPanel
++    from . import WorkflowTool
++    from . import URLTool
++    from . import RegistrationTool
++    from . import PropertiesTool
++    from . import ActionsTool
++    from . import TypesTool
++    from . import CatalogTool
++    from . import SkinsTool
++    from . import QuickInstallerTool
++    from . import TranslationServiceTool
 +
++    tools = (
++        PloneTool.PloneTool,
++        WorkflowTool.WorkflowTool,
++        CachingPolicyManager.CachingPolicyManager,
++        PropertiesTool.PropertiesTool,
++        MigrationTool.MigrationTool,
++        PloneControlPanel.PloneControlPanel,
++        RegistrationTool.RegistrationTool,
++        URLTool.URLTool,
++        ActionsTool.ActionsTool,
++        TypesTool.TypesTool,
++        CatalogTool.CatalogTool,
++        SkinsTool.SkinsTool,
++        QuickInstallerTool.QuickInstallerTool,
++        TranslationServiceTool.TranslationServiceTool,
++    )
+ 
+     from Products.CMFCore.utils import ContentInit
+     from Products.CMFPlone.utils import ToolInit
+ 
+     # Register tools and content
+-    ToolInit('Plone Tool',
+-             tools=tools,
+-             icon='tool.gif',
+-             ).initialize(context)
+-
+-    ContentInit('Plone Content',
+-                content_types=contentClasses,
+-                permission=ADD_CONTENT_PERMISSION,
+-                extra_constructors=contentConstructors,
+-                ).initialize(context)
++    ToolInit(
++        'Plone Tool',
++        tools=tools,
++        icon='tool.gif',
++    ).initialize(context)
 +
-+# Upgrade from pre-2.0 to 2.0 based Mockup patterns
-+
-+Since version 2.0, Mockup uses the Patternslib scanner and it's registry. This
-+allows us to: Use Patternslib patterns with Mockup/Plone and use Mockup
-+patterns with Patternslib outside of Plone. The integration with Patternslib
-+require that some small changes be made to newly developed Mockup patterns:
-+
-+1. Patterns should now use pat-registry as dependency instead of
-+   mockup-registry.
-+
-+        define([
-+            'jquery'
-+            'mockup-patterns-base',
-+            'pat-registry'
-+        ], function($, Base, registry) {
-+
-+2. Patterns' selectors are now explicitly specified via the trigger attribute.
-+   For example:
-+
-+       var Modal = Base.extend({
-+         name: 'modal',
-+         trigger: '.pat-modal',
-+
-+3. Because of change 2, patterns now fire events via the emit method, instead
-+   of the trigger method.
++    ContentInit(
++        'Plone Content',
++        content_types=contentClasses,
++        permission=ADD_CONTENT_PERMISSION,
++        extra_constructors=contentConstructors,
++    ).initialize(context)
+ 
++    from AccessControl.Permissions import view_management_screens
+     from Products.CMFPlone.Portal import PloneSite
+     from Products.CMFPlone.factory import zmi_constructor
+-    from AccessControl.Permissions import view_management_screens
+     context.registerClass(
+         instance_class=PloneSite,
+         permission=view_management_screens,
+@@ -179,12 +185,14 @@ def initialize(context):
+     )
+ 
+     from plone.app.folder import nogopip
+-    context.registerClass(nogopip.GopipIndex,
++    context.registerClass(
++        nogopip.GopipIndex,
+         permission='Add Pluggable Index',
+         constructors=(nogopip.manage_addGopipForm,
+                       nogopip.manage_addGopipIndex),
+         icon='index.gif',
+-        visibility=None)
++        visibility=None
++    )
+ 
+ 
+ # Import PloneMessageFactory to create messages in the plone domain
 
 
