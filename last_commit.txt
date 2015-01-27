@@ -1,110 +1,2239 @@
-Repository: Products.CMFPlone
+Repository: Products.Archetypes
 Branch: refs/heads/master
-Date: 2015-01-26T23:18:35-06:00
+Date: 2015-01-26T12:49:06-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/853317c3e34027f11e7cf7721891d57889f874a5
+Commit: https://github.com/plone/Products.Archetypes/commit/a0517cb03aacbe77b133c2b6bd08725ec42585bb
 
-date field is tested with new widgets
+integrate plone.app.widgets
 
 Files changed:
-M Products/CMFPlone/tests/testDateTimeIntegration.py
+A Products/Archetypes/browser/templates/patterns_widget.pt
+A Products/Archetypes/tests/test_pawidgets.py
+M Products/Archetypes/ExtensibleMetadata.py
+M Products/Archetypes/Widget.py
+M Products/Archetypes/browser/configure.zcml
+M Products/Archetypes/browser/widgets.py
+M setup.py
 
-diff --git a/Products/CMFPlone/tests/testDateTimeIntegration.py b/Products/CMFPlone/tests/testDateTimeIntegration.py
-index 5205a2f..613832e 100644
---- a/Products/CMFPlone/tests/testDateTimeIntegration.py
-+++ b/Products/CMFPlone/tests/testDateTimeIntegration.py
-@@ -53,92 +53,3 @@ def testExpirationDate(self):
-         expired = obj.ExpirationDate()      # the string representation...
-         expired = DateTime(expired)         # is usually parsed again in Plone
-         self.assertTrue(date.equalTo(expired), (date, expired))
--
--
--class DateTimeFunctionalTests(PloneTestCase):
--
--    def testNonDSTPublicationDateRemainsUnchangedThroughEdit(self):
--        # this test is for a date when daylight savings time is not in effect
--        self.setRoles(('Manager',))
--        obj = self.portal['front-page']
--        # the test is performed in the local timezone, and in 2 two alternate
--        # timezones (to make sure one is different from the local timezone)
--        for tz in ('', ' US/Central', ' US/Eastern'):
--            # save the time represented in the specified time zone
--            obj.setEffectiveDate('2020-02-20 00:00%s' % tz)
--            self.assertTrue(obj.effective_date.ISO8601().startswith(
--                '2020-02-20T00:00:00'))
--            start_value = obj.effective_date
--            browser = self.getBrowser()
--            browser.open(obj.absolute_url())
--            browser.getLink('Edit').click()
--            # Time should appear on the edit page in the timezone that was
--            # local for that date (not always the same, due to DST)
--            local_zone = start_value.localZone(
--                            localtime(start_value.timeTime()))
--            local_start_value = start_value.toZone(local_zone)
--            localHour = local_start_value.h_12()
--            localAMPM = local_start_value.ampm().upper()
--            self.assertEqual(
--                   localHour,
--                   int(browser.getControl(name='effectiveDate_hour').value[0]))
--            self.assertEqual(
--                           [localAMPM],
--                           browser.getControl(name='effectiveDate_ampm').value)
--            if not tz:
--                self.assertEqual(12, localHour)
--            browser.getControl('Save').click()
--            # Time is saved in the local timezone for the given date
--            self.assertEqual(local_start_value.tzoffset(),
--                             obj.effective_date.tzoffset())
--            # but should be equivalent to the original time
--            self.assertTrue(start_value.equalTo(obj.effective_date))
--
--    def testDSTPublicationDateRemainsUnchangedThroughEdit(self):
--        # this test is for a date when daylight savings time is in effect
--        self.setRoles(('Manager',))
--        obj = self.portal['front-page']
--        # the test is performed in the local timezone, and in 2 two alternate
--        # timezones (to make sure one is different from the local timezone)
--        for tz in ('', ' GMT-6', ' GMT-5'):
--            # save the time represented in the specified time zone
--            obj.setEffectiveDate('2020-06-20 16:00%s' % tz)
--            self.assertTrue(obj.effective_date.ISO8601().startswith(
--                '2020-06-20T16:00:00'))
--            start_value = obj.effective_date
--            browser = self.getBrowser()
--            browser.open(obj.absolute_url())
--            browser.getLink('Edit').click()
--            # Time should appear on the edit page in the timezone that was
--            # local for that date (not always the same, due to DST)
--            local_zone = start_value.localZone(
--                            localtime(start_value.timeTime()))
--            local_start_value = start_value.toZone(local_zone)
--            localHour = local_start_value.h_12()
--            localAMPM = local_start_value.ampm().upper()
--            self.assertEqual(
--                   localHour,
--                   int(browser.getControl(name='effectiveDate_hour').value[0]))
--            self.assertEqual(
--                   [localAMPM],
--                   browser.getControl(name='effectiveDate_ampm').value)
--            if not tz:
--                self.assertEqual(4, localHour)
--            browser.getControl('Save').click()
--            # Time is saved in the local timezone for the given date
--            self.assertEqual(local_start_value.tzoffset(),
--                             obj.effective_date.tzoffset())
--            # but should be equivalent to the original time
--            self.assertTrue(start_value.equalTo(obj.effective_date))
--
--    def testRespectDaylightSavingTime(self):
--        """ When saving dates, the date's timezone and Daylight Saving Time
--            has to be respected.
--            See Products.Archetypes.Field.DateTimeField.set
--        """
--        self.setRoles(('Manager',))
--        obj = self.portal['front-page']
--        obj.setEffectiveDate('2010-01-01 10:00 Europe/Belgrade')
--        obj.setExpirationDate('2010-06-01 10:00 Europe/Belgrade')
--        self.assertTrue(obj.effective_date.tzoffset() == 3600)
--        self.assertTrue(obj.expiration_date.tzoffset() == 7200)
+diff --git a/Products/Archetypes/ExtensibleMetadata.py b/Products/Archetypes/ExtensibleMetadata.py
+index 84a1bc4..2855073 100644
+--- a/Products/Archetypes/ExtensibleMetadata.py
++++ b/Products/Archetypes/ExtensibleMetadata.py
+@@ -6,8 +6,8 @@
+ from Products.Archetypes import PloneMessageFactory as _
+ from Products.Archetypes.Field import BooleanField, LinesField, TextField, \
+     StringField, DateTimeField
+-from Products.Archetypes.Widget import BooleanWidget, KeywordWidget, \
+-    TextAreaWidget, StringWidget, LinesWidget, CalendarWidget, LanguageWidget
++from Products.Archetypes.Widget import BooleanWidget, TagsWidget, \
++    TextAreaWidget, StringWidget, LinesWidget, DatetimeWidget, SelectWidget
+ from Products.Archetypes.Schema import Schema
+ from Products.Archetypes.Schema import MetadataSchema
+ from Products.Archetypes.interfaces import IExtensibleMetadata
+@@ -79,7 +79,7 @@ class ExtensibleMetadata(Persistence.Persistent):
+             multiValued=1,
+             accessor="Subject",
+             searchable=True,
+-            widget=KeywordWidget(
++            widget=TagsWidget(
+                 label=_(u'label_tags', default=u'Tags'),
+                 description=_(u'help_tags',
+                               default=u'Tags are commonly used for ad-hoc '
+@@ -114,31 +114,32 @@ class ExtensibleMetadata(Persistence.Persistent):
+         LinesField(
+             'contributors',
+             accessor="Contributors",
+-            widget=LinesWidget(
++            widget=AjaxSelectWidget(
+                 label=_(u'label_contributors', u'Contributors'),
+                 description=_(u'help_contributors',
+                               default=u"The names of people that have contributed "
+                                        "to this item. Each contributor should "
+                                        "be on a separate line."),
++                vocabulary="plone.app.vocabularies.Users"
+                 ),
+         ),
+         LinesField(
+             'creators',
+             accessor="Creators",
+-            widget=LinesWidget(
++            widget=AjaxSelectWidget(
+                 label=_(u'label_creators', u'Creators'),
+                 description=_(u'help_creators',
+                               default=u"Persons responsible for creating the content of "
+                                        "this item. Please enter a list of user names, one "
+                                        "per line. The principal creator should come first."),
+-                rows=3
++                vocabulary="plone.app.vocabularies.Users"
+                 ),
+         ),
+         DateTimeField(
+             'effectiveDate',
+             mutator='setEffectiveDate',
+             languageIndependent=True,
+-            widget=CalendarWidget(
++            widget=DatetimeWidget(
+                 label=_(u'label_effective_date', u'Publishing Date'),
+                 description=_(u'help_effective_date',
+                               default=u"The date when the item will be published. If no "
+@@ -149,7 +150,7 @@ class ExtensibleMetadata(Persistence.Persistent):
+             'expirationDate',
+             mutator='setExpirationDate',
+             languageIndependent=True,
+-            widget=CalendarWidget(
++            widget=DatetimeWidget(
+                 label=_(u'label_expiration_date', u'Expiration Date'),
+                 description=_(u'help_expiration_date',
+                               default=u"The date when the item expires. This will automatically "
+@@ -163,7 +164,7 @@ class ExtensibleMetadata(Persistence.Persistent):
+             default=config.LANGUAGE_DEFAULT,
+             default_method='defaultLanguage',
+             vocabulary='languages',
+-            widget=LanguageWidget(
++            widget=SelectWidget(
+                 label=_(u'label_language', default=u'Language'),
+                 ),
+         ),
+@@ -191,7 +192,7 @@ class ExtensibleMetadata(Persistence.Persistent):
+             isMetadata=True,
+             schemata='metadata',
+             generateMode='mVc',
+-            widget=CalendarWidget(
++            widget=DatetimeWidget(
+                 label=_(u'label_creation_date', default=u'Creation Date'),
+                 description=_(u'help_creation_date',
+                               default=u'Date this object was created'),
+@@ -206,7 +207,7 @@ class ExtensibleMetadata(Persistence.Persistent):
+             isMetadata=True,
+             schemata='metadata',
+             generateMode='mVc',
+-            widget=CalendarWidget(
++            widget=DatetimeWidget(
+                 label=_(u'label_modification_date',
+                         default=u'Modification Date'),
+                 description=_(u'help_modification_date',
+diff --git a/Products/Archetypes/Widget.py b/Products/Archetypes/Widget.py
+index 1edb851..8c56f44 100644
+--- a/Products/Archetypes/Widget.py
++++ b/Products/Archetypes/Widget.py
+@@ -1,5 +1,7 @@
+ from copy import deepcopy
++from datetime import datetime
+ from types import DictType, FileType, ListType, StringTypes
++from AccessControl import ClassSecurityInfo
+ from Acquisition import aq_inner
+ from Acquisition import aq_parent
+ from DateTime import DateTime
+@@ -8,19 +10,24 @@
+ from Products.CMFCore.Expression import Expression
+ from Products.CMFCore.Expression import createExprContext
+ 
++from Products.Archetypes.Registry import registerWidget
+ from Products.Archetypes.utils import className
+ from Products.Archetypes.utils import unique
+ from Products.Archetypes.utils import capitalize
+ from Products.Archetypes.generator import macrowidget
+ from Products.Archetypes.log import log
+ from Products.Archetypes.Registry import registerPropertyType
+-from Products.Archetypes.Registry import registerWidget
+ 
+ from ExtensionClass import Base
+-from AccessControl import ClassSecurityInfo
+ from App.class_init import InitializeClass
+ from Acquisition import aq_base
+ 
++from plone.app.widgets import base as base_widgets
++from plone.app.widgets import utils as utils
++from plone.uuid.interfaces import IUUID
++
++import json
++
+ _marker = []
+ 
+ 
+@@ -30,7 +37,7 @@ class TypesWidget(macrowidget, Base):
+         'modes': ('view', 'edit'),
+         'populate': True,  # should this field be populated in edit and view?
+         'postback': True,  # should this field be repopulated with POSTed
+-                         # value when an error occurs?
++                           # value when an error occurs?
+         'show_content_type': False,
+         'helper_js': (),
+         'helper_css': (),
+@@ -273,11 +280,11 @@ def addableTypes(self, instance, field):
+             if _info is None:
+                 # The portal_type asked for was not
+                 # installed/has been removed.
+-                log("Warning: in Archetypes.Widget.lookupDestinationsFor: " \
++                log("Warning: in Archetypes.Widget.lookupDestinationsFor: "
+                     "portal type %s not found" % typeid)
+                 continue
+ 
+-            if destination == None:
++            if destination is None:
+                 options[typeid] = [None]
+             elif isinstance(destination, DictType):
+                 options[typeid] = destination.get(typeid, [None])
+@@ -288,7 +295,7 @@ def addableTypes(self, instance, field):
+             else:
+                 place = getattr(aq_base(instance), destination, destination)
+                 if callable(place):
+-                    #restore acq.wrapper
++                    # restore acq.wrapper
+                     place = getattr(instance, destination)
+                     place = place()
+                 if isinstance(place, ListType):
+@@ -302,10 +309,10 @@ def addableTypes(self, instance, field):
+             value['destinations'] = []
+ 
+             for option in options.get(typeid):
+-                if option == None:
++                if option is None:
+                     value['destinations'] = value['destinations'] + \
+                         lookupDestinationsFor(_info, tool, purl,
+-                                          destination_types=destination_types)
++                                              destination_types=destination_types)
+                 elif option == '.':
+                     value['destinations'].append(getRelativeContentURL(instance))
+                 else:
+@@ -314,13 +321,13 @@ def addableTypes(self, instance, field):
+                     except TypeError:
+                         place = option
+                     if callable(place):
+-                        #restore acq.wrapper
++                        # restore acq.wrapper
+                         place = getattr(instance, option)
+                         place = place()
+                     if isinstance(place, ListType):
+                         value['destinations'] = place + value['destinations']
+                     else:
+-                        #TODO Might as well check for type, doing it everywhere else
++                        # TODO Might as well check for type, doing it everywhere else
+                         value['destinations'].append(place)
+ 
+             if value['destinations']:
+@@ -393,7 +400,7 @@ def process_form(self, instance, field, form, empty_marker=None,
+                     # using default_output_type caused a recursive transformation
+                     # that sucked, thus mimetype= here to keep it in line
+                     value = value + divider + \
+-                            field.getEditAccessor(instance)()
++                        field.getEditAccessor(instance)()
+                 else:
+                     # keep historical entries
+                     value = field.getEditAccessor(instance)()
+@@ -560,10 +567,10 @@ def process_form(self, instance, field, form, empty_marker=None,
+         # - None or empty_marker when it found nothing
+         name = field.getName()
+         existing_keywords = form.get('%s_existing_keywords' % name,
+-            empty_marker)
++                                     empty_marker)
+         new_keywords = form.get('%s_keywords' % name, empty_marker)
+         if (new_keywords is empty_marker) and (
+-            existing_keywords is empty_marker):
++                existing_keywords is empty_marker):
+             return empty_marker
+         if new_keywords is empty_marker:
+             new_keywords = []
+@@ -604,7 +611,8 @@ def process_form(self, instance, field, form, empty_marker=None,
+ 
+         fileobj = form.get('%s_file' % field.getName(), empty_marker)
+ 
+-        if fileobj is empty_marker: return empty_marker
++        if fileobj is empty_marker:
++            return empty_marker
+ 
+         filename = getattr(fileobj, 'filename', '')
+         if not filename:
+@@ -613,7 +621,8 @@ def process_form(self, instance, field, form, empty_marker=None,
+         if filename:
+             value = fileobj
+ 
+-        if not value: return None
++        if not value:
++            return None
+ 
+         return value, {}
+ 
+@@ -650,8 +659,8 @@ def process_form(self, instance, field, form, empty_marker=None,
+         if fileobj is not empty_marker:
+ 
+             filename = getattr(fileobj, 'filename', '') or \
+-                       (isinstance(fileobj, FileType) and \
+-                        getattr(fileobj, 'name', ''))
++                (isinstance(fileobj, FileType) and
++                    getattr(fileobj, 'name', ''))
+ 
+             if filename:
+                 value = fileobj
+@@ -668,8 +677,8 @@ def process_form(self, instance, field, form, empty_marker=None,
+ 
+         if value and not isFile:
+             # Value filled, no file uploaded
+-            if kwargs.get('mimetype') == str(field.getContentType(instance)) \
+-                   and instance.isBinary(field.getName()):
++            if (kwargs.get('mimetype') == str(field.getContentType(instance))
++                    and instance.isBinary(field.getName())):
+                 # Was an uploaded file, same content type
+                 del kwargs['mimetype']
+ 
+@@ -680,7 +689,7 @@ class IdWidget(TypesWidget):
+     _properties = TypesWidget._properties.copy()
+     _properties.update({
+         'macro': "widgets/zid",
+-         # show IDs in edit boxes when they are autogenerated?
++        # show IDs in edit boxes when they are autogenerated?
+         'display_autogenerated': True,
+         # script used to determine if an ID is autogenerated
+         'is_autogenerated': 'isIDAutoGenerated',
+@@ -732,7 +741,7 @@ def process_form(self, instance, field, form, empty_marker=None,
+                      emptyReturnsMarker=False, validating=True):
+         """form processing that deals with image data (and its delete case)"""
+         value = None
+-        ## check to see if the delete hidden was selected
++        # check to see if the delete hidden was selected
+         delete = form.get('%s_delete' % field.getName(), empty_marker)
+         if delete == 'delete':
+             return "DELETE_IMAGE", {}
+@@ -746,8 +755,8 @@ def process_form(self, instance, field, form, empty_marker=None,
+             return empty_marker
+ 
+         filename = getattr(fileobj, 'filename', '') or \
+-                   (isinstance(fileobj, FileType) and \
+-                    getattr(fileobj, 'name', ''))
++            (isinstance(fileobj, FileType) and
++                getattr(fileobj, 'name', ''))
+ 
+         if filename:
+             value = fileobj
+@@ -848,6 +857,581 @@ class PicklistWidget(TypesWidget):
+ 
+     security = ClassSecurityInfo()
+ 
++
++class BasePatternWidget(TypesWidget):
++    """Base widget for Archetypes."""
++
++    _properties = TypesWidget._properties.copy()
++    _properties.update({
++        'macro': 'patterns_widget',
++        'pattern': None,
++        'pattern_options': {},
++    })
++
++    def _base(self, pattern, pattern_options={}):
++        """Base widget class."""
++        raise NotImplemented
++
++    def _base_args(self, context, field, request):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++
++        :param context: Instance of content type.
++        :type context: context
++
++        :param request: Request object.
++        :type request: request
++
++        :param field: Instance of field of this widget.
++        :type field: field
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        if self.pattern is None:
++            raise NotImplemented("'pattern' option is not provided.")
++        return {
++            'pattern': self.pattern,
++            'pattern_options': self.pattern_options,
++        }
++
++    def view(self, context, field, request):
++        """Render widget on view.
++
++        :returns: Fields value.
++        :rtype: string
++        """
++        return field.getAccessor(context)()
++
++    def edit(self, context, field, request):
++        """Render widget on edit.
++
++        :returns: Widget's HTML.
++        :rtype: string
++        """
++        return self._base(**self._base_args(context, field, request)).render()
++
++
++class DateWidget(BasePatternWidget):
++    """Date widget for Archetypes."""
++
++    _base = base_widgets.InputWidget
++
++    _properties = BasePatternWidget._properties.copy()
++    _properties.update({
++        'pattern': 'pickadate',
++        'pattern_options': {},
++    })
++
++    def _base_args(self, context, field, request):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        args = super(DateWidget, self)._base_args(context, field, request)
++        args['name'] = field.getName()
++        args['value'] = (request.get(field.getName(),
++                                     field.getAccessor(context)()))
++
++        if args['value'] and isinstance(args['value'], DateTime):
++            args['value'] = ('{year:}-{month:02}-{day:02}').format(
++                year=args['value'].year(),
++                month=args['value'].month(),
++                day=args['value'].day(),
++            )
++
++        elif args['value'] and isinstance(args['value'], datetime):
++            args['value'] = ('{year:}-{month:02}-{day:02}').format(
++                year=args['value'].year,
++                month=args['value'].month,
++                day=args['value'].day,
++            )
++
++        args.setdefault('pattern_options', {})
++        args['pattern_options'] = base_widgets.dict_merge(
++            utils.get_date_options(request),
++            args['pattern_options'])
++
++        if 'date' in args['pattern_options'] and \
++           'firstDay' in args['pattern_options']['date'] and \
++           callable(args['pattern_options']['date']['firstDay']):
++            args['pattern_options']['date']['firstDay'] = \
++                args['pattern_options']['date']['firstDay']()
++
++        return args
++
++    security = ClassSecurityInfo()
++    security.declarePublic('process_form')
++
++    def process_form(self, instance, field, form, empty_marker=None):
++        """Basic impl for form processing in a widget"""
++
++        value = form.get(field.getName(), empty_marker)
++        if value is empty_marker:
++            return empty_marker
++
++        value = value.split('-')
++
++        try:
++            value = DateTime(datetime(*map(int, value)))
++        except:
++            return empty_marker
++
++        return value, {}
++
++
++class DatetimeWidget(DateWidget):
++    """Date widget for Archetypes."""
++
++    _properties = DateWidget._properties.copy()
++    _properties.update({
++        'pattern': 'pickadate',
++        'pattern_options': {},
++    })
++
++    def _base_args(self, context, field, request):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        args = super(DatetimeWidget, self)._base_args(context, field, request)
++        args['name'] = field.getName()
++        args['value'] = (request.get(field.getName(),
++                                     field.getAccessor(context)()))
++
++        if args['value'] and isinstance(args['value'], DateTime):
++            args['value'] = (
++                '{year:}-{month:02}-{day:02} {hour:02}:{minute:02}'
++            ).format(
++                year=args['value'].year(),
++                month=args['value'].month(),
++                day=args['value'].day(),
++                hour=args['value'].hour(),
++                minute=args['value'].minute(),
++            )
++
++        elif args['value'] and isinstance(args['value'], datetime):
++            args['value'] = (
++                '{year:}-{month:02}-{day:02} {hour:02}:{minute:02}'
++            ).format(
++                year=args['value'].year,
++                month=args['value'].month,
++                day=args['value'].day,
++                hour=args['value'].hour,
++                minute=args['value'].minute,
++            )
++
++        if args['value'] and len(args['value'].split(' ')) == 1:
++            args['value'] += ' 00:00'
++
++        args.setdefault('pattern_options', {})
++        if 'time' in args['pattern_options']:
++            del args['pattern_options']['time']
++        args['pattern_options'] = base_widgets.dict_merge(
++            utils.get_datetime_options(request),
++            args['pattern_options'])
++
++        return args
++
++    security = ClassSecurityInfo()
++    security.declarePublic('process_form')
++
++    def process_form(self, instance, field, form, empty_marker=None):
++        """Basic impl for form processing in a widget"""
++
++        value = form.get(field.getName(), empty_marker)
++        if value is empty_marker:
++            return empty_marker
++
++        tmp = value.split(' ')
++        if not tmp[0]:
++            return empty_marker
++        value = tmp[0].split('-')
++        if len(tmp) == 2 and ':' in tmp[1]:
++            value += tmp[1].split(':')
++        else:
++            value += ['00', '00']
++
++        try:
++            value = DateTime(datetime(*map(int, value)))
++        except:
++            return empty_marker
++
++        return value, {}
++
++
++class SelectWidget(BasePatternWidget):
++    """Select widget for Archetypes."""
++
++    _base = base_widgets.SelectWidget
++
++    _properties = BasePatternWidget._properties.copy()
++    _properties.update({
++        'pattern': 'select2',
++        'pattern_options': {},
++        'separator': ';',
++        'multiple': False,
++        'orderable': False,
++    })
++
++    def _base_args(self, context, field, request):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++            - `multiple`: field multiple
++            - `items`: field items from which we can select to
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        args = super(SelectWidget, self)._base_args(context, field, request)
++        args['name'] = field.getName()
++        args['value'] = (request.get(field.getName(),
++                                     field.getAccessor(context)()))
++        args['multiple'] = self.multiple
++
++        items = []
++        for item in field.Vocabulary(context).items():
++            items.append((item[0], item[1]))
++        args['items'] = items
++
++        args.setdefault('pattern_options', {})
++
++        if self.separator:
++            args['pattern_options']['separator'] = self.separator
++
++        if self.multiple and self.orderable:
++            args['pattern_options']['orderable'] = True
++
++        return args
++
++    security = ClassSecurityInfo()
++    security.declarePublic('process_form')
++
++    def process_form(self, instance, field, form, empty_marker=None):
++        value = form.get(field.getName(), empty_marker)
++        if value is empty_marker:
++            return empty_marker
++        if self.multiple and isinstance(value, basestring):
++            value = value.strip().split(self.separator)
++        return value, {}
++
++
++class AjaxSelectWidget(BasePatternWidget):
++    """Ajax select widget for Archetypes."""
++
++    _base = base_widgets.InputWidget
++
++    _properties = BasePatternWidget._properties.copy()
++    _properties.update({
++        'pattern': 'select2',
++        'pattern_options': {},
++        'separator': ';',
++        'vocabulary': None,
++        'vocabulary_view': '@@getVocabulary',
++        'orderable': False,
++    })
++
++    def _base_args(self, context, field, request):
++        args = super(AjaxSelectWidget, self)._base_args(context, field,
++                                                        request)
++
++        vocabulary_factory = getattr(field, 'vocabulary_factory', None)
++        if not self.vocabulary:
++            self.vocabulary = vocabulary_factory
++
++        args['name'] = field.getName()
++        args['value'] = self.separator.join(request.get(
++            field.getName(), field.getAccessor(context)()))
++
++        args.setdefault('pattern_options', {})
++        args['pattern_options'] = base_widgets.dict_merge(
++            utils.get_ajaxselect_options(context, args['value'], self.separator,
++                                         self.vocabulary, self.vocabulary_view,
++                                         field.getName()),
++            args['pattern_options'])
++
++        if self.orderable:
++            args['pattern_options']['orderable'] = True
++
++        return args
++
++    security = ClassSecurityInfo()
++    security.declarePublic('process_form')
++
++    def process_form(self, instance, field, form, empty_marker=None):
++        value = form.get(field.getName(), empty_marker)
++        if value is empty_marker:
++            return empty_marker
++        value = value.strip().split(self.separator)
++        return value, {}
++
++
++class TagsWidget(AjaxSelectWidget):
++    """Keywords widget for Archetypes."""
++
++    _base = base_widgets.InputWidget
++
++    _properties = AjaxSelectWidget._properties.copy()
++    _properties.update({
++        'vocabulary': 'plone.app.vocabularies.Keywords',
++    })
++
++    def _base_args(self, context, field, request):
++        args = super(TagsWidget, self)._base_args(context, field,
++                                                  request)
++
++        membership = getToolByName(context, 'portal_membership')
++        user = membership.getAuthenticatedMember()
++
++        site_properties = getToolByName(
++            context, 'portal_properties')['site_properties']
++        allowRolesToAddKeywords = site_properties.getProperty(
++            'allowRolesToAddKeywords', None)
++
++        allowNewItems = False
++        if allowRolesToAddKeywords and [
++            role for role in user.getRolesInContext(context)
++                if role in allowRolesToAddKeywords]:
++            allowNewItems = True
++
++        args.setdefault('pattern_options', {})
++        args['pattern_options']['allowNewItems'] = allowNewItems
++
++        return args
++
++    security = ClassSecurityInfo()
++    security.declarePublic('process_form')
++
++    def process_form(self, instance, field, form, empty_marker=None):
++        value = form.get(field.getName(), empty_marker)
++        if value is empty_marker:
++            return empty_marker
++        value = value.strip().split(self.separator)
++        return value, {}
++
++
++class RelatedItemsWidget(BasePatternWidget):
++    """Related items widget for Archetypes."""
++
++    _base = base_widgets.InputWidget
++
++    _properties = BasePatternWidget._properties.copy()
++    _properties.update({
++        'pattern': 'relateditems',
++        'pattern_options': {},
++        'separator': ';',
++        'vocabulary': 'plone.app.vocabularies.Catalog',
++        'vocabulary_view': '@@getVocabulary',
++        'allow_sorting': True,
++    })
++
++    def _base_args(self, context, field, request):
++        args = super(RelatedItemsWidget, self)._base_args(context, field,
++                                                          request)
++
++        value = request.get(field.getName(), None)
++        if value is None:
++            value = field.getAccessor(context)()
++            if field.multiValued:
++                value = [IUUID(o) for o in value if o]
++            else:
++                value = '' if value is None else IUUID(value)
++        else:
++            value = [v.split('/')[0]
++                     for v in value.strip().split(self.separator)]
++
++        vocabulary_factory = getattr(field, 'vocabulary_factory', None)
++        if not self.vocabulary:
++            self.vocabulary = vocabulary_factory
++
++        args['name'] = field.getName()
++        if field.multiValued:
++            args['value'] = self.separator.join(value)
++        else:
++            args['value'] = value
++
++        args.setdefault('pattern_options', {})
++        args['pattern_options']['maximumSelectionSize'] = \
++            -1 if field.multiValued else 1
++        args['pattern_options']['orderable'] = self.allow_sorting
++        args['pattern_options'] = base_widgets.dict_merge(
++            utils.get_relateditems_options(context, args['value'], self.separator,
++                                           self.vocabulary, self.vocabulary_view,
++                                           field.getName()),
++            args['pattern_options'])
++
++        return args
++
++    security = ClassSecurityInfo()
++    security.declarePublic('process_form')
++
++    def process_form(self, instance, field, form, empty_marker=None):
++        value = form.get(field.getName(), empty_marker)
++        if value is empty_marker:
++            return empty_marker
++        value = [v.split('/')[0] for v in value.strip().split(self.separator)]
++        return value, {}
++
++
++class QueryStringWidget(BasePatternWidget):
++    """Query string widget for Archetypes."""
++
++    _base = base_widgets.TextareaWidget
++
++    _properties = BasePatternWidget._properties.copy()
++    _properties.update({
++        'pattern': 'querystring',
++        'pattern_options': {},
++        'querystring_view': '@@qsOptions',
++    })
++
++    def _base_args(self, context, field, request):
++        args = super(QueryStringWidget, self)._base_args(
++            context, field, request)
++
++        args['name'] = field.getName()
++        args['value'] = request.get(field.getName(), json.dumps(
++            [dict(c) for c in field.getRaw(context)]
++        ))
++
++        args.setdefault('pattern_options', {})
++        args['pattern_options'] = base_widgets.dict_merge(
++            utils.get_querystring_options(context, self.querystring_view),
++            args['pattern_options'])
++
++        return args
++
++    security = ClassSecurityInfo()
++    security.declarePublic('process_form')
++
++    def process_form(self, instance, field, form, empty_marker=None,
++                     emptyReturnsMarker=False, validating=True):
++        value = form.get(field.getName(), empty_marker)
++        if value is empty_marker:
++            return empty_marker
++        value = json.loads(value)
++        return value, {}
++
++
++class TinyMCEWidget(BasePatternWidget):
++    """TinyMCE widget for Archetypes."""
++
++    _base = base_widgets.TextareaWidget
++
++    _properties = BasePatternWidget._properties.copy()
++    _properties.update({
++        'pattern': 'tinymce',
++        'pattern_options': {},
++    })
++
++    def _base_args(self, context, field, request):
++        args = super(TinyMCEWidget, self)._base_args(context, field, request)
++        args['name'] = field.getName()
++        properties = getToolByName(context, 'portal_properties')
++        charset = properties.site_properties.getProperty('default_charset',
++                                                         'utf-8')
++        args['value'] = (request.get(field.getName(),
++                                     field.getAccessor(context)())
++                         ).decode(charset)
++
++        args.setdefault('pattern_options', {})
++        merged = base_widgets.dict_merge(
++            utils.get_tinymce_options(context, field, request),
++            args['pattern_options'])
++        args['pattern_options'] = merged['pattern_options']
++
++        return args
++
++    def edit(self, context, field, request):
++        """Render widget on edit.
++
++        :returns: Widget's HTML.
++        :rtype: string
++        """
++        from Products.Archetypes.mimetype_utils import getAllowedContentTypes
++        from Products.Archetypes.mimetype_utils import getDefaultContentType
++        from lxml import etree
++
++        rendered = ''
++        allowed_mime_types = getAllowedContentTypes(context)
++        if not allowed_mime_types or len(allowed_mime_types) <= 1:
++            # Display textarea with default widget
++            rendered = self._base(
++                **self._base_args(context, field, request)).render()
++        else:
++            # Let pat-textarea-mimetype-selector choose the widget
++
++            # Initialize the widget without a pattern
++            base_args = self._base_args(context, field, request)
++            pattern_options = base_args['pattern_options']
++            del base_args['pattern']
++            del base_args['pattern_options']
++            textarea_widget = self._base(None, None, **base_args)
++            textarea_widget.klass = ''
++            mt_pattern_name = '{}{}'.format(
++                self._base._klass_prefix,
++                'textareamimetypeselector'
++            )
++
++            # Initialize mimetype selector pattern
++            value_mime_type = field.getContentType(context)\
++                or getDefaultContentType(context)
++            mt_select = etree.Element('select')
++            mt_select.attrib['id'] = '{}_text_format'.format(field.getName())
++            mt_select.attrib['name'] = '{}_text_format'.format(field.getName())
++            mt_select.attrib['class'] = mt_pattern_name
++            mt_select.attrib['{}{}'.format('data-', mt_pattern_name)] =\
++                json.dumps({
++                    'textareaName': field.getName(),
++                    'widgets': {
++                        'text/html': {  # TODO: currently, we only support
++                                        # richtext widget config for
++                                        # 'text/html', no other mimetypes.
++                            'pattern': self.pattern,
++                            'patternOptions': pattern_options
++                        }
++                    }
++                })
++
++            # Create a list of allowed mime types
++            for mt in allowed_mime_types:
++                opt = etree.Element('option')
++                opt.attrib['value'] = mt
++                if value_mime_type == mt:
++                    opt.attrib['selected'] = 'selected'
++                opt.text = mt
++                mt_select.append(opt)
++
++            # Render the combined widget
++            rendered = '{}\n{}'.format(
++                textarea_widget.render(),
++                etree.tostring(mt_select)
++            )
++        return rendered
++
++
+ __all__ = ('StringWidget', 'DecimalWidget', 'IntegerWidget',
+            'ReferenceWidget', 'ComputedWidget', 'TextAreaWidget',
+            'LinesWidget', 'BooleanWidget', 'CalendarWidget',
+@@ -855,7 +1439,9 @@ class PicklistWidget(TypesWidget):
+            'RichWidget', 'FileWidget', 'IdWidget', 'ImageWidget',
+            'LabelWidget', 'PasswordWidget', 'VisualWidget', 'EpozWidget',
+            'InAndOutWidget', 'PicklistWidget', 'RequiredIdWidget',
+-           'LanguageWidget',
++           'LanguageWidget', 'DateWidget', 'DatetimeWidget',
++           'SelectWidget', 'TinyMCEWidget', 'QueryStringWidget',
++           'RelatedItemsWidget', 'TagsWidget'
+            )
+ 
+ registerWidget(StringWidget,
+@@ -930,13 +1516,13 @@ class PicklistWidget(TypesWidget):
+                )
+ 
+ registerWidget(LanguageWidget,
+-              title='Language',
+-              description=('Renders a HTML selection widget for choosing '
+-                           'a language from a vocabulary. The widget can be '
+-                           'represented as a dropdown, or as a group of'
+-                           'of radio buttons'),
+-              used_for=('Products.Archetypes.Field.StringField')
+-              )
++               title='Language',
++               description=('Renders a HTML selection widget for choosing '
++                            'a language from a vocabulary. The widget can be '
++                            'represented as a dropdown, or as a group of'
++                            'of radio buttons'),
++               used_for=('Products.Archetypes.Field.StringField')
++               )
+ 
+ registerWidget(MultiSelectionWidget,
+                title='Multi Selection',
+@@ -1026,6 +1612,47 @@ class PicklistWidget(TypesWidget):
+                used_for=('Products.Archetypes.Field.LinesField',)
+                )
+ 
++registerWidget(DateWidget,
++               title='Date widget',
++               description=('Date widget'),
++               used_for=('Products.Archetypes.Field.DateTimeField',))
++
++registerWidget(DatetimeWidget,
++               title='Datetime widget',
++               description=('Datetime widget'),
++               used_for=('Products.Archetypes.Field.DateTimeField',))
++
++registerWidget(SelectWidget,
++               title='Select widget',
++               description=('Select widget'),
++               used_for=('Products.Archetypes.Field.SelectField',))
++
++registerWidget(TinyMCEWidget,
++               title='TinyMCE widget',
++               description=('TinyMCE widget'),
++               used_for='Products.Archetypes.Field.TextField')
++
++registerWidget(QueryStringWidget,
++               title='Querystring widget',
++               description=('Querystring widget'),
++               used_for='archetypes.querywidget.field.QueryField')
++
++registerWidget(RelatedItemsWidget,
++               title='Related items widget',
++               description=('Related items widget'),
++               used_for='Products.Archetypes.Field.ReferenceField')
++
++registerWidget(TagsWidget,
++               title='Tags widget',
++               description=('Tags widget'),
++               used_for=('Products.Archetypes.Field.LinesField',))
++
++registerWidget(AjaxSelectWidget,
++               title='Ajax select widget',
++               description=('Ajax select widget'),
++               used_for=('Products.Archetypes.Field.LinesField',))
++
++
+ registerPropertyType('maxlength', 'integer', StringWidget)
+ registerPropertyType('populate', 'boolean')
+ registerPropertyType('postback', 'boolean')
+diff --git a/Products/Archetypes/browser/configure.zcml b/Products/Archetypes/browser/configure.zcml
+index 5a87f48..56e2804 100644
+--- a/Products/Archetypes/browser/configure.zcml
++++ b/Products/Archetypes/browser/configure.zcml
+@@ -83,19 +83,27 @@
+       permission="zope2.View"
+       />
+  
+-   <browser:page
++  <browser:page
+       for="*"
+       name="calendar_macros"
+       template="templates/calendar_macros.pt"
+       permission="zope.Public"
+       />
+ 
+-    <browser:page
+-        name="date_components_support"
+-        for="*"
+-        permission="zope2.View"
+-        class=".datecomponents.DateComponents"
+-        allowed_attributes="result"
+-        />
++  <browser:page
++      name="date_components_support"
++      for="*"
++      permission="zope2.View"
++      class=".datecomponents.DateComponents"
++      allowed_attributes="result"
++      />
++
++  <browser:page
++      name="patterns_widget"
++      for="Products.Archetypes.interfaces.IBaseObject"
++      class=".widgets.PatternsWidgetMacros"
++      template="templates/patterns_widget.pt"
++      permission="zope.Public"
++      />
+ 
+ </configure>
+diff --git a/Products/Archetypes/browser/templates/patterns_widget.pt b/Products/Archetypes/browser/templates/patterns_widget.pt
+new file mode 100644
+index 0000000..39d0535
+--- /dev/null
++++ b/Products/Archetypes/browser/templates/patterns_widget.pt
+@@ -0,0 +1,29 @@
++<html xmlns="http://www.w3.org/1999/xhtml"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      i18n:domain="plone">
++
++<head><title></title></head>
++
++<body>
++
++  <metal:view_macro define-macro="view">
++    <div tal:attributes="id string:parent-fieldname-$fieldName-${context/UID|nothing}"
++         tal:content="structure python:widget.view(context, field, request)"></div>
++  </metal:view_macro>
++
++  <metal:define define-macro="edit">
++    <metal:use use-macro="field_macro | context/widgets/field/macros/edit">
++      <metal:fill fill-slot="widget_body">
++        <div tal:replace="structure python:widget.edit(context, field, request)"></div>
++      </metal:fill>
++    </metal:use>
++  </metal:define>
++
++<metal:define define-macro="search">
++  <div metal:use-macro="context/widgets_calendar/macros/edit"></div>
++</metal:define>
++
++</body>
++</html>
+diff --git a/Products/Archetypes/browser/widgets.py b/Products/Archetypes/browser/widgets.py
+index 0a7b441..ebfd954 100644
+--- a/Products/Archetypes/browser/widgets.py
++++ b/Products/Archetypes/browser/widgets.py
+@@ -171,3 +171,10 @@ def lookupMime(self, name):
+             return mimetypes[0].name()
+         else:
+             return name
++
++
++class PatternsWidgetMacros(BrowserView):
++
++    @property
++    def macros(self):
++        return self.index.macros
+diff --git a/Products/Archetypes/tests/test_pawidgets.py b/Products/Archetypes/tests/test_pawidgets.py
+new file mode 100644
+index 0000000..c0d33c0
+--- /dev/null
++++ b/Products/Archetypes/tests/test_pawidgets.py
+@@ -0,0 +1,736 @@
++# -*- coding: utf-8 -*-
++from DateTime import DateTime
++from Products.Archetypes.atapi import BaseContent
++from Products.Archetypes.atapi import ReferenceField
++from Products.Archetypes.atapi import Schema
++from Products.Archetypes.atapi import StringField
++from Products.CMFCore.utils import getToolByName
++from datetime import datetime
++from mock import Mock
++from plone.app.testing import TEST_USER_ID
++from plone.app.testing import TEST_USER_NAME
++from plone.app.testing import login
++from plone.app.testing import setRoles
++from plone.app.widgets.browser.vocabulary import VocabularyView
++from plone.app.widgets.testing import PLONEAPPWIDGETS_INTEGRATION_TESTING
++from plone.app.widgets.testing import TestRequest
++from plone.testing.zca import ZCML_DIRECTIVES
++from zope.configuration import xmlconfig
++from zope.globalrequest import setRequest
++
++import json
++import mock
++
++try:
++    import unittest2 as unittest
++except ImportError:  # pragma: nocover
++    import unittest  # pragma: nocover
++    assert unittest  # pragma: nocover
++
++import plone.uuid
++
++
++class BaseWidgetTests(unittest.TestCase):
++
++    def test_widget_pattern_notimplemented(self):
++        from Products.Archetypes.Widget import BasePatternWidget
++        from plone.app.widgets.utils import NotImplemented
++
++        widget = BasePatternWidget()
++
++        with self.assertRaises(NotImplemented):
++            widget._base_args(None, None, None)
++
++        widget.pattern = 'example'
++
++        self.assertEqual(
++            {
++                'pattern': 'example',
++                'pattern_options': {}
++            },
++            widget._base_args(None, None, None))
++
++    def test_widget_base_notimplemented(self):
++        from Products.Archetypes.Widget import BasePatternWidget
++        from plone.app.widgets.base import InputWidget
++        from plone.app.widgets.utils import NotImplemented
++
++        widget = BasePatternWidget(pattern='example')
++
++        with self.assertRaises(NotImplemented):
++            widget.edit(None, None, None)
++
++        widget._base = InputWidget
++
++        self.assertEqual(
++            '<input class="pat-example" type="text"/>',
++            widget.edit(None, None, None))
++
++
++class DateWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        from plone.app.widgets.at import DateWidget
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.context = Mock()
++        self.field = Mock()
++        self.field.getAccessor.return_value = lambda: u''
++        self.field.getName.return_value = 'fieldname'
++        self.widget = DateWidget()
++
++    def test_widget(self):
++        current_year = datetime.today().year
++        self.assertEqual(
++            {
++                'pattern': 'pickadate',
++                'value': u'',
++                'name': 'fieldname',
++                'pattern_options': {
++                    'date': {
++                        'firstDay': 0,
++                        'min': [current_year - 100, 1, 1],
++                        'max': [current_year + 20, 1, 1],
++                        'clear': u'Clear',
++                        'format': 'mmmm d, yyyy',
++                        'monthsFull': [u'January', u'February', u'March',
++                                       u'April', u'May', u'June', u'July',
++                                       u'August', u'September', u'October',
++                                       u'November', u'December'],
++                        'weekdaysShort': [u'Sun', u'Mon', u'Tue', u'Wed',
++                                          u'Thu', u'Fri', u'Sat'],
++                        'weekdaysFull': [u'Sunday', u'Monday', u'Tuesday',
++                                         u'Wednesday', u'Thursday', u'Friday',
++                                         u'Saturday'],
++                        'today': u'Today',
++                        'selectYears': 200,
++                        'placeholder': u'Enter date...',
++                        'monthsShort': [u'Jan', u'Feb', u'Mar', u'Apr', u'May',
++                                        u'Jun', u'Jul', u'Aug', u'Sep', u'Oct',
++                                        u'Nov', u'Dec']
++                    },
++                    'time': False
++                }
++            },
++            self.widget._base_args(self.context, self.field, self.request),
++        )
++
++    def test_process_form(self):
++        form = {
++            'fieldname': '2011-11-22',
++        }
++        self.assertEqual(
++            self.widget.process_form(
++                self.context, self.field, form)[0].asdatetime(),
++            (datetime(2011, 11, 22))
++        )
++
++
++class DatetimeWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        from plone.app.widgets.at import DatetimeWidget
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.context = Mock()
++        self.field = Mock()
++        self.field.getAccessor.return_value = lambda: DateTime(
++            '2013-11-13 10:20 Europe/Amsterdam'
++        )
++        self.field.getName.return_value = 'fieldname'
++        self.widget = DatetimeWidget()
++
++    def test_widget(self):
++        current_year = datetime.today().year
++        self.assertEqual(
++            {
++                'pattern': 'pickadate',
++                'value': '2013-11-13 10:20',
++                'name': 'fieldname',
++                'pattern_options': {
++                    'date': {
++                        'firstDay': 0,
++                        'min': [current_year - 100, 1, 1],
++                        'max': [current_year + 20, 1, 1],
++                        'clear': u'Clear',
++                        'format': 'mmmm d, yyyy',
++                        'monthsFull': [u'January', u'February', u'March',
++                                       u'April', u'May', u'June', u'July',
++                                       u'August', u'September', u'October',
++                                       u'November', u'December'],
++                        'weekdaysShort': [u'Sun', u'Mon', u'Tue', u'Wed',
++                                          u'Thu', u'Fri', u'Sat'],
++                        'weekdaysFull': [u'Sunday', u'Monday', u'Tuesday',
++                                         u'Wednesday', u'Thursday', u'Friday',
++                                         u'Saturday'],
++                        'today': u'Today',
++                        'selectYears': 200,
++                        'placeholder': u'Enter date...',
++                        'monthsShort': [u'Jan', u'Feb', u'Mar', u'Apr', u'May',
++                                        u'Jun', u'Jul', u'Aug', u'Sep', u'Oct',
++                                        u'Nov', u'Dec']
++                    },
++                    'time': {
++                        'placeholder': u'Enter time...',
++                        'today': u'Today',
++                        'format': 'h:i a'
++                    }
++                }
++            },
++            self.widget._base_args(self.context, self.field, self.request),
++        )
++
++    def test_process_form(self):
++        form = {
++            'fieldname': '2011-11-22 13:30',
++        }
++        self.assertEqual(
++            self.widget.process_form(
++                self.context, self.field, form)[0].asdatetime(),
++            (datetime(2011, 11, 22, 13, 30))
++        )
++
++
++class SelectWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.context = Mock()
++        self.vocabulary = Mock()
++        self.vocabulary.items.return_value = [
++            ('one', 'one'),
++            ('two', 'two'),
++            ('three', 'three'),
++        ]
++        self.field = Mock()
++        self.field.getAccessor.return_value = lambda: ()
++        self.field.getName.return_value = 'fieldname'
++        self.field.Vocabulary.return_value = self.vocabulary
++
++    def test_widget(self):
++        from plone.app.widgets.at import SelectWidget
++        widget = SelectWidget()
++        self.assertEqual(
++            {
++                'multiple': False,
++                'name': 'fieldname',
++                'pattern_options': {'separator': ';'},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(self.context, self.field, self.request),
++        )
++
++        widget.multiple = True
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': 'fieldname',
++                'pattern_options': {'separator': ';'},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(self.context, self.field, self.request),
++        )
++
++        self.field.getAccessor.return_value = lambda: u'one'
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': 'fieldname',
++                'pattern_options': {'separator': ';'},
++                'pattern': 'select2',
++                'value': (u'one'),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(self.context, self.field, self.request),
++        )
++
++    def test_widget_orderable(self):
++        from plone.app.widgets.at import SelectWidget
++        widget = SelectWidget()
++        widget.multiple = True
++        widget.orderable = True
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': 'fieldname',
++                'pattern_options': {'orderable': True, 'separator': ';'},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(self.context, self.field, self.request),
++        )
++
++    def test_process_form(self):
++        from plone.app.widgets.at import SelectWidget
++        widget = SelectWidget()
++        form = {'fieldname': 'aaa.bbb.ccc'}
++        self.assertEquals('aaa.bbb.ccc',
++                          widget.process_form(self.context,
++                                              self.field, form)[0])
++        widget.multiple = True
++        widget.separator = "."
++        self.assertEquals(['aaa', 'bbb', 'ccc'],
++                          widget.process_form(self.context,
++                                              self.field, form)[0])
++
++# TODO
++# class AjaxSelectWidgetTests(unittest.TestCase):
++
++
++class RelatedItemsWidgetTests(unittest.TestCase):
++
++    layer = ZCML_DIRECTIVES
++
++    def setUp(self):
++
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.context = Mock(absolute_url=lambda: '')
++        self.field = Mock()
++
++        xmlconfig.file('configure.zcml', plone.uuid,
++                       context=self.layer['configurationContext'])
++
++    def test_multi_valued(self):
++        from zope.event import notify
++        from zope.interface import implements
++        from zope.lifecycleevent import ObjectCreatedEvent
++        from plone.uuid.interfaces import IUUID
++        from plone.uuid.interfaces import IAttributeUUID
++        from plone.app.widgets.at import RelatedItemsWidget
++
++        class ExampleContent(object):
++            implements(IAttributeUUID)
++
++        obj1 = ExampleContent()
++        obj2 = ExampleContent()
++        notify(ObjectCreatedEvent(obj1))
++        notify(ObjectCreatedEvent(obj2))
++
++        self.field.getName.return_value = 'fieldname'
++        self.field.getAccessor.return_value = lambda: [obj1, obj2]
++        self.field.multiValued = True
++        self.context.portal_properties.site_properties\
++            .getProperty.return_value = ['SomeType']
++
++        widget = RelatedItemsWidget()
++
++        self.assertEqual(
++            {
++                'name': 'fieldname',
++                'value': '{};{}'.format(IUUID(obj1), IUUID(obj2)),
++                'pattern': 'relateditems',
++                'pattern_options': {
++                    'folderTypes': ['SomeType'],
++                    'homeText': u'Home',
++                    'searchAllText': u'Entire site',
++                    'searchText': u'Search',
++                    'separator': ';',
++                    'orderable': True,
++                    'maximumSelectionSize': -1,
++                    'vocabularyUrl': '/@@getVocabulary?name='
++                                     'plone.app.vocabularies.Catalog'
++                                     '&field=fieldname',
++                },
++            },
++            widget._base_args(self.context, self.field, self.request),
++        )
++
++    def test_single_value(self):
++        from zope.event import notify
++        from zope.interface import implements
++        from zope.lifecycleevent import ObjectCreatedEvent
++        from plone.uuid.interfaces import IUUID
++        from plone.uuid.interfaces import IAttributeUUID
++        from plone.app.widgets.at import RelatedItemsWidget
++
++        class ExampleContent(object):
++            implements(IAttributeUUID)
++
++        obj1 = ExampleContent()
++        notify(ObjectCreatedEvent(obj1))
++
++        self.field.getName.return_value = 'fieldname'
++        self.field.getAccessor.return_value = lambda: obj1
++        self.field.multiValued = False
++        self.context.portal_properties.site_properties\
++            .getProperty.return_value = ['SomeType']
++
++        widget = RelatedItemsWidget()
++
++        self.assertEqual(
++            {
++                'name': 'fieldname',
++                'value': '{}'.format(IUUID(obj1)),
++                'pattern': 'relateditems',
++                'pattern_options': {
++                    'folderTypes': ['SomeType'],
++                    'homeText': u'Home',
++                    'separator': ';',
++                    'orderable': True,
++                    'searchAllText': u'Entire site',
++                    'searchText': u'Search',
++                    'maximumSelectionSize': 1,
++                    'vocabularyUrl': '/@@getVocabulary?name='
++                                     'plone.app.vocabularies.Catalog'
++                                     '&field=fieldname',
++                },
++            },
++            widget._base_args(self.context, self.field, self.request),
++        )
++
++    def test_single_valued_empty(self):
++        from plone.app.widgets.at import RelatedItemsWidget
++
++        self.field.getName.return_value = 'fieldname'
++        self.field.getAccessor.return_value = lambda: None
++        self.field.multiValued = False
++        self.context.portal_properties.site_properties\
++            .getProperty.return_value = ['SomeType']
++
++        widget = RelatedItemsWidget()
++
++        self.assertEqual(
++            {
++                'name': 'fieldname',
++                'value': '',
++                'pattern': 'relateditems',
++                'pattern_options': {
++                    'folderTypes': ['SomeType'],
++                    'homeText': u'Home',
++                    'separator': ';',
++                    'orderable': True,
++                    'searchAllText': u'Entire site',
++                    'searchText': u'Search',
++                    'maximumSelectionSize': 1,
++                    'vocabularyUrl': '/@@getVocabulary?name='
++                                     'plone.app.vocabularies.Catalog'
++                                     '&field=fieldname',
++                },
++            },
++            widget._base_args(self.context, self.field, self.request),
++        )
++
++    def test_multiple_widgets(self):
++        from zope.event import notify
++        from plone.app.widgets.at import RelatedItemsWidget
++        from zope.interface import implements
++        from zope.lifecycleevent import ObjectCreatedEvent
++        from plone.uuid.interfaces import IUUID
++        from plone.uuid.interfaces import IAttributeUUID
++
++        class ExampleContent(object):
++            implements(IAttributeUUID)
++
++        obj1 = ExampleContent()
++        obj2 = ExampleContent()
++        notify(ObjectCreatedEvent(obj1))
++        notify(ObjectCreatedEvent(obj2))
++
++        self.context.fieldvalue = lambda: obj1
++        self.context.portal_properties.site_properties\
++            .getProperty.return_value = ['SomeType']
++
++        field1 = ReferenceField(
++            'fieldname1',
++            relationship="A",
++            multiValued=False,
++            widget=RelatedItemsWidget(),
++        )
++        field1.accessor = "fieldvalue"
++
++        self.assertEqual(
++            {
++                'name': 'fieldname1',
++                'value': '{}'.format(IUUID(obj1)),
++                'pattern': 'relateditems',
++                'pattern_options': {
++                    'folderTypes': ['SomeType'],
++                    'homeText': u'Home',
++                    'separator': ';',
++                    'orderable': True,
++                    'searchAllText': u'Entire site',
++                    'searchText': u'Search',
++                    'maximumSelectionSize': 1,
++                    'vocabularyUrl': '/@@getVocabulary?name='
++                                     'plone.app.vocabularies.Catalog'
++                                     '&field=fieldname1',
++                },
++            },
++            field1.widget._base_args(self.context, field1, self.request),
++        )
++
++        field2 = ReferenceField(
++            'fieldname2',
++            relationship="A",
++            multiValued=True,
++            widget=RelatedItemsWidget(),
++        )
++        field2.accessor = "fieldvalue"
++        self.context.fieldvalue = lambda: [obj1, obj2]
++
++        self.assertEqual(
++            {
++                'name': 'fieldname2',
++                'value': '{};{}'.format(IUUID(obj1), IUUID(obj2)),
++                'pattern': 'relateditems',
++                'pattern_options': {
++                    'folderTypes': ['SomeType'],
++                    'homeText': u'Home',
++                    'separator': ';',
++                    'orderable': True,
++                    'searchAllText': u'Entire site',
++                    'searchText': u'Search',
++                    'maximumSelectionSize': -1,
++                    'vocabularyUrl': '/@@getVocabulary?name='
++                                     'plone.app.vocabularies.Catalog'
++                                     '&field=fieldname2',
++                },
++            },
++            field2.widget._base_args(self.context, field2, self.request),
++        )
++
++
++class QueryStringWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.context = Mock()
++        self.context.absolute_url.return_value = ''
++        self.field = Mock()
++
++    def test_widget(self):
++        from plone.app.widgets.at import QueryStringWidget
++
++        self.field.getName.return_value = 'fieldname'
++        self.field.getRaw.return_value = [
++            {'query': 'string1'},
++            {'query': 'string2'},
++        ]
++
++        widget = QueryStringWidget()
++
++        self.assertEqual(
++            {
++                'name': 'fieldname',
++                'value': '[{"query": "string1"}, {"query": "string2"}]',
++                'pattern': 'querystring',
++                'pattern_options': {
++                    'indexOptionsUrl': '/@@qsOptions',
++                    'previewCountURL': '/@@querybuildernumberofresults',
++                    'previewURL': '/@@querybuilder_html_results',
++                },
++            },
++            widget._base_args(self.context, self.field, self.request),
++        )
++
++
++class TinyMCEWidgetTests(unittest.TestCase):
++
++    layer = PLONEAPPWIDGETS_INTEGRATION_TESTING
++
++    def setUp(self):
++        self.portal = self.layer['portal']
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.field = Mock()
++        self.field.getAccessor.return_value = lambda: 'fieldvalue'
++        self.field.getName.return_value = 'fieldname'
++        self.field.getContentType.return_value = 'text/html'
++
++    def test_widget(self):
++        # BBB: portal_tinymce is removed in Plone 5. Remove this check when
++        # Plone < 5 is no longer supported.
++        utility = getToolByName(self.portal, 'portal_tinymce', None)
++        if not utility:
++            return
++        from plone.app.widgets.at import TinyMCEWidget
++        widget = TinyMCEWidget()
++        self.field.widget = widget
++        base_args = widget._base_args(self.portal, self.field, self.request)
++        self.assertEqual(base_args['name'], 'fieldname')
++        self.assertEqual(base_args['value'], 'fieldvalue')
++        self.assertEqual(base_args['pattern'], 'tinymce')
++
++    @mock.patch(
++        'Products.Archetypes.mimetype_utils.getDefaultContentType',
++        new=lambda ctx: 'text/html')
++    @mock.patch(
++        'Products.Archetypes.mimetype_utils.getAllowedContentTypes',
++        new=lambda ctx: ['text/html'])
++    def test_at_tinymcewidget_single_mimetype(self):
++        """A RichTextWidget with only one available mimetype should render the
++        pattern class directly on itself.
++        """
++        from plone.app.widgets.at import TinyMCEWidget
++        widget = TinyMCEWidget()
++        rendered = widget.edit(self.portal, self.field, self.request)
++
++        self.assertTrue('<select' not in rendered)
++        self.assertTrue('pat-tinymce' in rendered)
++        self.assertTrue('data-pat-tinymce' in rendered)
++
++    @mock.patch(
++        'Products.Archetypes.mimetype_utils.getDefaultContentType',
++        new=lambda ctx: 'text/html')
++    @mock.patch(
++        'Products.Archetypes.mimetype_utils.getAllowedContentTypes',
++        new=lambda ctx: ['text/html', 'text/plain'])
++    def test_at_tinymcewidget_multiple_mimetypes_create(self):
++        """A RichTextWidget with multiple available mimetypes should render a
++        mimetype selection widget along with the textfield. When there is no
++        field value, the default mimetype should be preselected.
++        """
++        from plone.app.widgets.at import TinyMCEWidget
++        widget = TinyMCEWidget()
++        rendered = widget.edit(self.portal, self.field, self.request)
++
++        self.assertTrue('<select' in rendered)
++        self.assertTrue('pat-textareamimetypeselector' in rendered)
++        self.assertTrue('data-pat-textareamimetypeselector' in rendered)
++        self.assertTrue(
++            '<option value="text/html" selected="selected">' in rendered)
++        self.assertTrue('pat-tinymce' not in rendered)
++
++
++class ArchetypesVocabularyPermissionTests(unittest.TestCase):
++
++    layer = PLONEAPPWIDGETS_INTEGRATION_TESTING
++
++    def setUp(self):
++        from plone.app.widgets.at import AjaxSelectWidget
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        setRequest(self.request)
++        self.portal = self.layer['portal']
++
++        login(self.portal, TEST_USER_NAME)
++        setRoles(self.portal, TEST_USER_ID, ['Manager'])
++
++        class TestAT(BaseContent):
++
++            schema = BaseContent.schema.copy() + Schema((
++                StringField(
++                    'allowed_field',
++                    vocabulary_factory='plone.app.vocabularies.PortalTypes',
++                    write_permission='View'),
++                StringField(
++                    'disallowed_field',
++                    vocabulary_factory='plone.app.vocabularies.PortalTypes',
++                    write_permission='View management screens'),
++                StringField(
++                    'default_field',
++                    vocabulary_factory='plone.app.vocabularies.PortalTypes'),
++                StringField(
++                    'allowed_widget_vocab',
++                    write_permission='View',
++                    widget=AjaxSelectWidget(
++                        vocabulary='plone.app.vocabularies.PortalTypes'),
++                )))
++
++        self.portal._setObject('test_at', TestAT('test_at'),
++                               suppress_events=True)
++
++        self.portal.test_at.manage_permission('View',
++                                              ('Anonymous',),
++                                              acquire=False)
++        self.portal.test_at.manage_permission('View management screens',
++                                              (),
++                                              acquire=False)
++        self.portal.test_at.manage_permission('Modify portal content',
++                                              ('Editor', 'Manager',
++                                               'Site Adiminstrator'),
++                                              acquire=False)
++
++    def test_vocabulary_field_allowed(self):
++        view = VocabularyView(self.portal.test_at, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'allowed_field',
++        })
++        data = json.loads(view())
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++
++    def test_vocabulary_field_wrong_vocab_disallowed(self):
++        view = VocabularyView(self.portal.test_at, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.Fake',
++            'field': 'allowed_field',
++        })
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++    def test_vocabulary_field_disallowed(self):
++        view = VocabularyView(self.portal.test_at, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'disallowed_field',
++        })
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++    def test_vocabulary_field_default_permission(self):
++        view = VocabularyView(self.portal.test_at, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'default_field',
++        })
++        # If the field is does not have a security declaration, the
++        # default edit permission is tested (Modify portal content)
++        setRoles(self.portal, TEST_USER_ID, ['Member'])
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++        setRoles(self.portal, TEST_USER_ID, ['Editor'])
++        # Now access should be allowed, but the vocabulary does not exist
++        data = json.loads(view())
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++
++    def test_vocabulary_field_default_permission_wrong_vocab(self):
++        view = VocabularyView(self.portal.test_at, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.Fake',
++            'field': 'default_field',
++        })
++        setRoles(self.portal, TEST_USER_ID, ['Editor'])
++        # Now access should be allowed, but the vocabulary does not exist
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++    def test_vocabulary_widget_vocab_allowed(self):
++        view = VocabularyView(self.portal.test_at, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'allowed_widget_vocab',
++        })
++        data = json.loads(view())
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++
++    def test_vocabulary_missing_field(self):
++        view = VocabularyView(self.portal.test_at, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'missing_field',
++        })
++        setRoles(self.portal, TEST_USER_ID, ['Member'])
++        with self.assertRaises(AttributeError):
++            view()
+diff --git a/setup.py b/setup.py
+index 4fcbf05..7463058 100644
+--- a/setup.py
++++ b/setup.py
+@@ -68,5 +68,6 @@
+           'transaction',
+           'ZODB3',
+           'Zope2 >= 2.13.1',
++          'plone.app.widgets>=2'
+       ],
+       )
+
+
+Repository: Products.Archetypes
+Branch: refs/heads/master
+Date: 2015-01-26T23:19:47-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/Products.Archetypes/commit/fce66028ab87298e729fba5edd52a85f312de02f
+
+finish widgets integration
+
+Files changed:
+M Products/Archetypes/ExtensibleMetadata.py
+M Products/Archetypes/Widget.py
+M Products/Archetypes/tests/test_baseschema.py
+M Products/Archetypes/tests/test_pawidgets.py
+M Products/Archetypes/tests/test_widgets.py
+M setup.py
+
+diff --git a/Products/Archetypes/ExtensibleMetadata.py b/Products/Archetypes/ExtensibleMetadata.py
+index 2855073..f9eb98c 100644
+--- a/Products/Archetypes/ExtensibleMetadata.py
++++ b/Products/Archetypes/ExtensibleMetadata.py
+@@ -6,8 +6,9 @@
+ from Products.Archetypes import PloneMessageFactory as _
+ from Products.Archetypes.Field import BooleanField, LinesField, TextField, \
+     StringField, DateTimeField
+-from Products.Archetypes.Widget import BooleanWidget, TagsWidget, \
+-    TextAreaWidget, StringWidget, LinesWidget, DatetimeWidget, SelectWidget
++from Products.Archetypes.Widget import (
++    BooleanWidget, TagsWidget, TextAreaWidget, StringWidget,
++    DatetimeWidget, SelectWidget, AjaxSelectWidget)
+ from Products.Archetypes.Schema import Schema
+ from Products.Archetypes.Schema import MetadataSchema
+ from Products.Archetypes.interfaces import IExtensibleMetadata
+@@ -44,7 +45,7 @@
+     HAS_PLONE_I18N = False
+ 
+ 
+-## MIXIN
++# MIXIN
+ class ExtensibleMetadata(Persistence.Persistent):
+     """a replacement for CMFDefault.DublinCore.DefaultDublinCoreImpl
+     """
+@@ -57,8 +58,7 @@ class ExtensibleMetadata(Persistence.Persistent):
+ 
+     security = ClassSecurityInfo()
+ 
+-    schema = type = MetadataSchema(
+-        (
++    schema = type = MetadataSchema((
+         BooleanField(
+             'allowDiscussion',
+             accessor="isDiscussable",
+diff --git a/Products/Archetypes/Widget.py b/Products/Archetypes/Widget.py
+index 8c56f44..9e87f87 100644
+--- a/Products/Archetypes/Widget.py
++++ b/Products/Archetypes/Widget.py
+@@ -23,7 +23,7 @@
+ from Acquisition import aq_base
+ 
+ from plone.app.widgets import base as base_widgets
+-from plone.app.widgets import utils as utils
++from plone.app.widgets import utils
+ from plone.uuid.interfaces import IUUID
+ 
+ import json
+@@ -858,6 +858,15 @@ class PicklistWidget(TypesWidget):
+     security = ClassSecurityInfo()
+ 
+ 
++def _one(value, empty_marker=None):
++    if isinstance(value, list):
++        if len(value) > 0:
++            value = value[0]
++        else:
++            return empty_marker
++    return value
++
++
+ class BasePatternWidget(TypesWidget):
+     """Base widget for Archetypes."""
+ 
+@@ -870,7 +879,7 @@ class BasePatternWidget(TypesWidget):
+ 
+     def _base(self, pattern, pattern_options={}):
+         """Base widget class."""
+-        raise NotImplemented
++        raise utils.NotImplemented
+ 
+     def _base_args(self, context, field, request):
+         """Method which will calculate _base class arguments.
+@@ -892,7 +901,7 @@ def _base_args(self, context, field, request):
+         :rtype: dict
+         """
+         if self.pattern is None:
+-            raise NotImplemented("'pattern' option is not provided.")
++            raise utils.NotImplemented("'pattern' option is not provided.")
+         return {
+             'pattern': self.pattern,
+             'pattern_options': self.pattern_options,
+@@ -1130,7 +1139,7 @@ def _base_args(self, context, field, request):
+     security.declarePublic('process_form')
+ 
+     def process_form(self, instance, field, form, empty_marker=None):
+-        value = form.get(field.getName(), empty_marker)
++        value = _one(form.get(field.getName(), empty_marker), empty_marker)
+         if value is empty_marker:
+             return empty_marker
+         if self.multiple and isinstance(value, basestring):
+@@ -1181,9 +1190,10 @@ def _base_args(self, context, field, request):
+     security.declarePublic('process_form')
+ 
+     def process_form(self, instance, field, form, empty_marker=None):
+-        value = form.get(field.getName(), empty_marker)
++        value = _one(form.get(field.getName(), empty_marker), empty_marker)
+         if value is empty_marker:
+             return empty_marker
++
+         value = value.strip().split(self.separator)
+         return value, {}
+ 
+@@ -1205,10 +1215,13 @@ def _base_args(self, context, field, request):
+         membership = getToolByName(context, 'portal_membership')
+         user = membership.getAuthenticatedMember()
+ 
+-        site_properties = getToolByName(
+-            context, 'portal_properties')['site_properties']
+-        allowRolesToAddKeywords = site_properties.getProperty(
+-            'allowRolesToAddKeywords', None)
++        try:
++            site_properties = getToolByName(
++                context, 'portal_properties')['site_properties']
++            allowRolesToAddKeywords = site_properties.getProperty(
++                'allowRolesToAddKeywords', None)
++        except AttributeError:
++            allowRolesToAddKeywords = False
+ 
+         allowNewItems = False
+         if allowRolesToAddKeywords and [
+@@ -1225,9 +1238,11 @@ def _base_args(self, context, field, request):
+     security.declarePublic('process_form')
+ 
+     def process_form(self, instance, field, form, empty_marker=None):
+-        value = form.get(field.getName(), empty_marker)
++        value = _one(form.get(field.getName(), empty_marker), empty_marker)
+         if value is empty_marker:
+             return empty_marker
++        if not value:
++            return [], {}
+         value = value.strip().split(self.separator)
+         return value, {}
+ 
+@@ -1441,7 +1456,7 @@ def edit(self, context, field, request):
+            'InAndOutWidget', 'PicklistWidget', 'RequiredIdWidget',
+            'LanguageWidget', 'DateWidget', 'DatetimeWidget',
+            'SelectWidget', 'TinyMCEWidget', 'QueryStringWidget',
+-           'RelatedItemsWidget', 'TagsWidget'
++           'RelatedItemsWidget', 'TagsWidget', 'AjaxSelectWidget'
+            )
+ 
+ registerWidget(StringWidget,
+diff --git a/Products/Archetypes/tests/test_baseschema.py b/Products/Archetypes/tests/test_baseschema.py
+index a54f0bd..307b724 100644
+--- a/Products/Archetypes/tests/test_baseschema.py
++++ b/Products/Archetypes/tests/test_baseschema.py
+@@ -166,7 +166,7 @@ def test_subject(self):
+         self.assertTrue(isinstance(field.storage, atapi.MetadataStorage))
+         self.assertTrue(field.getLayerImpl('storage') == atapi.MetadataStorage())
+         self.assertTrue(field.validators == EmptyValidator)
+-        self.assertTrue(isinstance(field.widget, atapi.KeywordWidget))
++        self.assertTrue(isinstance(field.widget, atapi.TagsWidget))
+         vocab = field.Vocabulary(dummy)
+         self.assertTrue(isinstance(vocab, atapi.DisplayList))
+         self.assertTrue(tuple(vocab) == ())
+@@ -224,7 +224,7 @@ def test_contributors(self):
+         self.assertTrue(isinstance(field.storage, atapi.MetadataStorage))
+         self.assertTrue(field.getLayerImpl('storage') == atapi.MetadataStorage())
+         self.assertTrue(field.validators == EmptyValidator)
+-        self.assertTrue(isinstance(field.widget, atapi.LinesWidget))
++        self.assertTrue(isinstance(field.widget, atapi.AjaxSelectWidget))
+         vocab = field.Vocabulary(dummy)
+         self.assertTrue(isinstance(vocab, atapi.DisplayList))
+         self.assertTrue(tuple(vocab) == ())
+@@ -253,7 +253,7 @@ def test_effectivedate(self):
+         self.assertTrue(isinstance(field.storage, atapi.MetadataStorage))
+         self.assertTrue(field.getLayerImpl('storage') == atapi.MetadataStorage())
+         self.assertTrue(field.validators == EmptyValidator)
+-        self.assertTrue(isinstance(field.widget, atapi.CalendarWidget))
++        self.assertTrue(isinstance(field.widget, atapi.DatetimeWidget))
+         vocab = field.Vocabulary(dummy)
+         self.assertTrue(isinstance(vocab, atapi.DisplayList))
+         self.assertTrue(tuple(vocab) == ())
+@@ -282,7 +282,7 @@ def test_expirationdate(self):
+         self.assertTrue(isinstance(field.storage, atapi.MetadataStorage))
+         self.assertTrue(field.getLayerImpl('storage') == atapi.MetadataStorage())
+         self.assertTrue(field.validators == EmptyValidator)
+-        self.assertTrue(isinstance(field.widget, atapi.CalendarWidget))
++        self.assertTrue(isinstance(field.widget, atapi.DatetimeWidget))
+         vocab = field.Vocabulary(dummy)
+         self.assertTrue(isinstance(vocab, atapi.DisplayList))
+         self.assertTrue(tuple(vocab) == ())
+@@ -312,7 +312,7 @@ def test_language(self):
+         self.assertTrue(isinstance(field.storage, atapi.MetadataStorage))
+         self.assertTrue(field.getLayerImpl('storage') == atapi.MetadataStorage())
+         self.assertTrue(field.validators == EmptyValidator)
+-        self.assertTrue(isinstance(field.widget, atapi.LanguageWidget))
++        self.assertTrue(isinstance(field.widget, atapi.SelectWidget))
+         vocab = field.Vocabulary(dummy)
+         self.assertTrue(isinstance(vocab, atapi.DisplayList))
+         self.assertTrue(vocab == dummy.languages())
+diff --git a/Products/Archetypes/tests/test_pawidgets.py b/Products/Archetypes/tests/test_pawidgets.py
+index c0d33c0..2c709cf 100644
+--- a/Products/Archetypes/tests/test_pawidgets.py
++++ b/Products/Archetypes/tests/test_pawidgets.py
+@@ -11,7 +11,7 @@
+ from plone.app.testing import TEST_USER_NAME
+ from plone.app.testing import login
+ from plone.app.testing import setRoles
+-from plone.app.widgets.browser.vocabulary import VocabularyView
++from plone.app.content.browser.vocabulary import VocabularyView
+ from plone.app.widgets.testing import PLONEAPPWIDGETS_INTEGRATION_TESTING
+ from plone.app.widgets.testing import TestRequest
+ from plone.testing.zca import ZCML_DIRECTIVES
+@@ -70,7 +70,7 @@ def test_widget_base_notimplemented(self):
+ class DateWidgetTests(unittest.TestCase):
+ 
+     def setUp(self):
+-        from plone.app.widgets.at import DateWidget
++        from Products.Archetypes.Widget import DateWidget
+         self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
+         self.context = Mock()
+         self.field = Mock()
+@@ -128,7 +128,7 @@ def test_process_form(self):
+ class DatetimeWidgetTests(unittest.TestCase):
+ 
+     def setUp(self):
+-        from plone.app.widgets.at import DatetimeWidget
++        from Products.Archetypes.Widget import DatetimeWidget
+         self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
+         self.context = Mock()
+         self.field = Mock()
+@@ -206,7 +206,7 @@ def setUp(self):
+         self.field.Vocabulary.return_value = self.vocabulary
+ 
+     def test_widget(self):
+-        from plone.app.widgets.at import SelectWidget
++        from Products.Archetypes.Widget import SelectWidget
+         widget = SelectWidget()
+         self.assertEqual(
+             {
+@@ -259,7 +259,7 @@ def test_widget(self):
+         )
+ 
+     def test_widget_orderable(self):
+-        from plone.app.widgets.at import SelectWidget
++        from Products.Archetypes.Widget import SelectWidget
+         widget = SelectWidget()
+         widget.multiple = True
+         widget.orderable = True
+@@ -280,7 +280,7 @@ def test_widget_orderable(self):
+         )
+ 
+     def test_process_form(self):
+-        from plone.app.widgets.at import SelectWidget
++        from Products.Archetypes.Widget import SelectWidget
+         widget = SelectWidget()
+         form = {'fieldname': 'aaa.bbb.ccc'}
+         self.assertEquals('aaa.bbb.ccc',
+@@ -315,7 +315,7 @@ def test_multi_valued(self):
+         from zope.lifecycleevent import ObjectCreatedEvent
+         from plone.uuid.interfaces import IUUID
+         from plone.uuid.interfaces import IAttributeUUID
+-        from plone.app.widgets.at import RelatedItemsWidget
++        from Products.Archetypes.Widget import RelatedItemsWidget
+ 
+         class ExampleContent(object):
+             implements(IAttributeUUID)
+@@ -360,7 +360,7 @@ def test_single_value(self):
+         from zope.lifecycleevent import ObjectCreatedEvent
+         from plone.uuid.interfaces import IUUID
+         from plone.uuid.interfaces import IAttributeUUID
+-        from plone.app.widgets.at import RelatedItemsWidget
++        from Products.Archetypes.Widget import RelatedItemsWidget
+ 
+         class ExampleContent(object):
+             implements(IAttributeUUID)
+@@ -398,7 +398,7 @@ class ExampleContent(object):
+         )
+ 
+     def test_single_valued_empty(self):
+-        from plone.app.widgets.at import RelatedItemsWidget
++        from Products.Archetypes.Widget import RelatedItemsWidget
+ 
+         self.field.getName.return_value = 'fieldname'
+         self.field.getAccessor.return_value = lambda: None
+@@ -431,7 +431,7 @@ def test_single_valued_empty(self):
+ 
+     def test_multiple_widgets(self):
+         from zope.event import notify
+-        from plone.app.widgets.at import RelatedItemsWidget
++        from Products.Archetypes.Widget import RelatedItemsWidget
+         from zope.interface import implements
+         from zope.lifecycleevent import ObjectCreatedEvent
+         from plone.uuid.interfaces import IUUID
+@@ -518,7 +518,7 @@ def setUp(self):
+         self.field = Mock()
+ 
+     def test_widget(self):
+-        from plone.app.widgets.at import QueryStringWidget
++        from Products.Archetypes.Widget import QueryStringWidget
+ 
+         self.field.getName.return_value = 'fieldname'
+         self.field.getRaw.return_value = [
+@@ -561,7 +561,7 @@ def test_widget(self):
+         utility = getToolByName(self.portal, 'portal_tinymce', None)
+         if not utility:
+             return
+-        from plone.app.widgets.at import TinyMCEWidget
++        from Products.Archetypes.Widget import TinyMCEWidget
+         widget = TinyMCEWidget()
+         self.field.widget = widget
+         base_args = widget._base_args(self.portal, self.field, self.request)
+@@ -579,7 +579,7 @@ def test_at_tinymcewidget_single_mimetype(self):
+         """A RichTextWidget with only one available mimetype should render the
+         pattern class directly on itself.
+         """
+-        from plone.app.widgets.at import TinyMCEWidget
++        from Products.Archetypes.Widget import TinyMCEWidget
+         widget = TinyMCEWidget()
+         rendered = widget.edit(self.portal, self.field, self.request)
+ 
+@@ -598,7 +598,7 @@ def test_at_tinymcewidget_multiple_mimetypes_create(self):
+         mimetype selection widget along with the textfield. When there is no
+         field value, the default mimetype should be preselected.
+         """
+-        from plone.app.widgets.at import TinyMCEWidget
++        from Products.Archetypes.Widget import TinyMCEWidget
+         widget = TinyMCEWidget()
+         rendered = widget.edit(self.portal, self.field, self.request)
+ 
+@@ -615,7 +615,7 @@ class ArchetypesVocabularyPermissionTests(unittest.TestCase):
+     layer = PLONEAPPWIDGETS_INTEGRATION_TESTING
+ 
+     def setUp(self):
+-        from plone.app.widgets.at import AjaxSelectWidget
++        from Products.Archetypes.Widget import AjaxSelectWidget
+         self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
+         setRequest(self.request)
+         self.portal = self.layer['portal']
+diff --git a/Products/Archetypes/tests/test_widgets.py b/Products/Archetypes/tests/test_widgets.py
+index 14d2597..63f1807 100644
+--- a/Products/Archetypes/tests/test_widgets.py
++++ b/Products/Archetypes/tests/test_widgets.py
+@@ -62,37 +62,11 @@ def test_subject_keyword_widget(self):
+         doc = makeContent(self.folder, portal_type='ComplexType', id='demodoc')
+         field = doc.Schema()['subject']
+         widget = field.widget
+-        form = {'subject_keywords': ['bla', 'ble'],
+-                'subject_existing_keywords': ['bli']
+-                }
++        form = {'subject': ['bla;ble;bli']}
+         expected = ['bla', 'ble', 'bli']
+         result = widget.process_form(doc, field, form)
+         result[0].sort()
+         self.assertEqual(expected, result[0])
+-        form = {'subject_keywords': ['bla'],
+-                'subject_existing_keywords': ['ble', 'bli']
+-                }
+-        result = widget.process_form(doc, field, form)
+-        result[0].sort()
+-        self.assertEqual(expected, result[0])
+-        form = {'subject_keywords': [],
+-                'subject_existing_keywords': ['bla', 'ble', 'bli']
+-                }
+-        result = widget.process_form(doc, field, form)
+-        result[0].sort()
+-        self.assertEqual(expected, result[0])
+-        form = {'subject_keywords': ['bla', 'ble', 'bli'],
+-                'subject_existing_keywords': ['bla', 'ble', 'bli']
+-                }
+-        result = widget.process_form(doc, field, form)
+-        result[0].sort()
+-        self.assertEqual(expected, result[0])
+-        form = {'subject_keywords': ['bla', 'ble', 'bli'],
+-                'subject_existing_keywords': []
+-                }
+-        result = widget.process_form(doc, field, form)
+-        result[0].sort()
+-        self.assertEqual(expected, result[0])
+ 
+     def test_subject_keyword_widget2(self):
+         doc = makeContent(self.folder, portal_type='ComplexType', id='demodoc')
+@@ -114,10 +88,9 @@ def test_subject_keyword_widget_empty(self):
+         widget = field.widget
+         empty_marker = object()
+         # test when the widget is rendered and returns empty lists
+-        form = {'subject_keywords': [''],
+-                'subject_existing_keywords': []
+-                }
++        form = {'subject': ['']}
+         expected = []
++
+         result = widget.process_form(doc, field, form, empty_marker)
+         self.assertEqual(expected, result[0])
+         # test when the widget is not rendered
+diff --git a/setup.py b/setup.py
+index 7463058..087ceb6 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,6 +1,6 @@
+ from setuptools import setup, find_packages
+ 
+-version = '1.10.3.dev0'
++version = '1.10.4.dev0'
+ 
+ setup(name='Products.Archetypes',
+       version=version,
+@@ -68,6 +68,6 @@
+           'transaction',
+           'ZODB3',
+           'Zope2 >= 2.13.1',
+-          'plone.app.widgets>=2'
++          'plone.app.widgets>=2.0.0.dev0'
+       ],
+       )
 
 
