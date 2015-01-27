@@ -1,35 +1,40 @@
-Repository: plone.app.controlpanel
+Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-01-26T23:23:25-06:00
+Date: 2015-01-26T23:25:05-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.controlpanel/commit/a6f4ede1a4b29c27d9fe0ba39629ba7c1f00d2bc
+Commit: https://github.com/plone/plone.app.event/commit/7831f16975c15622154c92490b694feb6cd4d274
 
-fix test
+fix import location of date widget
 
 Files changed:
-M plone/app/controlpanel/tests/filter.txt
+M plone/app/event/dx/behaviors.py
+M setup.py
 
-diff --git a/plone/app/controlpanel/tests/filter.txt b/plone/app/controlpanel/tests/filter.txt
-index 95a321d..2044305 100644
---- a/plone/app/controlpanel/tests/filter.txt
-+++ b/plone/app/controlpanel/tests/filter.txt
-@@ -146,7 +146,7 @@ Check that the filtering works
-     True
-     >>> browser.getControl('Page').click()
-     >>> browser.getControl('Add').click()
--    >>> browser.getControl('Body Text').value = \
-+    >>> browser.getControl(name='text').value = \
-     ... '<p>Testing that<span> tag and its contents get stripped</span> works.</p>'
-     >>> browser.getControl('Title').value = 'My Page'
-     >>> browser.getControl('Save').click()
-@@ -176,6 +176,5 @@ Must use print here to take advantage of whitespace folding
- (whitespace in the body text may vary depending on the tidy_html transform).
- 
-     >>> browser.open('http://nohost/plone/Members/my-page')
--    >>> print browser.contents
--    <!DOCTYPE...
--    <p>Testing that works.</p>...
-+    >>> '<p>Testing that works.</p>' in browser.contents
-+    True
+diff --git a/plone/app/event/dx/behaviors.py b/plone/app/event/dx/behaviors.py
+index 3449139..bd34e10 100644
+--- a/plone/app/event/dx/behaviors.py
++++ b/plone/app/event/dx/behaviors.py
+@@ -15,7 +15,7 @@
+ from plone.app.event.dx.interfaces import IDXEvent
+ from plone.app.event.dx.interfaces import IDXEventRecurrence
+ from plone.app.textfield.value import RichTextValue
+-from plone.app.widgets.dx import DatetimeWidget
++from plone.app.z3cform.widget import DatetimeWidget
+ from plone.app.z3cform.interfaces import IPloneFormLayer
+ from plone.autoform import directives as form
+ from plone.autoform.interfaces import IFormFieldProvider
+diff --git a/setup.py b/setup.py
+index ece1940..cbbf862 100644
+--- a/setup.py
++++ b/setup.py
+@@ -55,7 +55,7 @@
+         'plone.app.textfield',
+         'plone.app.widgets [dexterity] >= 1.7.0',
+         'plone.app.vocabularies >= 2.1.15.dev0',
+-        'plone.app.z3cform',
++        'plone.app.z3cform>=1.1.0.dev0',
+         'plone.autoform>=1.4',
+         'plone.behavior',
+         'plone.browserlayer',
 
 
