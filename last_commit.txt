@@ -1,40 +1,107 @@
-Repository: plone.app.collection
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-26T23:22:44-06:00
+Date: 2015-01-26T12:50:45-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.collection/commit/c869125f6eb76ab92fb64fa52e5ffab5c5b962a4
+Commit: https://github.com/plone/plone.app.contenttypes/commit/8811bb88dcfb9d4e9216ac2b4e22042c14628e0f
 
-fix import
+integrate plone.app.widgets
 
 Files changed:
-M plone/app/collection/collection.py
+M plone/app/contenttypes/behaviors/collection.py
+M plone/app/contenttypes/behaviors/richtext.py
 M setup.py
 
-diff --git a/plone/app/collection/collection.py b/plone/app/collection/collection.py
-index eac3bce..ed110bf 100644
---- a/plone/app/collection/collection.py
-+++ b/plone/app/collection/collection.py
-@@ -2,7 +2,7 @@
- from OFS.ObjectManager import ObjectManager
- from plone.app.collection.field import QueryField
+diff --git a/plone/app/contenttypes/behaviors/collection.py b/plone/app/contenttypes/behaviors/collection.py
+index 81dc156..871e570 100644
+--- a/plone/app/contenttypes/behaviors/collection.py
++++ b/plone/app/contenttypes/behaviors/collection.py
+@@ -7,6 +7,7 @@
  from plone.app.contentlisting.interfaces import IContentListing
--from plone.app.widgets.at import QueryStringWidget
-+from Products.Archetypes.Widget import QueryStringWidget
- from Products.ATContentTypes.content import document, schemata
- from Products.Archetypes import atapi
- from Products.Archetypes.atapi import (BooleanField,
+ from plone.app.contenttypes import _
+ from plone.autoform.interfaces import IFormFieldProvider
++from plone.autoform import directives as form
+ from plone.dexterity.interfaces import IDexterityContent
+ from plone.supermodel import model
+ from zope import schema
+@@ -18,6 +19,7 @@
+ from zope.schema.interfaces import IVocabularyFactory
+ from zope.schema.vocabulary import SimpleTerm
+ from zope.schema.vocabulary import SimpleVocabulary
++from plone.app.z3cform.widget import QueryStringFieldWidget
+ 
+ 
+ @implementer(IVocabularyFactory)
+@@ -47,6 +49,7 @@ class ICollection(model.Schema):
+         required=False,
+         missing_value=''
+     )
++    form.widget('query', QueryStringFieldWidget)
+ 
+     sort_on = schema.TextLine(
+         title=_(u'label_sort_on', default=u'Sort on'),
+diff --git a/plone/app/contenttypes/behaviors/richtext.py b/plone/app/contenttypes/behaviors/richtext.py
+index a3b20ba..1dac2fe 100644
+--- a/plone/app/contenttypes/behaviors/richtext.py
++++ b/plone/app/contenttypes/behaviors/richtext.py
+@@ -3,11 +3,13 @@
+ from plone.app.textfield import RichText as RichTextField
+ from plone.autoform.interfaces import IFormFieldProvider
+ from plone.autoform.view import WidgetsView
++from plone.autoform import directives as form
+ from plone.dexterity.interfaces import IDexterityContent
+ from plone.supermodel import model
+ from zope.component import adapter
+ from zope.interface import implementer
+ from zope.interface import provider
++from plone.app.z3cform.widget import RichTextFieldWidget
+ 
+ 
+ @provider(IFormFieldProvider)
+@@ -18,6 +20,7 @@ class IRichText(model.Schema):
+         description=u"",
+         required=False,
+     )
++    form.widget('text', RichTextFieldWidget)
+     model.primary('text')
+ 
+ 
 diff --git a/setup.py b/setup.py
-index c4d4d8d..9a982fb 100644
+index 2f803eb..6d3275c 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -31,7 +31,7 @@
-           'plone.app.widgets',
-           'plone.portlet.collection',
-           'plone.portlets',
--          'Products.Archetypes',
-+          'Products.Archetypes>=1.10.4.dev0',
-           'Products.CMFCore',
-           'Products.CMFPlone',
-           'Products.CMFQuickInstallerTool',
+@@ -47,6 +47,7 @@ def read(*rnames):
+           'plone.namedfile [blobs]',
+           'plone.app.versioningbehavior',
+           'pytz',
++          'plone.app.z3cform>=1.1.0'
+       ],
+       extras_require={
+           'test': [
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2015-01-26T23:22:20-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/ef9b8c0da4b859b0bb748fdd5354e264891f8021
+
+fix requires version
+
+Files changed:
+M setup.py
+
+diff --git a/setup.py b/setup.py
+index 6d3275c..4a9198e 100644
+--- a/setup.py
++++ b/setup.py
+@@ -47,7 +47,7 @@ def read(*rnames):
+           'plone.namedfile [blobs]',
+           'plone.app.versioningbehavior',
+           'pytz',
+-          'plone.app.z3cform>=1.1.0'
++          'plone.app.z3cform>=1.1.0.dev0'
+       ],
+       extras_require={
+           'test': [
 
 
