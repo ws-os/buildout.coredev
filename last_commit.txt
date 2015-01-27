@@ -1,36 +1,1983 @@
-Repository: plone.app.contenttypes
+Repository: plone.app.dexterity
 Branch: refs/heads/master
-Date: 2015-01-27T01:00:30-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/03ad6e2a725d79d24ac25f9bcd024dbe16b2d9d6
+Date: 2015-01-27T16:12:05+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.dexterity/commit/973f047e5f92560a35f973963d1e9390810e634c
 
-fix test failures. With \n in robot framework with
-select2 widget, robot framework submits the form
-automatically
+rename docs/HISTORY.txt and RELEASE_NOTES.txt to CHANGES.rst resp. RELEASE_NOTES.rst
 
 Files changed:
-M plone/app/contenttypes/tests/robot/keywords.txt
+A CHANGES.rst
+A RELEASE_NOTES.rst
+M setup.py
+D RELEASE_NOTES.txt
+D docs/HISTORY.txt
 
-diff --git a/plone/app/contenttypes/tests/robot/keywords.txt b/plone/app/contenttypes/tests/robot/keywords.txt
-index 25de625..30f8d0e 100644
---- a/plone/app/contenttypes/tests/robot/keywords.txt
-+++ b/plone/app/contenttypes/tests/robot/keywords.txt
-@@ -119,14 +119,14 @@ the collection should not contain
+diff --git a/CHANGES.rst b/CHANGES.rst
+new file mode 100644
+index 0000000..bcaea29
+--- /dev/null
++++ b/CHANGES.rst
+@@ -0,0 +1,572 @@
++Changelog
++=========
++
++2.1.3 (unreleased)
++------------------
++
++- Nothing changed yet.
++
++
++2.1.2 (2014-10-23)
++------------------
++
++- Added transifex-client configuration for manage the translations
++  from Plone transifex organization [macagua].
++
++- Updated Spanish translation [flamelcanto, macagua].
++
++- Add validator to ensure expires date is after effective date.
++  [benniboy]
++  
++- Remove line feeds and carrige returns from meta description and
++  added upgrade step to do it for existing content
++  [bosim]
++
++- Fixed issue.
++  Multiple (two or more) acquisition from parent was failing when
++  user didn't have add permission on parent.
++  [keul, cekk]
++
++
++2.1.1 (2014-04-13)
++------------------
++
++- Add behavior to let an item's id be edited from its edit form
++  (plone.app.dexterity.behaviors.id.ShortName).
++  [davisagli]
++
++- Cloning of types containing white space did not work, this commit
++  fixes that bug.
++  [bosim]
++
++
++2.1.0 (2014-03-01)
++------------------
++
++- Don't throw an error if allowed_content_types is none or missing.
++  Fix https://github.com/plone/plone.app.contenttypes/issues/91
++  [pbauer]
++
++- PLIP #13705: Remove <base> tag.
++  [frapell]
++
++
++2.0.11 (2013-12-07)
++-------------------
++
++- Fix bug where the type editor's inline javascript was mangled by diazo.
++  [davisagli]
++
++- Fixed Add view URL of cloned content type.
++  Refs http://dev.plone.org/ticket/13776.
++  [thomasdesvenain]
++
++- Add robot testing environment and first robot test.
++  [cedricmessiant]
++
++- Better string normalization when setting type id from type title
++  (change accented or special characters with corresponding letters).
++  [cedricmessiant]
++
++- Show a warning when editing the default page of a folder.
++  [davisagli]
++
++
++
++2.0.10 (2013-09-16)
++-------------------
++
++- Fix determination of allowed types so it checks permission in
++  the context of the original folder when inheriting allowed
++  types.
++  [davisagli]
++
++
++2.0.9 (2013-08-13)
++------------------
++
++- Add documentation for defaultFactory tag in XML ref.
++  [smcmahon]
++
++- Removed line breaks within documentation URLs in modeleditor.py.
++  [smcmahon]
++
++- Fixed XML export so that GenericSetup's parser can successfully parse it
++  later on at install time.
++  [zupo]
++
++- Use @@ploneform-render-widget to render widgets in display mode.
++  [cedricmessiant]
++
++- Call the IBasic description field 'Summary' and give it
++  help text that is actually helpful.
++  [davisagli]
++
++- Don't show the 'Allow Discussion' field on an item's default view.
++  [davisagli]
++
++
++2.0.8 (2013-05-23)
++------------------
++
++- Add XML Model Editor based on plone.resourceditor. If plone.resourceditor
++  is available, this is exposed by an "Edit XML Field Model" button on
++  the fields tab of a content type -- if the content type is editable TTW.
++  [smcmahon]
++
++- Added catalan translations [sneridagh]
++
++
++2.0.7 (2013-04-09)
++------------------
++
++- Fix bug in determining whether to show the allowed contained type
++  fields.
++  [ericof]
++
++- Let the behavior INameFromFileName also set the title from the filename
++  if the type has such a field and it is left empty.
++  [pbauer]
++
++- Updated french translations.
++  [thomasdesvenain]
++
++
++2.0.6 (2013-04-06)
++------------------
++
++- Add missing translation strings.
++  [vincentfretin]
++
++
++2.0.5 (2013-04-06)
++------------------
++
++- Updated pt_BR translation [ericof]
++
++
++2.0.4 (2013-03-05)
++------------------
++
++- Add zh_TW translation [TsungWei Hu]
++
++- Add support for constraining container allowed content types using
++  the "Restrictions" form in the add menu.  Merged from Patrick
++  Gerken's (@do3cc) work in plone.app.contenttypes.
++  [rpatterson]
++
++- When a new type is added, redirect to the fields tab as the next view.
++  [davisagli]
++
++- Don't show the short name as a field on the type overview page.
++  [davisagli]
++
++- Remove the 'Container' checkbox when adding a new type, and default
++  to creating a container.
++  [davisagli]
++
++- Tweaks to type control panel based on user testing.
++  [davisagli]
++
++- Set default language for a new content item based on the language of
++  its container.
++  [frapell]
++
++- Fixed i18n of "Contents" in folder default view.
++  [vincentfretin]
++
++- Added Ukrainian translations
++  [kroman0]
++
++
++2.0.3 (2013-01-17)
++------------------
++
++- Nothing changed yet.
++
++
++2.0.2 (2013-01-01)
++------------------
++
++- Added French translations
++  [cedricmessiant]
++
++- The behavior controlpanel now correctly invalidates any modified FTIs.
++  [malthe]
++
++- I18n improved by adding many missing strings
++  [giacomos]
++
++- better graphical integration in the control panel
++  [giacomos]
++
++- Allow discussion behavior added.
++  [timo]
++
++
++2.0.1 (2012-08-31)
++------------------
++
++- Update MANIFEST.in to correct packaging error.
++  [esteele]
++
++
++2.0 (2012-08-30)
++----------------
++
++- DC metadata fields are now correctly encoded and decoded (from byte
++  strings to unicode and vice versa). Currently, UTF-8 is assumed.
++  [malthe]
++
++- Use lxml instead of elementtree.
++  [davisagli]
++
++- Use ViewPageTemplateFile from zope.browserpage.
++  [hannosch]
++
++- Add upgrade step to make sure that only uninstalling plone.app.intid will
++  remove the intids utility.
++  [davisagli]
++
++- Fix traversal over the types context so that skin items used by widgets
++  can be acquired.
++  [davisagli]
++
++- Provide an ``additionalSchemata`` property on the schema context so the
++  schema editor can include a preview of fields from behaviors.
++  [davisagli]
++
++- Give a more explicit warning before deleting content types that have existing
++  instances.
++  [davisagli]
++
++- Add validation to prevent giving a type the same name as an existing type.
++  [davisagli]
++
++- Make sure the title and description of new FTIs are stored encoded,
++  and with a default i18n domain of 'plone'.
++  [davisagli]
++
++- Add overview tab for each type in the control panel.
++  [davisagli]
++
++- Added Sphinx source for the Dexterity Developer manual.
++  [giacomos]
++
++- Added Italian translation.
++  [giacomos]
++
++- Internationalized content type settings pages,
++  I18N fixes,
++  messages extraction,
++  French translations.
++  [thomasdesvenain]
++
++- Added Spanish translation.
++  [hvelarde]
++
++- Install the profile from collective.z3cform.datetimewidget to enable the
++  Jquery Tools date picker for date/time fields.
++  [davisagli]
++
++- Bugfix: Make sure type short names are validated.
++  [davisagli]
++
++- Bugfix: Fix display of type descriptions in the types control panel.
++  [davisagli]
++
++- Bugfix: Make sure subject can still be retrieved as unicode for the
++  categorization behavior now that the Subject accessor returns a bytestring.
++  [davisagli]
++
++- Add intro message to Dexterity control panel.
++  [jonstahl, davisagli]
++
++- Grok support is now an optional "grok" extra. Use this if you want
++  ``five.grok``, ``plone.directives.form``, and ``plone.directives.dexterity``.
++  See the release notes for more information. The behaviors in this package
++  were updated to work without using grok.
++  [davisagli]
++
++- plone.formwidget.autocomplete and plone.formwidget.contenttree are no longer
++  included by default. See the release notes for more information.
++  [davisagli]
++
++- Moved the 'Related Items' behavior to plone.app.relationfield.
++  plone.app.relationfield is no longer installed as a dependency. See the
++  release notes for more information including how to update your package if it
++  depends on relation support or the 'Related Items' behavior.
++  IMPORTANT: You must install plone.app.relationfield on sites that are being
++  upgraded from Dexterity 1.0 to Dexterity 2.0, or the site will break.
++  [davisagli]
++
++- Converted tests to plone.app.testing-based setup. The old PloneTestCase-based
++  test case classes and layer are now deprecated.
++  [davisagli]
++
++- Remove ++resource++plone.app.dexterity.overlays.css from the CSS registry.
++  [davisagli]
++
++- Removed support for Plone 3 / CMF 2.1 / Zope 2.10.
++  [davisagli]
++
++- Update dependencies and imports as appropriate for Zope 2.12 & Zope 2.13
++  [davisagli]
++
++- Remove CDATA section from "browser\types_listing.pt" (in HTML5: allowed only in SVG/MathML namespaces).
++  [kleist]
++
++1.0 - 2011-05-20
++----------------
++
++- Fix publishing dates DateTime/datetime conversions so as not to drift by the
++  timezone delta every save.
++  [elro]
++
++- Make sure cloned types get a new factory.
++  [davisagli]
++
++- Don't override overlay CSS in Plone 4.
++  [davisagli]
++
++- Fixed cloning of types with a period (.) in their short name.
++  [davisagli]
++
++- Allow specifying a type's short name when adding a type.
++  [davisagli]
++
++- Make sure the Basic metadata adapter accesses the content's title attribute
++  directly so it doesn't get encoded. Also make sure encoded data can't be set
++  via this adapter.
++  [davisagli]
++
++1.0rc1 - 2011-04-30
++-------------------
++
++- Added upgrade step to install new javascript from
++  plone.formwidget.autocomplete
++  [davisagli]
++
++- Added basic support for making TTW changes to schemas defined in filesystem
++  models and code. (Note: This feature will not actually work until some further
++  changes are completed in plone.dexterity.)
++
++  In order to support this change, the event handling to serialize schema changes
++  was revised. We now register a single event handler for the SchemaModifiedEvent
++  raised for the schema context. This allows us to keep track of the FTI
++  that changes need to be serialized to on the schema context. The
++  serializeSchemaOnFieldEvent and serializeSchemaOnSchemaEvent handlers were
++  removed from the serialize module and replaced by serializeSchemaContext. The
++  serializeSchema helper remains but is deprecated.
++  [davisagli]
++
++- Add MANIFEST.in.
++  [WouterVH]
++
++- Add "export" button to types editor. Exports GS-style zip archive of type
++  info for selected types.
++  [stevem]
++
++- Fix old jquery alias in types_listing.pt. This closes
++  http://code.google.com/p/dexterity/issues/detail?id=159
++  [davisagli]
++
++- Make display templates fill content-core on Plone 4.
++  [elro]
++
++- Add ids to the group fieldsets on display forms.
++  [elro]
++
++- Exclude from navigation behavior should be restricted to IDexterityContent.
++  [elro]
++
++
++1.0b4 - 2011-03-15
++------------------
++
++- Add a "Name from file name" behavior.
++  [elro]
++
++- Remove the NameFromTitle behavior factory, it is not necessary.
++  [elro]
++
++- Add "Next previous navigation" and "Next previous navigation toggle"
++  behaviors.
++  [elro]
++
++- Add an "Exclude from navigation" behavior.
++  [lentinj]
++
++- Put the folder listing within a fieldset.
++  [lentinj]
++
++
++1.0b3 - 2011-02-11
++------------------
++
++- Add a navigation root behavior.
++  [elro]
++
++- Fix decoding error when an encoded description is stored in the FTI.
++  [davisagli]
++
++- Avoid empty <div class="field"> tag for title and description in
++  item.pt and container.pt.
++  [gaudenzius]
++
++- Add locales structure for translations with cs , de, es, eu, fr, ja, nl, pt_BR
++  [toutpt]
++
++- Update french translation
++  [toutpt]
++
++
++1.0b2 - 2010-08-05
++------------------
++
++- Fix several XML errors in templates. Needed for Chameleon compatibility.
++  [wichert]
++
++- cloning a type through the dexterity UI in the control panel did not work
++  if the type had a hyphen in it's name. This fixes
++  http://code.google.com/p/dexterity/issues/detail?id=126
++  [vangheem]
++
++
++1.0b1 - 2010-04-20
++------------------
++
++- Require plone.app.jquerytools for the schema editor UI, and make sure it is
++  installed when upgrading.
++  [davisagli]
++
++- Remove unused schemaeditor.css.
++  [davisagli]
++
++- Omit the metadata fields except on edit and add forms.
++  [davisagli]
++
++- Enable the "Name from title" behavior for new types, by default.
++  [davisagli]
++
++- Include plone.formwidget.namedfile so that File upload and Image fields are
++  available out of the box.  You must explicitly include z3c.blobfile in your
++  environment if you want blob-based files.
++  [davisagli]
++
++- Added a DexterityLayer that can be used in tests.
++  [davisagli]
++
++- Fix issue with the BehaviorsForm accidentally polluting the title of the
++  z3c.form EditForm 'Apply' button.
++  [davisagli]
++
++- Add upgrades folder and make sure plone.app.z3cform profile gets installed
++  on upgrades from previous versions of Dexterity.
++  [davisagli]
++
++- Depend on the plone.app.z3cform profile, to make sure the Plone browser layer
++  for z3c.form gets installed.
++  [davisagli]
++
++- Avoid relying on acquisition to get the portal_url for links in the type
++  listing table.
++  [davisagli]
++
++
++1.0a7 - 2010-01-08
++------------------
++
++- Make sure the Dublin Core fieldsets appear in the same order as they
++  do in AT content.
++  [davisagli]
++
++- Make sure the current user is loaded as the default creator for the
++  IOwnership schema in an add form.
++  [davisagli]
++
++- Include behavior descriptions on the behavior edit tab.
++  [davisagli]
++
++- IBasic behavior: set missing_value of description-field to u'' . The
++  description should never be None (live_search would not work any more).
++  [jbaumann]
++
++- Fix issue where traversing to a nonexistent type name in the types control
++  panel did not raise NotFound.
++  [davisagli]
++
++- Make it possible to view the fields of non-editable schemata.
++  [davisagli]
++
++- Tweaks to the tabbed_forms template used for the types control panel.
++  [davisagli]
++
++
++1.0a6 - 2009-10-12
++------------------
++
++- Add plone.app.textfield as a dependency. We don't use it directly in this
++  package, but users of Dexterity should have it installed and available.
++  [optilude]
++
++- Use some default icons for new types.
++  [davisagli]
++
++- Show type icons in type listing if available.
++  [davisagli]
++
++- Removed 'container' field from the types listing in the control panel
++  (it wasn't working).
++  [davisagli]
++
++- Add message factories to titles and descriptions of metadata schema fields.
++  Fixes http://code.google.com/p/dexterity/issues/detail?id=75.
++  [optilude]
++
++- Patch listActionInfos() instead of listActions() in order to get the
++  folder/add category into the actions list. This avoids a problem with
++  the 'actions.xml' export handler exporting the folder/add category
++  incorrectly. Fixes http://code.google.com/p/dexterity/issues/detail?id=78
++  [optilude]
++
++
++1.0a5 - 2009-07-26
++------------------
++
++- Explicitly include overrides.zcml from plone.app.z3cform.
++  [optilude]
++
++
++1.0a4 - 2009-07-12
++------------------
++
++- Changed API methods and arguments to mixedCase to be more consistent with
++  the rest of Zope. This is a non-backwards-compatible change. Our profuse
++  apologies, but it's now or never. :-/
++
++  If you find that you get import errors or unknown keyword arguments in your
++  code, please change names from foo_bar too fooBar, e.g. serialize_schema()
++  becomes serializeSchema().
++  [optilude]
++
++
++1.0a3 - 2009-06-07
++------------------
++
++- Updated use of <plone:behavior /> directive to match plone.behavior 1.0b4.
++  [optilude]
++
++
++1.0a2 - 2009-06-01
++------------------
++
++- Remove superfluous <includeOverrides /> in configure.zcml which would cause
++  a problem when the package is loaded via z3c.autoinclude.plugin
++  [optilude]
++
++
++1.0a1 - 2009-05-27
++--------------------
++
++- Initial release
+diff --git a/RELEASE_NOTES.rst b/RELEASE_NOTES.rst
+new file mode 100644
+index 0000000..bc13900
+--- /dev/null
++++ b/RELEASE_NOTES.rst
+@@ -0,0 +1,105 @@
++Release Notes
++=============
++
++Dexterity 2.0 is a major release of Dexterity. It has focused on getting
++Dexterity included in Plone core, by cleaning things up and making
++dependencies that are not ready for primetime optional.
++
++Grok-style configuration no longer included by default
++------------------------------------------------------
++
++Dexterity 1.0 included ``five.grok`` to allow configuring components via
++Python directives rather than in separate XML-based ZCML files.  It also
++included two packages, ``plone.directives.form`` and
++``plone.directives.dexterity``, to provide some grok-style directives for
++Dexterity-specific features.
++
++The Dexterity authors still like grok and believe it makes it easier to learn
++how to customize Plone.  However, it has been turned into an optional feature
++so that Dexterity has a chance to enter Plone core even if the Plone framework
++team doesn't want to add grok to the already complex stack.
++
++To include these three grok-related packages when you install Dexterity,
++enable the "grok" extra::
++
++  [instance]
++  eggs =
++      plone.app.dexterity [grok]
++
++By the way, a number of schema directives from ``plone.directives.form`` that
++used to require grok to work have been reimplemented so that they work without
++grok. In particular, the ``Schema`` class and the ``model``, ``fieldset``,
++and ``primary`` directives were moved to ``plone.supermodel.model``. The
++``omitted``, ``no_omit``, ``mode``, ``widget``, ``order_before``,
++``order_after``, ``read_permission``, and ``write_permission`` directives were
++moved to ``plone.autoform.directives``.  There are aliases in the old locations
++so you don't need to update existing code, but you can switch to the new
++locations if you're trying to avoid depending on grok.
++
++Relation support no longer included by default
++----------------------------------------------
++
++Dexterity 1.0 included support for object relations based on the zc.relation
++catalog and plone.app.relationfield, as well as a behavior
++(``plone.app.dexterity.behaviors.related.IRelatedItems``) providing a
++generic list of related items based on that implementation.
++
++Since this feature was added to Dexterity, we discovered that it will be hard
++to support this type of relation well in Zope 2 until Zope 2 is setting
++__parent__ pointers everywhere. In addition, we encountered some problems with
++using interfaces as keys in the zc.relation catalog. And Dexterity gained
++support for the Archetypes reference engine in
++``plone.app.referenceablebehavior``. As a result of these factors, the
++zc.relation approach to object relationships will not be included in Dexterity or Plone core for the time being.
++
++VERY IMPORTANT: If you are upgrading a site with Dexterity 1.0 to Dexterity
++2.0, it will break unless you install plone.app.relationfield, since your
++database contains persistent intid and relations utilities. The easiest way
++to include plone.app.relationfield is to install plone.app.dexterity with
++the "relations" extra::
++
++  [instance]
++  eggs =
++      plone.app.dexterity [relations]
++
++Using relations via plone.app.relationfield
++~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++
++If you were relying on the support for relations, you can re-enable support
++by installing the ``plone.app.relationfield`` package. You need to add it to
++your package's install_requires in setup.py::
++
++  install_requires=[
++      'plone.app.relationfield',
++      ]
++
++Make sure your package is including its ZCML in configure.zcml::
++
++  <include package="plone.app.relationfield" />
++
++And install its GenericSetup profile as a dependency in your package's metadata.xml::
++
++  <dependencies>
++    <dependency>profile-plone.app.relationfield:default</dependency>
++  </dependencies>
++
++If you have any content types using the IRelatedItems behavior, you should
++update them to import the behavior from the new location::
++
++  <property name="behaviors">
++      <element value="plone.app.relationfield.behavior.IRelatedItems" />
++  </property>
++
++Content tree and Autocomplete widgets no longer included by default
++-------------------------------------------------------------------
++
++In Dexterity 1.0, the widgets in ``plone.formwidget.autocomplete`` and
++``plone.formwidget.contenttree`` were installed as dependencies of
++``plone.app.dexterity``. In Dexterity 2.0 they are no longer installed
++by default, because they are not used by any of the included behaviors
++or made available via the through-the-web content type editor at this
++time.
++
++If you use these widgets, make sure your package lists them as
++dependencies in setup.py, loads their ZCML in configure.zcml, and
++activates their GenericSetup profiles as dependencies in metadata.xml.
+diff --git a/RELEASE_NOTES.txt b/RELEASE_NOTES.txt
+deleted file mode 100644
+index bc13900..0000000
+--- a/RELEASE_NOTES.txt
++++ /dev/null
+@@ -1,105 +0,0 @@
+-Release Notes
+-=============
+-
+-Dexterity 2.0 is a major release of Dexterity. It has focused on getting
+-Dexterity included in Plone core, by cleaning things up and making
+-dependencies that are not ready for primetime optional.
+-
+-Grok-style configuration no longer included by default
+-------------------------------------------------------
+-
+-Dexterity 1.0 included ``five.grok`` to allow configuring components via
+-Python directives rather than in separate XML-based ZCML files.  It also
+-included two packages, ``plone.directives.form`` and
+-``plone.directives.dexterity``, to provide some grok-style directives for
+-Dexterity-specific features.
+-
+-The Dexterity authors still like grok and believe it makes it easier to learn
+-how to customize Plone.  However, it has been turned into an optional feature
+-so that Dexterity has a chance to enter Plone core even if the Plone framework
+-team doesn't want to add grok to the already complex stack.
+-
+-To include these three grok-related packages when you install Dexterity,
+-enable the "grok" extra::
+-
+-  [instance]
+-  eggs =
+-      plone.app.dexterity [grok]
+-
+-By the way, a number of schema directives from ``plone.directives.form`` that
+-used to require grok to work have been reimplemented so that they work without
+-grok. In particular, the ``Schema`` class and the ``model``, ``fieldset``,
+-and ``primary`` directives were moved to ``plone.supermodel.model``. The
+-``omitted``, ``no_omit``, ``mode``, ``widget``, ``order_before``,
+-``order_after``, ``read_permission``, and ``write_permission`` directives were
+-moved to ``plone.autoform.directives``.  There are aliases in the old locations
+-so you don't need to update existing code, but you can switch to the new
+-locations if you're trying to avoid depending on grok.
+-
+-Relation support no longer included by default
+-----------------------------------------------
+-
+-Dexterity 1.0 included support for object relations based on the zc.relation
+-catalog and plone.app.relationfield, as well as a behavior
+-(``plone.app.dexterity.behaviors.related.IRelatedItems``) providing a
+-generic list of related items based on that implementation.
+-
+-Since this feature was added to Dexterity, we discovered that it will be hard
+-to support this type of relation well in Zope 2 until Zope 2 is setting
+-__parent__ pointers everywhere. In addition, we encountered some problems with
+-using interfaces as keys in the zc.relation catalog. And Dexterity gained
+-support for the Archetypes reference engine in
+-``plone.app.referenceablebehavior``. As a result of these factors, the
+-zc.relation approach to object relationships will not be included in Dexterity or Plone core for the time being.
+-
+-VERY IMPORTANT: If you are upgrading a site with Dexterity 1.0 to Dexterity
+-2.0, it will break unless you install plone.app.relationfield, since your
+-database contains persistent intid and relations utilities. The easiest way
+-to include plone.app.relationfield is to install plone.app.dexterity with
+-the "relations" extra::
+-
+-  [instance]
+-  eggs =
+-      plone.app.dexterity [relations]
+-
+-Using relations via plone.app.relationfield
+-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-
+-If you were relying on the support for relations, you can re-enable support
+-by installing the ``plone.app.relationfield`` package. You need to add it to
+-your package's install_requires in setup.py::
+-
+-  install_requires=[
+-      'plone.app.relationfield',
+-      ]
+-
+-Make sure your package is including its ZCML in configure.zcml::
+-
+-  <include package="plone.app.relationfield" />
+-
+-And install its GenericSetup profile as a dependency in your package's metadata.xml::
+-
+-  <dependencies>
+-    <dependency>profile-plone.app.relationfield:default</dependency>
+-  </dependencies>
+-
+-If you have any content types using the IRelatedItems behavior, you should
+-update them to import the behavior from the new location::
+-
+-  <property name="behaviors">
+-      <element value="plone.app.relationfield.behavior.IRelatedItems" />
+-  </property>
+-
+-Content tree and Autocomplete widgets no longer included by default
+--------------------------------------------------------------------
+-
+-In Dexterity 1.0, the widgets in ``plone.formwidget.autocomplete`` and
+-``plone.formwidget.contenttree`` were installed as dependencies of
+-``plone.app.dexterity``. In Dexterity 2.0 they are no longer installed
+-by default, because they are not used by any of the included behaviors
+-or made available via the through-the-web content type editor at this
+-time.
+-
+-If you use these widgets, make sure your package lists them as
+-dependencies in setup.py, loads their ZCML in configure.zcml, and
+-activates their GenericSetup profiles as dependencies in metadata.xml.
+diff --git a/docs/HISTORY.txt b/docs/HISTORY.txt
+deleted file mode 100644
+index a4e4959..0000000
+--- a/docs/HISTORY.txt
++++ /dev/null
+@@ -1,572 +0,0 @@
+-Changelog for plone.app.dexterity
+-=================================
+-
+-2.1.3 (unreleased)
+-------------------
+-
+-- Nothing changed yet.
+-
+-
+-2.1.2 (2014-10-23)
+-------------------
+-
+-- Added transifex-client configuration for manage the translations
+-  from Plone transifex organization [macagua].
+-
+-- Updated Spanish translation [flamelcanto, macagua].
+-
+-- Add validator to ensure expires date is after effective date.
+-  [benniboy]
+-  
+-- Remove line feeds and carrige returns from meta description and
+-  added upgrade step to do it for existing content
+-  [bosim]
+-
+-- Fixed issue.
+-  Multiple (two or more) acquisition from parent was failing when
+-  user didn't have add permission on parent.
+-  [keul, cekk]
+-
+-
+-2.1.1 (2014-04-13)
+-------------------
+-
+-- Add behavior to let an item's id be edited from its edit form
+-  (plone.app.dexterity.behaviors.id.ShortName).
+-  [davisagli]
+-
+-- Cloning of types containing white space did not work, this commit
+-  fixes that bug.
+-  [bosim]
+-
+-
+-2.1.0 (2014-03-01)
+-------------------
+-
+-- Don't throw an error if allowed_content_types is none or missing.
+-  Fix https://github.com/plone/plone.app.contenttypes/issues/91
+-  [pbauer]
+-
+-- PLIP #13705: Remove <base> tag.
+-  [frapell]
+-
+-
+-2.0.11 (2013-12-07)
+--------------------
+-
+-- Fix bug where the type editor's inline javascript was mangled by diazo.
+-  [davisagli]
+-
+-- Fixed Add view URL of cloned content type.
+-  Refs http://dev.plone.org/ticket/13776.
+-  [thomasdesvenain]
+-
+-- Add robot testing environment and first robot test.
+-  [cedricmessiant]
+-
+-- Better string normalization when setting type id from type title
+-  (change accented or special characters with corresponding letters).
+-  [cedricmessiant]
+-
+-- Show a warning when editing the default page of a folder.
+-  [davisagli]
+-
+-
+-
+-2.0.10 (2013-09-16)
+--------------------
+-
+-- Fix determination of allowed types so it checks permission in
+-  the context of the original folder when inheriting allowed
+-  types.
+-  [davisagli]
+-
+-
+-2.0.9 (2013-08-13)
+-------------------
+-
+-- Add documentation for defaultFactory tag in XML ref.
+-  [smcmahon]
+-
+-- Removed line breaks within documentation URLs in modeleditor.py.
+-  [smcmahon]
+-
+-- Fixed XML export so that GenericSetup's parser can successfully parse it
+-  later on at install time.
+-  [zupo]
+-
+-- Use @@ploneform-render-widget to render widgets in display mode.
+-  [cedricmessiant]
+-
+-- Call the IBasic description field 'Summary' and give it
+-  help text that is actually helpful.
+-  [davisagli]
+-
+-- Don't show the 'Allow Discussion' field on an item's default view.
+-  [davisagli]
+-
+-
+-2.0.8 (2013-05-23)
+-------------------
+-
+-- Add XML Model Editor based on plone.resourceditor. If plone.resourceditor
+-  is available, this is exposed by an "Edit XML Field Model" button on
+-  the fields tab of a content type -- if the content type is editable TTW.
+-  [smcmahon]
+-
+-- Added catalan translations [sneridagh]
+-
+-
+-2.0.7 (2013-04-09)
+-------------------
+-
+-- Fix bug in determining whether to show the allowed contained type
+-  fields.
+-  [ericof]
+-
+-- Let the behavior INameFromFileName also set the title from the filename
+-  if the type has such a field and it is left empty.
+-  [pbauer]
+-
+-- Updated french translations.
+-  [thomasdesvenain]
+-
+-
+-2.0.6 (2013-04-06)
+-------------------
+-
+-- Add missing translation strings.
+-  [vincentfretin]
+-
+-
+-2.0.5 (2013-04-06)
+-------------------
+-
+-- Updated pt_BR translation [ericof]
+-
+-
+-2.0.4 (2013-03-05)
+-------------------
+-
+-- Add zh_TW translation [TsungWei Hu]
+-
+-- Add support for constraining container allowed content types using
+-  the "Restrictions" form in the add menu.  Merged from Patrick
+-  Gerken's (@do3cc) work in plone.app.contenttypes.
+-  [rpatterson]
+-
+-- When a new type is added, redirect to the fields tab as the next view.
+-  [davisagli]
+-
+-- Don't show the short name as a field on the type overview page.
+-  [davisagli]
+-
+-- Remove the 'Container' checkbox when adding a new type, and default
+-  to creating a container.
+-  [davisagli]
+-
+-- Tweaks to type control panel based on user testing.
+-  [davisagli]
+-
+-- Set default language for a new content item based on the language of
+-  its container.
+-  [frapell]
+-
+-- Fixed i18n of "Contents" in folder default view.
+-  [vincentfretin]
+-
+-- Added Ukrainian translations
+-  [kroman0]
+-
+-
+-2.0.3 (2013-01-17)
+-------------------
+-
+-- Nothing changed yet.
+-
+-
+-2.0.2 (2013-01-01)
+-------------------
+-
+-- Added French translations
+-  [cedricmessiant]
+-
+-- The behavior controlpanel now correctly invalidates any modified FTIs.
+-  [malthe]
+-
+-- I18n improved by adding many missing strings
+-  [giacomos]
+-
+-- better graphical integration in the control panel
+-  [giacomos]
+-
+-- Allow discussion behavior added.
+-  [timo]
+-
+-
+-2.0.1 (2012-08-31)
+-------------------
+-
+-- Update MANIFEST.in to correct packaging error.
+-  [esteele]
+-
+-
+-2.0 (2012-08-30)
+-----------------
+-
+-- DC metadata fields are now correctly encoded and decoded (from byte
+-  strings to unicode and vice versa). Currently, UTF-8 is assumed.
+-  [malthe]
+-
+-- Use lxml instead of elementtree.
+-  [davisagli]
+-
+-- Use ViewPageTemplateFile from zope.browserpage.
+-  [hannosch]
+-
+-- Add upgrade step to make sure that only uninstalling plone.app.intid will
+-  remove the intids utility.
+-  [davisagli]
+-
+-- Fix traversal over the types context so that skin items used by widgets
+-  can be acquired.
+-  [davisagli]
+-
+-- Provide an ``additionalSchemata`` property on the schema context so the
+-  schema editor can include a preview of fields from behaviors.
+-  [davisagli]
+-
+-- Give a more explicit warning before deleting content types that have existing
+-  instances.
+-  [davisagli]
+-
+-- Add validation to prevent giving a type the same name as an existing type.
+-  [davisagli]
+-
+-- Make sure the title and description of new FTIs are stored encoded,
+-  and with a default i18n domain of 'plone'.
+-  [davisagli]
+-
+-- Add overview tab for each type in the control panel.
+-  [davisagli]
+-
+-- Added Sphinx source for the Dexterity Developer manual.
+-  [giacomos]
+-
+-- Added Italian translation.
+-  [giacomos]
+-
+-- Internationalized content type settings pages,
+-  I18N fixes,
+-  messages extraction,
+-  French translations.
+-  [thomasdesvenain]
+-
+-- Added Spanish translation.
+-  [hvelarde]
+-
+-- Install the profile from collective.z3cform.datetimewidget to enable the
+-  Jquery Tools date picker for date/time fields.
+-  [davisagli]
+-
+-- Bugfix: Make sure type short names are validated.
+-  [davisagli]
+-
+-- Bugfix: Fix display of type descriptions in the types control panel.
+-  [davisagli]
+-
+-- Bugfix: Make sure subject can still be retrieved as unicode for the
+-  categorization behavior now that the Subject accessor returns a bytestring.
+-  [davisagli]
+-
+-- Add intro message to Dexterity control panel.
+-  [jonstahl, davisagli]
+-
+-- Grok support is now an optional "grok" extra. Use this if you want
+-  ``five.grok``, ``plone.directives.form``, and ``plone.directives.dexterity``.
+-  See the release notes for more information. The behaviors in this package
+-  were updated to work without using grok.
+-  [davisagli]
+-
+-- plone.formwidget.autocomplete and plone.formwidget.contenttree are no longer
+-  included by default. See the release notes for more information.
+-  [davisagli]
+-
+-- Moved the 'Related Items' behavior to plone.app.relationfield.
+-  plone.app.relationfield is no longer installed as a dependency. See the
+-  release notes for more information including how to update your package if it
+-  depends on relation support or the 'Related Items' behavior.
+-  IMPORTANT: You must install plone.app.relationfield on sites that are being
+-  upgraded from Dexterity 1.0 to Dexterity 2.0, or the site will break.
+-  [davisagli]
+-
+-- Converted tests to plone.app.testing-based setup. The old PloneTestCase-based
+-  test case classes and layer are now deprecated.
+-  [davisagli]
+-
+-- Remove ++resource++plone.app.dexterity.overlays.css from the CSS registry.
+-  [davisagli]
+-
+-- Removed support for Plone 3 / CMF 2.1 / Zope 2.10.
+-  [davisagli]
+-
+-- Update dependencies and imports as appropriate for Zope 2.12 & Zope 2.13
+-  [davisagli]
+-
+-- Remove CDATA section from "browser\types_listing.pt" (in HTML5: allowed only in SVG/MathML namespaces).
+-  [kleist]
+-
+-1.0 - 2011-05-20
+-----------------
+-
+-- Fix publishing dates DateTime/datetime conversions so as not to drift by the
+-  timezone delta every save.
+-  [elro]
+-
+-- Make sure cloned types get a new factory.
+-  [davisagli]
+-
+-- Don't override overlay CSS in Plone 4.
+-  [davisagli]
+-
+-- Fixed cloning of types with a period (.) in their short name.
+-  [davisagli]
+-
+-- Allow specifying a type's short name when adding a type.
+-  [davisagli]
+-
+-- Make sure the Basic metadata adapter accesses the content's title attribute
+-  directly so it doesn't get encoded. Also make sure encoded data can't be set
+-  via this adapter.
+-  [davisagli]
+-
+-1.0rc1 - 2011-04-30
+--------------------
+-
+-- Added upgrade step to install new javascript from
+-  plone.formwidget.autocomplete
+-  [davisagli]
+-
+-- Added basic support for making TTW changes to schemas defined in filesystem
+-  models and code. (Note: This feature will not actually work until some further
+-  changes are completed in plone.dexterity.)
+-
+-  In order to support this change, the event handling to serialize schema changes
+-  was revised. We now register a single event handler for the SchemaModifiedEvent
+-  raised for the schema context. This allows us to keep track of the FTI
+-  that changes need to be serialized to on the schema context. The
+-  serializeSchemaOnFieldEvent and serializeSchemaOnSchemaEvent handlers were
+-  removed from the serialize module and replaced by serializeSchemaContext. The
+-  serializeSchema helper remains but is deprecated.
+-  [davisagli]
+-
+-- Add MANIFEST.in.
+-  [WouterVH]
+-
+-- Add "export" button to types editor. Exports GS-style zip archive of type
+-  info for selected types.
+-  [stevem]
+-
+-- Fix old jquery alias in types_listing.pt. This closes
+-  http://code.google.com/p/dexterity/issues/detail?id=159
+-  [davisagli]
+-
+-- Make display templates fill content-core on Plone 4.
+-  [elro]
+-
+-- Add ids to the group fieldsets on display forms.
+-  [elro]
+-
+-- Exclude from navigation behavior should be restricted to IDexterityContent.
+-  [elro]
+-
+-
+-1.0b4 - 2011-03-15
+-------------------
+-
+-- Add a "Name from file name" behavior.
+-  [elro]
+-
+-- Remove the NameFromTitle behavior factory, it is not necessary.
+-  [elro]
+-
+-- Add "Next previous navigation" and "Next previous navigation toggle"
+-  behaviors.
+-  [elro]
+-
+-- Add an "Exclude from navigation" behavior.
+-  [lentinj]
+-
+-- Put the folder listing within a fieldset.
+-  [lentinj]
+-
+-
+-1.0b3 - 2011-02-11
+-------------------
+-
+-- Add a navigation root behavior.
+-  [elro]
+-
+-- Fix decoding error when an encoded description is stored in the FTI.
+-  [davisagli]
+-
+-- Avoid empty <div class="field"> tag for title and description in
+-  item.pt and container.pt.
+-  [gaudenzius]
+-
+-- Add locales structure for translations with cs , de, es, eu, fr, ja, nl, pt_BR
+-  [toutpt]
+-
+-- Update french translation
+-  [toutpt]
+-
+-
+-1.0b2 - 2010-08-05
+-------------------
+-
+-- Fix several XML errors in templates. Needed for Chameleon compatibility.
+-  [wichert]
+-
+-- cloning a type through the dexterity UI in the control panel did not work
+-  if the type had a hyphen in it's name. This fixes
+-  http://code.google.com/p/dexterity/issues/detail?id=126
+-  [vangheem]
+-
+-
+-1.0b1 - 2010-04-20
+-------------------
+-
+-- Require plone.app.jquerytools for the schema editor UI, and make sure it is
+-  installed when upgrading.
+-  [davisagli]
+-
+-- Remove unused schemaeditor.css.
+-  [davisagli]
+-
+-- Omit the metadata fields except on edit and add forms.
+-  [davisagli]
+-
+-- Enable the "Name from title" behavior for new types, by default.
+-  [davisagli]
+-
+-- Include plone.formwidget.namedfile so that File upload and Image fields are
+-  available out of the box.  You must explicitly include z3c.blobfile in your
+-  environment if you want blob-based files.
+-  [davisagli]
+-
+-- Added a DexterityLayer that can be used in tests.
+-  [davisagli]
+-
+-- Fix issue with the BehaviorsForm accidentally polluting the title of the
+-  z3c.form EditForm 'Apply' button.
+-  [davisagli]
+-
+-- Add upgrades folder and make sure plone.app.z3cform profile gets installed
+-  on upgrades from previous versions of Dexterity.
+-  [davisagli]
+-
+-- Depend on the plone.app.z3cform profile, to make sure the Plone browser layer
+-  for z3c.form gets installed.
+-  [davisagli]
+-
+-- Avoid relying on acquisition to get the portal_url for links in the type
+-  listing table.
+-  [davisagli]
+-
+-
+-1.0a7 - 2010-01-08
+-------------------
+-
+-- Make sure the Dublin Core fieldsets appear in the same order as they
+-  do in AT content.
+-  [davisagli]
+-
+-- Make sure the current user is loaded as the default creator for the
+-  IOwnership schema in an add form.
+-  [davisagli]
+-
+-- Include behavior descriptions on the behavior edit tab.
+-  [davisagli]
+-
+-- IBasic behavior: set missing_value of description-field to u'' . The
+-  description should never be None (live_search would not work any more).
+-  [jbaumann]
+-
+-- Fix issue where traversing to a nonexistent type name in the types control
+-  panel did not raise NotFound.
+-  [davisagli]
+-
+-- Make it possible to view the fields of non-editable schemata.
+-  [davisagli]
+-
+-- Tweaks to the tabbed_forms template used for the types control panel.
+-  [davisagli]
+-
+-
+-1.0a6 - 2009-10-12
+-------------------
+-
+-- Add plone.app.textfield as a dependency. We don't use it directly in this
+-  package, but users of Dexterity should have it installed and available.
+-  [optilude]
+-
+-- Use some default icons for new types.
+-  [davisagli]
+-
+-- Show type icons in type listing if available.
+-  [davisagli]
+-
+-- Removed 'container' field from the types listing in the control panel
+-  (it wasn't working).
+-  [davisagli]
+-
+-- Add message factories to titles and descriptions of metadata schema fields.
+-  Fixes http://code.google.com/p/dexterity/issues/detail?id=75.
+-  [optilude]
+-
+-- Patch listActionInfos() instead of listActions() in order to get the
+-  folder/add category into the actions list. This avoids a problem with
+-  the 'actions.xml' export handler exporting the folder/add category
+-  incorrectly. Fixes http://code.google.com/p/dexterity/issues/detail?id=78
+-  [optilude]
+-
+-
+-1.0a5 - 2009-07-26
+-------------------
+-
+-- Explicitly include overrides.zcml from plone.app.z3cform.
+-  [optilude]
+-
+-
+-1.0a4 - 2009-07-12
+-------------------
+-
+-- Changed API methods and arguments to mixedCase to be more consistent with
+-  the rest of Zope. This is a non-backwards-compatible change. Our profuse
+-  apologies, but it's now or never. :-/
+-
+-  If you find that you get import errors or unknown keyword arguments in your
+-  code, please change names from foo_bar too fooBar, e.g. serialize_schema()
+-  becomes serializeSchema().
+-  [optilude]
+-
+-
+-1.0a3 - 2009-06-07
+-------------------
+-
+-- Updated use of <plone:behavior /> directive to match plone.behavior 1.0b4.
+-  [optilude]
+-
+-
+-1.0a2 - 2009-06-01
+-------------------
+-
+-- Remove superfluous <includeOverrides /> in configure.zcml which would cause
+-  a problem when the package is loaded via z3c.autoinclude.plugin
+-  [optilude]
+-
+-
+-1.0a1 - 2009-05-27
+---------------------
+-
+-- Initial release
+diff --git a/setup.py b/setup.py
+index dd04666..96460fb 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,10 +1,9 @@
+ from setuptools import setup, find_packages
+-import os
  
- fill in metadata
-   Click Link  Categorization
--  Input text  name=form.widgets.IDublinCore.subjects  testcreated\nrobot
-+  Input text  name=form.widgets.IDublinCore.subjects  testcreatedrobot
-   Click Link  Dates
-   ${currentyear}=  Get Time  year
-   fill date field  form.widgets.IDublinCore.effective  2009  January  1
-   fill date field  form.widgets.IDublinCore.expires  2017  December  12
-   Click Link  Ownership
-   Input text  name=form.widgets.IDublinCore.creators  another_creator
--  Input text  name=form.widgets.IDublinCore.contributors  contributor1\ncontributor2
-+  Input text  name=form.widgets.IDublinCore.contributors  contributor1
-   Input text  name=form.widgets.IDublinCore.rights  Copyright\nstatement\nhere
-   Click Link  Settings
-   Select from List  name=form.widgets.IAllowDiscussion.allow_discussion:list  Yes
+ version = '2.1.3.dev0'
+ long_description = open("README.rst").read() + "\n" + \
+-    open("RELEASE_NOTES.txt").read() + "\n" + \
+-    open(os.path.join("docs", "HISTORY.txt")).read()
++    open("RELEASE_NOTES.rst").read() + "\n" + \
++    open("CHANGES.rst").read()
+ 
+ setup(name='plone.app.dexterity',
+       version=version,
+
+
+Repository: plone.app.dexterity
+Branch: refs/heads/master
+Date: 2015-01-27T16:20:31+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.dexterity/commit/b74d6384717718784631b534313e6b19ef01ba4c
+
+IDexterityContainer-view listing view macro calling fix
+
+Fix the IDexterityContainer view to make use of plone.app.contenttype's new
+listing view. Accessing it's macro needs the macro-caller's view variable set
+to the new listing view.
+
+Files changed:
+M CHANGES.rst
+M plone/app/dexterity/browser/container.pt
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index bcaea29..a129313 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,10 @@ Changelog
+ 2.1.3 (unreleased)
+ ------------------
+ 
+-- Nothing changed yet.
++- Fix the IDexterityContainer view to make use of plone.app.contenttype's new
++  listing view. Accessing it's macro needs the macro-caller's view variable set
++  to the new listing view.
++  [thet]
+ 
+ 
+ 2.1.2 (2014-10-23)
+diff --git a/plone/app/dexterity/browser/container.pt b/plone/app/dexterity/browser/container.pt
+index 340b619..db926c3 100644
+--- a/plone/app/dexterity/browser/container.pt
++++ b/plone/app/dexterity/browser/container.pt
+@@ -26,7 +26,7 @@
+ 
+     <fieldset id="folder-listing">
+         <legend i18n:translate="" i18n:domain="plone">Contents</legend>
+-        <tal:block define="listing_macro context/folder_listing/macros/listing">
++        <tal:block define="view nocall:context/folder_listing; listing_macro view/macros/listing">
+             <metal:use_macro use-macro="listing_macro" />
+         </tal:block>
+     </fieldset>
+
+
+Repository: plone.app.dexterity
+Branch: refs/heads/master
+Date: 2015-01-27T16:22:18+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.dexterity/commit/c7de6b16412144cbdb8533a11732a0aad50ace2b
+
+Merge branch 'master' of git://github.com/plone/plone.app.dexterity
+
+Files changed:
+A plone/app/dexterity/factories.py
+A plone/app/dexterity/permissions.py
+A plone/app/dexterity/tests/test_permissions.py
+M plone/app/dexterity/behaviors/metadata.py
+M plone/app/dexterity/configure.zcml
+M plone/app/dexterity/interfaces.py
+M setup.py
+
+diff --git a/plone/app/dexterity/behaviors/metadata.py b/plone/app/dexterity/behaviors/metadata.py
+index 4114b4e..fececbf 100644
+--- a/plone/app/dexterity/behaviors/metadata.py
++++ b/plone/app/dexterity/behaviors/metadata.py
+@@ -5,6 +5,8 @@
+ from datetime import datetime
+ from plone.app.dexterity import MessageFactory as _
+ from plone.app.dexterity import PloneMessageFactory as _PMF
++from plone.app.z3cform.widget import (
++    AjaxSelectFieldWidget, SelectFieldWidget, DatetimeFieldWidget)
+ from plone.autoform import directives as form
+ from plone.autoform.interfaces import IFormFieldProvider
+ from plone.dexterity.interfaces import IDexterityContent
+@@ -101,6 +103,8 @@ class ICategorization(model.Schema):
+         required=False,
+         missing_value=(),
+     )
++    form.widget('subjects', AjaxSelectFieldWidget,
++                vocabulary='plone.app.vocabularies.Keywords')
+ 
+     language = schema.Choice(
+         title=_PMF(u'label_language', default=u'Language'),
+@@ -109,6 +113,7 @@ class ICategorization(model.Schema):
+         missing_value='',
+         defaultFactory=default_language,
+     )
++    form.widget('language', SelectFieldWidget)
+ 
+     form.omitted('subjects', 'language')
+     form.no_omit(IEditForm, 'subjects', 'language')
+@@ -136,6 +141,7 @@ class IPublication(model.Schema):
+                     u"not show up in listings and searches until this date."),
+         required=False
+     )
++    form.widget('effective', DatetimeFieldWidget)
+ 
+     expires = schema.Datetime(
+         title=_PMF(u'label_expiration_date', u'Expiration Date'),
+@@ -145,6 +151,7 @@ class IPublication(model.Schema):
+                     u"longer be visible in listings and searches."),
+         required=False
+     )
++    form.widget('expires', DatetimeFieldWidget)
+ 
+     @invariant
+     def validate_start_end(data):
+@@ -183,6 +190,8 @@ class IOwnership(model.Schema):
+         required=False,
+         missing_value=(),
+     )
++    form.widget('creators', AjaxSelectFieldWidget,
++                vocabulary='plone.app.vocabularies.Users')
+ 
+     contributors = schema.Tuple(
+         title=_PMF(u'label_contributors', u'Contributors'),
+@@ -195,6 +204,8 @@ class IOwnership(model.Schema):
+         required=False,
+         missing_value=(),
+     )
++    form.widget('contributors', AjaxSelectFieldWidget,
++                vocabulary='plone.app.vocabularies.Users')
+ 
+     rights = schema.Text(
+         title=_PMF(u'label_copyrights', default=u'Rights'),
+diff --git a/plone/app/dexterity/configure.zcml b/plone/app/dexterity/configure.zcml
+index cbbb3bb..e75af3f 100644
+--- a/plone/app/dexterity/configure.zcml
++++ b/plone/app/dexterity/configure.zcml
+@@ -63,4 +63,10 @@
+     <adapter factory=".interfaces.TypeIdValidator" />
+     <adapter factory=".interfaces.TypeTitleValidator" />
+ 
++    <adapter factory=".factories.DXFileFactory" />
++    <adapter factory=".permissions.DXFieldPermissionChecker" />
++    <adapter factory=".permissions.DXAddViewFieldPermissionChecker" />
++    <adapter factory=".permissions.DXAddViewFieldPermissionChecker"
++             for="plone.z3cform.interfaces.IFormWrapper" />
++
+ </configure>
+diff --git a/plone/app/dexterity/factories.py b/plone/app/dexterity/factories.py
+new file mode 100644
+index 0000000..6b14406
+--- /dev/null
++++ b/plone/app/dexterity/factories.py
+@@ -0,0 +1,70 @@
++import transaction
++from thread import allocate_lock
++
++from zope.component import adapts
++from zope.container.interfaces import INameChooser
++from zope.interface import implements
++
++from Products.CMFCore.utils import getToolByName
++from Products.CMFCore.interfaces._content import IFolderish
++from Products.CMFPlone import utils as ploneutils
++
++
++from plone.namedfile.file import NamedBlobImage
++from plone.namedfile.file import NamedBlobFile
++from plone.app.dexterity.interfaces import IDXFileFactory
++
++upload_lock = allocate_lock()
++
++from plone.dexterity.utils import createContentInContainer
++
++
++class DXFileFactory(object):
++    implements(IDXFileFactory)
++    adapts(IFolderish)
++
++    def __init__(self, context):
++        self.context = context
++
++    def __call__(self, name, content_type, data):
++        ctr = getToolByName(self.context, 'content_type_registry')
++        type_ = ctr.findTypeName(name.lower(), '', '') or 'File'
++
++        name = name.decode("utf8")
++
++        chooser = INameChooser(self.context)
++
++        # otherwise I get ZPublisher.Conflict ConflictErrors
++        # when uploading multiple files
++        upload_lock.acquire()
++
++        newid = chooser.chooseName(name, self.context.aq_parent)
++        try:
++            transaction.begin()
++
++            # Try to determine which kind of NamedBlob we need
++            # This will suffice for standard p.a.contenttypes File/Image
++            # and any other custom type that would have 'File' or 'Image' in
++            # its type name
++            filename = ploneutils.safe_unicode(name)
++            if 'Image' in type_:
++                image = NamedBlobImage(data=data,
++                                       filename=filename,
++                                       contentType=content_type)
++                obj = createContentInContainer(
++                    self.context, type_, id=newid, image=image)
++            else:
++                file = NamedBlobFile(data=data,
++                                     filename=filename,
++                                     contentType=content_type)
++                obj = createContentInContainer(
++                    self.context, type_, id=newid, file=file)
++
++            obj.title = name
++            obj.reindexObject()
++            transaction.commit()
++
++        finally:
++            upload_lock.release()
++
++        return obj
+diff --git a/plone/app/dexterity/interfaces.py b/plone/app/dexterity/interfaces.py
+index 91c0a07..281dbc5 100644
+--- a/plone/app/dexterity/interfaces.py
++++ b/plone/app/dexterity/interfaces.py
+@@ -6,6 +6,7 @@
+ from z3c.form import validator
+ from plone.app.dexterity import MessageFactory as _
+ from Products.CMFCore.utils import getToolByName
++from plone.app.widgets.interfaces import IFileFactory
+ 
+ 
+ class ITypesContext(IBrowserPage):
+@@ -122,3 +123,9 @@ def validate(self, value):
+ 
+ validator.WidgetValidatorDiscriminators(
+     TypeTitleValidator, field=ITypeSettings['title'])
++
++
++
++class IDXFileFactory(IFileFactory):
++    """ adapter factory for DX types
++    """
+diff --git a/plone/app/dexterity/permissions.py b/plone/app/dexterity/permissions.py
+new file mode 100644
+index 0000000..8ede354
+--- /dev/null
++++ b/plone/app/dexterity/permissions.py
+@@ -0,0 +1,102 @@
++# -*- coding: utf-8 -*-
++from AccessControl import getSecurityManager
++from plone.app.widgets.interfaces import IFieldPermissionChecker
++from plone.app.widgets.interfaces import IWidgetsLayer
++from plone.autoform.interfaces import WIDGETS_KEY
++from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
++from plone.autoform.utils import resolveDottedName
++from plone.dexterity.interfaces import IDexterityContent
++from plone.dexterity.utils import iterSchemata, getAdditionalSchemata
++from plone.supermodel.utils import mergedTaggedValueDict
++from z3c.form.interfaces import IAddForm
++from z3c.form.interfaces import IFieldWidget
++from zope.component import adapts
++from zope.component import queryMultiAdapter
++from zope.component import queryUtility
++from zope.interface import implements
++from zope.publisher.browser import TestRequest
++from zope.security.interfaces import IPermission
++
++
++class MockRequest(TestRequest):
++    implements(IWidgetsLayer)
++
++
++class DXFieldPermissionChecker(object):
++    """
++    """
++
++    implements(IFieldPermissionChecker)
++    adapts(IDexterityContent)
++
++    DEFAULT_PERMISSION = 'Modify portal content'
++
++    def __init__(self, context):
++        self.context = context
++        self._request = MockRequest()
++
++    def _get_schemata(self):
++        return iterSchemata(self.context)
++
++    def validate(self, field_name, vocabulary_name=None):
++        context = self.context
++        checker = getSecurityManager().checkPermission
++        schemata = self._get_schemata()
++        for schema in schemata:
++            if field_name in schema:
++                # If a vocabulary name was specified and it does not
++                # match the vocabulary name for the field or widget,
++                # fail.
++                field = schema[field_name]
++                if vocabulary_name and (
++                   vocabulary_name != getattr(field, 'vocabulary', None) and
++                   vocabulary_name != getattr(field, 'vocabularyName', None)):
++                    # Determine the widget to check for vocabulary there
++                    widgets = mergedTaggedValueDict(schema, WIDGETS_KEY)
++                    widget = widgets.get(field_name)
++                    if widget:
++                        widget = (isinstance(widget, basestring) and
++                                  resolveDottedName(widget) or widget)
++                        widget = widget and widget(field, self._request)
++                    else:
++                        widget = queryMultiAdapter((field, self._request),
++                                                   IFieldWidget)
++                    if getattr(widget, 'vocabulary', None) != vocabulary_name:
++                        return False
++                # Create mapping of all schema permissions
++                permissions = mergedTaggedValueDict(schema,
++                                                    WRITE_PERMISSIONS_KEY)
++                permission_name = permissions.get(field_name, None)
++                if permission_name is not None:
++                    permission = queryUtility(IPermission,
++                                              name=permission_name)
++                    if permission:
++                        return checker(permission.title, context)
++
++                # If the field is in the schema, but no permission is
++                # specified, fall back to the default edit permission
++                return checker(self.DEFAULT_PERMISSION, context)
++        else:
++            raise AttributeError('No such field: {0}'.format(field_name))
++
++
++class DXAddViewFieldPermissionChecker(DXFieldPermissionChecker):
++    """Permission checker for when we just have an add view"""
++
++    adapts(IAddForm)
++
++    def __init__(self, view):
++        self.context = view.context
++        # This may fail for views that aren't DefaultAddForm or
++        # DefaultAddView sub-classes, but they can register their own
++        # more specific adapters, if needed.
++        self.fti = getattr(view, 'fti', None)
++        if self.fti is None:
++            self.fti = view.ti
++        self._request = view.request
++
++    def _get_schemata(self):
++        fti = self.fti
++        yield fti.lookupSchema()
++        for schema in getAdditionalSchemata(portal_type=fti.getId()):
++            yield schema
+diff --git a/plone/app/dexterity/tests/test_permissions.py b/plone/app/dexterity/tests/test_permissions.py
+new file mode 100644
+index 0000000..51d89ed
+--- /dev/null
++++ b/plone/app/dexterity/tests/test_permissions.py
+@@ -0,0 +1,201 @@
++# -*- coding: utf-8 -*-
++from z3c.form.interfaces import IFieldWidget
++from z3c.form.util import getSpecification
++from zope.component import provideAdapter
++from plone.app.widgets.interfaces import IWidgetsLayer
++from zope.component.globalregistry import base
++from plone.app.testing import TEST_USER_ID
++from plone.app.testing import TEST_USER_NAME
++from plone.app.testing import login
++from plone.app.testing import setRoles
++from plone.app.content.browser.vocabulary import VocabularyView
++from plone.app.widgets.testing import PLONEAPPWIDGETS_DX_INTEGRATION_TESTING
++from plone.app.widgets.testing import TestRequest
++from plone.autoform.interfaces import WIDGETS_KEY
++from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
++from zope import schema
++from zope.globalrequest import setRequest
++from zope.interface import Interface
++from z3c.form.widget import FieldWidget
++from plone.dexterity.fti import DexterityFTI
++
++import json
++
++try:
++    import unittest2 as unittest
++except ImportError:  # pragma: nocover
++    import unittest  # pragma: nocover
++    assert unittest  # pragma: nocover
++
++
++def add_mock_fti(portal):
++    # Fake DX Type
++    fti = DexterityFTI('dx_mock')
++    portal.portal_types._setObject('dx_mock', fti)
++    fti.klass = 'plone.dexterity.content.Item'
++    fti.schema = 'plone.app.dexterity.tests.test_permissions.IMockSchema'
++    fti.filter_content_types = False
++    fti.behaviors = ('plone.app.dexterity.behaviors.metadata.IBasic',)
++
++
++def _custom_field_widget(field, request):
++    from plone.app.z3cform.widget import AjaxSelectWidget
++    widget = FieldWidget(field, AjaxSelectWidget(request))
++    widget.vocabulary = 'plone.app.vocabularies.PortalTypes'
++    return widget
++
++
++class IMockSchema(Interface):
++    allowed_field = schema.Choice(
++        vocabulary='plone.app.vocabularies.PortalTypes')
++    disallowed_field = schema.Choice(
++        vocabulary='plone.app.vocabularies.PortalTypes')
++    default_field = schema.Choice(
++        vocabulary='plone.app.vocabularies.PortalTypes')
++    custom_widget_field = schema.TextLine()
++    adapted_widget_field = schema.TextLine()
++
++IMockSchema.setTaggedValue(WRITE_PERMISSIONS_KEY, {
++    'allowed_field': u'zope2.View',
++    'disallowed_field': u'zope2.ViewManagementScreens',
++    'custom_widget_field': u'zope2.View',
++    'adapted_widget_field': u'zope2.View',
++})
++IMockSchema.setTaggedValue(WIDGETS_KEY, {
++    'custom_widget_field': _custom_field_widget,
++})
++
++
++def _enable_custom_widget(field):
++    provideAdapter(_custom_field_widget, adapts=
++                   (getSpecification(field), IWidgetsLayer),
++                   provides=IFieldWidget)
++
++
++def _disable_custom_widget(field):
++        base.unregisterAdapter(
++            required=(getSpecification(field), IWidgetsLayer,),
++            provided=IFieldWidget)
++
++
++class DexterityVocabularyPermissionTests(unittest.TestCase):
++
++    layer = PLONEAPPWIDGETS_DX_INTEGRATION_TESTING
++
++    def setUp(self):
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        setRequest(self.request)
++        self.portal = self.layer['portal']
++
++        login(self.portal, TEST_USER_NAME)
++        setRoles(self.portal, TEST_USER_ID, ['Manager'])
++
++        add_mock_fti(self.portal)
++        self.portal.invokeFactory('dx_mock', 'test_dx')
++
++        self.portal.test_dx.manage_permission('View',
++                                              ('Anonymous',),
++                                              acquire=False)
++        self.portal.test_dx.manage_permission('View management screens',
++                                              (),
++                                              acquire=False)
++        self.portal.test_dx.manage_permission('Modify portal content',
++                                              ('Editor', 'Manager',
++                                               'Site Adiminstrator'),
++                                              acquire=False)
++
++    def test_vocabulary_field_allowed(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'allowed_field',
++        })
++        data = json.loads(view())
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++
++    def test_vocabulary_field_wrong_vocabulary_disallowed(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.Fake',
++            'field': 'allowed_field',
++        })
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++    def test_vocabulary_field_disallowed(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'disallowed_field',
++        })
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++    def test_vocabulary_field_default_permission(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'default_field',
++        })
++        # If the field is does not have a security declaration, the
++        # default edit permission is tested (Modify portal content)
++        setRoles(self.portal, TEST_USER_ID, ['Member'])
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++        setRoles(self.portal, TEST_USER_ID, ['Editor'])
++        # Now access should be allowed, but the vocabulary does not exist
++        data = json.loads(view())
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++
++    def test_vocabulary_field_default_permission_wrong_vocab(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.Fake',
++            'field': 'default_field',
++        })
++        setRoles(self.portal, TEST_USER_ID, ['Editor'])
++        # Now access should be allowed, but the vocabulary does not exist
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++    def test_vocabulary_missing_field(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'missing_field',
++        })
++        setRoles(self.portal, TEST_USER_ID, ['Member'])
++        with self.assertRaises(AttributeError):
++            view()
++
++    def test_vocabulary_on_widget(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'custom_widget_field',
++        })
++        data = json.loads(view())
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++        self.request.form['name'] = 'plone.app.vocabularies.Fake'
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++    def test_vocabulary_on_adapted_widget(self):
++        _enable_custom_widget(IMockSchema['adapted_widget_field'])
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'adapted_widget_field',
++        })
++        data = json.loads(view())
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++
++        self.request.form['name'] = 'plone.app.vocabularies.Fake'
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++        _disable_custom_widget(IMockSchema['adapted_widget_field'])
+\ No newline at end of file
+diff --git a/setup.py b/setup.py
+index 96460fb..dc117f3 100644
+--- a/setup.py
++++ b/setup.py
+@@ -58,6 +58,7 @@
+           'zope.schema',
+           'zope.publisher',
+           'z3c.form>=3.0.0a1',
++          'plone.app.z3cform>=1.1.0.dev0'
+       ],
+       extras_require={
+           'test': [
 
 
