@@ -1,601 +1,328 @@
-Repository: plone.app.content
+Repository: plone.app.dexterity
 Branch: refs/heads/master
-Date: 2015-01-26T12:49:45-06:00
+Date: 2015-01-26T12:48:47-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.content/commit/8e009792f3caacd6050c449922dc0c1b37819791
+Commit: https://github.com/plone/plone.app.dexterity/commit/5acbea6c3c1a599cc8376f739c19f5ae3a3597a0
 
 integrate plone.app.widgets
 
 Files changed:
-A plone/app/content/browser/file.py
-A plone/app/content/browser/i18n.py
-A plone/app/content/browser/query.py
-A plone/app/content/browser/vocabulary.py
-A plone/app/content/tests/test_widgets.py
-M plone/app/content/browser/configure.zcml
+A plone/app/dexterity/factories.py
+A plone/app/dexterity/permissions.py
+A plone/app/dexterity/tests/test_permissions.py
+M plone/app/dexterity/behaviors/metadata.py
+M plone/app/dexterity/configure.zcml
+M plone/app/dexterity/interfaces.py
 M setup.py
 
-diff --git a/plone/app/content/browser/configure.zcml b/plone/app/content/browser/configure.zcml
-index 0e67f0f..637bf6c 100644
---- a/plone/app/content/browser/configure.zcml
-+++ b/plone/app/content/browser/configure.zcml
-@@ -144,4 +144,40 @@
-         permission="zope2.DeleteObjects"
-         />
+diff --git a/plone/app/dexterity/behaviors/metadata.py b/plone/app/dexterity/behaviors/metadata.py
+index 4114b4e..fececbf 100644
+--- a/plone/app/dexterity/behaviors/metadata.py
++++ b/plone/app/dexterity/behaviors/metadata.py
+@@ -5,6 +5,8 @@
+ from datetime import datetime
+ from plone.app.dexterity import MessageFactory as _
+ from plone.app.dexterity import PloneMessageFactory as _PMF
++from plone.app.z3cform.widget import (
++    AjaxSelectFieldWidget, SelectFieldWidget, DatetimeFieldWidget)
+ from plone.autoform import directives as form
+ from plone.autoform.interfaces import IFormFieldProvider
+ from plone.dexterity.interfaces import IDexterityContent
+@@ -101,6 +103,8 @@ class ICategorization(model.Schema):
+         required=False,
+         missing_value=(),
+     )
++    form.widget('subjects', AjaxSelectFieldWidget,
++                vocabulary='plone.app.vocabularies.Keywords')
  
-+
-+    <browser:page
-+        name="getVocabulary"
-+        for="*"
-+        class=".vocabulary.VocabularyView"
-+        permission="zope2.View"
-+        />
-+
-+    <browser:page
-+        name="getSource"
-+        for="z3c.form.interfaces.IWidget"
-+        class=".vocabulary.SourceView"
-+        permission="zope.Public"
-+        />
-+
-+    <browser:page
-+        name="fileUpload"
-+        for="Products.CMFCore.interfaces._content.IFolderish"
-+        class=".file.FileUploadView"
-+        permission="cmf.AddPortalContent"
-+        />
-+
-+    <browser:page
-+        name="qsOptions"
-+        for="plone.app.layout.navigation.interfaces.INavigationRoot"
-+        class=".query.QueryStringIndexOptions"
-+        permission="zope2.View"
-+        />
-+
-+    <browser:view
-+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
-+        name="plonejsi18n"
-+        class=".i18n.i18njs"
-+        permission="zope2.View"
-+        />
+     language = schema.Choice(
+         title=_PMF(u'label_language', default=u'Language'),
+@@ -109,6 +113,7 @@ class ICategorization(model.Schema):
+         missing_value='',
+         defaultFactory=default_language,
+     )
++    form.widget('language', SelectFieldWidget)
+ 
+     form.omitted('subjects', 'language')
+     form.no_omit(IEditForm, 'subjects', 'language')
+@@ -136,6 +141,7 @@ class IPublication(model.Schema):
+                     u"not show up in listings and searches until this date."),
+         required=False
+     )
++    form.widget('effective', DatetimeFieldWidget)
+ 
+     expires = schema.Datetime(
+         title=_PMF(u'label_expiration_date', u'Expiration Date'),
+@@ -145,6 +151,7 @@ class IPublication(model.Schema):
+                     u"longer be visible in listings and searches."),
+         required=False
+     )
++    form.widget('expires', DatetimeFieldWidget)
+ 
+     @invariant
+     def validate_start_end(data):
+@@ -183,6 +190,8 @@ class IOwnership(model.Schema):
+         required=False,
+         missing_value=(),
+     )
++    form.widget('creators', AjaxSelectFieldWidget,
++                vocabulary='plone.app.vocabularies.Users')
+ 
+     contributors = schema.Tuple(
+         title=_PMF(u'label_contributors', u'Contributors'),
+@@ -195,6 +204,8 @@ class IOwnership(model.Schema):
+         required=False,
+         missing_value=(),
+     )
++    form.widget('contributors', AjaxSelectFieldWidget,
++                vocabulary='plone.app.vocabularies.Users')
+ 
+     rights = schema.Text(
+         title=_PMF(u'label_copyrights', default=u'Rights'),
+diff --git a/plone/app/dexterity/configure.zcml b/plone/app/dexterity/configure.zcml
+index cbbb3bb..e75af3f 100644
+--- a/plone/app/dexterity/configure.zcml
++++ b/plone/app/dexterity/configure.zcml
+@@ -63,4 +63,10 @@
+     <adapter factory=".interfaces.TypeIdValidator" />
+     <adapter factory=".interfaces.TypeTitleValidator" />
+ 
++    <adapter factory=".factories.DXFileFactory" />
++    <adapter factory=".permissions.DXFieldPermissionChecker" />
++    <adapter factory=".permissions.DXAddViewFieldPermissionChecker" />
++    <adapter factory=".permissions.DXAddViewFieldPermissionChecker"
++             for="plone.z3cform.interfaces.IFormWrapper" />
 +
  </configure>
-diff --git a/plone/app/content/browser/file.py b/plone/app/content/browser/file.py
+diff --git a/plone/app/dexterity/factories.py b/plone/app/dexterity/factories.py
 new file mode 100644
-index 0000000..0daebd1
+index 0000000..f1bf7e9
 --- /dev/null
-+++ b/plone/app/content/browser/file.py
-@@ -0,0 +1,167 @@
++++ b/plone/app/dexterity/factories.py
+@@ -0,0 +1,70 @@
++import transaction
++from thread import allocate_lock
++
++from zope.component import adapts
++from zope.container.interfaces import INameChooser
++from zope.interface import implements
++
 +from Products.CMFCore.utils import getToolByName
-+from Products.Five.browser import BrowserView
-+
-+import json
-+import mimetypes
-+from plone.dexterity.interfaces import IDexterityFTI
-+from plone.app.widgets.interfaces import IATCTFileFactory, IDXFileFactory
-+from plone.uuid.interfaces import IUUID
-+import os
-+import logging
-+
-+logger = logging.getLogger('plone')
++from Products.CMFCore.interfaces._content import IFolderish
++from Products.CMFPlone import utils as ploneutils
 +
 +
-+def _bool(val):
-+    if val.lower() in ('t', 'true', '1', 'on'):
-+        return True
-+    return False
++from plone.namedfile.file import NamedBlobImage
++from plone.namedfile.file import NamedBlobFile
++from plone.app.widgets.interfaces import IDXFileFactory
++
++upload_lock = allocate_lock()
++
++from plone.dexterity.utils import createContentInContainer
 +
 +
-+def _tus_int(val):
-+    try:
-+        return int(val)
-+    except:
-+        return 60 * 60  # default here...
++class DXFileFactory(object):
++    implements(IDXFileFactory)
++    adapts(IFolderish)
 +
++    def __init__(self, context):
++        self.context = context
 +
-+possible_tus_options = {
-+    'tmp_file_dir': str,
-+    'send_file': _bool,
-+    'upload_valid_duration': _tus_int
-+}
-+
-+TUS_ENABLED = False
-+if os.environ.get('TUS_ENABLED'):
-+    try:
-+        from tus import Tus, Zope2RequestAdapter
-+        tus_settings = {}
-+        for option, converter in possible_tus_options.items():
-+            name = 'TUS_%s' % option.upper()
-+            if name in os.environ:
-+                tus_settings[option] = converter(os.environ[name])
-+
-+            tmp_file_dir = tus_settings.get('tmp_file_dir')
-+            if tmp_file_dir is None:
-+                logger.warn('You are trying to enable tus but no'
-+                            'TUS_TMP_FILE_DIR environment setting is set.')
-+            elif not os.path.exists(tmp_file_dir) or \
-+                    not os.path.isdir(tmp_file_dir):
-+                logger.warn('The TUS_TMP_FILE_DIR does not point to a valid '
-+                            'directory.')
-+            elif not os.access(tmp_file_dir, os.W_OK):
-+                logger.warn('The TUS_TMP_FILE_DIR is not writable')
-+            else:
-+                TUS_ENABLED = True
-+                logger.info('tus file upload support is successfully '
-+                            'configured')
-+    except ImportError:
-+        logger.warn('TUS_ENABLED is set; however, tus python package is '
-+                    'not installed')
-+else:
-+    try:
-+        import tus
-+        tus  # pyflakes
-+    except ImportError:
-+        pass
-+    else:
-+        logger.warn('You have the tus python package installed but it is '
-+                    'not configured for this plone client')
-+
-+
-+class FileUploadView(BrowserView):
-+    """
-+    Handle file uploads with potential
-+    special handling of TUS resumable uploads
-+    """
-+
-+    tus_uid = None
-+
-+    def __contains__(self, uid):
-+        return self.tus_uid and self.tus_uid == uid
-+
-+    def __getitem__(self, uid):
-+        if self.tus_uid is None:
-+            self.tus_uid = uid
-+            self.__doc__ = 'foobar'  # why is this necessary?
-+            return self
-+        else:
-+            raise KeyError
-+
-+    def __call__(self):
-+        req = self.request
-+        tusrequest = False
-+        if TUS_ENABLED:
-+            adapter = Zope2RequestAdapter(req)
-+            tus = Tus(adapter, **tus_settings)
-+            if tus.valid:
-+                tusrequest = True
-+                tus.handle()
-+                if not tus.upload_finished:
-+                    return
-+                else:
-+                    filename = req.getHeader('FILENAME')
-+                    if tus.send_file:
-+                        filedata = req._file
-+                        filedata.filename = filename
-+                    else:
-+                        filepath = req._file.read()
-+                        filedata = open(filepath)
-+        if not tusrequest:
-+            if req.REQUEST_METHOD != 'POST':
-+                return
-+            filedata = self.request.form.get("file", None)
-+            if filedata is None:
-+                return
-+            filename = filedata.filename
-+        content_type = mimetypes.guess_type(filename)[0] or ""
-+
-+        if not filedata:
-+            return
-+
-+        # Determine if the default file/image types are DX or AT based
++    def __call__(self, name, content_type, data):
 +        ctr = getToolByName(self.context, 'content_type_registry')
-+        type_ = ctr.findTypeName(filename.lower(), '', '') or 'File'
++        type_ = ctr.findTypeName(name.lower(), '', '') or 'File'
 +
-+        dx_based = False
-+        pt = getToolByName(self.context, 'portal_types')
-+        if IDexterityFTI.providedBy(getattr(pt, type_)):
-+            factory = IDXFileFactory(self.context)
-+            dx_based = True
-+        else:
-+            factory = IATCTFileFactory(self.context)
++        name = name.decode("utf8")
 +
-+        obj = factory(filename, content_type, filedata)
++        chooser = INameChooser(self.context)
 +
-+        if dx_based:
-+            if 'File' in obj.portal_type:
-+                size = obj.file.getSize()
-+                content_type = obj.file.contentType
-+            elif 'Image' in obj.portal_type:
-+                size = obj.image.getSize()
-+                content_type = obj.image.contentType
++        # otherwise I get ZPublisher.Conflict ConflictErrors
++        # when uploading multiple files
++        upload_lock.acquire()
 +
-+            result = {
-+                "type": content_type,
-+                "size": size
-+            }
-+        else:
-+            try:
-+                size = obj.getSize()
-+            except AttributeError:
-+                size = obj.getObjSize()
-+
-+            result = {
-+                "type": obj.getContentType(),
-+                "size": size
-+            }
-+
-+        if tusrequest:
-+            tus.cleanup_file()
-+        result.update({
-+            'url': obj.absolute_url(),
-+            'name': obj.getId(),
-+            'UID': IUUID(obj),
-+            'filename': filename
-+        })
-+        return json.dumps(result)
-diff --git a/plone/app/content/browser/i18n.py b/plone/app/content/browser/i18n.py
-new file mode 100644
-index 0000000..612b510
---- /dev/null
-+++ b/plone/app/content/browser/i18n.py
-@@ -0,0 +1,38 @@
-+import json
-+
-+from plone.memoize import ram
-+from zope.component import queryUtility
-+from zope.i18n.interfaces import ITranslationDomain
-+
-+from Products.Five.browser import BrowserView
-+
-+
-+def _cache_key(method, self, domain, language):
-+    return (domain, language,)
-+
-+
-+class i18njs(BrowserView):
-+
-+    @ram.cache(_cache_key)
-+    def _gettext_catalog(self, domain, language):
-+        td = queryUtility(ITranslationDomain, domain)
-+        if td is None or language not in td._catalogs:
-+            return
-+        mo_path = td._catalogs[language][0]
-+        catalog = td._data[mo_path]._catalog
-+        if catalog is None:
-+            td._data[mo_path].reload()
-+            catalog = td._data[mo_path]._catalog
-+        return catalog._catalog
-+
-+    def __call__(self, domain, language=None):
-+        if domain is None:
-+            return
-+        if language is None:
-+            language = self.request['LANGUAGE']
-+
-+        catalog = self._gettext_catalog(domain, language)
-+        response = self.request.response
-+        response.setHeader('content-type', 'application/json')
-+        response.setBody(json.dumps(catalog))
-+        return response
-\ No newline at end of file
-diff --git a/plone/app/content/browser/query.py b/plone/app/content/browser/query.py
-new file mode 100644
-index 0000000..91dc9d1
---- /dev/null
-+++ b/plone/app/content/browser/query.py
-@@ -0,0 +1,14 @@
-+import json
-+from plone.registry.interfaces import IRegistry
-+from plone.app.querystring.interfaces import IQuerystringRegistryReader
-+from zope.component import getUtility
-+from Products.Five import BrowserView
-+
-+
-+class QueryStringIndexOptions(BrowserView):
-+
-+    def __call__(self):
-+        registry = getUtility(IRegistry)
-+        config = IQuerystringRegistryReader(registry)()
-+        self.request.response.setHeader("Content-Type", "application/json")
-+        return json.dumps(config)
-diff --git a/plone/app/content/browser/vocabulary.py b/plone/app/content/browser/vocabulary.py
-new file mode 100644
-index 0000000..e1cc615
---- /dev/null
-+++ b/plone/app/content/browser/vocabulary.py
-@@ -0,0 +1,257 @@
-+# -*- coding: utf-8 -*-
-+
-+from AccessControl import getSecurityManager
-+from Products.CMFCore.utils import getToolByName
-+from Products.CMFPlone.interfaces import IPloneSiteRoot
-+from Products.Five import BrowserView
-+from logging import getLogger
-+from plone.app.querystring import queryparser
-+from plone.app.widgets.interfaces import IFieldPermissionChecker
-+from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
-+from plone.supermodel.utils import mergedTaggedValueDict
-+from types import FunctionType
-+from zope.component import getUtility
-+from zope.component import queryAdapter
-+from zope.component import queryUtility
-+from zope.schema.interfaces import ICollection
-+from zope.schema.interfaces import IVocabularyFactory
-+from zope.security.interfaces import IPermission
-+import inspect
-+import itertools
-+import json
-+
-+logger = getLogger(__name__)
-+
-+
-+_permissions = {
-+    'plone.app.vocabularies.Users': 'Modify portal content',
-+    'plone.app.vocabularies.Catalog': 'View',
-+    'plone.app.vocabularies.Keywords': 'Modify portal content',
-+    'plone.app.vocabularies.SyndicatableFeedItems': 'Modify portal content'
-+}
-+
-+
-+def _parseJSON(s):
-+    if isinstance(s, basestring):
-+        s = s.strip()
-+        if (s.startswith('{') and s.endswith('}')) or \
-+                (s.startswith('[') and s.endswith(']')):  # detect if json
-+            return json.loads(s)
-+    return s
-+
-+
-+_unsafe_metadata = ['Creator', 'listCreators', 'author_name', 'commentors']
-+_safe_callable_metadata = ['getURL', 'getPath']
-+
-+
-+class VocabLookupException(Exception):
-+    pass
-+
-+
-+class BaseVocabularyView(BrowserView):
-+
-+    def __call__(self):
-+        """
-+        Accepts GET parameters of:
-+        name: Name of the vocabulary
-+        field: Name of the field the vocabulary is being retrieved for
-+        query: string or json object of criteria and options.
-+            json value consists of a structure:
-+                {
-+                    criteria: object,
-+                    sort_on: index,
-+                    sort_order: (asc|reversed)
-+                }
-+        attributes: comma seperated, or json object list
-+        batch: {
-+            page: 1-based page of results,
-+            size: size of paged results
-+        }
-+        """
-+        context = self.get_context()
-+        self.request.response.setHeader("Content-type", "application/json")
-+
++        newid = chooser.chooseName(name, self.context.aq_parent)
 +        try:
-+            vocabulary = self.get_vocabulary()
-+        except VocabLookupException, e:
-+            return json.dumps({'error': e.message})
++            transaction.begin()
 +
-+        results_are_brains = False
-+        if hasattr(vocabulary, 'search_catalog'):
-+            query = self.parsed_query()
-+            results = vocabulary.search_catalog(query)
-+            results_are_brains = True
-+        elif hasattr(vocabulary, 'search'):
-+            try:
-+                query = self.parsed_query()['SearchableText']['query']
-+            except KeyError:
-+                results = iter(vocabulary)
++            # Try to determine which kind of NamedBlob we need
++            # This will suffice for standard p.a.contenttypes File/Image
++            # and any other custom type that would have 'File' or 'Image' in
++            # its type name
++            filename = ploneutils.safe_unicode(name)
++            if 'Image' in type_:
++                image = NamedBlobImage(data=data,
++                                       filename=filename,
++                                       contentType=content_type)
++                obj = createContentInContainer(
++                    self.context, type_, id=newid, image=image)
 +            else:
-+                results = vocabulary.search(query)
-+        else:
-+            results = vocabulary
++                file = NamedBlobFile(data=data,
++                                     filename=filename,
++                                     contentType=content_type)
++                obj = createContentInContainer(
++                    self.context, type_, id=newid, file=file)
 +
-+        try:
-+            total = len(results)
-+        except TypeError:
-+            total = 0  # do not error if object does not support __len__
-+                       # we'll check again later if we can figure some size
-+                       # out
++            obj.title = name
++            obj.reindexObject()
++            transaction.commit()
 +
-+        # get batch
-+        batch = _parseJSON(self.request.get('batch', ''))
-+        if batch and ('size' not in batch or 'page' not in batch):
-+            batch = None  # batching not providing correct options
-+        if batch:
-+            # must be slicable for batching support
-+            page = int(batch['page'])
-+            # page is being passed in is 1-based
-+            start = (max(page - 1, 0)) * int(batch['size'])
-+            end = start + int(batch['size'])
-+            # Try __getitem__-based slice, then iterator slice.
-+            # The iterator slice has to consume the iterator through
-+            # to the desired slice, but that shouldn't be the end
-+            # of the world because at some point the user will hopefully
-+            # give up scrolling and search instead.
-+            try:
-+                results = results[start:end]
-+            except TypeError:
-+                results = itertools.islice(results, start, end)
++        finally:
++            upload_lock.release()
 +
-+        # build result items
-+        items = []
-+
-+        attributes = _parseJSON(self.request.get('attributes', ''))
-+        if isinstance(attributes, basestring) and attributes:
-+            attributes = attributes.split(',')
-+
-+        if attributes:
-+            portal = getToolByName(context, 'portal_url').getPortalObject()
-+            base_path = '/'.join(portal.getPhysicalPath())
-+            for vocab_item in results:
-+                if not results_are_brains:
-+                    vocab_item = vocab_item.value
-+                item = {}
-+                for attr in attributes:
-+                    key = attr
-+                    if ':' in attr:
-+                        key, attr = attr.split(':', 1)
-+                    if attr in _unsafe_metadata:
-+                        continue
-+                    if key == 'path':
-+                        attr = 'getPath'
-+                    val = getattr(vocab_item, attr, None)
-+                    if callable(val):
-+                        if attr in _safe_callable_metadata:
-+                            val = val()
-+                        else:
-+                            continue
-+                    if key == 'path':
-+                        val = val[len(base_path):]
-+                    item[key] = val
-+                items.append(item)
-+        else:
-+            for item in results:
-+                items.append({'id': item.token, 'text': item.title})
-+
-+        if total == 0:
-+            total = len(items)
-+
-+        return json.dumps({
-+            'results': items,
-+            'total': total
-+        })
-+
-+    def parsed_query(self, ):
-+        query = _parseJSON(self.request.get('query', '')) or {}
-+        if query:
-+            parsed = queryparser.parseFormquery(
-+                self.get_context(), query['criteria'])
-+            if 'sort_on' in query:
-+                parsed['sort_on'] = query['sort_on']
-+            if 'sort_order' in query:
-+                parsed['sort_order'] = str(query['sort_order'])
-+            query = parsed
-+        return query
++        return obj
+diff --git a/plone/app/dexterity/interfaces.py b/plone/app/dexterity/interfaces.py
+index 91c0a07..281dbc5 100644
+--- a/plone/app/dexterity/interfaces.py
++++ b/plone/app/dexterity/interfaces.py
+@@ -6,6 +6,7 @@
+ from z3c.form import validator
+ from plone.app.dexterity import MessageFactory as _
+ from Products.CMFCore.utils import getToolByName
++from plone.app.widgets.interfaces import IFileFactory
+ 
+ 
+ class ITypesContext(IBrowserPage):
+@@ -122,3 +123,9 @@ def validate(self, value):
+ 
+ validator.WidgetValidatorDiscriminators(
+     TypeTitleValidator, field=ITypeSettings['title'])
 +
 +
-+class VocabularyView(BaseVocabularyView):
-+    """Queries a named vocabulary and returns JSON-formatted results."""
 +
-+    def get_context(self):
-+        return self.context
-+
-+    def get_vocabulary(self):
-+        # Look up named vocabulary and check permission.
-+
-+        context = self.context
-+        factory_name = self.request.get('name', None)
-+        field_name = self.request.get('field', None)
-+        if not factory_name:
-+            raise VocabLookupException('No factory provided.')
-+        authorized = None
-+        sm = getSecurityManager()
-+        if (factory_name not in _permissions or
-+                not IPloneSiteRoot.providedBy(context)):
-+            # Check field specific permission
-+            if field_name:
-+                permission_checker = queryAdapter(context,
-+                                                  IFieldPermissionChecker)
-+                if permission_checker is not None:
-+                    authorized = permission_checker.validate(field_name,
-+                                                             factory_name)
-+            if not authorized:
-+                raise VocabLookupException('Vocabulary lookup not allowed')
-+        # Short circuit if we are on the site root and permission is
-+        # in global registry
-+        elif not sm.checkPermission(_permissions[factory_name], context):
-+            raise VocabLookupException('Vocabulary lookup not allowed')
-+
-+        factory = queryUtility(IVocabularyFactory, factory_name)
-+        if not factory:
-+            raise VocabLookupException(
-+                'No factory with name "%s" exists.' % factory_name)
-+
-+        # This part is for backwards-compatibility with the first
-+        # generation of vocabularies created for plone.app.widgets,
-+        # which take the (unparsed) query as a parameter of the vocab
-+        # factory rather than as a separate search method.
-+        if type(factory) is FunctionType:
-+            factory_spec = inspect.getargspec(factory)
-+        else:
-+            factory_spec = inspect.getargspec(factory.__call__)
-+        query = _parseJSON(self.request.get('query', ''))
-+        if query and 'query' in factory_spec.args:
-+            vocabulary = factory(context, query=query)
-+        else:
-+            # This is what is reached for non-legacy vocabularies.
-+            vocabulary = factory(context)
-+
-+        return vocabulary
-+
-+
-+class SourceView(BaseVocabularyView):
-+    """Queries a field's source and returns JSON-formatted results."""
-+
-+    def get_context(self):
-+        return self.context.context
-+
-+    def get_vocabulary(self):
-+        widget = self.context
-+        field = widget.field.bind(widget.context)
-+
-+        # check field's write permission
-+        info = mergedTaggedValueDict(field.interface, WRITE_PERMISSIONS_KEY)
-+        permission_name = info.get(field.__name__, 'cmf.ModifyPortalContent')
-+        permission = queryUtility(IPermission, name=permission_name)
-+        if permission is None:
-+            permission = getUtility(
-+                IPermission, name='cmf.ModifyPortalContent')
-+        if not getSecurityManager().checkPermission(
-+                permission.title, self.get_context()):
-+            raise VocabLookupException('Vocabulary lookup not allowed.')
-+
-+        if ICollection.providedBy(field):
-+            return field.value_type.vocabulary
-+        else:
-+            return field.vocabulary
-diff --git a/plone/app/content/tests/test_widgets.py b/plone/app/content/tests/test_widgets.py
++class IDXFileFactory(IFileFactory):
++    """ adapter factory for DX types
++    """
+diff --git a/plone/app/dexterity/permissions.py b/plone/app/dexterity/permissions.py
 new file mode 100644
-index 0000000..2dffb54
+index 0000000..8ede354
 --- /dev/null
-+++ b/plone/app/content/tests/test_widgets.py
-@@ -0,0 +1,416 @@
++++ b/plone/app/dexterity/permissions.py
+@@ -0,0 +1,102 @@
 +# -*- coding: utf-8 -*-
-+import os
-+from mock import Mock
++from AccessControl import getSecurityManager
++from plone.app.widgets.interfaces import IFieldPermissionChecker
++from plone.app.widgets.interfaces import IWidgetsLayer
++from plone.autoform.interfaces import WIDGETS_KEY
++from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
++from plone.autoform.utils import resolveDottedName
++from plone.dexterity.interfaces import IDexterityContent
++from plone.dexterity.utils import iterSchemata, getAdditionalSchemata
++from plone.supermodel.utils import mergedTaggedValueDict
++from z3c.form.interfaces import IAddForm
++from z3c.form.interfaces import IFieldWidget
++from zope.component import adapts
++from zope.component import queryMultiAdapter
++from zope.component import queryUtility
++from zope.interface import implements
++from zope.publisher.browser import TestRequest
++from zope.security.interfaces import IPermission
++
++
++class MockRequest(TestRequest):
++    implements(IWidgetsLayer)
++
++
++class DXFieldPermissionChecker(object):
++    """
++    """
++
++    implements(IFieldPermissionChecker)
++    adapts(IDexterityContent)
++
++    DEFAULT_PERMISSION = 'Modify portal content'
++
++    def __init__(self, context):
++        self.context = context
++        self._request = MockRequest()
++
++    def _get_schemata(self):
++        return iterSchemata(self.context)
++
++    def validate(self, field_name, vocabulary_name=None):
++        context = self.context
++        checker = getSecurityManager().checkPermission
++        schemata = self._get_schemata()
++        for schema in schemata:
++            if field_name in schema:
++                # If a vocabulary name was specified and it does not
++                # match the vocabulary name for the field or widget,
++                # fail.
++                field = schema[field_name]
++                if vocabulary_name and (
++                   vocabulary_name != getattr(field, 'vocabulary', None) and
++                   vocabulary_name != getattr(field, 'vocabularyName', None)):
++                    # Determine the widget to check for vocabulary there
++                    widgets = mergedTaggedValueDict(schema, WIDGETS_KEY)
++                    widget = widgets.get(field_name)
++                    if widget:
++                        widget = (isinstance(widget, basestring) and
++                                  resolveDottedName(widget) or widget)
++                        widget = widget and widget(field, self._request)
++                    else:
++                        widget = queryMultiAdapter((field, self._request),
++                                                   IFieldWidget)
++                    if getattr(widget, 'vocabulary', None) != vocabulary_name:
++                        return False
++                # Create mapping of all schema permissions
++                permissions = mergedTaggedValueDict(schema,
++                                                    WRITE_PERMISSIONS_KEY)
++                permission_name = permissions.get(field_name, None)
++                if permission_name is not None:
++                    permission = queryUtility(IPermission,
++                                              name=permission_name)
++                    if permission:
++                        return checker(permission.title, context)
++
++                # If the field is in the schema, but no permission is
++                # specified, fall back to the default edit permission
++                return checker(self.DEFAULT_PERMISSION, context)
++        else:
++            raise AttributeError('No such field: {0}'.format(field_name))
++
++
++class DXAddViewFieldPermissionChecker(DXFieldPermissionChecker):
++    """Permission checker for when we just have an add view"""
++
++    adapts(IAddForm)
++
++    def __init__(self, view):
++        self.context = view.context
++        # This may fail for views that aren't DefaultAddForm or
++        # DefaultAddView sub-classes, but they can register their own
++        # more specific adapters, if needed.
++        self.fti = getattr(view, 'fti', None)
++        if self.fti is None:
++            self.fti = view.ti
++        self._request = view.request
++
++    def _get_schemata(self):
++        fti = self.fti
++        yield fti.lookupSchema()
++        for schema in getAdditionalSchemata(portal_type=fti.getId()):
++            yield schema
+diff --git a/plone/app/dexterity/tests/test_permissions.py b/plone/app/dexterity/tests/test_permissions.py
+new file mode 100644
+index 0000000..47c79ee
+--- /dev/null
++++ b/plone/app/dexterity/tests/test_permissions.py
+@@ -0,0 +1,182 @@
++# -*- coding: utf-8 -*-
 +from plone.app.testing import TEST_USER_ID
 +from plone.app.testing import TEST_USER_NAME
 +from plone.app.testing import login
-+from plone.app.testing import logout
 +from plone.app.testing import setRoles
-+from plone.app.content.browser import vocabulary
-+from plone.app.content.browser.file import FileUploadView
-+from plone.app.content.browser.query import QueryStringIndexOptions
 +from plone.app.content.browser.vocabulary import VocabularyView
-+from plone.app.widgets.interfaces import IFieldPermissionChecker
-+from plone.app.widgets.testing import ExampleFunctionVocabulary
-+from plone.app.widgets.testing import ExampleVocabulary
-+from plone.app.widgets.testing import PLONEAPPWIDGETS_INTEGRATION_TESTING
++from plone.app.widgets.testing import PLONEAPPWIDGETS_DX_INTEGRATION_TESTING
 +from plone.app.widgets.testing import TestRequest
-+from zope.component import provideAdapter
-+from zope.component import provideUtility
-+from zope.component.globalregistry import base
++from plone.autoform.interfaces import WIDGETS_KEY
++from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
++from zope import schema
 +from zope.globalrequest import setRequest
 +from zope.interface import Interface
-+from zope.interface import alsoProvides
-+from zope.interface import noLongerProvides
++from z3c.form.widget import FieldWidget
++from plone.dexterity.fti import DexterityFTI
 +
 +import json
-+import transaction
-+
-+_dir = os.path.dirname(__file__)
 +
 +try:
 +    import unittest2 as unittest
@@ -604,170 +331,72 @@ index 0000000..2dffb54
 +    assert unittest  # pragma: nocover
 +
 +
-+class PermissionChecker(object):
-+    def __init__(self, context):
-+        pass
-+
-+    def validate(self, field_name, vocabulary_name=None):
-+        if field_name == 'allowed_field':
-+            return True
-+        elif field_name == 'disallowed_field':
-+            return False
-+        else:
-+            raise AttributeError('Missing Field')
++def add_mock_fti(portal):
++    # Fake DX Type
++    fti = DexterityFTI('dx_mock')
++    portal.portal_types._setObject('dx_mock', fti)
++    fti.klass = 'plone.dexterity.content.Item'
++    fti.schema = 'plone.app.widgets.tests.test_dx.IMockSchema'
++    fti.filter_content_types = False
++    fti.behaviors = ('plone.app.dexterity.behaviors.metadata.IBasic',)
 +
 +
-+class ICustomPermissionProvider(Interface):
-+    pass
++def _custom_field_widget(field, request):
++    from plone.app.z3cform.widget import AjaxSelectWidget
++    widget = FieldWidget(field, AjaxSelectWidget(request))
++    widget.vocabulary = 'plone.app.vocabularies.PortalTypes'
++    return widget
 +
 +
-+def _enable_permission_checker(context):
-+    provideAdapter(PermissionChecker, adapts=(ICustomPermissionProvider,),
-+                   provides=IFieldPermissionChecker)
-+    alsoProvides(context, ICustomPermissionProvider)
++class IMockSchema(Interface):
++    allowed_field = schema.Choice(
++        vocabulary='plone.app.vocabularies.PortalTypes')
++    disallowed_field = schema.Choice(
++        vocabulary='plone.app.vocabularies.PortalTypes')
++    default_field = schema.Choice(
++        vocabulary='plone.app.vocabularies.PortalTypes')
++    custom_widget_field = schema.TextLine()
++    adapted_widget_field = schema.TextLine()
++
++IMockSchema.setTaggedValue(WRITE_PERMISSIONS_KEY, {
++    'allowed_field': u'zope2.View',
++    'disallowed_field': u'zope2.ViewManagementScreens',
++    'custom_widget_field': u'zope2.View',
++    'adapted_widget_field': u'zope2.View',
++})
++IMockSchema.setTaggedValue(WIDGETS_KEY, {
++    'custom_widget_field': _custom_field_widget,
++})
 +
 +
-+def _disable_permission_checker(context):
-+    noLongerProvides(context, ICustomPermissionProvider)
-+    base.unregisterAdapter(required=(ICustomPermissionProvider,),
-+                           provided=IFieldPermissionChecker)
++class DexterityVocabularyPermissionTests(unittest.TestCase):
 +
-+
-+class BrowserTest(unittest.TestCase):
-+
-+    layer = PLONEAPPWIDGETS_INTEGRATION_TESTING
++    layer = PLONEAPPWIDGETS_DX_INTEGRATION_TESTING
 +
 +    def setUp(self):
 +        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
 +        setRequest(self.request)
 +        self.portal = self.layer['portal']
++
 +        login(self.portal, TEST_USER_NAME)
 +        setRoles(self.portal, TEST_USER_ID, ['Manager'])
-+        provideUtility(ExampleVocabulary(), name=u'vocab_class')
-+        provideUtility(ExampleFunctionVocabulary, name=u'vocab_function')
-+        vocabulary._permissions.update({
-+            'vocab_class': 'Modify portal content',
-+            'vocab_function': 'Modify portal content',
-+        })
 +
-+    def testVocabularyQueryString(self):
-+        """Test querying a class based vocabulary with a search string.
-+        """
-+        view = VocabularyView(self.portal, self.request)
-+        self.request.form.update({
-+            'name': 'vocab_class',
-+            'query': 'three'
-+        })
-+        data = json.loads(view())
-+        self.assertEquals(len(data['results']), 1)
++        add_mock_fti(self.portal)
++        self.portal.invokeFactory('dx_mock', 'test_dx')
 +
-+    def testVocabularyFunctionQueryString(self):
-+        """Test querying a function based vocabulary with a search string.
-+        """
-+        view = VocabularyView(self.portal, self.request)
-+        self.request.form.update({
-+            'name': 'vocab_function',
-+            'query': 'third'
-+        })
-+        data = json.loads(view())
-+        self.assertEquals(len(data['results']), 1)
++        self.portal.test_dx.manage_permission('View',
++                                              ('Anonymous',),
++                                              acquire=False)
++        self.portal.test_dx.manage_permission('View management screens',
++                                              (),
++                                              acquire=False)
++        self.portal.test_dx.manage_permission('Modify portal content',
++                                              ('Editor', 'Manager',
++                                               'Site Adiminstrator'),
++                                              acquire=False)
 +
-+    def testVocabularyNoResults(self):
-+        """Tests that the widgets displays correctly
-+        """
-+        view = VocabularyView(self.portal, self.request)
-+        query = {
-+            'criteria': [
-+                {
-+                    'i': 'path',
-+                    'o': 'plone.app.querystring.operation.string.path',
-+                    'v': '/foo'
-+                }
-+            ]
-+        }
-+        self.request.form.update({
-+            'name': 'plone.app.vocabularies.Catalog',
-+            'query': json.dumps(query)
-+        })
-+        data = json.loads(view())
-+        self.assertEquals(len(data['results']), 0)
-+
-+    def testVocabularyCatalogResults(self):
-+        self.portal.invokeFactory('Document', id="page", title="page")
-+        self.portal.page.reindexObject()
-+        view = VocabularyView(self.portal, self.request)
-+        query = {
-+            'criteria': [
-+                {
-+                    'i': 'path',
-+                    'o': 'plone.app.querystring.operation.string.path',
-+                    'v': '/plone'
-+                }
-+            ]
-+        }
-+        self.request.form.update({
-+            'name': 'plone.app.vocabularies.Catalog',
-+            'query': json.dumps(query),
-+            'attributes': ['UID', 'id', 'title', 'path']
-+        })
-+        data = json.loads(view())
-+        self.assertEquals(len(data['results']), 1)
-+        self.portal.manage_delObjects(['page'])
-+
-+    def testVocabularyBatching(self):
-+        amount = 30
-+        for i in xrange(amount):
-+            self.portal.invokeFactory('Document', id="page" + str(i),
-+                                      title="Page" + str(i))
-+            self.portal['page' + str(i)].reindexObject()
-+        view = VocabularyView(self.portal, self.request)
-+        query = {
-+            'criteria': [
-+                {
-+                    'i': 'path',
-+                    'o': 'plone.app.querystring.operation.string.path',
-+                    'v': '/plone'
-+                }
-+            ]
-+        }
-+        # batch pages are 1-based
-+        self.request.form.update({
-+            'name': 'plone.app.vocabularies.Catalog',
-+            'query': json.dumps(query),
-+            'attributes': ['UID', 'id', 'title', 'path'],
-+            'batch': {
-+                'page': '1',
-+                'size': '10'
-+            }
-+        })
-+        data = json.loads(view())
-+        self.assertEquals(len(data['results']), 10)
-+        self.assertEquals(data['total'], amount)
-+
-+    def testVocabularyUnauthorized(self):
-+        setRoles(self.portal, TEST_USER_ID, [])
-+        view = VocabularyView(self.portal, self.request)
-+        self.request.form.update({
-+            'name': 'plone.app.vocabularies.Users',
-+            'query': TEST_USER_NAME
-+        })
-+        data = json.loads(view())
-+        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
-+
-+    def testVocabularyMissing(self):
-+        view = VocabularyView(self.portal, self.request)
-+        self.request.form.update({
-+            'name': 'vocabulary.that.does.not.exist',
-+        })
-+        data = json.loads(view())
-+        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
-+
-+    def testPermissionCheckerAllowed(self):
-+        # Setup a custom permission checker on the portal
-+        _enable_permission_checker(self.portal)
-+        view = VocabularyView(self.portal, self.request)
-+
-+        # Allowed field is allowed
++    def test_vocabulary_field_allowed(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
 +        self.request.form.update({
 +            'name': 'plone.app.vocabularies.PortalTypes',
 +            'field': 'allowed_field',
@@ -775,303 +404,198 @@ index 0000000..2dffb54
 +        data = json.loads(view())
 +        self.assertEquals(len(data['results']),
 +                          len(self.portal.portal_types.objectIds()))
-+        _disable_permission_checker(self.portal)
 +
-+    def testPermissionCheckerUnknownVocab(self):
-+        _enable_permission_checker(self.portal)
-+        view = VocabularyView(self.portal, self.request)
-+        # Unknown vocabulary gives error
++    def test_vocabulary_field_wrong_vocabulary_disallowed(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
 +        self.request.form.update({
-+            'name': 'vocab.does.not.exist',
++            'name': 'plone.app.vocabularies.Fake',
 +            'field': 'allowed_field',
 +        })
 +        data = json.loads(view())
-+        self.assertEquals(
-+            data['error'],
-+            'No factory with name "{}" exists.'.format(
-+                'vocab.does.not.exist'))
-+        _disable_permission_checker(self.portal)
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
 +
-+    def testPermissionCheckerDisallowed(self):
-+        _enable_permission_checker(self.portal)
-+        view = VocabularyView(self.portal, self.request)
-+        # Disallowed field is not allowed
-+        # Allowed field is allowed
++    def test_vocabulary_field_disallowed(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
 +        self.request.form.update({
 +            'name': 'plone.app.vocabularies.PortalTypes',
 +            'field': 'disallowed_field',
 +        })
 +        data = json.loads(view())
 +        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
-+        _disable_permission_checker(self.portal)
 +
-+    def testPermissionCheckerShortCircuit(self):
-+        _enable_permission_checker(self.portal)
-+        view = VocabularyView(self.portal, self.request)
-+        # Known vocabulary name short-circuits field permission check
-+        # global permission
-+        self.request.form['name'] = 'plone.app.vocabularies.Users'
++    def test_vocabulary_field_default_permission(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
 +        self.request.form.update({
-+            'name': 'plone.app.vocabularies.Users',
-+            'field': 'disallowed_field',
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'default_field',
 +        })
++        # If the field is does not have a security declaration, the
++        # default edit permission is tested (Modify portal content)
++        setRoles(self.portal, TEST_USER_ID, ['Member'])
 +        data = json.loads(view())
-+        self.assertEquals(data['results'], [])
-+        _disable_permission_checker(self.portal)
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
 +
-+    def testPermissionCheckerUnknownField(self):
-+        _enable_permission_checker(self.portal)
-+        view = VocabularyView(self.portal, self.request)
-+        # Unknown field is raises error
++        setRoles(self.portal, TEST_USER_ID, ['Editor'])
++        # Now access should be allowed, but the vocabulary does not exist
++        data = json.loads(view())
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++
++    def test_vocabulary_field_default_permission_wrong_vocab(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
++        self.request.form.update({
++            'name': 'plone.app.vocabularies.Fake',
++            'field': 'default_field',
++        })
++        setRoles(self.portal, TEST_USER_ID, ['Editor'])
++        # Now access should be allowed, but the vocabulary does not exist
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++
++    def test_vocabulary_missing_field(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
 +        self.request.form.update({
 +            'name': 'plone.app.vocabularies.PortalTypes',
 +            'field': 'missing_field',
 +        })
++        setRoles(self.portal, TEST_USER_ID, ['Member'])
 +        with self.assertRaises(AttributeError):
 +            view()
-+        _disable_permission_checker(self.portal)
 +
-+    def testVocabularyUsers(self):
-+        acl_users = self.portal.acl_users
-+        membership = self.portal.portal_membership
-+        amount = 10
-+        for i in range(amount):
-+            id = 'user' + str(i)
-+            acl_users.userFolderAddUser(id, 'secret', ['Member'], [])
-+            member = membership.getMemberById(id)
-+            member.setMemberProperties(mapping={"fullname": id})
-+        view = VocabularyView(self.portal, self.request)
++    def test_vocabulary_on_widget(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
 +        self.request.form.update({
-+            'name': 'plone.app.vocabularies.Users',
-+            'query': 'user'
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'custom_widget_field',
 +        })
 +        data = json.loads(view())
-+        self.assertEqual(len(data['results']), amount)
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
++        self.request.form['name'] = 'plone.app.vocabularies.Fake'
++        data = json.loads(view())
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
 +
-+    def testSource(self):
-+        from z3c.form.browser.text import TextWidget
-+        from zope.interface import implementer
-+        from zope.interface import Interface
-+        from zope.schema import Choice
-+        from zope.schema.interfaces import ISource
-+
-+        @implementer(ISource)
-+        class DummyCatalogSource(object):
-+            def search_catalog(self, query):
-+                querytext = query['SearchableText']['query']
-+                return [Mock(id=querytext)]
-+
-+        widget = TextWidget(self.request)
-+        widget.context = self.portal
-+        widget.field = Choice(source=DummyCatalogSource())
-+        widget.field.interface = Interface
-+
-+        from plone.app.widgets.browser.vocabulary import SourceView
-+        view = SourceView(widget, self.request)
-+        query = {
-+            'criteria': [
-+                {
-+                    'i': 'SearchableText',
-+                    'o': 'plone.app.querystring.operation.string.is',
-+                    'v': 'foo'
-+                }
-+            ]
-+        }
++    def test_vocabulary_on_adapted_widget(self):
++        view = VocabularyView(self.portal.test_dx, self.request)
 +        self.request.form.update({
-+            'query': json.dumps(query),
-+            'attributes': 'id',
++            'name': 'plone.app.vocabularies.PortalTypes',
++            'field': 'adapted_widget_field',
 +        })
 +        data = json.loads(view())
-+        self.assertEquals(len(data['results']), 1)
-+        self.assertEquals(data['results'][0]['id'], 'foo')
++        self.assertEquals(len(data['results']),
++                          len(self.portal.portal_types.objectIds()))
 +
-+    def testSourceCollectionField(self):
-+        # This test uses a collection field
-+        # and a source providing the 'search' method
-+        # to help achieve coverage.
-+        from z3c.form.browser.text import TextWidget
-+        from zope.interface import implementer
-+        from zope.interface import Interface
-+        from zope.schema import List, Choice
-+        from zope.schema.interfaces import ISource
-+        from zope.schema.vocabulary import SimpleTerm
-+
-+        @implementer(ISource)
-+        class DummySource(object):
-+            def search(self, query):
-+                terms = [SimpleTerm(query, query)]
-+                return iter(terms)
-+
-+        widget = TextWidget(self.request)
-+        widget.context = self.portal
-+        widget.field = List(value_type=Choice(source=DummySource()))
-+        widget.field.interface = Interface
-+
-+        from plone.app.widgets.browser.vocabulary import SourceView
-+        view = SourceView(widget, self.request)
-+        query = {
-+            'criteria': [
-+                {
-+                    'i': 'SearchableText',
-+                    'o': 'plone.app.querystring.operation.string.is',
-+                    'v': 'foo'
-+                }
-+            ],
-+            'sort_on': 'id',
-+            'sort_order': 'ascending',
-+        }
-+        self.request.form.update({
-+            'query': json.dumps(query),
-+            'batch': json.dumps({'size': 10, 'page': 1}),
-+        })
++        self.request.form['name'] = 'plone.app.vocabularies.Fake'
 +        data = json.loads(view())
-+        self.assertEquals(len(data['results']), 1)
-+        self.assertEquals(data['results'][0]['id'], 'foo')
-+
-+    def testSourcePermissionDenied(self):
-+        from z3c.form.browser.text import TextWidget
-+        from zope.interface import implementer
-+        from zope.interface import Interface
-+        from zope.schema import Choice
-+        from zope.schema.interfaces import ISource
-+
-+        @implementer(ISource)
-+        class DummyCatalogSource(object):
-+            def search_catalog(self, query):
-+                querytext = query['SearchableText']['query']
-+                return [Mock(id=querytext)]
-+
-+        widget = TextWidget(self.request)
-+        widget.context = self.portal
-+        widget.field = Choice(source=DummyCatalogSource())
-+        widget.field.interface = Interface
-+
-+        from plone.app.widgets.browser.vocabulary import SourceView
-+        view = SourceView(widget, self.request)
-+        query = {
-+            'criteria': [
-+                {
-+                    'i': 'SearchableText',
-+                    'o': 'plone.app.querystring.operation.string.is',
-+                    'v': 'foo'
-+                }
-+            ]
-+        }
-+        self.request.form.update({
-+            'query': json.dumps(query),
-+        })
-+        logout()
-+        data = json.loads(view())
-+        self.assertEquals(data['error'], 'Vocabulary lookup not allowed.')
-+
-+    def testQueryStringConfiguration(self):
-+        view = QueryStringIndexOptions(self.portal, self.request)
-+        data = json.loads(view())
-+        # just test one so we know it's working...
-+        self.assertEqual(data['indexes']['sortable_title']['sortable'], True)
-+
-+    def testFileUpload(self):
-+        view = FileUploadView(self.portal, self.request)
-+        from plone.namedfile.file import FileChunk
-+        chunk = FileChunk('foobar')
-+        chunk.filename = 'test.xml'
-+        self.request.form['file'] = chunk
-+        self.request.REQUEST_METHOD = 'POST'
-+        data = json.loads(view())
-+        self.assertEqual(data['url'], 'http://nohost/plone/test.xml')
-+        self.assertTrue(data['UID'] is not None)
-+        # clean it up...
-+        self.portal.manage_delObjects(['test.xml'])
-+        transaction.commit()
++        self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
 diff --git a/setup.py b/setup.py
-index dfade18..e8b5ed9 100644
+index dd04666..e48716c 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -52,5 +52,6 @@
-           'Products.CMFDefault',
-           'Products.CMFDynamicViewFTI',  # required for cmf.ModifyViewTemplate
-           'Zope2',
-+          'plone.app.widgets>=2'
+@@ -59,6 +59,7 @@
+           'zope.schema',
+           'zope.publisher',
+           'z3c.form>=3.0.0a1',
++          'plone.app.z3cform>=1.1.0'
        ],
-       )
+       extras_require={
+           'test': [
 
 
-Repository: plone.app.content
+Repository: plone.app.dexterity
 Branch: refs/heads/master
-Date: 2015-01-26T23:20:25-06:00
+Date: 2015-01-26T23:20:46-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.content/commit/5d8e2a9c9cd8c0c7d55d972d08476e581467b537
+Commit: https://github.com/plone/plone.app.dexterity/commit/8d9abc2fe89d3eb603e00fef1bf29001be0b9595
 
-fix tests for widgets integration
+fix tests for widgets
 
 Files changed:
-M plone/app/content/browser/file.py
-M plone/app/content/tests/test_widgets.py
+M plone/app/dexterity/factories.py
+M plone/app/dexterity/tests/test_permissions.py
 M setup.py
 
-diff --git a/plone/app/content/browser/file.py b/plone/app/content/browser/file.py
-index 0daebd1..7598fd5 100644
---- a/plone/app/content/browser/file.py
-+++ b/plone/app/content/browser/file.py
-@@ -4,7 +4,7 @@
- import json
- import mimetypes
- from plone.dexterity.interfaces import IDexterityFTI
--from plone.app.widgets.interfaces import IATCTFileFactory, IDXFileFactory
+diff --git a/plone/app/dexterity/factories.py b/plone/app/dexterity/factories.py
+index f1bf7e9..6b14406 100644
+--- a/plone/app/dexterity/factories.py
++++ b/plone/app/dexterity/factories.py
+@@ -12,7 +12,7 @@
+ 
+ from plone.namedfile.file import NamedBlobImage
+ from plone.namedfile.file import NamedBlobFile
+-from plone.app.widgets.interfaces import IDXFileFactory
 +from plone.app.dexterity.interfaces import IDXFileFactory
- from plone.uuid.interfaces import IUUID
- import os
- import logging
-@@ -129,6 +129,7 @@ def __call__(self):
-             factory = IDXFileFactory(self.context)
-             dx_based = True
-         else:
-+            from Products.ATContentTypes.interfaces import IATCTFileFactory
-             factory = IATCTFileFactory(self.context)
  
-         obj = factory(filename, content_type, filedata)
-diff --git a/plone/app/content/tests/test_widgets.py b/plone/app/content/tests/test_widgets.py
-index 2dffb54..be32820 100644
---- a/plone/app/content/tests/test_widgets.py
-+++ b/plone/app/content/tests/test_widgets.py
-@@ -297,7 +297,7 @@ def search_catalog(self, query):
-         widget.field = Choice(source=DummyCatalogSource())
-         widget.field.interface = Interface
+ upload_lock = allocate_lock()
  
--        from plone.app.widgets.browser.vocabulary import SourceView
-+        from plone.app.content.browser.vocabulary import SourceView
-         view = SourceView(widget, self.request)
-         query = {
-             'criteria': [
-@@ -338,7 +338,7 @@ def search(self, query):
-         widget.field = List(value_type=Choice(source=DummySource()))
-         widget.field.interface = Interface
+diff --git a/plone/app/dexterity/tests/test_permissions.py b/plone/app/dexterity/tests/test_permissions.py
+index 47c79ee..51d89ed 100644
+--- a/plone/app/dexterity/tests/test_permissions.py
++++ b/plone/app/dexterity/tests/test_permissions.py
+@@ -1,4 +1,9 @@
+ # -*- coding: utf-8 -*-
++from z3c.form.interfaces import IFieldWidget
++from z3c.form.util import getSpecification
++from zope.component import provideAdapter
++from plone.app.widgets.interfaces import IWidgetsLayer
++from zope.component.globalregistry import base
+ from plone.app.testing import TEST_USER_ID
+ from plone.app.testing import TEST_USER_NAME
+ from plone.app.testing import login
+@@ -28,7 +33,7 @@ def add_mock_fti(portal):
+     fti = DexterityFTI('dx_mock')
+     portal.portal_types._setObject('dx_mock', fti)
+     fti.klass = 'plone.dexterity.content.Item'
+-    fti.schema = 'plone.app.widgets.tests.test_dx.IMockSchema'
++    fti.schema = 'plone.app.dexterity.tests.test_permissions.IMockSchema'
+     fti.filter_content_types = False
+     fti.behaviors = ('plone.app.dexterity.behaviors.metadata.IBasic',)
  
--        from plone.app.widgets.browser.vocabulary import SourceView
-+        from plone.app.content.browser.vocabulary import SourceView
-         view = SourceView(widget, self.request)
-         query = {
-             'criteria': [
-@@ -377,7 +377,7 @@ def search_catalog(self, query):
-         widget.field = Choice(source=DummyCatalogSource())
-         widget.field.interface = Interface
+@@ -61,6 +66,18 @@ class IMockSchema(Interface):
+ })
  
--        from plone.app.widgets.browser.vocabulary import SourceView
-+        from plone.app.content.browser.vocabulary import SourceView
-         view = SourceView(widget, self.request)
-         query = {
-             'criteria': [
+ 
++def _enable_custom_widget(field):
++    provideAdapter(_custom_field_widget, adapts=
++                   (getSpecification(field), IWidgetsLayer),
++                   provides=IFieldWidget)
++
++
++def _disable_custom_widget(field):
++        base.unregisterAdapter(
++            required=(getSpecification(field), IWidgetsLayer,),
++            provided=IFieldWidget)
++
++
+ class DexterityVocabularyPermissionTests(unittest.TestCase):
+ 
+     layer = PLONEAPPWIDGETS_DX_INTEGRATION_TESTING
+@@ -168,6 +185,7 @@ def test_vocabulary_on_widget(self):
+         self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
+ 
+     def test_vocabulary_on_adapted_widget(self):
++        _enable_custom_widget(IMockSchema['adapted_widget_field'])
+         view = VocabularyView(self.portal.test_dx, self.request)
+         self.request.form.update({
+             'name': 'plone.app.vocabularies.PortalTypes',
+@@ -180,3 +198,4 @@ def test_vocabulary_on_adapted_widget(self):
+         self.request.form['name'] = 'plone.app.vocabularies.Fake'
+         data = json.loads(view())
+         self.assertEquals(data['error'], 'Vocabulary lookup not allowed')
++        _disable_custom_widget(IMockSchema['adapted_widget_field'])
+\ No newline at end of file
 diff --git a/setup.py b/setup.py
-index e8b5ed9..0c4c87e 100644
+index e48716c..567f6bf 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -52,6 +52,6 @@
-           'Products.CMFDefault',
-           'Products.CMFDynamicViewFTI',  # required for cmf.ModifyViewTemplate
-           'Zope2',
--          'plone.app.widgets>=2'
-+          'plone.app.widgets>=2.0.0.dev0'
+@@ -59,7 +59,7 @@
+           'zope.schema',
+           'zope.publisher',
+           'z3c.form>=3.0.0a1',
+-          'plone.app.z3cform>=1.1.0'
++          'plone.app.z3cform>=1.1.0.dev0'
        ],
-       )
+       extras_require={
+           'test': [
 
 
