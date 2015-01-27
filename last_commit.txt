@@ -1,26 +1,36 @@
-Repository: mockup
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-27T00:11:23-06:00
+Date: 2015-01-27T01:00:30-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/6a9555f0653afd3488ea566362c577d8a8bb5dec
+Commit: https://github.com/plone/plone.app.contenttypes/commit/03ad6e2a725d79d24ac25f9bcd024dbe16b2d9d6
 
-change label to say it only works with logged in users
+fix test failures. With \n in robot framework with
+select2 widget, robot framework submits the form
+automatically
 
 Files changed:
-M mockup/patterns/resourceregistry/js/registry.js
+M plone/app/contenttypes/tests/robot/keywords.txt
 
-diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index fe6cbfc..8bb058a 100644
---- a/mockup/patterns/resourceregistry/js/registry.js
-+++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -515,7 +515,7 @@ define([
-           '<label>' +
-             '<input type="checkbox" ' +
-               '<% if(data.development){ %> checked="checked" <% } %>' +
--              ' > Development Mode' +
-+              ' > Development Mode(only logged in users)' +
-           '</label>' +
-         '</div>' +
-       '</div>' +
+diff --git a/plone/app/contenttypes/tests/robot/keywords.txt b/plone/app/contenttypes/tests/robot/keywords.txt
+index 25de625..30f8d0e 100644
+--- a/plone/app/contenttypes/tests/robot/keywords.txt
++++ b/plone/app/contenttypes/tests/robot/keywords.txt
+@@ -119,14 +119,14 @@ the collection should not contain
+ 
+ fill in metadata
+   Click Link  Categorization
+-  Input text  name=form.widgets.IDublinCore.subjects  testcreated\nrobot
++  Input text  name=form.widgets.IDublinCore.subjects  testcreatedrobot
+   Click Link  Dates
+   ${currentyear}=  Get Time  year
+   fill date field  form.widgets.IDublinCore.effective  2009  January  1
+   fill date field  form.widgets.IDublinCore.expires  2017  December  12
+   Click Link  Ownership
+   Input text  name=form.widgets.IDublinCore.creators  another_creator
+-  Input text  name=form.widgets.IDublinCore.contributors  contributor1\ncontributor2
++  Input text  name=form.widgets.IDublinCore.contributors  contributor1
+   Input text  name=form.widgets.IDublinCore.rights  Copyright\nstatement\nhere
+   Click Link  Settings
+   Select from List  name=form.widgets.IAllowDiscussion.allow_discussion:list  Yes
 
 
