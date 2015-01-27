@@ -1,414 +1,2585 @@
-Repository: plone.app.relationfield
+Repository: plone.app.z3cform
 Branch: refs/heads/master
-Date: 2015-01-26T12:50:10-06:00
+Date: 2015-01-26T12:51:04-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.relationfield/commit/408fa93b1d8b8733bcf24d15d247987de379741c
+Commit: https://github.com/plone/plone.app.z3cform/commit/6eb2ebd4b7f9232e95ad96455d4483d4b3c06eab
 
 integrate plone.app.widgets
 
 Files changed:
-M plone/app/relationfield/__init__.py
-M plone/app/relationfield/behavior.py
+A plone/app/z3cform/converters.py
+A plone/app/z3cform/tests/test_widgets.py
+M plone/app/z3cform/configure.zcml
+M plone/app/z3cform/interfaces.py
+M plone/app/z3cform/widget.py
 M setup.py
 
-diff --git a/plone/app/relationfield/__init__.py b/plone/app/relationfield/__init__.py
-index 27a5b35..60d502b 100644
---- a/plone/app/relationfield/__init__.py
-+++ b/plone/app/relationfield/__init__.py
-@@ -5,20 +5,6 @@
- import pkg_resources
+diff --git a/plone/app/z3cform/configure.zcml b/plone/app/z3cform/configure.zcml
+index b271f65..2f053c9 100644
+--- a/plone/app/z3cform/configure.zcml
++++ b/plone/app/z3cform/configure.zcml
+@@ -156,4 +156,54 @@
+   <!-- Use a custom actions manager that knows how to do CSRF token authentication. -->
+   <adapter factory=".csrf.AuthenticatedButtonActions" />
  
- try:
--    pkg_resources.get_distribution('plone.formwidget.contenttree')
--except pkg_resources.DistributionNotFound:
--    HAS_CONTENTTREE = False
--else:
--    HAS_CONTENTTREE = True
--
--try:
--    pkg_resources.get_distribution('plone.app.widgets')
--except pkg_resources.DistributionNotFound:
--    HAS_WIDGETS = False
--else:
--    HAS_WIDGETS = True
--
--try:
-     pkg_resources.get_distribution('plone.app.contenttypes')
- except pkg_resources.DistributionNotFound:
-     HAS_CONTENTTYPES = False
-diff --git a/plone/app/relationfield/behavior.py b/plone/app/relationfield/behavior.py
-index 42cb441..c51cbd6 100644
---- a/plone/app/relationfield/behavior.py
-+++ b/plone/app/relationfield/behavior.py
-@@ -1,52 +1,31 @@
- # -*- coding: utf-8 -*-
--from plone.app.relationfield import HAS_CONTENTTREE
--from plone.app.relationfield import HAS_WIDGETS
- from plone.autoform.interfaces import IFormFieldProvider
- from plone.supermodel.interfaces import FIELDSETS_KEY
- from plone.supermodel.model import Fieldset
- from z3c.relationfield.schema import RelationChoice
- from z3c.relationfield.schema import RelationList
--from zope.interface import Interface
- from zope.interface import alsoProvides
-+from plone.autoform import directives as form
-+from plone.supermodel import model
-+from plone.app.dexterity import MessageFactory as _
-+from plone.app.z3cform.widget import RelatedItemsFieldWidget
++
++  <adapter factory=".converters.DatetimeWidgetConverter" />
++  <adapter factory=".converters.DateWidgetConverter" />
++  <adapter factory=".converters.SelectWidgetConverter" />
++  <adapter factory=".converters.SequenceSelectWidgetConverter" />
++  <adapter factory=".converters.AjaxSelectWidgetConverter" />
++  <adapter factory=".converters.QueryStringDataConverter" />
++  <adapter factory=".converters.RelationChoiceRelatedItemsWidgetConverter" />
++  <adapter factory=".converters.RelatedItemsDataConverter" />
++
++  <class class=".widget.DateWidget">
++    <require permission="zope.Public"
++             interface=".interfaces.IDateWidget" />
++  </class>
++  <class class="zope.schema._field.Date">
++    <implements interface=".interfaces.IDateField"/>
++  </class>
++  <adapter
++      factory=".widget.DateFieldWidget"
++      for=".interfaces.IDateField
++           z3c.form.interfaces.IFormLayer" />
++
++  <class class=".widget.DatetimeWidget">
++    <require permission="zope.Public"
++             interface=".interfaces.IDatetimeWidget" />
++  </class>
++  <class class="zope.schema._field.Datetime">
++    <implements interface=".interfaces.IDatetimeField"/>
++  </class>
++  <adapter
++      factory=".widget.DatetimeFieldWidget"
++      for=".interfaces.IDatetimeField
++           z3c.form.interfaces.IFormLayer" />
++
++  <adapter factory=".widget.RelatedItemsFieldWidget"
++           for="z3c.relationfield.interfaces.IRelationChoice
++                z3c.form.interfaces.IFormLayer" />
++
++  <adapter factory=".widget.RelatedItemsFieldWidget"
++           for="z3c.relationfield.interfaces.IRelationList
++                z3c.form.interfaces.IFormLayer" />
++
++  <adapter
++    factory=".widget.RelatedItemsFieldWidget"
++    for="zope.schema.interfaces.IChoice
++         plone.app.vocabularies.catalog.CatalogSource
++         z3c.form.interfaces.IFormLayer" />
++
++  <adapter factory=".widget.QueryStringFieldWidget" />
++  <adapter factory="..RichTextFieldWidget" />
+ </configure>
+diff --git a/plone/app/z3cform/converters.py b/plone/app/z3cform/converters.py
+new file mode 100644
+index 0000000..9e43085
+--- /dev/null
++++ b/plone/app/z3cform/converters.py
+@@ -0,0 +1,305 @@
++# -*- coding: utf-8 -*-
++from Products.CMFCore.utils import getToolByName
++from Products.CMFPlone.utils import safe_callable
++from datetime import date
++from datetime import datetime
++from plone.uuid.interfaces import IUUID
++from z3c.form.converter import BaseDataConverter
++from z3c.form.converter import CollectionSequenceDataConverter
++from z3c.form.converter import SequenceDataConverter
++from zope.component import adapts
++from zope.component.hooks import getSite
++from zope.schema.interfaces import ICollection
++from zope.schema.interfaces import IDate
++from zope.schema.interfaces import IDatetime
++from zope.schema.interfaces import IField
++from zope.schema.interfaces import IList
++
++from plone.app.z3cform.interfaces import (
++    IDateWidget, IDatetimeWidget, ISelectWidget, IAjaxSelectWidget,
++    IRelatedItemsWidget, IQueryStringWidget)
++
++import pytz
++import json
++
++from z3c.relationfield.interfaces import IRelationChoice
++from z3c.relationfield.interfaces import IRelationList
++
++
++class DateWidgetConverter(BaseDataConverter):
++    """Data converter for date fields."""
++
++    adapts(IDate, IDateWidget)
++
++    def toWidgetValue(self, value):
++        """Converts from field value to widget.
++
++        :param value: Field value.
++        :type value: date
++
++        :returns: Date in format `Y-m-d`
++        :rtype: string
++        """
++        if value is self.field.missing_value:
++            return u''
++        return ('{value.year:}-{value.month:02}-{value.day:02}'
++                ).format(value=value)
++
++    def toFieldValue(self, value):
++        """Converts from widget value to field.
++
++        :param value: Value inserted by date widget.
++        :type value: string
++
++        :returns: `date.date` object.
++        :rtype: date
++        """
++        if not value:
++            return self.field.missing_value
++        return date(*map(int, value.split('-')))
++
++
++class DatetimeWidgetConverter(BaseDataConverter):
++    """Data converter for datetime fields."""
++
++    adapts(IDatetime, IDatetimeWidget)
++
++    def toWidgetValue(self, value):
++        """Converts from field value to widget.
++
++        :param value: Field value.
++        :type value: datetime
++
++        :returns: Datetime in format `Y-m-d H:M`
++        :rtype: string
++        """
++        if value is self.field.missing_value:
++            return u''
++        return ('{value.year:}-{value.month:02}-{value.day:02} '
++                '{value.hour:02}:{value.minute:02}').format(value=value)
++
++    def toFieldValue(self, value):
++        """Converts from widget value to field.
++
++        :param value: Value inserted by datetime widget.
++        :type value: string
++
++        :returns: `datetime.datetime` object.
++        :rtype: datetime
++        """
++        if not value:
++            return self.field.missing_value
++        tmp = value.split(' ')
++        if not tmp[0]:
++            return self.field.missing_value
++        value = tmp[0].split('-')
++        if len(tmp) == 2 and ':' in tmp[1]:
++            value += tmp[1].split(':')
++        else:
++            value += ['00', '00']
++
++        # TODO: respect the selected zone from the widget and just fall back
++        # to default_zone
++        default_zone = self.widget.default_timezone
++        zone = default_zone(self.widget.context)\
++            if safe_callable(default_zone) else default_zone
++        ret = datetime(*map(int, value))
++        if zone:
++            tzinfo = pytz.timezone(zone)
++            ret = tzinfo.localize(ret)
++        return ret
++
++
++class SelectWidgetConverterBase(object):
++
++    def toFieldValue(self, value):
++        """Converts from widget value to field.
++
++        :param value: Value inserted by Select2 widget or default html
++                      select/multi-select
++        :type value: string | list
++
++        :returns: List of items
++        :rtype: list | tuple | set
++        """
++        separator = getattr(self.widget, 'separator', ';')
++        if isinstance(value, basestring):
++            value = value.strip()
++            if value:
++                value = value.split(separator)
++            else:
++                return self.field.missing_value
++        elif value == (u'',):
++            return self.field.missing_value
++        return super(SelectWidgetConverterBase, self).toFieldValue(value)
++
++
++class SequenceSelectWidgetConverter(
++        SelectWidgetConverterBase, SequenceDataConverter):
++    adapts(IField, ISelectWidget)
++
++
++class SelectWidgetConverter(
++        SelectWidgetConverterBase, CollectionSequenceDataConverter):
++    adapts(ICollection, ISelectWidget)
++
++
++class AjaxSelectWidgetConverter(BaseDataConverter):
++    """Data converter for ICollection fields using the AjaxSelectWidget.
++    """
++
++    adapts(ICollection, IAjaxSelectWidget)
++
++    def toWidgetValue(self, value):
++        """Converts from field value to widget.
++
++        :param value: Field value.
++        :type value: list |tuple | set
++
++        :returns: Items separated using separator defined on widget
++        :rtype: string
++        """
++        if not value:
++            return self.field.missing_value
++        separator = getattr(self.widget, 'separator', ';')
++        return separator.join(unicode(v) for v in value)
++
++    def toFieldValue(self, value):
++        """Converts from widget value to field.
++
++        :param value: Value inserted by AjaxSelect widget.
++        :type value: string
++
++        :returns: List of items
++        :rtype: list | tuple | set
++        """
++        collectionType = self.field._type
++        if isinstance(collectionType, tuple):
++            collectionType = collectionType[-1]
++        if not len(value):
++            return self.field.missing_value
++        valueType = self.field.value_type._type
++        if isinstance(valueType, tuple):
++            valueType = valueType[0]
++        separator = getattr(self.widget, 'separator', ';')
++        return collectionType(valueType and valueType(v) or v
++                              for v in value.split(separator))
++
++
++class RelationChoiceRelatedItemsWidgetConverter(BaseDataConverter):
++    """Data converter for RelationChoice fields using the RelatedItemsWidget.
++    """
++
++    adapts(IRelationChoice, IRelatedItemsWidget)
++
++    def toWidgetValue(self, value):
++        if not value:
++            return self.field.missing_value
++        return IUUID(value)
++
++    def toFieldValue(self, value):
++        if not value:
++            return self.field.missing_value
++        try:
++            catalog = getToolByName(self.widget.context, 'portal_catalog')
++        except AttributeError:
++            catalog = getToolByName(getSite(), 'portal_catalog')
++
++        res = catalog(UID=value)
++        if res:
++            return res[0].getObject()
++        else:
++            return self.field.missing_value
++
++
++class RelatedItemsDataConverter(BaseDataConverter):
++    """Data converter for ICollection fields using the RelatedItemsWidget."""
++
++    adapts(ICollection, IRelatedItemsWidget)
++
++    def toWidgetValue(self, value):
++        """Converts from field value to widget.
++
++        :param value: List of catalog brains.
++        :type value: list
++
++        :returns: List of of UID separated by separator defined on widget.
++        :rtype: string
++        """
++        if not value:
++            return self.field.missing_value
++        separator = getattr(self.widget, 'separator', ';')
++        if IRelationList.providedBy(self.field):
++            return separator.join([IUUID(o) for o in value if value])
++        else:
++            return separator.join(v for v in value if v)
++
++    def toFieldValue(self, value):
++        """Converts from widget value to field.
++
++        :param value: List of UID's separated by separator defined
++        :type value: string
++
++        :returns: List of content objects
++        :rtype: list | tuple | set
++        """
++        if not value:
++            return self.field.missing_value
++
++        collectionType = self.field._type
++        if isinstance(collectionType, tuple):
++            collectionType = collectionType[-1]
++
++        separator = getattr(self.widget, 'separator', ';')
++        value = value.split(separator)
++
++        if IRelationList.providedBy(self.field):
++            try:
++                catalog = getToolByName(self.widget.context, 'portal_catalog')
++            except AttributeError:
++                catalog = getToolByName(getSite(), 'portal_catalog')
++
++            objects = {item.UID: item.getObject()
++                       for item in catalog(UID=value) if item}
++
++            return collectionType(objects[uid]
++                                  for uid in value
++                                  if uid in objects.keys())
++        else:
++            return collectionType(v for v in value)
++
++
++class QueryStringDataConverter(BaseDataConverter):
++    """Data converter for IList."""
++
++    adapts(IList, IQueryStringWidget)
++
++    def toWidgetValue(self, value):
++        """Converts from field value to widget.
++
++        :param value: Query string.
++        :type value: list
++
++        :returns: Query string converted to JSON.
++        :rtype: string
++        """
++        if not value:
++            return '[]'
++        return json.dumps(value)
++
++    def toFieldValue(self, value):
++        """Converts from widget value to field.
++
++        :param value: Query string.
++        :type value: string
++
++        :returns: Query string.
++        :rtype: list
++        """
++        try:
++            value = json.loads(value)
++        except ValueError:
++            value = None
++        if not value:
++            return self.field.missing_value
++        return value
+diff --git a/plone/app/z3cform/interfaces.py b/plone/app/z3cform/interfaces.py
+index 96564e3..90895dd 100644
+--- a/plone/app/z3cform/interfaces.py
++++ b/plone/app/z3cform/interfaces.py
+@@ -1,6 +1,47 @@
+ from z3c.form.interfaces import IFormLayer
++from zope.schema.interfaces import IDate
++from zope.schema.interfaces import IDatetime
++from z3c.form.interfaces import ISelectWidget
++from z3c.form.interfaces import ITextWidget
++from plone.app.textfield.widget import IRichTextWidget as patextfield_IRichTextWidget
  
--if HAS_CONTENTTREE and not HAS_WIDGETS:
--    from plone.formwidget.contenttree import ObjPathSourceBinder
  
--try:
--    from plone.app.dexterity import MessageFactory as _
--except ImportError:
--    def MessageFactory(messageid, default=None):
--        return unicode(default)
--    _ = MessageFactory
--
--
--class IRelatedItems(Interface):
-+class IRelatedItems(model.Schema):
-     """Behavior interface to make a Dexterity type support related items.
+ class IPloneFormLayer(IFormLayer):
+     """Request layer installed via browserlayer.xml
      """
++
++
++class IDateField(IDate):
++    """Marker interface for the DateField."""
++
++
++class IDatetimeField(IDatetime):
++    """Marker interface for the DatetimeField."""
++
++
++class IDateWidget(ITextWidget):
++    """Marker interface for the DateWidget."""
++
++
++class IDatetimeWidget(ITextWidget):
++    """Marker interface for the DatetimeWidget."""
++
++
++class ISelectWidget(ISelectWidget):
++    """Marker interface for the SelectWidget."""
++
++
++class IAjaxSelectWidget(ITextWidget):
++    """Marker interface for the Select2Widget."""
++
++
++class IQueryStringWidget(ITextWidget):
++    """Marker interface for the QueryStringWidget."""
++
++
++class IRelatedItemsWidget(ITextWidget):
++    """Marker interface for the RelatedItemsWidget."""
++
++
++class IRichTextWidget(patextfield_IRichTextWidget):
++    """Marker interface for the TinyMCEWidget."""
+diff --git a/plone/app/z3cform/tests/test_widgets.py b/plone/app/z3cform/tests/test_widgets.py
+new file mode 100644
+index 0000000..f873e7b
+--- /dev/null
++++ b/plone/app/z3cform/tests/test_widgets.py
+@@ -0,0 +1,1187 @@
++# -*- coding: utf-8 -*-
++from datetime import date
++from datetime import datetime
++from mock import Mock
++from plone.app.widgets.testing import ExampleVocabulary
++from plone.app.widgets.testing import PLONEAPPWIDGETS_DX_INTEGRATION_TESTING
++from plone.app.widgets.testing import TestRequest
++from plone.dexterity.fti import DexterityFTI
++from plone.registry.interfaces import IRegistry
++from plone.testing.zca import UNIT_TESTING
++from z3c.form.interfaces import IFormLayer
++from z3c.form.widget import FieldWidget
++from zope.component import getUtility
++from zope.component import provideUtility
++from zope.component.globalregistry import base
++from zope.interface import Interface
++from zope.interface import alsoProvides
++from zope.schema import Choice
++from zope.schema import Date
++from zope.schema import Datetime
++from zope.schema import List
++from zope.schema import Set
++from zope.schema import TextLine
++from zope.schema import Tuple
++from plone.app.z3cform.widget import BaseWidget
++
++import mock
++import pytz
++
++try:
++    import unittest2 as unittest
++except ImportError:  # pragma: nocover
++    import unittest  # pragma: nocover
++    assert unittest  # pragma: nocover
++
++from Products.CMFPlone.interfaces import IMarkupSchema
++
++
++class BaseWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.field = TextLine(__name__='textlinefield')
++        self.maxDiff = 999999
++
++    def test_widget_pattern_notimplemented(self):
++        from plone.app.widgets.utils import NotImplemented
++
++        widget = BaseWidget(self.request)
++        widget.field = self.field
++
++        self.assertRaises(
++            NotImplemented,
++            widget._base_args)
++
++        widget.pattern = 'example'
++
++        self.assertEqual(
++            {
++                'pattern': 'example',
++                'pattern_options': {}
++            },
++            widget._base_args())
++
++    def test_widget_base_notimplemented(self):
++        from plone.app.z3cform.widget import BaseWidget
++        from plone.app.widgets.base import InputWidget
++        from plone.app.widgets.utils import NotImplemented
++
++        widget = BaseWidget(self.request)
++        widget.field = self.field
++        widget.pattern = 'example'
++
++        self.assertRaises(
++            NotImplemented,
++            widget.render)
++
++        widget._base = InputWidget
++
++        self.assertEqual(
++            '<input class="pat-example" type="text"/>',
++            widget.render())
++
++
++class DateWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        from plone.app.z3cform.widget import DateWidget
++
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.field = Date(__name__='datefield')
++        self.widget = DateWidget(self.request)
++        self.widget.field = self.field
++        self.widget.pattern_options = {'date': {'firstDay': 0}}
++
++    def test_widget(self):
++        current_year = datetime.today().year
++        self.assertEqual(
++            {
++                'pattern': 'pickadate',
++                'value': u'',
++                'name': None,
++                'pattern_options': {
++                    'date': {
++                        'firstDay': 0,
++                        'min': [current_year - 100, 1, 1],
++                        'max': [current_year + 20, 1, 1],
++                        'clear': u'Clear',
++                        'format': 'mmmm d, yyyy',
++                        'monthsFull': [u'January', u'February', u'March',
++                                       u'April', u'May', u'June', u'July',
++                                       u'August', u'September', u'October',
++                                       u'November', u'December'],
++                        'weekdaysShort': [u'Sun', u'Mon', u'Tue', u'Wed',
++                                          u'Thu', u'Fri', u'Sat'],
++                        'weekdaysFull': [u'Sunday', u'Monday', u'Tuesday',
++                                         u'Wednesday', u'Thursday', u'Friday',
++                                         u'Saturday'],
++                        'today': u'Today',
++                        'selectYears': 200,
++                        'placeholder': u'Enter date...',
++                        'monthsShort': [u'Jan', u'Feb', u'Mar', u'Apr', u'May',
++                                        u'Jun', u'Jul', u'Aug', u'Sep', u'Oct',
++                                        u'Nov', u'Dec']
++                    },
++                    'time': False
++                }
++            },
++            self.widget._base_args(),
++        )
++
++    def test_data_converter(self):
++        from plone.app.z3cform.widget import DateWidgetConverter
++        converter = DateWidgetConverter(self.field, self.widget)
++
++        self.assertEqual(
++            converter.field.missing_value,
++            converter.toFieldValue(''),
++        )
++
++        self.assertEqual(
++            date(2000, 10, 30),
++            converter.toFieldValue('2000-10-30'),
++        )
++
++        self.assertEqual(
++            date(21, 10, 30),
++            converter.toFieldValue('21-10-30'),
++        )
++
++        self.assertEqual(
++            '',
++            converter.toWidgetValue(converter.field.missing_value),
++        )
++
++        self.assertEqual(
++            '2000-10-30',
++            converter.toWidgetValue(date(2000, 10, 30)),
++        )
++
++        self.assertEqual(
++            '21-10-30',
++            converter.toWidgetValue(date(21, 10, 30)),
++        )
++
++    def test_fieldwidget(self):
++        from plone.app.z3cform.widget import DateWidget
++        from plone.app.z3cform.widget import DateFieldWidget
++        field = Mock(__name__='field', title=u'', required=True)
++        request = Mock()
++        widget = DateFieldWidget(field, request)
++        self.assertTrue(isinstance(widget, DateWidget))
++        self.assertIs(widget.field, field)
++        self.assertIs(widget.request, request)
++
++
++class DatetimeWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        from plone.app.z3cform.widget import DatetimeWidget
++
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        self.field = Datetime(__name__='datetimefield')
++        self.widget = DatetimeWidget(self.request)
++        self.widget.pattern_options = {'date': {'firstDay': 0}}
++
++    def test_widget(self):
++        current_year = datetime.today().year
++        self.assertEqual(
++            {
++                'pattern': 'pickadate',
++                'value': u'',
++                'name': None,
++                'pattern_options': {
++                    'date': {
++                        'firstDay': 0,
++                        'min': [current_year - 100, 1, 1],
++                        'max': [current_year + 20, 1, 1],
++                        'clear': u'Clear',
++                        'format': 'mmmm d, yyyy',
++                        'monthsFull': [u'January', u'February', u'March',
++                                       u'April', u'May', u'June', u'July',
++                                       u'August', u'September', u'October',
++                                       u'November', u'December'],
++                        'weekdaysShort': [u'Sun', u'Mon', u'Tue', u'Wed',
++                                          u'Thu', u'Fri', u'Sat'],
++                        'weekdaysFull': [u'Sunday', u'Monday', u'Tuesday',
++                                         u'Wednesday', u'Thursday', u'Friday',
++                                         u'Saturday'],
++                        'today': u'Today',
++                        'selectYears': 200,
++                        'placeholder': u'Enter date...',
++                        'monthsShort': [u'Jan', u'Feb', u'Mar', u'Apr', u'May',
++                                        u'Jun', u'Jul', u'Aug', u'Sep', u'Oct',
++                                        u'Nov', u'Dec']
++                    },
++                    'time': {
++                        'placeholder': u'Enter time...',
++                        'today': u'Today',
++                        'format': 'h:i a'
++                    }
++                }
++            },
++            self.widget._base_args(),
++        )
++
++    def test_data_converter(self):
++        from plone.app.z3cform.widget import DatetimeWidgetConverter
++        converter = DatetimeWidgetConverter(self.field, self.widget)
++
++        self.assertEqual(
++            converter.toFieldValue(''),
++            converter.field.missing_value,
++        )
++
++        self.assertEqual(
++            converter.toFieldValue('2000-10-30 15:40'),
++            datetime(2000, 10, 30, 15, 40),
++        )
++
++        self.assertEqual(
++            converter.toFieldValue('21-10-30 15:40'),
++            datetime(21, 10, 30, 15, 40),
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(converter.field.missing_value),
++            '',
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(datetime(2000, 10, 30, 15, 40)),
++            '2000-10-30 15:40',
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(datetime(21, 10, 30, 15, 40)),
++            '21-10-30 15:40',
++        )
++
++    def test_data_converter__no_timezone(self):
++        """When no timezone is set, don't apply one.
++        """
++        from plone.app.z3cform.widget import DatetimeWidgetConverter
++        context = Mock()
++
++        dt = datetime(2013, 11, 13, 10, 20)
++        setattr(context, self.field.getName(), dt)
++        self.widget.context = context
++        self.widget.default_timezone = None
++
++        converter = DatetimeWidgetConverter(self.field, self.widget)
++        self.assertEqual(
++            converter.toFieldValue('2013-11-13 10:20'),
++            datetime(2013, 11, 13, 10, 20),
++        )
++
++        # cleanup
++        self.widget.context = None
++        self.widget.default_timezone = None
++
++    def test_data_converter__timezone_id(self):
++        """When a (pytz) timezone id is set, use that.
++        """
++        from plone.app.z3cform.widget import DatetimeWidgetConverter
++        context = Mock()
++
++        dt = datetime(2013, 11, 13, 10, 20)
++        setattr(context, self.field.getName(), dt)
++        self.widget.context = context
++        self.widget.default_timezone = 'Europe/Amsterdam'
++        tz = pytz.timezone('Europe/Amsterdam')
++
++        converter = DatetimeWidgetConverter(self.field, self.widget)
++        self.assertEqual(
++            converter.toFieldValue('2013-11-13 10:20'),
++            tz.localize(datetime(2013, 11, 13, 10, 20)),
++        )
++
++        # cleanup
++        self.widget.context = None
++        self.widget.default_timezone = None
++
++    def test_data_converter__timezone_callback(self):
++        """When a timezone callback is set, returning a (pytz) timezone id,
++        use that.
++        """
++        from plone.app.z3cform.widget import DatetimeWidgetConverter
++        context = Mock()
++
++        dt = datetime(2013, 11, 13, 10, 20)
++        setattr(context, self.field.getName(), dt)
++        self.widget.context = context
++        self.widget.default_timezone = lambda(context): 'Europe/Amsterdam'
++        tz = pytz.timezone('Europe/Amsterdam')
++
++        converter = DatetimeWidgetConverter(self.field, self.widget)
++        self.assertEqual(
++            converter.toFieldValue('2013-11-13 10:20'),
++            tz.localize(datetime(2013, 11, 13, 10, 20)),
++        )
++
++        # cleanup
++        self.widget.context = None
++        self.widget.default_timezone = None
++
++    def test_fieldwidget(self):
++        from plone.app.z3cform.widget import DatetimeWidget
++        from plone.app.z3cform.widget import DatetimeFieldWidget
++        field = Mock(__name__='field', title=u'', required=True)
++        request = Mock()
++        widget = DatetimeFieldWidget(field, request)
++        self.assertTrue(isinstance(widget, DatetimeWidget))
++        self.assertIs(widget.field, field)
++        self.assertIs(widget.request, request)
++
++
++class SelectWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        alsoProvides(self.request, IFormLayer)
++
++        # ITerms Adapters are needed for data converter
++        from z3c.form import term
++        import zope.component
++        zope.component.provideAdapter(term.CollectionTerms)
++        zope.component.provideAdapter(term.CollectionTermsVocabulary)
++        zope.component.provideAdapter(term.CollectionTermsSource)
++
++    def tearDown(self):
++        from z3c.form import term
++        base.unregisterAdapter(term.CollectionTerms)
++        base.unregisterAdapter(term.CollectionTermsVocabulary)
++        base.unregisterAdapter(term.CollectionTermsSource)
++
++    def test_widget(self):
++        from plone.app.z3cform.widget import SelectWidget
++        widget = SelectWidget(self.request)
++        widget.id = 'test-widget'
++        widget.field = Choice(
++            __name__='selectfield',
++            values=['one', 'two', 'three']
++        )
++        widget.terms = widget.field.vocabulary
++        widget.field.required = True
++        self.assertEqual(
++            {
++                'multiple': None,
++                'name': None,
++                'pattern_options': {},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++        widget.field.required = False
++        self.assertEqual(
++            {
++                'multiple': None,
++                'name': None,
++                'pattern_options': {'allowClear': True},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    (u'', u''),
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++        widget.field.required = True
++        widget.multiple = True
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': None,
++                'pattern_options': {'separator': ';', 'multiple': True},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++        widget.field.required = False
++        widget.multiple = True
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': None,
++                'pattern_options': {'allowClear': True,
++                                    'separator': ';',
++                                    'multiple': True},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++        widget.value = 'one'
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': None,
++                'pattern_options': {'allowClear': True,
++                                    'separator': ';',
++                                    'multiple': True},
++                'pattern': 'select2',
++                'value': ('one'),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++    def test_widget_list_orderable(self):
++        from plone.app.z3cform.widget import SelectWidget
++        widget = SelectWidget(self.request)
++        widget.id = 'test-widget'
++        widget.separator = '.'
++        widget.field = List(
++            __name__='selectfield',
++            value_type=Choice(values=['one', 'two', 'three'])
++        )
++        widget.terms = widget.field.value_type.vocabulary
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': None,
++                'pattern_options': {
++                    'orderable': True, 'multiple': True, 'separator': '.'},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++    def test_widget_tuple_orderable(self):
++        from plone.app.z3cform.widget import SelectWidget
++        widget = SelectWidget(self.request)
++        widget.id = 'test-widget'
++        widget.field = Tuple(
++            __name__='selectfield',
++            value_type=Choice(values=['one', 'two', 'three'])
++        )
++        widget.terms = widget.field.value_type.vocabulary
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': None,
++                'pattern_options': {
++                    'orderable': True, 'multiple': True, 'separator': ';'},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++    def test_widget_set_not_orderable(self):
++        from plone.app.z3cform.widget import SelectWidget
++        widget = SelectWidget(self.request)
++        widget.id = 'test-widget'
++        # A set is not orderable
++        widget.field = Set(
++            __name__='selectfield',
++            value_type=Choice(values=['one', 'two', 'three'])
++        )
++        widget.terms = widget.field.value_type.vocabulary
++        self.assertEqual(
++            {
++                'multiple': True,
++                'name': None,
++                'pattern_options': {
++                    'multiple': True, 'separator': ';'},
++                'pattern': 'select2',
++                'value': (),
++                'items': [
++                    ('one', 'one'),
++                    ('two', 'two'),
++                    ('three', 'three')
++                ]
++            },
++            widget._base_args(),
++        )
++
++    def test_widget_extract(self):
++        from plone.app.z3cform.widget import SelectWidget
++        widget = SelectWidget(self.request)
++        widget.field = Choice(
++            __name__='selectfield',
++            values=['one', 'two', 'three']
++        )
++        widget.name = 'selectfield'
++        self.request.form['selectfield'] = 'one'
++        self.assertEquals(widget.extract(), 'one')
++        widget.multiple = True
++        self.request.form['selectfield'] = 'one;two'
++        self.assertEquals(widget.extract(), 'one;two')
++
++    def test_data_converter_list(self):
++        from plone.app.z3cform.widget import SelectWidget
++        from plone.app.z3cform.widget import SelectWidgetConverter
++
++        field = List(__name__='listfield',
++                     value_type=Choice(__name__='selectfield',
++                                       values=['one', 'two', 'three']))
++        widget = SelectWidget(self.request)
++        widget.field = field
++        widget.multiple = True
++        converter = SelectWidgetConverter(field, widget)
++
++        self.assertEqual(
++            converter.toFieldValue(''),
++            field.missing_value,
++        )
++
++        self.assertEqual(
++            converter.toFieldValue('one;two;three'),
++            ['one', 'two', 'three'],
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue([]),
++            [],
++        )
++
++        widget.separator = ','
++        self.assertEqual(
++            converter.toFieldValue('one,two,three'),
++            ['one', 'two', 'three'],
++        )
++        self.assertRaises(
++            LookupError,
++            converter.toFieldValue, 'one;two;three'
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(['one', 'two', 'three']),
++            ['one', 'two', 'three']
++        )
++
++    def test_data_converter_tuple(self):
++        from plone.app.z3cform.widget import SelectWidget
++        from plone.app.z3cform.widget import SelectWidgetConverter
++
++        field = Tuple(__name__='tuplefield',
++                      value_type=Choice(__name__='selectfield',
++                                        values=['one', 'two', 'three']))
++        widget = SelectWidget(self.request)
++        widget.field = field
++        widget.multiple = True
++        converter = SelectWidgetConverter(field, widget)
++
++        self.assertEqual(
++            converter.toFieldValue(''),
++            field.missing_value,
++        )
++
++        self.assertEqual(
++            converter.toFieldValue('one;two;three'),
++            ('one', 'two', 'three'),
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(tuple()),
++            [],
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(('one', 'two', 'three')),
++            ['one', 'two', 'three'],
++        )
++
++    def test_data_converter_handles_empty_value(self):
++        from plone.app.z3cform.widget import SelectWidget
++        from plone.app.z3cform.widget import SelectWidgetConverter
++
++        field = Tuple(__name__='tuplefield',
++                      value_type=Choice(__name__='selectfield',
++                                        values=['one', 'two', 'three']))
++        widget = SelectWidget(self.request)
++        widget.field = field
++        widget.multiple = True
++        converter = SelectWidgetConverter(field, widget)
++
++        self.assertEqual(
++            converter.toFieldValue((u'',)),
++            field.missing_value,
++        )
++
++
++class AjaxSelectWidgetTests(unittest.TestCase):
++
++    layer = UNIT_TESTING
++    maxDiff = None
++
++    def setUp(self):
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++        provideUtility(ExampleVocabulary(), name=u'example')
++
++    def test_widget(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        widget = AjaxSelectWidget(self.request)
++        widget.update()
++        self.assertEqual(
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'select2',
++                'pattern_options': {'separator': ';'},
++            },
++            widget._base_args()
++        )
++
++        widget.vocabulary = 'example'
++        self.assertEqual(
++            widget._base_args(),
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'select2',
++                'pattern_options': {
++                    'vocabularyUrl': '/@@getVocabulary?name=example',
++                    'separator': ';'
++                },
++            }
++        )
++
++        widget.value = 'three;two'
++        self.assertEqual(
++            widget._base_args(),
++            {
++                'name': None,
++                'value': 'three;two',
++                'pattern': 'select2',
++                'pattern_options': {
++                    'vocabularyUrl': '/@@getVocabulary?name=example',
++                    'initialValues': {'three': u'Three', 'two': u'Two'},
++                    'separator': ';'
++                },
++            }
++        )
++
++    def test_widget_list_orderable(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        widget = AjaxSelectWidget(self.request)
++        widget.field = List(__name__='selectfield')
++        self.assertEqual(
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'select2',
++                'pattern_options': {'orderable': True, 'separator': ';'},
++            },
++            widget._base_args(),
++        )
++
++    def test_widget_tuple_orderable(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        widget = AjaxSelectWidget(self.request)
++        widget.field = Tuple(__name__='selectfield')
++        self.assertEqual(
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'select2',
++                'pattern_options': {'orderable': True, 'separator': ';'},
++            },
++            widget._base_args(),
++        )
++
++    def test_widget_set_not_orderable(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        widget = AjaxSelectWidget(self.request)
++        # A set is not orderable
++        widget.field = Set(__name__='selectfield')
++        self.assertEqual(
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'select2',
++                'pattern_options': {'separator': ';'},
++            },
++            widget._base_args(),
++        )
++
++    def test_widget_choice(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        from zope.schema.interfaces import ISource
++        widget = AjaxSelectWidget(self.request)
++        source = Mock()
++        alsoProvides(source, ISource)
++        widget.field = Choice(__name__='choicefield', source=source)
++        widget.name = 'choicefield'
++        self.assertEqual(
++            {
++                'name': 'choicefield',
++                'value': u'',
++                'pattern': 'select2',
++                'pattern_options': {
++                    'separator': ';',
++                    'maximumSelectionSize': 1,
++                    'vocabularyUrl':
++                    'http://127.0.0.1/++widget++choicefield/@@getSource',
++                    },
++            },
++            widget._base_args(),
++        )
++
++    def test_widget_addform_url_on_addform(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        widget = AjaxSelectWidget(self.request)
++        form = Mock()
++        from zope.interface import directlyProvides
++        from z3c.form.interfaces import IAddForm
++        directlyProvides(form, IAddForm)
++        form.request = {'URL': 'http://addform_url'}
++        widget.form = form
++        self.assertEqual(
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'select2',
++                'pattern_options': {'separator': ';'},
++            },
++            widget._base_args(),
++        )
++        widget.vocabulary = 'vocabulary1'
++        self.assertEqual(
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'select2',
++                'pattern_options': {
++                    'separator': ';',
++                    'vocabularyUrl':
++                    'http://addform_url/@@getVocabulary?name=vocabulary1'}
++
++            },
++            widget._base_args(),
++        )
++
++    def test_data_converter_list(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        from plone.app.z3cform.widget import AjaxSelectWidgetConverter
++
++        field = List(__name__='listfield', value_type=TextLine())
++        widget = AjaxSelectWidget(self.request)
++        widget.field = field
++        converter = AjaxSelectWidgetConverter(field, widget)
++
++        self.assertEqual(
++            converter.toFieldValue(''),
++            field.missing_value,
++        )
++
++        self.assertEqual(
++            converter.toFieldValue('123;456;789'),
++            ['123', '456', '789'],
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue([]),
++            None,
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(['123', '456', '789']),
++            '123;456;789',
++        )
++
++    def test_data_converter_tuple(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        from plone.app.z3cform.widget import AjaxSelectWidgetConverter
++
++        field = Tuple(__name__='tuplefield', value_type=TextLine())
++        widget = AjaxSelectWidget(self.request)
++        widget.field = field
++        converter = AjaxSelectWidgetConverter(field, widget)
++
++        self.assertEqual(
++            converter.toFieldValue(''),
++            field.missing_value,
++        )
++
++        self.assertEqual(
++            converter.toFieldValue('123;456;789'),
++            ('123', '456', '789'),
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(tuple()),
++            None,
++        )
++
++        self.assertEqual(
++            converter.toWidgetValue(('123', '456', '789')),
++            '123;456;789',
++        )
++
++    def test_fieldwidget(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        from plone.app.z3cform.widget import AjaxSelectFieldWidget
++        field = Mock(__name__='field', title=u'', required=True)
++        request = Mock()
++        widget = AjaxSelectFieldWidget(field, request)
++        self.assertTrue(isinstance(widget, AjaxSelectWidget))
++        self.assertIs(widget.field, field)
++        self.assertIs(widget.request, request)
++
++    def test_fieldwidget_sequence(self):
++        from plone.app.z3cform.widget import AjaxSelectWidget
++        from plone.app.z3cform.widget import AjaxSelectFieldWidget
++        field = Mock(__name__='field', title=u'', required=True)
++        vocabulary = Mock()
++        request = Mock()
++        widget = AjaxSelectFieldWidget(field, vocabulary, request)
++        self.assertTrue(isinstance(widget, AjaxSelectWidget))
++        self.assertIs(widget.field, field)
++        self.assertIs(widget.request, request)
++
++
++class QueryStringWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++
++    def test_converter_toWidgetValue(self):
++        from plone.app.z3cform.widget import QueryStringDataConverter
++        converter = QueryStringDataConverter(List(), None)
++        self.assertEqual(converter.toWidgetValue(None), u'[]')
++        self.assertEqual(converter.toWidgetValue([]), u'[]')
++
++    def test_converter_empty_value(self):
++        from plone.app.z3cform.widget import QueryStringDataConverter
++        converter = QueryStringDataConverter(List(), None)
++        self.assertEqual(converter.toFieldValue(u''), None)
++        self.assertEqual(converter.toFieldValue(u'[]'), None)
++
++    def test_widget(self):
++        from plone.app.z3cform.widget import QueryStringWidget
++        widget = QueryStringWidget(self.request)
++        self.assertEqual(
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'querystring',
++                'pattern_options': {
++                    'indexOptionsUrl': '/@@qsOptions',
++                    'previewCountURL': '/@@querybuildernumberofresults',
++                    'previewURL': '/@@querybuilder_html_results',
++                },
++            },
++            widget._base_args()
++        )
++
++
++class RelatedItemsWidgetTests(unittest.TestCase):
++
++    def setUp(self):
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++
++    def test_widget(self):
++        from plone.app.z3cform.widget import RelatedItemsWidget
++        context = Mock(absolute_url=lambda: 'fake_url')
++        context.portal_properties.site_properties\
++            .getProperty.return_value = ['SomeType']
++        widget = RelatedItemsWidget(self.request)
++        widget.context = context
++        widget.update()
++        self.assertEqual(
++            {
++                'name': None,
++                'value': u'',
++                'pattern': 'relateditems',
++                'pattern_options': {
++                    'folderTypes': ['SomeType'],
++                    'homeText': u'Home',
++                    'searchAllText': u'Entire site',
++                    'searchText': u'Search',
++                    'separator': ';',
++                    'vocabularyUrl': '/@@getVocabulary?name='
++                                     'plone.app.vocabularies.Catalog',
++                },
++            },
++            widget._base_args()
++        )
++
++    def test_single_selection(self):
++        """The pattern_options value for maximumSelectionSize should
++        be 1 when the field only allows a single selection."""
++        from plone.app.z3cform.widget import RelatedItemsFieldWidget
++        context = Mock(absolute_url=lambda: 'fake_url')
++        context.portal_properties.site_properties\
++            .getProperty.return_value = ['SomeType']
++        field = Choice(
++            __name__='selectfield',
++            values=['one', 'two', 'three'],
++        )
++        widget = RelatedItemsFieldWidget(field, self.request)
++        widget.context = context
++        widget.update()
++        base_args = widget._base_args()
++        pattern_options = base_args['pattern_options']
++        self.assertEquals(pattern_options.get('maximumSelectionSize', 0), 1)
++
++    def test_multiple_selection(self):
++        """The pattern_options key maximumSelectionSize shouldn't be
++        set when the field allows multiple selections"""
++        from plone.app.z3cform.widget import RelatedItemsFieldWidget
++        from zope.schema.interfaces import ISource
++        from zope.schema.vocabulary import VocabularyRegistry
++
++        context = Mock(absolute_url=lambda: 'fake_url')
++        context.portal_properties.site_properties\
++            .getProperty.return_value = ['SomeType']
++        field = List(
++            __name__='selectfield',
++            value_type=Choice(vocabulary='foobar')
++        )
++        widget = RelatedItemsFieldWidget(field, self.request)
++        widget.context = context
++
++        vocab = Mock()
++        alsoProvides(vocab, ISource)
++        with mock.patch.object(VocabularyRegistry, 'get', return_value=vocab):
++            widget.update()
++            base_args = widget._base_args()
++        patterns_options = base_args['pattern_options']
++        self.assertFalse('maximumSelectionSize' in patterns_options)
++        self.assertEqual(
++            patterns_options['vocabularyUrl'],
++            '/@@getVocabulary?name=foobar&field=selectfield',
++            )
++
++    def test_converter_RelationChoice(self):
++        from plone.app.z3cform.widget import \
++            RelationChoiceRelatedItemsWidgetConverter
++        brain = Mock(getObject=Mock(return_value='obj'))
++        portal_catalog = Mock(return_value=[brain])
++        widget = Mock()
++        converter = RelationChoiceRelatedItemsWidgetConverter(
++            TextLine(), widget)
++
++        with mock.patch('plone.app.widgets.dx.IUUID', return_value='id'):
++            self.assertEqual(converter.toWidgetValue('obj'), 'id')
++        self.assertEqual(converter.toWidgetValue(None), None)
++
++        with mock.patch(
++                'plone.app.widgets.dx.getToolByName',
++                return_value=portal_catalog):
++            self.assertEqual(converter.toFieldValue('id'), 'obj')
++        self.assertEqual(converter.toFieldValue(None), None)
++
++    def test_converter_RelationList(self):
++        from plone.app.z3cform.widget import RelatedItemsDataConverter
++        from plone.app.z3cform.widget import IRelationList
++        field = List()
++        alsoProvides(field, IRelationList)
++        brain1 = Mock(getObject=Mock(return_value='obj1'), UID='id1')
++        brain2 = Mock(getObject=Mock(return_value='obj2'), UID='id2')
++        portal_catalog = Mock(return_value=[brain1, brain2])
++        widget = Mock(separator=';')
++        converter = RelatedItemsDataConverter(field, widget)
++
++        self.assertEqual(converter.toWidgetValue(None), None)
++        with mock.patch(
++                'plone.app.widgets.dx.IUUID', side_effect=['id1', 'id2']):
++            self.assertEqual(
++                converter.toWidgetValue(['obj1', 'obj2']), 'id1;id2')
++
++        self.assertEqual(converter.toFieldValue(None), None)
++        with mock.patch(
++                'plone.app.widgets.dx.getToolByName',
++                return_value=portal_catalog):
++            self.assertEqual(
++                converter.toFieldValue('id1;id2'), ['obj1', 'obj2'])
++
++    def test_converter_List_of_Choice(self):
++        from plone.app.z3cform.widget import RelatedItemsDataConverter
++        field = List()
++        widget = Mock(separator=';')
++        converter = RelatedItemsDataConverter(field, widget)
++
++        self.assertEqual(converter.toWidgetValue(None), None)
++        self.assertEqual(
++            converter.toWidgetValue(['id1', 'id2']), 'id1;id2')
++
++        self.assertEqual(converter.toFieldValue(None), None)
++        self.assertEqual(
++            converter.toFieldValue('id1;id2'), ['id1', 'id2'])
++
++    def test_fieldwidget(self):
++        from plone.app.z3cform.widget import RelatedItemsWidget
++        from plone.app.z3cform.widget import RelatedItemsFieldWidget
++        field = Mock(__name__='field', title=u'', required=True)
++        vocabulary = Mock()
++        request = Mock()
++        widget = RelatedItemsFieldWidget(field, vocabulary, request)
++        self.assertTrue(isinstance(widget, RelatedItemsWidget))
++        self.assertIs(widget.field, field)
++        self.assertIs(widget.request, request)
++
++
++def add_mock_fti(portal):
++    # Fake DX Type
++    fti = DexterityFTI('dx_mock')
++    portal.portal_types._setObject('dx_mock', fti)
++    fti.klass = 'plone.dexterity.content.Item'
++    fti.schema = 'plone.app.widgets.tests.test_dx.IMockSchema'
++    fti.filter_content_types = False
++    fti.behaviors = ('plone.app.dexterity.behaviors.metadata.IBasic',)
++
++
++def _custom_field_widget(field, request):
++    from plone.app.z3cform.widget import AjaxSelectWidget
++    widget = FieldWidget(field, AjaxSelectWidget(request))
++    widget.vocabulary = 'plone.app.vocabularies.PortalTypes'
++    return widget
++
++
++class RichTextWidgetTests(unittest.TestCase):
++
++    layer = PLONEAPPWIDGETS_DX_INTEGRATION_TESTING
++
++    def setUp(self):
++        from plone.app.textfield import RichText as RichTextField
++
++        self.portal = self.layer['portal']
++        self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
++
++        class IWithText(Interface):
++            text = RichTextField(title=u"Text")
++
++        self.field = IWithText['text']
++
++    def test_widget_params(self):
++        from plone.app.z3cform.widget import RichTextWidget
++
++        widget = FieldWidget(self.field, RichTextWidget(self.request))
++        # set the context so we can get tinymce settings
++        widget.context = self.portal
++        widget.update()
++        base_args = widget._base_args()
++        self.assertEqual(base_args['name'], 'text')
++        self.assertEqual(base_args['value'], u'')
++        self.assertEqual(base_args['pattern'], 'tinymce')
++
++        self.assertEqual(base_args['pattern_options']['prependToUrl'],
++                         'resolveuid/')
++        self.assertEqual(
++            base_args['pattern_options']['upload']['relativePath'],
++            '@@fileUpload')
++
++    def test_widget_values(self):
++        from plone.app.z3cform.widget import RichTextWidget
++        from plone.app.textfield.value import RichTextValue
++
++        widget = FieldWidget(self.field, RichTextWidget(self.request))
++        # set the context so we can get tinymce settings
++        widget.context = self.portal
++        widget.value = RichTextValue(u'Lorem ipsum \u2026')
++        base_args = widget._base_args()
++        self.assertEquals(base_args['value'], u'Lorem ipsum \u2026')
++
++    def _set_mimetypes(self, default='text/html', allowed=('text/html')):
++        """Set portal's mimetype settings.
++        """
++        if IMarkupSchema:
++            registry = getUtility(IRegistry)
++            self.settings = registry.forInterface(
++                IMarkupSchema, prefix="plone")
++            self.settings.default_type = default
++            self.settings.allowed_types = allowed
++
++    def test_dx_tinymcewidget_single_mimetype(self):
++        """A RichTextWidget with only one available mimetype should render the
++        pattern class directly on itself.
++        """
++        if IMarkupSchema:
++            # if not, don't run this test
++            self._set_mimetypes(allowed=('text/html',))
++            from plone.app.z3cform.widget import RichTextWidget
++            widget = FieldWidget(self.field, RichTextWidget(self.request))
++            # set the context so we can get tinymce settings
++            widget.context = self.portal
++            rendered = widget.render()
++
++            self.assertTrue('<select' not in rendered)
++            self.assertTrue('pat-tinymce' in rendered)
++            self.assertTrue('data-pat-tinymce' in rendered)
++
++    def test_dx_tinymcewidget_multiple_mimetypes_create(self):
++        """A RichTextWidget with multiple available mimetypes should render a
++        mimetype selection widget along with the textfield. When there is no
++        field value, the default mimetype should be preselected.
++        """
++        if IMarkupSchema:
++            # if not, don't run this test
++            self._set_mimetypes(allowed=('text/html', 'text/plain'))
++            from plone.app.z3cform.widget import RichTextWidget
++            widget = FieldWidget(self.field, RichTextWidget(self.request))
++            # set the context so we can get tinymce settings
++            widget.context = self.portal
++            rendered = widget.render()
++
++            self.assertTrue('<select' in rendered)
++            self.assertTrue('pat-textareamimetypeselector' in rendered)
++            self.assertTrue('data-pat-textareamimetypeselector' in rendered)
++            self.assertTrue(
++                '<option value="text/html" selected="selected">' in rendered)
++            self.assertTrue('pat-tinymce' not in rendered)
++
++    def test_dx_tinymcewidget_multiple_mimetypes_edit(self):
++        """A RichTextWidget with multiple available mimetypes should render a
++        mimetype selection widget along with the textfield. When there is
++        already a RichTextValue, it's mimetype should be preselected.
++        """
++        if IMarkupSchema:
++            # if not, don't run this test
++            self._set_mimetypes(allowed=('text/html', 'text/plain'))
++            from plone.app.z3cform.widget import RichTextWidget
++            from plone.app.textfield.value import RichTextValue
++            widget = FieldWidget(self.field, RichTextWidget(self.request))
++            # set the context so we can get tinymce settings
++            widget.context = self.portal
++            widget.value = RichTextValue(u'Hello world', mimeType='text/plain')
++            rendered = widget.render()
++
++            self.assertTrue('<select' in rendered)
++            self.assertTrue('pat-textareamimetypeselector' in rendered)
++            self.assertTrue('data-pat-textareamimetypeselector' in rendered)
++            self.assertTrue(
++                '<option value="text/plain" selected="selected">' in rendered)
++            self.assertTrue('pat-tinymce' not in rendered)
+diff --git a/plone/app/z3cform/widget.py b/plone/app/z3cform/widget.py
+index 034d4d2..790f4c2 100644
+--- a/plone/app/z3cform/widget.py
++++ b/plone/app/z3cform/widget.py
+@@ -1,21 +1,591 @@
+-from plone.app.widgets.dx import DateWidget  # TODO: move definition in here
+-from plone.app.widgets.dx import DatetimeWidget  # TODO: move def. in here
+-from zope.schema.interfaces import IDate
+-from zope.schema.interfaces import IDatetime
++# -*- coding: utf-8 -*-
++from Products.CMFCore.utils import getToolByName
++from lxml import etree
++from plone.app.textfield.value import RichTextValue
++from plone.app.textfield.widget import IRichTextWidget as patextfield_IRichTextWidget  # noqa
++from plone.app.textfield.widget import RichTextWidget as patextfield_RichTextWidget  # noqa
++from plone.app.widgets.base import InputWidget
++from plone.app.widgets.base import SelectWidget as BaseSelectWidget
++from plone.app.widgets.base import TextareaWidget
++from plone.app.widgets.base import dict_merge
++from plone.app.widgets.utils import NotImplemented
++from plone.app.widgets.utils import get_ajaxselect_options
++from plone.app.widgets.utils import get_date_options
++from plone.app.widgets.utils import get_datetime_options
++from plone.app.widgets.utils import get_querystring_options
++from plone.app.widgets.utils import get_relateditems_options
++from plone.app.widgets.utils import get_tinymce_options
++from plone.registry.interfaces import IRegistry
++from z3c.form.browser.select import SelectWidget as z3cform_SelectWidget
++from z3c.form.browser.text import TextWidget as z3cform_TextWidget
++from z3c.form.browser.widget import HTMLInputWidget
++from z3c.form.interfaces import IAddForm
++from z3c.form.interfaces import IFieldWidget
++from z3c.form.interfaces import ISelectWidget
++from z3c.form.interfaces import NO_VALUE
+ from z3c.form.widget import FieldWidget
++from z3c.form.widget import Widget
++from zope.component import getUtility
++from zope.i18n import translate
++from zope.interface import implementer
++from zope.interface import implementsOnly
++from zope.schema.interfaces import IChoice
++from zope.schema.interfaces import ICollection
++from zope.schema.interfaces import ISequence
++from plone.app.widgets.utils import first_weekday
  
--    if HAS_CONTENTTREE and not HAS_WIDGETS:
--
--        relatedItems = RelationList(
--            title=_(u'label_related_items', default=u'Related Items'),
--            default=[],
--            value_type=RelationChoice(
--                title=u"Related",
--                source=ObjPathSourceBinder()
--            ),
--            required=False
--        )
--
--    else:
--
--        relatedItems = RelationList(
--            title=_(u'label_related_items', default=u'Related Items'),
--            default=[],
--            value_type=RelationChoice(
--                title=u"Related",
--                vocabulary="plone.app.vocabularies.Catalog"
--            ),
--            required=False
--        )
-+    relatedItems = RelationList(
-+        title=_(u'label_related_items', default=u'Related Items'),
-+        default=[],
-+        value_type=RelationChoice(
-+            title=u"Related",
-+            vocabulary="plone.app.vocabularies.Catalog"
-+        ),
-+        required=False
-+    )
-+    form.widget('relatedItems', RelatedItemsFieldWidget,
-+                vocabulary='plone.app.vocabularies.Catalog')
++from plone.app.z3cform.converters import (
++    DateWidgetConverter, DatetimeWidgetConverter)
++from plone.app.z3cform.interfaces import (
++    IDatetimeWidget, IDateWidget, IAjaxSelectWidget,
++    IRelatedItemsWidget, IQueryStringWidget, IRichTextWidget)
  
- fieldset = Fieldset('categorization',
-                     label=_(u'Categorization'), fields=['relatedItems'])
+-class IDateField(IDate):
+-    pass
++import json
+ 
++from Products.CMFPlone.interfaces import IEditingSchema
+ 
+-class IDatetimeField(IDatetime):
+-    pass
+ 
++class BaseWidget(Widget):
++    """Base widget for z3c.form."""
+ 
++    pattern = None
++    pattern_options = {}
++
++    def _base(self, pattern, pattern_options={}):
++        """Base widget class."""
++        raise NotImplemented
++
++    def _base_args(self):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        if self.pattern is None:
++            raise NotImplemented("'pattern' option is not provided.")
++        return {
++            'pattern': self.pattern,
++            'pattern_options': self.pattern_options.copy(),
++        }
++
++    def render(self):
++        """Render widget.
++
++        :returns: Widget's HTML.
++        :rtype: string
++        """
++        if self.mode != 'input':
++            return super(BaseWidget, self).render()
++        return self._base(**self._base_args()).render()
++
++
++class DateWidget(BaseWidget, HTMLInputWidget):
++    """Date widget for z3c.form."""
++
++    _base = InputWidget
++    _converter = DateWidgetConverter
++    _formater = 'date'
++
++    implementsOnly(IDateWidget)
++
++    pattern = 'pickadate'
++    pattern_options = BaseWidget.pattern_options.copy()
++
++    def _base_args(self):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        args = super(DateWidget, self)._base_args()
++        args['name'] = self.name
++        args['value'] = (self.request.get(self.name,
++                                          self.value) or u'').strip()
++
++        args.setdefault('pattern_options', {})
++        args['pattern_options'] = dict_merge(
++            get_date_options(self.request),
++            args['pattern_options'])
++
++        return args
++
++    def render(self):
++        """Render widget.
++
++        :returns: Widget's HTML.
++        :rtype: string
++        """
++        if self.mode != 'display':
++            return super(DateWidget, self).render()
++
++        if not self.value:
++            return ''
++
++        field_value = self._converter(
++            self.field, self).toFieldValue(self.value)
++        if field_value is self.field.missing_value:
++            return u''
++
++        formatter = self.request.locale.dates.getFormatter(
++            self._formater, "short")
++        if field_value.year > 1900:
++            return formatter.format(field_value)
++
++        # due to fantastic datetime.strftime we need this hack
++        # for now ctime is default
++        return field_value.ctime()
++
++
++class DatetimeWidget(DateWidget, HTMLInputWidget):
++    """Datetime widget for z3c.form.
++
++    :param default_timezone: A Olson DB/pytz timezone identifier or a callback
++                             returning such an identifier.
++    :type default_timezone: String or callback
++
++    """
++
++    _converter = DatetimeWidgetConverter
++    _formater = 'dateTime'
++
++    implementsOnly(IDatetimeWidget)
++
++    pattern_options = DateWidget.pattern_options.copy()
++
++    default_timezone = None
++
++    def _base_args(self):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        args = super(DatetimeWidget, self)._base_args()
++
++        if args['value'] and len(args['value'].split(' ')) == 1:
++            args['value'] += ' 00:00'
++
++        args.setdefault('pattern_options', {})
++        if 'time' in args['pattern_options']:
++            del args['pattern_options']['time']
++        args['pattern_options'] = dict_merge(
++            get_datetime_options(self.request),
++            args['pattern_options'])
++
++        return args
++
++
++class SelectWidget(BaseWidget, z3cform_SelectWidget):
++    """Select widget for z3c.form."""
++
++    _base = BaseSelectWidget
++
++    implementsOnly(ISelectWidget)
++
++    pattern = 'select2'
++    pattern_options = BaseWidget.pattern_options.copy()
++
++    separator = ';'
++    noValueToken = u''
++    noValueMessage = u''
++    multiple = None
++    orderable = False
++    required = True
++
++    def _base_args(self):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++            - `multiple`: field multiple
++            - `items`: field items from which we can select to
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        args = super(SelectWidget, self)._base_args()
++        args['name'] = self.name
++        args['value'] = self.value
++        args['multiple'] = self.multiple
++
++        self.required = self.field.required
++
++        options = args.setdefault('pattern_options', {})
++        if self.multiple or ICollection.providedBy(self.field):
++            options['multiple'] = args['multiple'] = self.multiple = True
++
++        # ISequence represents an orderable collection
++        if ISequence.providedBy(self.field) or self.orderable:
++            options['orderable'] = True
++
++        if self.multiple:
++            options['separator'] = self.separator
++
++        # Allow to clear field value if it is not required
++        if not self.required:
++            options['allowClear'] = True
++
++        items = []
++        for item in self.items():
++            if not isinstance(item['content'], basestring):
++                item['content'] = translate(
++                    item['content'],
++                    context=self.request,
++                    default=item['value'])
++            items.append((item['value'], item['content']))
++        args['items'] = items
++
++        return args
++
++    def extract(self, default=NO_VALUE):
++        """Override extract to handle delimited response values.
++        Skip the vocabulary validation provided in the parent
++        method, since it's not ever done for single selects."""
++        if (self.name not in self.request and
++                self.name + '-empty-marker' in self.request):
++            return []
++        return self.request.get(self.name, default)
++
++
++class AjaxSelectWidget(BaseWidget, z3cform_TextWidget):
++    """Ajax select widget for z3c.form."""
++
++    _base = InputWidget
++
++    implementsOnly(IAjaxSelectWidget)
++
++    pattern = 'select2'
++    pattern_options = BaseWidget.pattern_options.copy()
++
++    separator = ';'
++    vocabulary = None
++    vocabulary_view = '@@getVocabulary'
++    orderable = False
++
++    def _base_args(self):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++
++        args = super(AjaxSelectWidget, self)._base_args()
++
++        args['name'] = self.name
++        args['value'] = self.value
++
++        args.setdefault('pattern_options', {})
++
++        field_name = self.field and self.field.__name__ or None
++
++        context = self.context
++        # We need special handling for AddForms
++        if IAddForm.providedBy(getattr(self, 'form')):
++            context = self.form
++
++        vocabulary_name = self.vocabulary
++        field = None
++        if IChoice.providedBy(self.field):
++            args['pattern_options']['maximumSelectionSize'] = 1
++            field = self.field
++        elif ICollection.providedBy(self.field):
++            field = self.field.value_type
++        if not vocabulary_name and field is not None:
++            vocabulary_name = field.vocabularyName
++
++        args['pattern_options'] = dict_merge(
++            get_ajaxselect_options(context, args['value'], self.separator,
++                                   vocabulary_name, self.vocabulary_view,
++                                   field_name),
++            args['pattern_options'])
++
++        if field and getattr(field, 'vocabulary', None):
++            form_url = self.request.getURL()
++            source_url = "%s/++widget++%s/@@getSource" % (form_url, self.name)
++            args['pattern_options']['vocabularyUrl'] = source_url
++
++        # ISequence represents an orderable collection
++        if ISequence.providedBy(self.field) or self.orderable:
++            args['pattern_options']['orderable'] = True
++
++        return args
++
++
++class RelatedItemsWidget(BaseWidget, z3cform_TextWidget):
++    """RelatedItems widget for z3c.form."""
++
++    _base = InputWidget
++
++    implementsOnly(IRelatedItemsWidget)
++
++    pattern = 'relateditems'
++    pattern_options = BaseWidget.pattern_options.copy()
++
++    separator = ';'
++    vocabulary = None
++    vocabulary_view = '@@getVocabulary'
++    orderable = False
++
++    def _base_args(self):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        args = super(RelatedItemsWidget, self)._base_args()
++
++        args['name'] = self.name
++        args['value'] = self.value
++        args.setdefault('pattern_options', {})
++
++        field = None
++        if IChoice.providedBy(self.field):
++            args['pattern_options']['maximumSelectionSize'] = 1
++            field = self.field
++        elif ICollection.providedBy(self.field):
++            field = self.field.value_type
++
++        vocabulary_name = self.vocabulary
++        if not vocabulary_name:
++            if field is not None and field.vocabularyName:
++                vocabulary_name = field.vocabularyName
++            else:
++                vocabulary_name = 'plone.app.vocabularies.Catalog'
++
++        field_name = self.field and self.field.__name__ or None
++        args['pattern_options'] = dict_merge(
++            get_relateditems_options(self.context, args['value'],
++                                     self.separator, vocabulary_name,
++                                     self.vocabulary_view, field_name),
++            args['pattern_options'])
++
++        if not self.vocabulary:  # widget vocab takes precedence over field
++            if field and getattr(field, 'vocabulary', None):
++                form_url = self.request.getURL()
++                source_url = "%s/++widget++%s/@@getSource" % (
++                    form_url, self.name)
++                args['pattern_options']['vocabularyUrl'] = source_url
++
++        return args
++
++
++class QueryStringWidget(BaseWidget, z3cform_TextWidget):
++    """QueryString widget for z3c.form."""
++
++    _base = InputWidget
++
++    implementsOnly(IQueryStringWidget)
++
++    pattern = 'querystring'
++    pattern_options = BaseWidget.pattern_options.copy()
++
++    querystring_view = '@@qsOptions'
++
++    def _base_args(self):
++        """Method which will calculate _base class arguments.
++
++        Returns (as python dictionary):
++            - `pattern`: pattern name
++            - `pattern_options`: pattern options
++            - `name`: field name
++            - `value`: field value
++
++        :returns: Arguments which will be passed to _base
++        :rtype: dict
++        """
++        args = super(QueryStringWidget, self)._base_args()
++        args['name'] = self.name
++        args['value'] = self.value
++
++        args.setdefault('pattern_options', {})
++        args['pattern_options'] = dict_merge(
++            get_querystring_options(self.context, self.querystring_view),
++            args['pattern_options'])
++
++        return args
++
++
++class RichTextWidget(BaseWidget, patextfield_RichTextWidget):
++    """TinyMCE widget for z3c.form."""
++
++    _base = TextareaWidget
++
++    implementsOnly(IRichTextWidget)
++
++    pattern_options = BaseWidget.pattern_options.copy()
++
++    @property
++    def pattern(self):
++        """dynamically grab the actual pattern name so it will
++           work with custom visual editors"""
++        registry = getUtility(IRegistry)
++        try:
++            records = registry.forInterface(IEditingSchema, check=False,
++                                            prefix='plone')
++            return records.default_editor.lower()
++        except AttributeError:
++            return 'tinymce'
++
++    def _base_args(self):
++        args = super(RichTextWidget, self)._base_args()
++        args['name'] = self.name
++        properties = getToolByName(self.context, 'portal_properties')
++        charset = properties.site_properties.getProperty('default_charset',
++                                                         'utf-8')
++        value = self.value and self.value.raw_encoded or ''
++        args['value'] = (self.request.get(
++            self.field.getName(), value)).decode(charset)
++
++        args.setdefault('pattern_options', {})
++        merged = dict_merge(get_tinymce_options(self.context, self.field, self.request),  # noqa
++                            args['pattern_options'])
++        args['pattern_options'] = merged['pattern_options']
++
++        return args
++
++    def render(self):
++        """Render widget.
++
++        :returns: Widget's HTML.
++        :rtype: string
++        """
++        if self.mode != 'display':
++            # MODE "INPUT"
++            rendered = ''
++            allowed_mime_types = self.allowedMimeTypes()
++            if not allowed_mime_types or len(allowed_mime_types) <= 1:
++                # Display textarea with default widget
++                rendered = super(RichTextWidget, self).render()
++            else:
++                # Let pat-textarea-mimetype-selector choose the widget
++
++                # Initialize the widget without a pattern
++                base_args = self._base_args()
++                pattern_options = base_args['pattern_options']
++                del base_args['pattern']
++                del base_args['pattern_options']
++                textarea_widget = self._base(None, None, **base_args)
++                textarea_widget.klass = ''
++                mt_pattern_name = '{}{}'.format(
++                    self._base._klass_prefix,
++                    'textareamimetypeselector'
++                )
++
++                # Initialize mimetype selector pattern
++                # TODO: default_mime_type returns 'text/html', regardless of
++                # settings. fix in plone.app.textfield
++                value_mime_type = self.value.mimeType if self.value\
++                    else self.field.default_mime_type
++                mt_select = etree.Element('select')
++                mt_select.attrib['id'] = '{}_text_format'.format(self.id)
++                mt_select.attrib['name'] = '{}.mimeType'.format(self.name)
++                mt_select.attrib['class'] = mt_pattern_name
++                mt_select.attrib['{}{}'.format('data-', mt_pattern_name)] =\
++                    json.dumps({
++                        'textareaName': self.name,
++                        'widgets': {
++                            'text/html': {  # TODO: currently, we only support
++                                            # richtext widget config for
++                                            # 'text/html', no other mimetypes.
++                                'pattern': self.pattern,
++                                'patternOptions': pattern_options
++                            }
++                        }
++                    })
++
++                # Create a list of allowed mime types
++                for mt in allowed_mime_types:
++                    opt = etree.Element('option')
++                    opt.attrib['value'] = mt
++                    if value_mime_type == mt:
++                        opt.attrib['selected'] = 'selected'
++                    opt.text = mt
++                    mt_select.append(opt)
++
++                # Render the combined widget
++                rendered = '{}\n{}'.format(
++                    textarea_widget.render(),
++                    etree.tostring(mt_select)
++                )
++            return rendered
++
++        if not self.value:
++            return ''
++
++        if isinstance(self.value, RichTextValue):
++            return self.value.output
++
++        return super(RichTextWidget, self).render()
++
++
++@implementer(IFieldWidget)
+ def DateFieldWidget(field, request):
+-    return FieldWidget(field, DateWidget(request))
++    widget = FieldWidget(field, DateWidget(request))
++    widget.pattern_options.setdefault('date', {})
++    widget.pattern_options['date']['firstDay'] = first_weekday()
++    return widget
+ 
+ 
++@implementer(IFieldWidget)
+ def DatetimeFieldWidget(field, request):
+     return FieldWidget(field, DatetimeWidget(request))
++
++
++@implementer(IFieldWidget)
++def SelectFieldWidget(field, request):
++    return FieldWidget(field, SelectWidget(request))
++
++
++@implementer(IFieldWidget)
++def AjaxSelectFieldWidget(field, request, extra=None):
++    if extra is not None:
++        request = extra
++    return FieldWidget(field, AjaxSelectWidget(request))
++
++
++@implementer(IFieldWidget)
++def RelatedItemsFieldWidget(field, request, extra=None):
++    if extra is not None:
++        request = extra
++    return FieldWidget(field, RelatedItemsWidget(request))
++
++
++@implementer(IFieldWidget)
++def RichTextFieldWidget(field, request):
++    return FieldWidget(field, RichTextWidget(request))
++
++
++@implementer(IFieldWidget)
++def QueryStringFieldWidget(field, request):
++    return FieldWidget(field, QueryStringWidget(request))
 diff --git a/setup.py b/setup.py
-index 9895628..dc226ab 100644
+index 2ffef0b..f44ce59 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -40,6 +40,7 @@
-           'plone.schemaeditor>=1.3.5.dev0',
-           'Products.CMFCore',
-           'plone.rfc822',
-+          'plone.app.z3cform>=1.1.0'
-       ],
-       extras_require={'test': ['plone.app.testing', 'plone.app.dexterity']},
-       entry_points="""
+@@ -5,7 +5,7 @@
+ def read(*rnames):
+     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+ 
+-version = '1.0.2.dev0'
++version = '1.1.0.dev0'
+ 
+ long_description = (
+     read('README.rst')
+@@ -46,7 +46,7 @@ def read(*rnames):
+         'Products.CMFCore',
+         'Products.CMFPlone',
+         'Zope2',  # Products.Five
+-        'plone.app.widgets',
++        'plone.app.widgets>=2',
+         'plone.protect',
+         'plone.z3cform>=0.5.11dev',
+         'z3c.form >= 3.0',
 
 
-Repository: plone.app.relationfield
+Repository: plone.app.z3cform
 Branch: refs/heads/master
-Date: 2015-01-26T23:21:23-06:00
+Date: 2015-01-26T23:21:51-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.relationfield/commit/90cca5ef68a92506b262e7ff0d868bba560fb743
+Commit: https://github.com/plone/plone.app.z3cform/commit/479b103c61392b2b7894353521aa24e742378fd9
 
 fix tests for widgets integration
 
 Files changed:
-M plone/app/relationfield/schemaeditor.py
-M plone/app/relationfield/supermodel.py
-M plone/app/relationfield/tests/test_schemaeditor.py
-M plone/app/relationfield/tests/test_supermodel.py
+M plone/app/z3cform/configure.zcml
+M plone/app/z3cform/interfaces.py
+M plone/app/z3cform/tests/test_widgets.py
+M plone/app/z3cform/widget.py
 M setup.py
 
-diff --git a/plone/app/relationfield/schemaeditor.py b/plone/app/relationfield/schemaeditor.py
-index 3e7b9f0..dabd06f 100644
---- a/plone/app/relationfield/schemaeditor.py
-+++ b/plone/app/relationfield/schemaeditor.py
-@@ -1,6 +1,4 @@
- # -*- coding: utf-8 -*-
--from plone.app.relationfield import HAS_CONTENTTREE
--from plone.app.relationfield import HAS_WIDGETS
- from plone.schemaeditor.fields import FieldFactory
- from plone.schemaeditor.interfaces import IFieldEditFormSchema
- from plone.schemaeditor.interfaces import IFieldFactory
-@@ -17,10 +15,7 @@
+diff --git a/plone/app/z3cform/configure.zcml b/plone/app/z3cform/configure.zcml
+index 2f053c9..c50e2a6 100644
+--- a/plone/app/z3cform/configure.zcml
++++ b/plone/app/z3cform/configure.zcml
+@@ -104,24 +104,6 @@
+            plone.app.z3cform.interfaces.IPloneFormLayer"
+       />
  
- _ = MessageFactory('plone')
+-  <!-- DATE/TIME FIELD REGISTRATIONS -->
+-  <class class="zope.schema._field.Date">
+-    <implements interface=".widget.IDateField"/>
+-  </class>
+-  <class class="zope.schema._field.Datetime">
+-    <implements interface=".widget.IDatetimeField"/>
+-  </class>
+-  <adapter
+-      factory=".widget.DateFieldWidget"
+-      provides="z3c.form.interfaces.IFieldWidget"
+-      for=".widget.IDateField
+-           z3c.form.interfaces.IFormLayer" />
+-  <adapter
+-      factory=".widget.DatetimeFieldWidget"
+-      provides="z3c.form.interfaces.IFieldWidget"
+-      for=".widget.IDatetimeField
+-           z3c.form.interfaces.IFormLayer" />
+-
+   <z3c:widgetTemplate
+       mode="input"
+       widget="z3c.form.interfaces.IMultiWidget"
+@@ -156,7 +138,6 @@
+   <!-- Use a custom actions manager that knows how to do CSRF token authentication. -->
+   <adapter factory=".csrf.AuthenticatedButtonActions" />
  
--if HAS_CONTENTTREE and not HAS_WIDGETS:
--    from plone.formwidget.contenttree import ObjPathSourceBinder
--else:
--    from plone.app.vocabularies.catalog import CatalogSource
-+from plone.app.vocabularies.catalog import CatalogSource
+-
+   <adapter factory=".converters.DatetimeWidgetConverter" />
+   <adapter factory=".converters.DateWidgetConverter" />
+   <adapter factory=".converters.SelectWidgetConverter" />
+@@ -166,6 +147,7 @@
+   <adapter factory=".converters.RelationChoiceRelatedItemsWidgetConverter" />
+   <adapter factory=".converters.RelatedItemsDataConverter" />
  
++  <!-- widget registration stuff -->
+   <class class=".widget.DateWidget">
+     <require permission="zope.Public"
+              interface=".interfaces.IDateWidget" />
+@@ -185,10 +167,10 @@
+   <class class="zope.schema._field.Datetime">
+     <implements interface=".interfaces.IDatetimeField"/>
+   </class>
+-  <adapter
+-      factory=".widget.DatetimeFieldWidget"
+-      for=".interfaces.IDatetimeField
+-           z3c.form.interfaces.IFormLayer" />
++
++  <adapter factory=".widget.DatetimeFieldWidget"
++           for=".interfaces.IDatetimeField
++                z3c.form.interfaces.IFormLayer" />
  
- class RelationFieldFactory(FieldFactory):
-@@ -58,43 +53,26 @@ def _read_portal_type(self):
-         field = self.field
-         types = []
+   <adapter factory=".widget.RelatedItemsFieldWidget"
+            for="z3c.relationfield.interfaces.IRelationChoice
+@@ -198,12 +180,18 @@
+            for="z3c.relationfield.interfaces.IRelationList
+                 z3c.form.interfaces.IFormLayer" />
  
--        if HAS_CONTENTTREE and not HAS_WIDGETS:
--            filter_ = getattr(field.source, 'selectable_filter', None) or {}
--            types.extend(filter_.criteria.get('portal_type') or [])
--        else:
--            types.extend(field.source.query.get('portal_type') or [])
-+        types.extend(field.source.query.get('portal_type') or [])
+-  <adapter
+-    factory=".widget.RelatedItemsFieldWidget"
+-    for="zope.schema.interfaces.IChoice
+-         plone.app.vocabularies.catalog.CatalogSource
+-         z3c.form.interfaces.IFormLayer" />
++  <adapter factory=".widget.RelatedItemsFieldWidget"
++           for="zope.schema.interfaces.IChoice
++                plone.app.vocabularies.catalog.CatalogSource
++                z3c.form.interfaces.IFormLayer" />
++
++  <adapter factory=".widget.QueryStringFieldWidget"
++           for="zope.schema.interfaces.IList
++                zope.schema.interfaces.IDict
++                z3c.form.interfaces.IFormLayer"/>
++
++  <adapter factory=".widget.RichTextFieldWidget"
++           for="plone.app.textfield.interfaces.IRichText
++                z3c.form.interfaces.IFormLayer"/>
  
-         return types
+-  <adapter factory=".widget.QueryStringFieldWidget" />
+-  <adapter factory="..RichTextFieldWidget" />
+ </configure>
+diff --git a/plone/app/z3cform/interfaces.py b/plone/app/z3cform/interfaces.py
+index 90895dd..da4385a 100644
+--- a/plone/app/z3cform/interfaces.py
++++ b/plone/app/z3cform/interfaces.py
+@@ -1,7 +1,7 @@
+ from z3c.form.interfaces import IFormLayer
+ from zope.schema.interfaces import IDate
+ from zope.schema.interfaces import IDatetime
+-from z3c.form.interfaces import ISelectWidget
++from z3c.form.interfaces import ISelectWidget as IBaseSelectWidget
+ from z3c.form.interfaces import ITextWidget
+ from plone.app.textfield.widget import IRichTextWidget as patextfield_IRichTextWidget
  
-     def _write_portal_type(self, value):
-         field = self.field
- 
--        if HAS_CONTENTTREE and not HAS_WIDGETS:
--            filter_ = getattr(field.source, 'selectable_filter', None) or {}
--            if value:
--                filter_.criteria['portal_type'] = list(value)
--            elif 'portal_type' in filter_.criteria:
--                del filter_.criteria['portal_type']
--        else:
--            if value:
--                field.source.query['portal_type'] = list(value)
--            elif 'portal_type' in field.source.query:
--                del field.source.query['portal_type']
-+        if value:
-+            field.source.query['portal_type'] = list(value)
-+        elif 'portal_type' in field.source.query:
-+            del field.source.query['portal_type']
- 
-     portal_type = property(_read_portal_type,
-                            _write_portal_type)
- 
- 
--if HAS_CONTENTTREE and not HAS_WIDGETS:
--    RelationChoiceFactory = RelationFieldFactory(
--        RelationChoice, _('Relation Choice'),
--        source=ObjPathSourceBinder()
--    )
--else:
--    RelationChoiceFactory = RelationFieldFactory(
--        RelationChoice, _('Relation Choice'),
--        source=CatalogSource()
--    )
-+RelationChoiceFactory = RelationFieldFactory(
-+    RelationChoice, _('Relation Choice'),
-+    source=CatalogSource()
-+)
- 
- 
- @adapter(interfaces.IRelationList)
-@@ -112,41 +90,23 @@ def _read_portal_type(self):
-         field = self.field.value_type
-         types = []
- 
--        if HAS_CONTENTTREE and not HAS_WIDGETS:
--            filter_ = getattr(field.source, 'selectable_filter', None) or {}
--            types.extend(filter_.criteria.get('portal_type') or [])
--        else:
--            types.extend(field.source.query.get('portal_type') or [])
-+        types.extend(field.source.query.get('portal_type') or [])
- 
-         return set(types)
- 
-     def _write_portal_type(self, value):
-         field = self.field.value_type
- 
--        if HAS_CONTENTTREE and not HAS_WIDGETS:
--            filter_ = getattr(field.source, 'selectable_filter', None) or {}
--            if value:
--                filter_.criteria['portal_type'] = list(value)
--            elif 'portal_type' in filter_.criteria:
--                del filter_.criteria['portal_type']
--        else:
--            if value:
--                field.source.query['portal_type'] = list(value)
--            elif 'portal_type' in field.source.query:
--                del field.source.query['portal_type']
-+        if value:
-+            field.source.query['portal_type'] = list(value)
-+        elif 'portal_type' in field.source.query:
-+            del field.source.query['portal_type']
- 
-     portal_type = property(_read_portal_type, _write_portal_type)
+@@ -27,7 +27,7 @@ class IDatetimeWidget(ITextWidget):
+     """Marker interface for the DatetimeWidget."""
  
  
--if HAS_CONTENTTREE and not HAS_WIDGETS:
--    RelationListFactory = RelationFieldFactory(
--        RelationList, _('Relation List'),
--        value_type=RelationChoice(title=_(u'Relation Choice'),
--                                  source=ObjPathSourceBinder())
--    )
--else:
--    RelationListFactory = RelationFieldFactory(
--        RelationList, _('Relation List'),
--        value_type=RelationChoice(title=_(u'Relation Choice'),
--                                  source=CatalogSource())
--    )
-+RelationListFactory = RelationFieldFactory(
-+    RelationList, _('Relation List'),
-+    value_type=RelationChoice(title=_(u'Relation Choice'),
-+                              source=CatalogSource())
-+)
-diff --git a/plone/app/relationfield/supermodel.py b/plone/app/relationfield/supermodel.py
-index 8ffec97..557b7b6 100644
---- a/plone/app/relationfield/supermodel.py
-+++ b/plone/app/relationfield/supermodel.py
-@@ -1,16 +1,11 @@
- # -*- coding: utf-8 -*-
--from plone.app.relationfield import HAS_CONTENTTREE
--from plone.app.relationfield import HAS_WIDGETS
- from plone.supermodel.exportimport import BaseHandler
- from plone.supermodel.utils import valueToElement
- from z3c.relationfield.schema import RelationChoice
- from z3c.relationfield.schema import RelationList
- from zope import schema
- 
--if HAS_CONTENTTREE and not HAS_WIDGETS:
--    from plone.formwidget.contenttree import ObjPathSourceBinder
--else:
--    from plone.app.vocabularies.catalog import CatalogSource
-+from plone.app.vocabularies.catalog import CatalogSource
+-class ISelectWidget(ISelectWidget):
++class ISelectWidget(IBaseSelectWidget):
+     """Marker interface for the SelectWidget."""
  
  
- class RelationChoiceBaseHandler(BaseHandler):
-@@ -38,11 +33,7 @@ def _constructField(self, attributes):
-         if 'portal_type' in attributes:
-             del attributes['portal_type']
+diff --git a/plone/app/z3cform/tests/test_widgets.py b/plone/app/z3cform/tests/test_widgets.py
+index f873e7b..b611c49 100644
+--- a/plone/app/z3cform/tests/test_widgets.py
++++ b/plone/app/z3cform/tests/test_widgets.py
+@@ -551,7 +551,7 @@ def test_widget_extract(self):
  
--        if HAS_CONTENTTREE and not HAS_WIDGETS and not portal_type:
--            attributes['source'] = ObjPathSourceBinder()
--        elif HAS_CONTENTTREE and not HAS_WIDGETS:
--            attributes['source'] = ObjPathSourceBinder(portal_type=portal_type)
--        elif not portal_type:
-+        if not portal_type:
-             attributes['source'] = CatalogSource()
-         else:
-             attributes['source'] = CatalogSource(portal_type=portal_type)
-@@ -55,13 +46,8 @@ def write(self, field, name, type, elementName='field'):
-                         self).write(field, name, type, elementName)
-         portal_type = []
+     def test_data_converter_list(self):
+         from plone.app.z3cform.widget import SelectWidget
+-        from plone.app.z3cform.widget import SelectWidgetConverter
++        from plone.app.z3cform.converters import SelectWidgetConverter
  
--        if HAS_CONTENTTREE and not HAS_WIDGETS:
--            filter_ = getattr(field.source, 'selectable_filter', None) or {}
--            portal_type.extend(
--                filter_.criteria.get('portal_type') or [])
--        else:
--            portal_type.extend(
--                field.source.query.get('portal_type') or [])
-+        portal_type.extend(
-+            field.source.query.get('portal_type') or [])
+         field = List(__name__='listfield',
+                      value_type=Choice(__name__='selectfield',
+@@ -593,7 +593,7 @@ def test_data_converter_list(self):
  
-         if portal_type:
-             attributeField = self.fieldAttributes['portal_type']
-diff --git a/plone/app/relationfield/tests/test_schemaeditor.py b/plone/app/relationfield/tests/test_schemaeditor.py
-index de79cdb..679e903 100644
---- a/plone/app/relationfield/tests/test_schemaeditor.py
-+++ b/plone/app/relationfield/tests/test_schemaeditor.py
-@@ -1,7 +1,4 @@
- # -*- coding: utf-8 -*-
--from plone.app.relationfield import HAS_CONTENTTREE
--from plone.app.relationfield import HAS_WIDGETS
--from plone.app.relationfield.testing import FUNCTIONAL_CONTENTTREE_TESTING
- from plone.app.relationfield.testing import FUNCTIONAL_WIDGETS_TESTING
- from plone.testing import layered
- import doctest
-@@ -14,21 +11,12 @@
+     def test_data_converter_tuple(self):
+         from plone.app.z3cform.widget import SelectWidget
+-        from plone.app.z3cform.widget import SelectWidgetConverter
++        from plone.app.z3cform.converters import SelectWidgetConverter
  
- def test_suite():
-     suite = unittest.TestSuite()
--    if HAS_CONTENTTREE and not HAS_WIDGETS:
--        suite.addTests([
--            layered(doctest.DocFileSuite(
--                    os.path.join(os.path.pardir,
--                                 'schemaeditor_contenttree.txt'),
--                    optionflags=optionflags),
--                    FUNCTIONAL_CONTENTTREE_TESTING)
--        ])
--    elif HAS_WIDGETS:
--        suite.addTests([
--            layered(doctest.DocFileSuite(
--                    os.path.join(os.path.pardir, 'schemaeditor.txt'),
--                    optionflags=optionflags),
--                    FUNCTIONAL_WIDGETS_TESTING)
--        ])
-+    suite.addTests([
-+        layered(doctest.DocFileSuite(
-+                os.path.join(os.path.pardir, 'schemaeditor.txt'),
-+                optionflags=optionflags),
-+                FUNCTIONAL_WIDGETS_TESTING)
-+    ])
-     return suite
+         field = Tuple(__name__='tuplefield',
+                       value_type=Choice(__name__='selectfield',
+@@ -625,7 +625,7 @@ def test_data_converter_tuple(self):
+ 
+     def test_data_converter_handles_empty_value(self):
+         from plone.app.z3cform.widget import SelectWidget
+-        from plone.app.z3cform.widget import SelectWidgetConverter
++        from plone.app.z3cform.converters import SelectWidgetConverter
+ 
+         field = Tuple(__name__='tuplefield',
+                       value_type=Choice(__name__='selectfield',
+@@ -794,7 +794,7 @@ def test_widget_addform_url_on_addform(self):
+ 
+     def test_data_converter_list(self):
+         from plone.app.z3cform.widget import AjaxSelectWidget
+-        from plone.app.z3cform.widget import AjaxSelectWidgetConverter
++        from plone.app.z3cform.converters import AjaxSelectWidgetConverter
+ 
+         field = List(__name__='listfield', value_type=TextLine())
+         widget = AjaxSelectWidget(self.request)
+@@ -823,7 +823,7 @@ def test_data_converter_list(self):
+ 
+     def test_data_converter_tuple(self):
+         from plone.app.z3cform.widget import AjaxSelectWidget
+-        from plone.app.z3cform.widget import AjaxSelectWidgetConverter
++        from plone.app.z3cform.converters import AjaxSelectWidgetConverter
+ 
+         field = Tuple(__name__='tuplefield', value_type=TextLine())
+         widget = AjaxSelectWidget(self.request)
+@@ -878,13 +878,13 @@ def setUp(self):
+         self.request = TestRequest(environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
+ 
+     def test_converter_toWidgetValue(self):
+-        from plone.app.z3cform.widget import QueryStringDataConverter
++        from plone.app.z3cform.converters import QueryStringDataConverter
+         converter = QueryStringDataConverter(List(), None)
+         self.assertEqual(converter.toWidgetValue(None), u'[]')
+         self.assertEqual(converter.toWidgetValue([]), u'[]')
+ 
+     def test_converter_empty_value(self):
+-        from plone.app.z3cform.widget import QueryStringDataConverter
++        from plone.app.z3cform.converters import QueryStringDataConverter
+         converter = QueryStringDataConverter(List(), None)
+         self.assertEqual(converter.toFieldValue(u''), None)
+         self.assertEqual(converter.toFieldValue(u'[]'), None)
+@@ -986,7 +986,7 @@ def test_multiple_selection(self):
+             )
+ 
+     def test_converter_RelationChoice(self):
+-        from plone.app.z3cform.widget import \
++        from plone.app.z3cform.converters import \
+             RelationChoiceRelatedItemsWidgetConverter
+         brain = Mock(getObject=Mock(return_value='obj'))
+         portal_catalog = Mock(return_value=[brain])
+@@ -994,19 +994,19 @@ def test_converter_RelationChoice(self):
+         converter = RelationChoiceRelatedItemsWidgetConverter(
+             TextLine(), widget)
+ 
+-        with mock.patch('plone.app.widgets.dx.IUUID', return_value='id'):
++        with mock.patch('plone.app.z3cform.converters.IUUID', return_value='id'):
+             self.assertEqual(converter.toWidgetValue('obj'), 'id')
+         self.assertEqual(converter.toWidgetValue(None), None)
+ 
+         with mock.patch(
+-                'plone.app.widgets.dx.getToolByName',
++                'plone.app.z3cform.converters.getToolByName',
+                 return_value=portal_catalog):
+             self.assertEqual(converter.toFieldValue('id'), 'obj')
+         self.assertEqual(converter.toFieldValue(None), None)
+ 
+     def test_converter_RelationList(self):
+-        from plone.app.z3cform.widget import RelatedItemsDataConverter
+-        from plone.app.z3cform.widget import IRelationList
++        from plone.app.z3cform.converters import RelatedItemsDataConverter
++        from z3c.relationfield.interfaces import IRelationList
+         field = List()
+         alsoProvides(field, IRelationList)
+         brain1 = Mock(getObject=Mock(return_value='obj1'), UID='id1')
+@@ -1017,19 +1017,19 @@ def test_converter_RelationList(self):
+ 
+         self.assertEqual(converter.toWidgetValue(None), None)
+         with mock.patch(
+-                'plone.app.widgets.dx.IUUID', side_effect=['id1', 'id2']):
++                'plone.app.z3cform.converters.IUUID', side_effect=['id1', 'id2']):
+             self.assertEqual(
+                 converter.toWidgetValue(['obj1', 'obj2']), 'id1;id2')
+ 
+         self.assertEqual(converter.toFieldValue(None), None)
+         with mock.patch(
+-                'plone.app.widgets.dx.getToolByName',
++                'plone.app.z3cform.converters.getToolByName',
+                 return_value=portal_catalog):
+             self.assertEqual(
+                 converter.toFieldValue('id1;id2'), ['obj1', 'obj2'])
+ 
+     def test_converter_List_of_Choice(self):
+-        from plone.app.z3cform.widget import RelatedItemsDataConverter
++        from plone.app.z3cform.converters import RelatedItemsDataConverter
+         field = List()
+         widget = Mock(separator=';')
+         converter = RelatedItemsDataConverter(field, widget)
+diff --git a/plone/app/z3cform/widget.py b/plone/app/z3cform/widget.py
+index 790f4c2..584947e 100644
+--- a/plone/app/z3cform/widget.py
++++ b/plone/app/z3cform/widget.py
+@@ -2,8 +2,7 @@
+ from Products.CMFCore.utils import getToolByName
+ from lxml import etree
+ from plone.app.textfield.value import RichTextValue
+-from plone.app.textfield.widget import IRichTextWidget as patextfield_IRichTextWidget  # noqa
+-from plone.app.textfield.widget import RichTextWidget as patextfield_RichTextWidget  # noqa
++from plone.app.textfield.widget import RichTextWidget as patextfield_RichTextWidget
+ from plone.app.widgets.base import InputWidget
+ from plone.app.widgets.base import SelectWidget as BaseSelectWidget
+ from plone.app.widgets.base import TextareaWidget
+@@ -21,11 +20,11 @@
+ from z3c.form.browser.widget import HTMLInputWidget
+ from z3c.form.interfaces import IAddForm
+ from z3c.form.interfaces import IFieldWidget
+-from z3c.form.interfaces import ISelectWidget
+ from z3c.form.interfaces import NO_VALUE
+ from z3c.form.widget import FieldWidget
+ from z3c.form.widget import Widget
+ from zope.component import getUtility
++from zope.component import ComponentLookupError
+ from zope.i18n import translate
+ from zope.interface import implementer
+ from zope.interface import implementsOnly
+@@ -38,7 +37,8 @@
+     DateWidgetConverter, DatetimeWidgetConverter)
+ from plone.app.z3cform.interfaces import (
+     IDatetimeWidget, IDateWidget, IAjaxSelectWidget,
+-    IRelatedItemsWidget, IQueryStringWidget, IRichTextWidget)
++    IRelatedItemsWidget, IQueryStringWidget, IRichTextWidget,
++    ISelectWidget)
+ 
+ import json
+ 
+@@ -553,7 +553,10 @@ def render(self):
+ def DateFieldWidget(field, request):
+     widget = FieldWidget(field, DateWidget(request))
+     widget.pattern_options.setdefault('date', {})
+-    widget.pattern_options['date']['firstDay'] = first_weekday()
++    try:
++        widget.pattern_options['date']['firstDay'] = first_weekday()
++    except ComponentLookupError:
++        pass
+     return widget
  
  
-diff --git a/plone/app/relationfield/tests/test_supermodel.py b/plone/app/relationfield/tests/test_supermodel.py
-index d8eba2a..ef38074 100644
---- a/plone/app/relationfield/tests/test_supermodel.py
-+++ b/plone/app/relationfield/tests/test_supermodel.py
-@@ -1,7 +1,4 @@
- # -*- coding: utf-8 -*-
--from plone.app.relationfield import HAS_CONTENTTREE
--from plone.app.relationfield import HAS_WIDGETS
--from plone.app.relationfield.testing import FUNCTIONAL_CONTENTTREE_TESTING
- from plone.app.relationfield.testing import FUNCTIONAL_WIDGETS_TESTING
- from plone.testing import layered
- import doctest
-@@ -14,21 +11,12 @@
- 
- def test_suite():
-     suite = unittest.TestSuite()
--    if HAS_CONTENTTREE and not HAS_WIDGETS:
--        suite.addTests([
--            layered(doctest.DocFileSuite(
--                    os.path.join(os.path.pardir,
--                                 'supermodel_contenttree.txt'),
--                    optionflags=optionflags),
--                    FUNCTIONAL_CONTENTTREE_TESTING)
--        ])
--    elif HAS_WIDGETS:
--        suite.addTests([
--            layered(doctest.DocFileSuite(
--                    os.path.join(os.path.pardir, 'supermodel.txt'),
--                    optionflags=optionflags),
--                    FUNCTIONAL_WIDGETS_TESTING)
--        ])
-+    suite.addTests([
-+        layered(doctest.DocFileSuite(
-+                os.path.join(os.path.pardir, 'supermodel.txt'),
-+                optionflags=optionflags),
-+                FUNCTIONAL_WIDGETS_TESTING)
-+    ])
-     return suite
+@@ -587,5 +590,7 @@ def RichTextFieldWidget(field, request):
  
  
+ @implementer(IFieldWidget)
+-def QueryStringFieldWidget(field, request):
++def QueryStringFieldWidget(field, request, extra=None):
++    if extra is not None:
++        request = extra
+     return FieldWidget(field, QueryStringWidget(request))
 diff --git a/setup.py b/setup.py
-index dc226ab..15e6562 100644
+index f44ce59..c97ba01 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -40,7 +40,7 @@
-           'plone.schemaeditor>=1.3.5.dev0',
-           'Products.CMFCore',
-           'plone.rfc822',
--          'plone.app.z3cform>=1.1.0'
-+          'plone.app.z3cform>=1.1.0.dev0'
-       ],
-       extras_require={'test': ['plone.app.testing', 'plone.app.dexterity']},
-       entry_points="""
+@@ -46,7 +46,7 @@ def read(*rnames):
+         'Products.CMFCore',
+         'Products.CMFPlone',
+         'Zope2',  # Products.Five
+-        'plone.app.widgets>=2',
++        'plone.app.widgets>=2.0.0.dev0',
+         'plone.protect',
+         'plone.z3cform>=0.5.11dev',
+         'z3c.form >= 3.0',
+@@ -59,6 +59,7 @@ def read(*rnames):
+         'zope.interface',
+         'zope.schema',
+         'zope.traversing',
++        'plone.app.textfield'
+     ],
+     extras_require={
+         'tests': [
 
 
