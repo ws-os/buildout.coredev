@@ -1,40 +1,69 @@
-Repository: plone.app.event
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-26T23:25:05-06:00
+Date: 2015-01-27T00:11:34-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.event/commit/7831f16975c15622154c92490b694feb6cd4d274
+Commit: https://github.com/plone/Products.CMFPlone/commit/276d1048d0b25b5cfeeaedb87e3c7077fb7a652e
 
-fix import location of date widget
+require being logged in for development mode
 
 Files changed:
-M plone/app/event/dx/behaviors.py
-M setup.py
+M Products/CMFPlone/resources/browser/resource.py
 
-diff --git a/plone/app/event/dx/behaviors.py b/plone/app/event/dx/behaviors.py
-index 3449139..bd34e10 100644
---- a/plone/app/event/dx/behaviors.py
-+++ b/plone/app/event/dx/behaviors.py
-@@ -15,7 +15,7 @@
- from plone.app.event.dx.interfaces import IDXEvent
- from plone.app.event.dx.interfaces import IDXEventRecurrence
- from plone.app.textfield.value import RichTextValue
--from plone.app.widgets.dx import DatetimeWidget
-+from plone.app.z3cform.widget import DatetimeWidget
- from plone.app.z3cform.interfaces import IPloneFormLayer
- from plone.autoform import directives as form
- from plone.autoform.interfaces import IFormFieldProvider
-diff --git a/setup.py b/setup.py
-index ece1940..cbbf862 100644
---- a/setup.py
-+++ b/setup.py
-@@ -55,7 +55,7 @@
-         'plone.app.textfield',
-         'plone.app.widgets [dexterity] >= 1.7.0',
-         'plone.app.vocabularies >= 2.1.15.dev0',
--        'plone.app.z3cform',
-+        'plone.app.z3cform>=1.1.0.dev0',
-         'plone.autoform>=1.4',
-         'plone.behavior',
-         'plone.browserlayer',
+diff --git a/Products/CMFPlone/resources/browser/resource.py b/Products/CMFPlone/resources/browser/resource.py
+index 0e32f90..38d8ae1 100644
+--- a/Products/CMFPlone/resources/browser/resource.py
++++ b/Products/CMFPlone/resources/browser/resource.py
+@@ -13,6 +13,7 @@
+ from zope.component import getMultiAdapter
+ from zope.component import getUtility
+ from zope.ramcache.interfaces import ram
++from Products.CMFCore.utils import _getAuthenticatedUser
+ 
+ 
+ class ResourceView(ViewletBase):
+@@ -21,6 +22,8 @@ class ResourceView(ViewletBase):
+ 
+     @property
+     def development(self):
++        if _getAuthenticatedUser(self.context).getUserName() == 'Anonymous User':
++            return False
+         return self.registry.records['plone.resources.development'].value
+ 
+     @property
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2015-01-27T00:16:58-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/760db7a5d1a2c40435da9f9f144ddd0ae41364bf
+
+fix test to match body text
+
+Files changed:
+M Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt
+
+diff --git a/Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt b/Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt
+index 38177b2..e1055e2 100644
+--- a/Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt
++++ b/Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt
+@@ -44,7 +44,7 @@ browser.
+ Now that the document has been added, we can edit it, but we pretend
+ we don't know better and forget to type in a Title:
+ 
+-    >>> browser.getControl('Body Text').value = 'About test_user_1_'
++    >>> browser.getControl(name='text').value = 'About test_user_1_'
+     >>> browser.getControl('Save').click()
+     >>> 'Title is required, please correct.' in browser.contents
+     True
+@@ -179,7 +179,7 @@ between cut and paste, the page should say so and not give a stacktrace.
+ 
+     >>> browser.open('http://nohost/plone/Members/test_user_1_')
+     >>> browser.getLink('Page').click()
+-    >>> browser.getControl('Body Text').value = ''
++    >>> browser.getControl(name='text').value = ''
+     >>> browser.getControl('Title').value = 'Op een dag'
+     >>> browser.getControl('Save').click()
+     >>> 'Op een dag' in browser.contents
 
 
