@@ -1,605 +1,86 @@
 Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-01-27T18:05:23+01:00
+Date: 2015-01-27T18:33:59+01:00
 Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/8ca6b8371f79623d00c7740b2318ff039f0ba211
+Commit: https://github.com/plone/plone.app.contenttypes/commit/109850d03af405a0f23da396f41bfab09984e6d5
 
-reuse patch-method from Products.contentmigration.utils
-Prevent UUID Error-Messages when migrating folders.
+fix code-analysis and indent
 
 Files changed:
-A plone/app/contenttypes/migration/patches.py
 M plone/app/contenttypes/migration/browser.py
+M plone/app/contenttypes/migration/migration.py
+M plone/app/contenttypes/migration/patches.py
+M plone/app/contenttypes/tests/test_migration_topic.py
 
 diff --git a/plone/app/contenttypes/migration/browser.py b/plone/app/contenttypes/migration/browser.py
-index 4b9beff..77b8c09 100644
+index 7c58764..f6cec0c 100644
 --- a/plone/app/contenttypes/migration/browser.py
 +++ b/plone/app/contenttypes/migration/browser.py
-@@ -6,6 +6,7 @@
- from Products.CMFPlone import PloneMessageFactory as _
- from Products.Five.browser import BrowserView
- from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
-+from Products.contentmigration.utils import patch, undoPatch
- from Products.statusmessages.interfaces import IStatusMessage
- from datetime import datetime
- from datetime import timedelta
-@@ -17,6 +18,7 @@
+@@ -18,7 +18,8 @@
  from plone.app.contenttypes.content import NewsItem
  from plone.app.contenttypes.migration import dxmigration
  from plone.app.contenttypes.migration import migration
-+from plone.app.contenttypes.migration.patches import patched_insertForwardIndexEntry
+-from plone.app.contenttypes.migration.patches import patched_insertForwardIndexEntry
++from plone.app.contenttypes.migration.patches import \
++    patched_insertForwardIndexEntry
  from plone.app.contenttypes.migration.utils import HAS_MULTILINGUAL
  from plone.app.contenttypes.migration.utils import installTypeIfNeeded
  from plone.app.contenttypes.migration.utils import isSchemaExtended
-@@ -37,6 +39,7 @@
- from zope.component import getMultiAdapter
- from zope.component import queryUtility
- from zope.interface import Interface
-+from Products.PluginIndexes.UUIDIndex.UUIDIndex import UUIDIndex
- 
- import logging
- import pkg_resources
-@@ -61,6 +64,11 @@
- ONE_OBJECT_MIGRATION_TIME = 500
- 
- 
-+def pass_fn(*args, **kwargs):
-+    """Empty function used for patching."""
-+    pass
-+
-+
- class FixBaseClasses(BrowserView):
- 
-     def __call__(self):
-@@ -113,6 +121,9 @@ def __call__(self,
-                  from_form=False):
- 
-         portal = self.context
-+        if content_types == 'all':
-+            content_types = DEFAULT_TYPES
-+
-         if not from_form and migrate not in ['1', 'True', 'true', 1]:
-             url1 = '{0}/@@migrate_from_atct?migrate=1'.format(
-                 portal.absolute_url())
-@@ -149,11 +160,17 @@ def __call__(self,
-         # switch of setModificationDate on changes
-         self.patchNotifyModified()
- 
-+        # patch UUIDIndex
-+        patch(
-+            UUIDIndex,
-+            'insertForwardIndexEntry',
-+            patched_insertForwardIndexEntry)
-+
-         not_migrated = []
-         migrated_types = {}
- 
-         for (k, v) in ATCT_LIST.items():
--            if content_types != "all" and k not in content_types:
-+            if k not in content_types:
-                 not_migrated.append(k)
-                 continue
-             # test if the ct is extended beyond blobimage and blobfile
-@@ -207,6 +224,9 @@ def __call__(self,
-         # switch on setModificationDate on changes
-         self.resetNotifyModified()
- 
-+        # unpatch UUIDIndex
-+        undoPatch(UUIDIndex, 'insertForwardIndexEntry')
-+
-         duration = str(timedelta(seconds=(datetime.now() - starttime).seconds))
-         if not_migrated:
-             msg = ("The following types were not migrated: \n %s"
-@@ -257,21 +277,13 @@ def patchNotifyModified(self):
-         So when we migrate Documents before Folders the folders
-         ModifiedDate gets changed.
-         """
--        patch = lambda *args: None
-         for klass in PATCH_NOTIFY:
--            old_notifyModified = getattr(klass, 'notifyModified', None)
--            klass.notifyModified = patch
--            klass.old_notifyModified = old_notifyModified
-+            patch(klass, 'notifyModified', pass_fn)
- 
-     def resetNotifyModified(self):
-         """reset notifyModified to old state"""
--
-         for klass in PATCH_NOTIFY:
--            if klass.old_notifyModified is None:
--                del klass.notifyModified
--            else:
--                klass.notifyModified = klass.old_notifyModified
--            del klass.old_notifyModified
-+            undoPatch(klass, 'notifyModified')
+diff --git a/plone/app/contenttypes/migration/migration.py b/plone/app/contenttypes/migration/migration.py
+index 7c60cf7..5ca0793 100644
+--- a/plone/app/contenttypes/migration/migration.py
++++ b/plone/app/contenttypes/migration/migration.py
+@@ -162,7 +162,7 @@ def cleanup_stored_refs(obj):
+     if safe_hasattr(obj, '_backrefs'):
+         del obj._backrefs
+     if safe_hasattr(obj, '_relatedItemsOrder'):
+-    del obj._relatedItemsOrder
++        del obj._relatedItemsOrder
  
  
- class IATCTMigratorForm(Interface):
+ def restoreReferences(portal,
 diff --git a/plone/app/contenttypes/migration/patches.py b/plone/app/contenttypes/migration/patches.py
-new file mode 100644
-index 0000000..30ecc88
---- /dev/null
+index 30ecc88..3c1ab0c 100644
+--- a/plone/app/contenttypes/migration/patches.py
 +++ b/plone/app/contenttypes/migration/patches.py
-@@ -0,0 +1,23 @@
-+# -*- coding: UTF-8 -*-
-+"""Patches used for migrations. These patches are applied before and removed
-+after running the migration.
-+"""
-+from Products.PluginIndexes.common.UnIndex import _marker
-+
-+
-+# Prevent UUID Error-Messages when migrating folders.
-+# Products.PluginIndexes.UUIDIndex.UUIDIndex.UUIDIndex.insertForwardIndexEntry
-+def patched_insertForwardIndexEntry(self, entry, documentId):
-+    """Take the entry provided and put it in the correct place
-+    in the forward index.
-+    """
-+    if entry is None:
-+        return
-+
-+    old_docid = self._index.get(entry, _marker)
-+    if old_docid is _marker:
-+        self._index[entry] = documentId
-+        self._length.change(1)
-+    # elif old_docid != documentId:
-+    #     logger.error("A different document with value '%s' already "
-+    #         "exists in the index.'" % entry)
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2015-01-27T18:05:33+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/7807fbdeaccc52eedcf2aeaa0cfd14731823f893
-
-always rebuild catalog after migrating
-refactor restoreReferences
-
-Files changed:
-M plone/app/contenttypes/migration/browser.py
-M plone/app/contenttypes/migration/migration.py
-M plone/app/contenttypes/tests/test_migration.py
-
-diff --git a/plone/app/contenttypes/migration/browser.py b/plone/app/contenttypes/migration/browser.py
-index 77b8c09..be37bd3 100644
---- a/plone/app/contenttypes/migration/browser.py
-+++ b/plone/app/contenttypes/migration/browser.py
-@@ -213,8 +213,10 @@ def __call__(self,
-         # if there are blobnewsitems we just migrate them silently.
-         migration.migrate_blobnewsitems(portal)
- 
--        if migrate_references:
--            migration.restoreReferences(portal)
-+        catalog.clearFindAndRebuild()
-+
-+        # rebuild catalog, restore references and cleanup
-+        migration.restoreReferences(portal, migrate_references, content_types)
- 
-         # switch linkintegrity back to what it was before migrating
-         site_props.manage_changeProperties(
-@@ -300,10 +302,7 @@ class IATCTMigratorForm(Interface):
-     migrate_references = schema.Bool(
-         title=u"Migrate references?",
-         description=(
--            u"Select this option to migrate all "
--            u"references to each content type. "
--            u"This will rebuild the whole catalog and "
--            u"increase the migration-time."
-+            u"Select this option to migrate references."
-         ),
-         default=True
-     )
-diff --git a/plone/app/contenttypes/migration/migration.py b/plone/app/contenttypes/migration/migration.py
-index 5737f6f..52a1893 100644
---- a/plone/app/contenttypes/migration/migration.py
-+++ b/plone/app/contenttypes/migration/migration.py
-@@ -24,6 +24,7 @@
- from plone.app.contenttypes.migration.utils import copy_contentrules
- from plone.app.contenttypes.migration.utils import move_comments
- from plone.app.contenttypes.migration.utils import migrate_leadimage
-+from plone.app.contenttypes.utils import DEFAULT_TYPES
- from plone.app.textfield.value import RichTextValue
- from plone.app.uuid.utils import uuidToObject
- from plone.dexterity.interfaces import IDexterityContent
-@@ -90,10 +91,10 @@ def migrate_portlets(src_obj, dst_obj):
-                             'for manager {1}'.format(key, manager))
- 
- 
--def refs(obj):
-+def restore_refs(obj):
-+    """Restore references stored in the attribute _relatedItems.
-+    """
-     intids = getUtility(IIntIds)
--    out = ''
--
-     try:
-         if not getattr(obj, 'relatedItems', None):
-             obj.relatedItems = PersistentList()
-@@ -105,19 +106,16 @@ def refs(obj):
-             to_obj = uuidToObject(uuid)
-             to_id = intids.getId(to_obj)
-             obj.relatedItems.append(RelationValue(to_id))
--            out += str('Restore Relation from %s to %s \n' % (obj, to_obj))
--        del obj._relatedItems
--
-+            logger.info('Restored Relation from %s to %s' % (obj, to_obj))
-     except AttributeError:
-         pass
--    return out
- 
- 
--def backrefs(portal, obj):
-+def restore_backrefs(portal, obj):
-+    """Restore backreferences stored in the attribute _backrefs.
-+    """
-     intids = getUtility(IIntIds)
-     uid_catalog = getToolByName(portal, 'uid_catalog')
--    out = ''
--
-     try:
-         backrefobjs = [uuidToObject(uuid) for uuid in obj._backrefs]
-         for backrefobj in backrefobjs:
-@@ -139,53 +137,51 @@ def backrefs(portal, obj):
-                 path = '/'.join(obj.getPhysicalPath())
-                 uid_catalog.catalog_object(obj, path)
-                 backrefobj.setRelatedItems(obj)
--            out += str(
--                'Restore BackRelation from %s to %s \n' % (
--                    backrefobj,
--                    obj
--                )
--            )
--        del obj._backrefs
-+            logger.info(
-+                'Restored BackRelation from %s to %s' % (backrefobj, obj))
-     except AttributeError:
-         pass
--    return out
- 
- 
--def order(obj):
--    out = ''
-+def restore_reforder(obj):
-+    """Restore order of references stored in the attribute _relatedItemsOrder.
-+    """
-     if not hasattr(obj, '_relatedItemsOrder'):
-         # Nothing to do
--        return out
--
-+        return
-     relatedItemsOrder = obj._relatedItemsOrder
-     uid_position_map = dict([(y, x) for x, y in enumerate(relatedItemsOrder)])
-     key = lambda rel: uid_position_map.get(rel.to_object.UID(), 0)
-     obj.relatedItems = sorted(obj.relatedItems, key=key)
--    out += str('%s ordered.' % obj)
-+
-+
-+def cleanup_stored_refs(obj):
-+    """Cleanup new dx item."""
-+    if safe_hasattr(obj, '_relatedItems'):
-+        del obj._relatedItems
-+    if safe_hasattr(obj, '_backrefs'):
-+        del obj._backrefs
-+    if safe_hasattr(obj, '_relatedItemsOrder'):
-     del obj._relatedItemsOrder
--    return out
- 
- 
--def restoreReferences(portal):
--    """ iterate over all Dexterity Objs and restore as Dexterity Reference. """
--    out = ''
-+def restoreReferences(portal,
-+                      migrate_references=True,
-+                      content_types=DEFAULT_TYPES):
-+    """Iterate over new Dexterity items and restore Dexterity References.
-+    """
-     catalog = getToolByName(portal, "portal_catalog")
--    # Seems that these newly created objs are not reindexed
--    catalog.clearFindAndRebuild()
-     results = catalog.searchResults(
--        object_provides=IDexterityContent.__identifier__)
-+        object_provides=IDexterityContent.__identifier__,
-+        portal_type=content_types)
- 
-     for brain in results:
-         obj = brain.getObject()
--
--        # refs
--        out += refs(obj)
--        # backrefs
--        out += backrefs(portal, obj)
--        # order
--        out += order(obj)
--
--    return out
-+        if migrate_references:
-+            restore_refs(obj)
-+            restore_backrefs(portal, obj)
-+            restore_reforder(obj)
-+        cleanup_stored_refs(obj)
- 
- 
- class ReferenceMigrator(object):
-diff --git a/plone/app/contenttypes/tests/test_migration.py b/plone/app/contenttypes/tests/test_migration.py
-index a6020be..795b5a9 100644
---- a/plone/app/contenttypes/tests/test_migration.py
-+++ b/plone/app/contenttypes/tests/test_migration.py
-@@ -974,6 +974,10 @@ def test_relations_are_migrated(self):
-         applyProfile(self.portal, 'plone.app.contenttypes:default')
-         migrate_documents(self.portal)
-         migrate_folders(self.portal)
-+
-+        # rebuild catalog
-+        self.portal.portal_catalog.clearFindAndRebuild()
-+
-         dx_folder1 = self.portal['folder1']
-         dx_folder2 = self.portal['folder2']
- 
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2015-01-27T18:05:43+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/27e708a90961f10b20820dcb538ef33252694e7e
-
-logging full results when using the form
-
-Files changed:
-M plone/app/contenttypes/migration/browser.py
-M plone/app/contenttypes/migration/migration.py
-
-diff --git a/plone/app/contenttypes/migration/browser.py b/plone/app/contenttypes/migration/browser.py
-index be37bd3..7c58764 100644
---- a/plone/app/contenttypes/migration/browser.py
-+++ b/plone/app/contenttypes/migration/browser.py
-@@ -258,6 +258,7 @@ def __call__(self,
-                 'content_types': content_types,
-                 'migrated_types': migrated_types,
-             }
-+            logger.info(msg)
-             return stats
- 
-     def stats(self):
-diff --git a/plone/app/contenttypes/migration/migration.py b/plone/app/contenttypes/migration/migration.py
-index 52a1893..7c60cf7 100644
---- a/plone/app/contenttypes/migration/migration.py
-+++ b/plone/app/contenttypes/migration/migration.py
-@@ -268,7 +268,7 @@ class ATCTContentMigrator(CMFItemMigrator, ReferenceMigrator):
-     def __init__(self, *args, **kwargs):
-         super(ATCTContentMigrator, self).__init__(*args, **kwargs)
-         logger.info(
--            "Migrating object {0}".format(
-+            "Migrating {0}".format(
-                 '/'.join(self.old.getPhysicalPath())))
- 
-     def beforeChange_store_comments_on_portal(self):
-@@ -312,7 +312,7 @@ class ATCTFolderMigrator(CMFFolderMigrator, ReferenceMigrator):
-     def __init__(self, *args, **kwargs):
-         super(ATCTFolderMigrator, self).__init__(*args, **kwargs)
-         logger.info(
--            "Migrating object {}".format('/'.join(self.old.getPhysicalPath())))
-+            "Migrating {}".format('/'.join(self.old.getPhysicalPath())))
- 
-     def beforeChange_store_comments_on_portal(self):
-         """Comments from plone.app.discussion are lost when the
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2015-01-27T18:05:51+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/620c630dc9be409dbfb6f9b00f9137a9b3663bf0
-
-Keep migrated comments on the old objects. They will be removed with the objects.
-
-Files changed:
-M plone/app/contenttypes/migration/utils.py
-
-diff --git a/plone/app/contenttypes/migration/utils.py b/plone/app/contenttypes/migration/utils.py
-index 89813be..d283847 100644
---- a/plone/app/contenttypes/migration/utils.py
-+++ b/plone/app/contenttypes/migration/utils.py
-@@ -1,5 +1,6 @@
- # -*- coding: utf-8 -*-
- from Products.CMFCore.utils import getToolByName
-+from Products.CMFPlone.interfaces import IPloneSiteRoot
- from Products.CMFPlone.utils import safe_unicode, safe_hasattr
- from Products.GenericSetup.context import DirectoryImportContext
- from Products.GenericSetup.utils import importObjects
-@@ -142,10 +143,14 @@ def move_comments(source_object, target_object):
-             logger.error('Comments exist on {0}').format(
-                 target_object.absolute_url())
-         target_annotations[DISCUSSION_KEY] = deepcopy(comments)
--        source_conversation = IConversation(source_object)
--        for comment in source_conversation.getComments():
--            del source_conversation[comment.comment_id]
--        del source_annotations[DISCUSSION_KEY]
-+
-+        # Delete comments from the portal where wthey were stored temporarily.
-+        # Comments on the old objects will be removed with the objects.
-+        if IPloneSiteRoot.providedBy(source_object):
-+            source_conversation = IConversation(source_object)
-+            for comment in source_conversation.getComments():
-+                del source_conversation[comment.comment_id]
-+            del source_annotations[DISCUSSION_KEY]
- 
- 
- def copy_contentrules(source_object, target_object):
-
-
-Repository: plone.app.contenttypes
-Branch: refs/heads/master
-Date: 2015-01-27T18:06:02+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/54de69f9ffc405f50b6abb70cfdaeaef6805425a
-
-improve test by getting the actual results when testing migrated collections
-
-Files changed:
-M plone/app/contenttypes/tests/test_migration_topic.py
-
+@@ -1,4 +1,4 @@
+-# -*- coding: UTF-8 -*-
++# -*- coding: utf-8 -*-
+ """Patches used for migrations. These patches are applied before and removed
+ after running the migration.
+ """
 diff --git a/plone/app/contenttypes/tests/test_migration_topic.py b/plone/app/contenttypes/tests/test_migration_topic.py
-index d52fbdd..b24ec57 100644
+index b24ec57..7789964 100644
 --- a/plone/app/contenttypes/tests/test_migration_topic.py
 +++ b/plone/app/contenttypes/tests/test_migration_topic.py
-@@ -11,6 +11,7 @@
+@@ -1,17 +1,17 @@
+ # -*- coding: utf-8 -*-
+ from DateTime import DateTime
+ from Products.CMFCore.utils import getToolByName
+-from plone.app.contenttypes.migration.topics import migrate_topics
+ from plone.app.contenttypes.behaviors.collection import ICollection
++from plone.app.contenttypes.migration.topics import migrate_topics
+ from plone.app.contenttypes.testing import \
+     PLONE_APP_CONTENTTYPES_MIGRATION_TESTING
+-from plone.dexterity.content import Container
++from plone.app.querystring.queryparser import parseFormquery
+ from plone.app.testing import applyProfile
+ from plone.app.testing import login
++from plone.dexterity.content import Container
  from plone.dexterity.interfaces import IDexterityFTI
  from zope.component import queryUtility
  from zope.interface import implementer
-+from plone.app.querystring.queryparser import parseFormquery
+-from plone.app.querystring.queryparser import parseFormquery
  
  import unittest
  
-@@ -324,7 +325,7 @@ def test_ATCurrentAuthorCriterion(self):
-         )
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATListCriterion(self):
-         # The new-style queries do not currently offer the possibility
-@@ -353,7 +354,7 @@ def test_ATListCriterion(self):
-                           'v': ('Document', 'Folder')})
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATPathCriterion(self):
-         crit = self.add_criterion(
-@@ -366,9 +367,14 @@ def test_ATPathCriterion(self):
-                          [{'i': 'path',
+@@ -368,7 +368,6 @@ def test_ATPathCriterion(self):
                             'o': 'plone.app.querystring.operation.string.path',
                             'v': self.portal.folder.UID()}])
-+        # check is the query is correct
-+        from plone.app.querystring.queryparser import parseFormquery
-+        self.assertEqual(
-+            parseFormquery(self.portal, self.portal.topic.query),
-+            {'path': {'query': ['/plone/folder']}})
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATPathCriterionNonRecursive(self):
-         # Topics supported non recursive search, so search at a
-@@ -389,7 +395,7 @@ def test_ATPathCriterionNonRecursive(self):
-                            'v': self.portal.folder.UID() + '::1'}])
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATPathCriterionMultiRecursive(self):
-         # Collections support multiple paths since
-@@ -416,7 +422,7 @@ def test_ATPathCriterionMultiRecursive(self):
-                           'v': self.portal.folder2.UID()})
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATPathCriterionMultiNonRecursive(self):
-         # Collections support multiple paths since
-@@ -443,7 +449,7 @@ def test_ATPathCriterionMultiNonRecursive(self):
-                           'v': self.portal.folder2.UID() + '::1'})
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATBooleanCriterion(self):
-         # Note that in standard Plone the boolean criterion is only
-@@ -468,7 +474,7 @@ def test_ATBooleanCriterion(self):
-         )
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATDateRangeCriteria(self):
-         time1 = DateTime()
-@@ -512,7 +518,7 @@ def test_ATDateRangeCriteria(self):
-         self.assertEqual(query[2]['v'], (time1 + 3, time1 + 5))
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATPortalTypeCriterion(self):
-         self.add_criterion(
-@@ -530,7 +536,7 @@ def test_ATPortalTypeCriterion(self):
-         )
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATPortalTypeCriterionOfTopic(self):
-         # We migrate Topics to Collections, so we should update
-@@ -548,7 +554,7 @@ def test_ATPortalTypeCriterionOfTopic(self):
-                            'v': ('Collection',)}])
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATSelectionCriterion(self):
-         # The new-style queries do not currently offer the possibility
-@@ -583,7 +589,7 @@ def test_ATSelectionCriterion(self):
-                           'v': ('Document', 'Collection')})
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATSelectionCriterionForTypeTitle(self):
-         # 'portal_type' is the object id of the FTI in portal_types.
-@@ -603,7 +609,7 @@ def test_ATSelectionCriterionForTypeTitle(self):
-                            'v': ['Document', 'Folder']}])
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATReferenceCriterion(self):
-         # Note: the new criterion is disabled by default.  Also, it
-@@ -625,7 +631,7 @@ def test_ATReferenceCriterion(self):
-         # )
- 
-         # Check that the resulting query does not give an error.
--        # self.portal.topic.getQuery()
-+        # self.portal.topic.results
- 
-     def test_ATRelativePathCriterion(self):
-         crit = self.add_criterion(
-@@ -643,7 +649,7 @@ def test_ATRelativePathCriterion(self):
-         )
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATRelativePathCriterionNonRecursive(self):
-         # Topics supported non recursive search, so search at a specific
-@@ -660,7 +666,7 @@ def test_ATRelativePathCriterionNonRecursive(self):
-               'v': '../folder'}])
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATSimpleIntCriterion(self):
-         self.add_criterion('getObjPositionInParent', 'ATSimpleIntCriterion', 7)
-@@ -672,7 +678,7 @@ def test_ATSimpleIntCriterion(self):
-                            'v': 7}])
- 
-         # Check that the resulting query does not give an error.
--        self.portal.topic.getQuery()
-+        self.portal.topic.results
- 
-     def test_ATSimpleIntCriterionMinimum(self):
-         crit = self.add_criterion(
+         # check is the query is correct
+-        from plone.app.querystring.queryparser import parseFormquery
+         self.assertEqual(
+             parseFormquery(self.portal, self.portal.topic.query),
+             {'path': {'query': ['/plone/folder']}})
 
 
