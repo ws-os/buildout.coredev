@@ -1,69 +1,26 @@
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-27T00:11:34-06:00
+Date: 2015-01-27T00:11:23-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/276d1048d0b25b5cfeeaedb87e3c7077fb7a652e
+Commit: https://github.com/plone/mockup/commit/6a9555f0653afd3488ea566362c577d8a8bb5dec
 
-require being logged in for development mode
+change label to say it only works with logged in users
 
 Files changed:
-M Products/CMFPlone/resources/browser/resource.py
+M mockup/patterns/resourceregistry/js/registry.js
 
-diff --git a/Products/CMFPlone/resources/browser/resource.py b/Products/CMFPlone/resources/browser/resource.py
-index 0e32f90..38d8ae1 100644
---- a/Products/CMFPlone/resources/browser/resource.py
-+++ b/Products/CMFPlone/resources/browser/resource.py
-@@ -13,6 +13,7 @@
- from zope.component import getMultiAdapter
- from zope.component import getUtility
- from zope.ramcache.interfaces import ram
-+from Products.CMFCore.utils import _getAuthenticatedUser
- 
- 
- class ResourceView(ViewletBase):
-@@ -21,6 +22,8 @@ class ResourceView(ViewletBase):
- 
-     @property
-     def development(self):
-+        if _getAuthenticatedUser(self.context).getUserName() == 'Anonymous User':
-+            return False
-         return self.registry.records['plone.resources.development'].value
- 
-     @property
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2015-01-27T00:16:58-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/760db7a5d1a2c40435da9f9f144ddd0ae41364bf
-
-fix test to match body text
-
-Files changed:
-M Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt
-
-diff --git a/Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt b/Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt
-index 38177b2..e1055e2 100644
---- a/Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt
-+++ b/Products/CMFPlone/tests/AddMoveAndDeleteDocument.txt
-@@ -44,7 +44,7 @@ browser.
- Now that the document has been added, we can edit it, but we pretend
- we don't know better and forget to type in a Title:
- 
--    >>> browser.getControl('Body Text').value = 'About test_user_1_'
-+    >>> browser.getControl(name='text').value = 'About test_user_1_'
-     >>> browser.getControl('Save').click()
-     >>> 'Title is required, please correct.' in browser.contents
-     True
-@@ -179,7 +179,7 @@ between cut and paste, the page should say so and not give a stacktrace.
- 
-     >>> browser.open('http://nohost/plone/Members/test_user_1_')
-     >>> browser.getLink('Page').click()
--    >>> browser.getControl('Body Text').value = ''
-+    >>> browser.getControl(name='text').value = ''
-     >>> browser.getControl('Title').value = 'Op een dag'
-     >>> browser.getControl('Save').click()
-     >>> 'Op een dag' in browser.contents
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index fe6cbfc..8bb058a 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -515,7 +515,7 @@ define([
+           '<label>' +
+             '<input type="checkbox" ' +
+               '<% if(data.development){ %> checked="checked" <% } %>' +
+-              ' > Development Mode' +
++              ' > Development Mode(only logged in users)' +
+           '</label>' +
+         '</div>' +
+       '</div>' +
 
 
