@@ -1,321 +1,35 @@
-Repository: plone.app.dexterity
+Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2014-12-27T16:31:35+01:00
-Author: Tom Gross (tomgross) <itconsense@gmail.com>
-Commit: https://github.com/plone/plone.app.dexterity/commit/20f15368091874f6c6abd9f535fd209fff375eb3
+Date: 2015-01-28T04:26:38+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.event/commit/68962d02efd16ceeeef4509b4c1ef26836e04fca
 
-remove traces of PloneTestCase
+we already have a site object here
 
 Files changed:
-M setup.py
-D plone/app/dexterity/tests/base.py
-D plone/app/dexterity/tests/layer.py
+M plone/app/event/setuphandlers.py
 
-diff --git a/plone/app/dexterity/tests/base.py b/plone/app/dexterity/tests/base.py
-deleted file mode 100644
-index 8bda264..0000000
---- a/plone/app/dexterity/tests/base.py
-+++ /dev/null
-@@ -1,15 +0,0 @@
--# Note: These test case classes are deprecated.  We recommend using the
--# plone.app.testing-based test setup in plone.app.dexterity.testing
--
--from Products.PloneTestCase import PloneTestCase as ptc
--from plone.app.dexterity.tests.layer import DexterityLayer
--
--ptc.setupPloneSite()
--
--
--class DexterityTestCase(ptc.PloneTestCase):
--    layer = DexterityLayer
--
--
--class DexterityFunctionalTestCase(ptc.FunctionalTestCase):
--    layer = DexterityLayer
-diff --git a/plone/app/dexterity/tests/layer.py b/plone/app/dexterity/tests/layer.py
-deleted file mode 100644
-index bf8fcfb..0000000
---- a/plone/app/dexterity/tests/layer.py
-+++ /dev/null
-@@ -1,46 +0,0 @@
--# Note: This layer is deprecated.  We recommend using the
--# plone.app.testing-based test setup in plone.app.dexterity.testing
--
--from Testing.ZopeTestCase import app, close
--from Products.CMFCore.utils import getToolByName
--from Products.PloneTestCase.layer import PloneSite
--from zope.component.hooks import setSite, setHooks
--from transaction import commit
--
--# BBB Zope 2.12
--try:
--    from Zope2.App import zcml
--    from OFS import metaconfigure
--    zcml  # pyflakes
--    metaconfigure
--except ImportError:
--    from Products.Five import zcml
--    from Products.Five import fiveconfigure as metaconfigure
--
--
--class DexterityLayer(PloneSite):
--
--    @classmethod
--    def setUp(cls):
--        metaconfigure.debug_mode = True
--        import plone.app.dexterity
--        zcml.load_config('meta.zcml', plone.app.dexterity)
--        zcml.load_config('configure.zcml', plone.app.dexterity)
--        metaconfigure.debug_mode = False
--
--        # import the default profile
--        root = app()
--        portal = root.plone
--        setHooks()
--        setSite(portal)
--        tool = getToolByName(portal, 'portal_setup')
--        profile = 'profile-plone.app.dexterity:default'
--        tool.runAllImportStepsFromProfile(profile, purge_old=False)
--        setSite(None)
--        # and commit the changes
--        commit()
--        close(root)
--
--    @classmethod
--    def tearDown(cls):
--        pass
-diff --git a/setup.py b/setup.py
-index dd04666..2ee7ec8 100644
---- a/setup.py
-+++ b/setup.py
-@@ -15,7 +15,9 @@
-       long_description=long_description,
-       classifiers=[
-           "Framework :: Plone",
-+          "Framework :: Plone :: 5.0",
-           "Programming Language :: Python",
-+          "Programming Language :: Python :: 2.7",
-           "Topic :: Software Development :: Libraries :: Python Modules",
-           "Development Status :: 5 - Production/Stable",
-       ],
-
-
-Repository: plone.app.dexterity
-Branch: refs/heads/master
-Date: 2015-01-27T08:42:06+01:00
-Author: Tom Gross (tomgross) <itconsense@gmail.com>
-Commit: https://github.com/plone/plone.app.dexterity/commit/497528b265da665eea21630b7c0360827a9b44b5
-
-remove traces of PloneTestCase
-
-Files changed:
-M setup.py
-D plone/app/dexterity/tests/base.py
-D plone/app/dexterity/tests/layer.py
-
-diff --git a/plone/app/dexterity/tests/base.py b/plone/app/dexterity/tests/base.py
-deleted file mode 100644
-index 8bda264..0000000
---- a/plone/app/dexterity/tests/base.py
-+++ /dev/null
-@@ -1,15 +0,0 @@
--# Note: These test case classes are deprecated.  We recommend using the
--# plone.app.testing-based test setup in plone.app.dexterity.testing
--
--from Products.PloneTestCase import PloneTestCase as ptc
--from plone.app.dexterity.tests.layer import DexterityLayer
--
--ptc.setupPloneSite()
--
--
--class DexterityTestCase(ptc.PloneTestCase):
--    layer = DexterityLayer
--
--
--class DexterityFunctionalTestCase(ptc.FunctionalTestCase):
--    layer = DexterityLayer
-diff --git a/plone/app/dexterity/tests/layer.py b/plone/app/dexterity/tests/layer.py
-deleted file mode 100644
-index bf8fcfb..0000000
---- a/plone/app/dexterity/tests/layer.py
-+++ /dev/null
-@@ -1,46 +0,0 @@
--# Note: This layer is deprecated.  We recommend using the
--# plone.app.testing-based test setup in plone.app.dexterity.testing
--
--from Testing.ZopeTestCase import app, close
--from Products.CMFCore.utils import getToolByName
--from Products.PloneTestCase.layer import PloneSite
--from zope.component.hooks import setSite, setHooks
--from transaction import commit
--
--# BBB Zope 2.12
--try:
--    from Zope2.App import zcml
--    from OFS import metaconfigure
--    zcml  # pyflakes
--    metaconfigure
--except ImportError:
--    from Products.Five import zcml
--    from Products.Five import fiveconfigure as metaconfigure
--
--
--class DexterityLayer(PloneSite):
--
--    @classmethod
--    def setUp(cls):
--        metaconfigure.debug_mode = True
--        import plone.app.dexterity
--        zcml.load_config('meta.zcml', plone.app.dexterity)
--        zcml.load_config('configure.zcml', plone.app.dexterity)
--        metaconfigure.debug_mode = False
--
--        # import the default profile
--        root = app()
--        portal = root.plone
--        setHooks()
--        setSite(portal)
--        tool = getToolByName(portal, 'portal_setup')
--        profile = 'profile-plone.app.dexterity:default'
--        tool.runAllImportStepsFromProfile(profile, purge_old=False)
--        setSite(None)
--        # and commit the changes
--        commit()
--        close(root)
--
--    @classmethod
--    def tearDown(cls):
--        pass
-diff --git a/setup.py b/setup.py
-index 567f6bf..8133d5a 100644
---- a/setup.py
-+++ b/setup.py
-@@ -15,7 +15,9 @@
-       long_description=long_description,
-       classifiers=[
-           "Framework :: Plone",
-+          "Framework :: Plone :: 5.0",
-           "Programming Language :: Python",
-+          "Programming Language :: Python :: 2.7",
-           "Topic :: Software Development :: Libraries :: Python Modules",
-           "Development Status :: 5 - Production/Stable",
-       ],
-
-
-Repository: plone.app.dexterity
-Branch: refs/heads/master
-Date: 2015-01-27T08:42:34+01:00
-Author: Tom Gross (tomgross) <itconsense@gmail.com>
-Commit: https://github.com/plone/plone.app.dexterity/commit/498a642be42397afa1d1e9d755d730ea105799de
-
-Merge branch 'tomgross-noptc2' of git://github.com/plone/plone.app.dexterity into tomgross-noptc2
-
-Files changed:
-
-
-
-
-Repository: plone.app.dexterity
-Branch: refs/heads/master
-Date: 2015-01-27T21:46:14+01:00
-Author: Jens W. Klein (jensens) <jk@kleinundpartner.at>
-Commit: https://github.com/plone/plone.app.dexterity/commit/86fea25875702b7ce24edc539de825cbee0946e5
-
-Merge pull request #148 from plone/tomgross-noptc2
-
-Removed traces of PloneTestCase
-
-Files changed:
-M setup.py
-D plone/app/dexterity/tests/base.py
-D plone/app/dexterity/tests/layer.py
-
-diff --git a/plone/app/dexterity/tests/base.py b/plone/app/dexterity/tests/base.py
-deleted file mode 100644
-index 8bda264..0000000
---- a/plone/app/dexterity/tests/base.py
-+++ /dev/null
-@@ -1,15 +0,0 @@
--# Note: These test case classes are deprecated.  We recommend using the
--# plone.app.testing-based test setup in plone.app.dexterity.testing
--
--from Products.PloneTestCase import PloneTestCase as ptc
--from plone.app.dexterity.tests.layer import DexterityLayer
--
--ptc.setupPloneSite()
--
--
--class DexterityTestCase(ptc.PloneTestCase):
--    layer = DexterityLayer
--
--
--class DexterityFunctionalTestCase(ptc.FunctionalTestCase):
--    layer = DexterityLayer
-diff --git a/plone/app/dexterity/tests/layer.py b/plone/app/dexterity/tests/layer.py
-deleted file mode 100644
-index bf8fcfb..0000000
---- a/plone/app/dexterity/tests/layer.py
-+++ /dev/null
-@@ -1,46 +0,0 @@
--# Note: This layer is deprecated.  We recommend using the
--# plone.app.testing-based test setup in plone.app.dexterity.testing
--
--from Testing.ZopeTestCase import app, close
--from Products.CMFCore.utils import getToolByName
--from Products.PloneTestCase.layer import PloneSite
--from zope.component.hooks import setSite, setHooks
--from transaction import commit
--
--# BBB Zope 2.12
--try:
--    from Zope2.App import zcml
--    from OFS import metaconfigure
--    zcml  # pyflakes
--    metaconfigure
--except ImportError:
--    from Products.Five import zcml
--    from Products.Five import fiveconfigure as metaconfigure
--
--
--class DexterityLayer(PloneSite):
--
--    @classmethod
--    def setUp(cls):
--        metaconfigure.debug_mode = True
--        import plone.app.dexterity
--        zcml.load_config('meta.zcml', plone.app.dexterity)
--        zcml.load_config('configure.zcml', plone.app.dexterity)
--        metaconfigure.debug_mode = False
--
--        # import the default profile
--        root = app()
--        portal = root.plone
--        setHooks()
--        setSite(portal)
--        tool = getToolByName(portal, 'portal_setup')
--        profile = 'profile-plone.app.dexterity:default'
--        tool.runAllImportStepsFromProfile(profile, purge_old=False)
--        setSite(None)
--        # and commit the changes
--        commit()
--        close(root)
--
--    @classmethod
--    def tearDown(cls):
--        pass
-diff --git a/setup.py b/setup.py
-index dc117f3..d06731c 100644
---- a/setup.py
-+++ b/setup.py
-@@ -14,7 +14,9 @@
-       long_description=long_description,
-       classifiers=[
-           "Framework :: Plone",
-+          "Framework :: Plone :: 5.0",
-           "Programming Language :: Python",
-+          "Programming Language :: Python :: 2.7",
-           "Topic :: Software Development :: Libraries :: Python Modules",
-           "Development Status :: 5 - Production/Stable",
-       ],
+diff --git a/plone/app/event/setuphandlers.py b/plone/app/event/setuphandlers.py
+index 470cbc2..c37b39f 100644
+--- a/plone/app/event/setuphandlers.py
++++ b/plone/app/event/setuphandlers.py
+@@ -1,7 +1,6 @@
+ from Products.CMFCore.utils import getToolByName
+ from Products.CMFPlone.interfaces import INonInstallable
+ from Products.ZCatalog.Catalog import CatalogError
+-from zope.component.hooks import getSite
+ from zope.interface import implements
+ 
+ import logging
+@@ -34,8 +33,7 @@ def catalog_setup(context):
+         emptying-the-indexes-td2302709.html
+         https://mail.zope.org/pipermail/zope-cmf/2007-March/025664.html
+     """
+-    site = getSite()
+-    catalog = getToolByName(site, 'portal_catalog')
++    catalog = getToolByName(context, 'portal_catalog')
+     date_idxs = ['start', 'end']
+     field_idxs = ['sync_uid']
+     idxs = date_idxs + field_idxs
 
 
