@@ -1,96 +1,86 @@
-Repository: plone.app.event
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-01-29T11:34:49+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.event/commit/e51fdbdea5debd22158c95095d4a8b835f3d0311
+Date: 2015-01-29T19:13:45+01:00
+Author: Ramon Navarro Bosch () <ramon@iMac-de-Ramon.local>
+Commit: https://github.com/plone/Products.CMFPlone/commit/4b73760206955785941e8691ea1f8d53e722dd03
 
-No need to return DateTime objects for the indexer. Products.DateRecurringIndex works with Python datetime objects.
+Forcing an specific JS/CSS resource for a view
 
 Files changed:
-M CHANGES.rst
-M plone/app/event/dx/behaviors.py
-M plone/app/event/tests/test_dx_behaviors.py
+M Products/CMFPlone/resources/__init__.py
+M Products/CMFPlone/resources/browser/scripts.py
+M Products/CMFPlone/resources/browser/styles.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 56dc8f0..761e5de 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,10 @@ Changelog
- 2.0.0 (unreleased)
- ------------------
+diff --git a/Products/CMFPlone/resources/__init__.py b/Products/CMFPlone/resources/__init__.py
+index 19a173b..9a616c0 100644
+--- a/Products/CMFPlone/resources/__init__.py
++++ b/Products/CMFPlone/resources/__init__.py
+@@ -10,6 +10,16 @@ def onThemeApplied(event):
+     # theme.disabled_bundles
  
-+- No need to return DateTime objects for the indexer.
-+  Products.DateRecurringIndex works with Python datetime objects.
-+  [thet]
+ 
++def add_resource_on_request(request, resource):
++    """ Adds the resource to the request
++    """
++    if hasattr(request, 'enabled_resources'):
++        if isinstance(resource, str):
++            request.enabled_resources.append(resource)
++    else:
++        request.enabled_resources = [resource]
 +
- - Whole day setting doesn't hide effective range anymore. Fixes issue #167.
-   [thet]
++
+ def add_bundle_on_request(request, bundle):
+     """ Adds the bundle to the request
+     """
+diff --git a/Products/CMFPlone/resources/browser/scripts.py b/Products/CMFPlone/resources/browser/scripts.py
+index 603ba47..0e02e9a 100644
+--- a/Products/CMFPlone/resources/browser/scripts.py
++++ b/Products/CMFPlone/resources/browser/scripts.py
+@@ -95,6 +95,26 @@ def scripts(self):
+         })
+         result.extend(self.ordered_bundles_result())
  
-diff --git a/plone/app/event/dx/behaviors.py b/plone/app/event/dx/behaviors.py
-index bd34e10..8a4b047 100644
---- a/plone/app/event/dx/behaviors.py
-+++ b/plone/app/event/dx/behaviors.py
-@@ -375,19 +375,13 @@ def data_postprocessing_context(context):
- # Start indexer
- @indexer(IDXEvent)
- def start_indexer(obj):
--    event = IEventBasic(obj)
--    if event.start is None:
--        return None
--    return DT(event.start)
-+    return IEventBasic(obj).start
- 
- 
- # End indexer
- @indexer(IDXEvent)
- def end_indexer(obj):
--    event = IEventBasic(obj)
--    if event.end is None:
--        return None
--    return DT(event.end)
-+    return IEventBasic(obj).end
- 
- 
- # Location indexer
-diff --git a/plone/app/event/tests/test_dx_behaviors.py b/plone/app/event/tests/test_dx_behaviors.py
-index 13f6d5d..899c6d8 100644
---- a/plone/app/event/tests/test_dx_behaviors.py
-+++ b/plone/app/event/tests/test_dx_behaviors.py
-@@ -295,12 +295,14 @@ def test_end_default(self):
- 
-     def test_start_end_dates_indexed(self):
-         tz = pytz.timezone("Europe/Vienna")
-+        start = tz.localize(datetime(2011, 11, 11, 11, 0))
-+        end = tz.localize(datetime(2011, 11, 11, 12, 0))
-         e1 = createContentInContainer(
-             self.portal,
-             'plone.app.event.dx.event',
-             title='event1',
--            start=tz.localize(datetime(2011, 11, 11, 11, 0)),
--            end=tz.localize(datetime(2011, 11, 11, 12, 0)),
-+            start=start,
-+            end=end
-         )
- 
-         result = self.portal.portal_catalog(
-@@ -308,15 +310,9 @@ def test_start_end_dates_indexed(self):
-         )
-         self.assertEqual(1, len(result))
- 
--        # result returns Zope's DateTime
--        self.assertEqual(
--            result[0].start,
--            DateTime('2011/11/11 11:00:00 Europe/Vienna')
--        )
--        self.assertEqual(
--            result[0].end,
--            DateTime('2011/11/11 12:00:00 Europe/Vienna')
--        )
-+        # The start and end datetime's are indexed as Python datetimes
-+        self.assertEqual(result[0].start, start)
-+        self.assertEqual(result[0].end, end)
- 
-     def test_recurrence_indexing(self):
-         tz = pytz.timezone("Europe/Vienna")
++        # Add manual added resources
++        resources = self.get_resources()
++        if hasattr(self.request, 'enabled_resources'):
++            for resource in self.request.enabled_resources:
++                if resource in resources:
++                    data = resources[resource]
++                    if data.js:
++                        url = urlparse(data.js)
++                        if url.netloc == '':
++                            # Local
++                            src = "%s/%s" % (self.portal_url, data.js)
++                        else:
++                            src = "%s" % (data.js)
++
++                        data = {
++                            'bundle': 'none',
++                            'conditionalcomment': '',  # noqa
++                            'src': src}
++                        result.append(data)
++
+         # Add diazo url
+         origin = None
+         if self.diazo_production_js and self.development is False:
+diff --git a/Products/CMFPlone/resources/browser/styles.py b/Products/CMFPlone/resources/browser/styles.py
+index c4f60c7..dd3bd3d 100644
+--- a/Products/CMFPlone/resources/browser/styles.py
++++ b/Products/CMFPlone/resources/browser/styles.py
+@@ -75,6 +75,14 @@ def styles(self):
+         Get all the styles
+         """
+         result = self.ordered_bundles_result()
++        # Add manual added resources
++        resources = self.get_resources()
++        if hasattr(self.request, 'enabled_resources'):
++            for resource in self.request.enabled_resources:
++                if resource in resources:                
++                    for data in self.get_urls(resources[resource], None):
++                        result.append(data)
++
+         # Add diazo css
+         origin = None
+         if self.diazo_production_css and self.development is False:
 
 
