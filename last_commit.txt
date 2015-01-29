@@ -1,121 +1,40 @@
 Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-01-29T19:35:11+01:00
+Date: 2015-01-29T21:24:26+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/52de2e809a3fafafe1d18a169de9b617fb5c34b7
+Commit: https://github.com/plone/plone.app.discussion/commit/1b67cc75968944b4f8e5a1eb9f5ba7704456f317
 
-Delete jenkins.cfg.
+Next release needs to be a major version because of an API change and upgrade step.
 
 Files changed:
-D jenkins.cfg
+M CHANGES.rst
+M setup.py
 
-diff --git a/jenkins.cfg b/jenkins.cfg
-deleted file mode 100644
-index f5b0907..0000000
---- a/jenkins.cfg
-+++ /dev/null
-@@ -1,32 +0,0 @@
--[buildout]
--extends =
--    https://raw.github.com/collective/buildout.plonetest/master/plone-4.3.x.cfg
--    https://raw.github.com/plone/buildout.jenkins/master/jenkins.cfg
--    https://raw.github.com/plone/buildout.jenkins/master/jenkins-code-analysis.cfg
--jenkins-test-eggs = plone.app.discussion [test]
--jenkins-test-directories = plone/app/discussion
--parts +=
--    flake8
--    code-analysis
--extensions = mr.developer
--auto-checkout =
--    plone.recipe.codeanalysis
--    collective.xmltestreport
--
--[flake8]
--recipe = zc.recipe.egg
--eggs = flake8
--entry-points = flake8=flake8.main:main
--
--[code-analysis]
--recipe = plone.recipe.codeanalysis
--
--[sources]
--plone.recipe.codeanalysis = git git://github.com/tisto/plone.recipe.codeanalysis.git pushurl=git@github.com:tisto/plone.recipe.codeanalysis.git
--collective.xmltestreport = git git://github.com/collective/collective.xmltestreport.git
--
--[versions]
--plone.app.discussion =
--zope.interface = 3.6.1
--zc.buildout = 2.1.0
--zc.recipe.egg = 2.0.0
-
-
-Repository: plone.app.discussion
-Branch: refs/heads/master
-Date: 2015-01-29T20:29:53+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/0591f9ad2d95159414c7e305930df169f6b09b45
-
-Fix buildout.
-
-Files changed:
-M buildout.cfg
-
-diff --git a/buildout.cfg b/buildout.cfg
-index fac6771..b9a690e 100644
---- a/buildout.cfg
-+++ b/buildout.cfg
-@@ -2,11 +2,15 @@
- extends = http://dist.plone.org/release/4.3.4/versions.cfg
- parts =
-     instance
-+    test
-+    coverage
-+    test-coverage
-     mkrelease
-     pocompile
-     code-analysis
-     i18ndude
-     update_translations
-+develop = .
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 5e03573..482a299 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -1,7 +1,7 @@
+ Changelog
+ =========
  
- [instance]
- recipe = plone.recipe.zope2instance
-@@ -14,6 +18,28 @@ http-address = 8080
- user = admin:admin
- eggs = Plone
+-2.3.4 (unreleased)
++2.4.0 (unreleased)
+ ------------------
  
-+
-+[test]
-+recipe = zc.recipe.testrunner
-+eggs = plone.app.discussion [test]
-+defaults = ['-s', 'plone.app.discussion', '--auto-color', '--auto-progress']
-+
-+[coverage]
-+recipe = zc.recipe.egg
-+eggs = coverage
-+
-+[test-coverage]
-+recipe = collective.recipe.template
-+input = inline:
-+    #!/bin/bash
-+    ${buildout:directory}/bin/coverage run --source=${buildout:directory}/src/plone/app/discussion bin/test
-+    ${buildout:directory}/bin/coverage html
-+    ${buildout:directory}/bin/coverage report -m --fail-under=100
-+    # Fail (exit status 1) if coverage returns exit status 2 (this happens
-+    # when test coverage is below 100%.
-+output = ${buildout:directory}/bin/test-coverage
-+mode = 755
-+
- [mkrelease]
- recipe = zc.recipe.egg
- eggs = jarn.mkrelease
-@@ -56,6 +82,7 @@ input = inline:
- mode = 755
+ - Add permission to allow comment authors to delete their own comments if
+diff --git a/setup.py b/setup.py
+index 494515e..abc69e9 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,7 +1,7 @@
+ from setuptools import find_packages
+ from setuptools import setup
  
- [versions]
-+plone.app.discussion =
- zope.interface = 4.0.5
- zc.buildout = 2.3.1
- setuptools = 8.0.4
+-version = '2.3.4.dev0'
++version = '2.4.0.dev0'
+ 
+ install_requires = [
+     'setuptools',
 
 
