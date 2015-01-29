@@ -1,151 +1,121 @@
-Repository: plone.app.event
+Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-01-29T19:42:55+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.event/commit/5a53cb1a6f337197270351428400b3b38b5f7b79
+Date: 2015-01-29T19:35:11+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.discussion/commit/52de2e809a3fafafe1d18a169de9b617fb5c34b7
 
-Remove plone.app.event.EventTypes vocabulary
-
-Remove the ``plone.app.event.EventTypes`` vocabulary, which relied on
-temporaily creating types. It's used for importing ical files. It should be
-possible to figure out, which types might suitable for creating events from
-ical VEVENT entries.
+Delete jenkins.cfg.
 
 Files changed:
-M CHANGES.rst
-M plone/app/event/configure.zcml
-M plone/app/event/ical/importer.py
-M plone/app/event/vocabularies.py
-D plone/app/event/vocabularies.zcml
+D jenkins.cfg
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 544e68d..77a558c 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -10,6 +10,12 @@ Changelog
-   ``IEventAccessor``.
-   [thet]
- 
-+- Remove the ``plone.app.event.EventTypes`` vocabulary, which relied on
-+  temporaily creating types. It's used for importing ical files. It should be
-+  possible to figure out, which types might suitable for creating events from
-+  ical VEVENT entries.
-+  [thet]
-+
- - No need to return DateTime objects for the indexer.
-   Products.DateRecurringIndex works with Python datetime objects.
-   [thet]
-diff --git a/plone/app/event/configure.zcml b/plone/app/event/configure.zcml
-index 0b3ad18..d54a846 100644
---- a/plone/app/event/configure.zcml
-+++ b/plone/app/event/configure.zcml
-@@ -23,9 +23,13 @@
-   <include package=".portlets" />
-   <include package=".ical" />
-   <include file="recurrence.zcml" />
--  <include file="vocabularies.zcml" />
-   <include package=".bbb" zcml:condition="not-have plone-5" />
- 
-+  <utility
-+      component=".vocabularies.SynchronizationStrategies"
-+      name="plone.app.event.SynchronizationStrategies"
-+      />
-+
-   <genericsetup:registerProfile
-       name="default"
-       directory="profiles/default"
-diff --git a/plone/app/event/ical/importer.py b/plone/app/event/ical/importer.py
-index 3f2f428..9ade379 100644
---- a/plone/app/event/ical/importer.py
-+++ b/plone/app/event/ical/importer.py
-@@ -236,7 +236,7 @@ class IIcalendarImportSettings(Interface):
-             'ical_import_event_type_desc',
-             default=u"Content type of the event, which is created when "
-                     u"importing icalendar resources."),
--        vocabulary='plone.app.event.EventTypes',
-+        vocabulary='plone.app.vocabularies.ReallyUserFriendlyTypes',
-         required=True
-     )
- 
-diff --git a/plone/app/event/vocabularies.py b/plone/app/event/vocabularies.py
-index 08d5e1e..f62aa0f 100644
---- a/plone/app/event/vocabularies.py
-+++ b/plone/app/event/vocabularies.py
-@@ -1,56 +1,10 @@
--from Products.CMFCore.utils import getToolByName
- from plone.app.event import base
- from plone.app.event import messageFactory as _
--from plone.event.interfaces import IEvent
--from plone.memoize import forever
--from zope.component.hooks import getSite
- from zope.interface import provider
- from zope.schema.interfaces import IVocabularyFactory
- from zope.schema.vocabulary import SimpleTerm
- from zope.schema.vocabulary import SimpleVocabulary
- 
--import random
--
--
--@provider(IVocabularyFactory)
--@forever.memoize
--def EventTypes(context):
--    # TODO: refactor for DX
--    """Vocabulary for available event types.
--
--    Insane stuff: All types are created temporary and checked if the provide
--    the IEvent interface. At least, this function is cached forever the Zope
--    process lives.
--    """
--    # TODO: I'd love to query the factory for types, who's instances are
--    # implementing a specific interface via the portal_factory API.
--
--    portal = getSite()
--    tmp_folder_id = 'event_types_temp_folder__%s' % random.randint(0, 99999999)
--    portal.invokeFactory('Folder', tmp_folder_id)
--    try:
--        tmp_folder = portal._getOb(tmp_folder_id)
--        portal_types = getToolByName(portal, 'portal_types')
--        all_types = portal_types.listTypeInfo(portal)
--        event_types = []
--        cnt = 0
--        for fti in all_types:
--            if not getattr(fti, 'global_allow', False):
--                continue
--            cnt += 1
--            tmp_id = 'temporary__event_types__%s' % cnt
--            tmp_obj = None
--            fti.constructInstance(tmp_folder, tmp_id)
--            tmp_obj = tmp_folder._getOb(tmp_id)
--            if tmp_obj:
--                if IEvent.providedBy(tmp_obj):
--                    event_types.append(fti.id)
--    finally:
--        # Delete the tmp_folder again
--        tmp_folder.__parent__.manage_delObjects([tmp_folder_id])
--
--    return SimpleVocabulary.fromValues(event_types)
--
- 
- @provider(IVocabularyFactory)
- def SynchronizationStrategies(context):
-diff --git a/plone/app/event/vocabularies.zcml b/plone/app/event/vocabularies.zcml
+diff --git a/jenkins.cfg b/jenkins.cfg
 deleted file mode 100644
-index 60d5405..0000000
---- a/plone/app/event/vocabularies.zcml
+index f5b0907..0000000
+--- a/jenkins.cfg
 +++ /dev/null
-@@ -1,13 +0,0 @@
--<configure xmlns="http://namespaces.zope.org/zope">
+@@ -1,32 +0,0 @@
+-[buildout]
+-extends =
+-    https://raw.github.com/collective/buildout.plonetest/master/plone-4.3.x.cfg
+-    https://raw.github.com/plone/buildout.jenkins/master/jenkins.cfg
+-    https://raw.github.com/plone/buildout.jenkins/master/jenkins-code-analysis.cfg
+-jenkins-test-eggs = plone.app.discussion [test]
+-jenkins-test-directories = plone/app/discussion
+-parts +=
+-    flake8
+-    code-analysis
+-extensions = mr.developer
+-auto-checkout =
+-    plone.recipe.codeanalysis
+-    collective.xmltestreport
 -
--  <utility
--      component=".vocabularies.EventTypes"
--      name="plone.app.event.EventTypes"
--      />
+-[flake8]
+-recipe = zc.recipe.egg
+-eggs = flake8
+-entry-points = flake8=flake8.main:main
 -
--  <utility
--      component=".vocabularies.SynchronizationStrategies"
--      name="plone.app.event.SynchronizationStrategies"
--      />
+-[code-analysis]
+-recipe = plone.recipe.codeanalysis
 -
--</configure>
+-[sources]
+-plone.recipe.codeanalysis = git git://github.com/tisto/plone.recipe.codeanalysis.git pushurl=git@github.com:tisto/plone.recipe.codeanalysis.git
+-collective.xmltestreport = git git://github.com/collective/collective.xmltestreport.git
+-
+-[versions]
+-plone.app.discussion =
+-zope.interface = 3.6.1
+-zc.buildout = 2.1.0
+-zc.recipe.egg = 2.0.0
+
+
+Repository: plone.app.discussion
+Branch: refs/heads/master
+Date: 2015-01-29T20:29:53+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.discussion/commit/0591f9ad2d95159414c7e305930df169f6b09b45
+
+Fix buildout.
+
+Files changed:
+M buildout.cfg
+
+diff --git a/buildout.cfg b/buildout.cfg
+index fac6771..b9a690e 100644
+--- a/buildout.cfg
++++ b/buildout.cfg
+@@ -2,11 +2,15 @@
+ extends = http://dist.plone.org/release/4.3.4/versions.cfg
+ parts =
+     instance
++    test
++    coverage
++    test-coverage
+     mkrelease
+     pocompile
+     code-analysis
+     i18ndude
+     update_translations
++develop = .
+ 
+ [instance]
+ recipe = plone.recipe.zope2instance
+@@ -14,6 +18,28 @@ http-address = 8080
+ user = admin:admin
+ eggs = Plone
+ 
++
++[test]
++recipe = zc.recipe.testrunner
++eggs = plone.app.discussion [test]
++defaults = ['-s', 'plone.app.discussion', '--auto-color', '--auto-progress']
++
++[coverage]
++recipe = zc.recipe.egg
++eggs = coverage
++
++[test-coverage]
++recipe = collective.recipe.template
++input = inline:
++    #!/bin/bash
++    ${buildout:directory}/bin/coverage run --source=${buildout:directory}/src/plone/app/discussion bin/test
++    ${buildout:directory}/bin/coverage html
++    ${buildout:directory}/bin/coverage report -m --fail-under=100
++    # Fail (exit status 1) if coverage returns exit status 2 (this happens
++    # when test coverage is below 100%.
++output = ${buildout:directory}/bin/test-coverage
++mode = 755
++
+ [mkrelease]
+ recipe = zc.recipe.egg
+ eggs = jarn.mkrelease
+@@ -56,6 +82,7 @@ input = inline:
+ mode = 755
+ 
+ [versions]
++plone.app.discussion =
+ zope.interface = 4.0.5
+ zc.buildout = 2.3.1
+ setuptools = 8.0.4
 
 
