@@ -1,40 +1,29 @@
 Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-01-29T21:24:26+01:00
+Date: 2015-01-29T21:25:38+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/1b67cc75968944b4f8e5a1eb9f5ba7704456f317
+Commit: https://github.com/plone/plone.app.discussion/commit/4f1491bea89ca1f23d5001bbc6cc1c90037d9f80
 
-Next release needs to be a major version because of an API change and upgrade step.
+Let's use travis for static code analysis only.
 
 Files changed:
-M CHANGES.rst
-M setup.py
+M .travis.yml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 5e03573..482a299 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -1,7 +1,7 @@
- Changelog
- =========
- 
--2.3.4 (unreleased)
-+2.4.0 (unreleased)
- ------------------
- 
- - Add permission to allow comment authors to delete their own comments if
-diff --git a/setup.py b/setup.py
-index 494515e..abc69e9 100644
---- a/setup.py
-+++ b/setup.py
-@@ -1,7 +1,7 @@
- from setuptools import find_packages
- from setuptools import setup
- 
--version = '2.3.4.dev0'
-+version = '2.4.0.dev0'
- 
- install_requires = [
-     'setuptools',
+diff --git a/.travis.yml b/.travis.yml
+index 959dcf3..70f96b4 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -13,7 +13,7 @@ install:
+   - bin/buildout -N -t 3 -c travis.cfg
+ script:
+   - bin/code-analysis
+-  - bin/test-coverage
+-after_success:
+-  - pip install -q coveralls
+-  - coveralls
++#  - bin/test-coverage
++#after_success:
++#  - pip install -q coveralls
++#  - coveralls
 
 
