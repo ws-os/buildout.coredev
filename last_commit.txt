@@ -1,80 +1,144 @@
-Repository: plone.app.portlets
+Repository: plone.batching
 Branch: refs/heads/master
-Date: 2015-01-30T22:48:39+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.portlets/commit/3b80ba15b04799acf69357b57333afbb97c1467e
+Date: 2015-01-27T20:10:02+01:00
+Author: Patrick Gerken (do3cc) <do3cc@patrick-gerken.de>
+Commit: https://github.com/plone/plone.batching/commit/d6b8296d95f6bf7b8a0467c5804f646fa48790ef
 
-Fix missing definitions of plone_view. Fixes the recent portlet.
+Fix issue with orphaning
+
+Orphaning did not work...
+Added a test and an assertion for funny folks
+trying to have orphan ranges higher than batch size.
 
 Files changed:
 M CHANGES.rst
-M plone/app/portlets/browser/templates/manage-contextual.pt
-M plone/app/portlets/browser/templates/topbar-manage-portlets.pt
-M plone/app/portlets/portlets/recent.pt
+M plone/batching/batch.py
+M plone/batching/tests.py
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 3a4ad10..186b99b 100644
+index a2eb2dc..420d228 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 3.0.3 (unreleased)
+@@ -4,7 +4,8 @@ Changelog
+ 1.0.3 (unreleased)
  ------------------
  
-+- Fix missing definitions of ``plone_view``. Fixes the recent portlet.
-+  [thet]
+-- Nothing changed yet.
++- Fix issue with orphaning
++  [do3cc]
+ 
+ 
+ 1.0.2 (2014-04-13)
+diff --git a/plone/batching/batch.py b/plone/batching/batch.py
+index c5e57d0..f6d3e87 100644
+--- a/plone/batching/batch.py
++++ b/plone/batching/batch.py
+@@ -31,6 +31,8 @@ def __init__(self, sequence, size, start=0, end=0, orphan=0, overlap=0,
+         overlap   - the number of overlapping elements in each batch
+         pagerange - the number of pages to display in the navigation
+         """
++        assert orphan < size, "Having an orphan size, higher than batch size" \
++                              " is undefined"
+         start += 1
+         self._sequence = sequence
+         self._size = size
+@@ -155,7 +157,7 @@ def lastpage(self):
+         """ Last page of batch
+         """
+         pages = self.sequence_length / self.pagesize
+-        if self.sequence_length % self.pagesize:
++        if (self.sequence_length - self.orphan) % self.pagesize:
+             pages += 1
+         return pages
+ 
+diff --git a/plone/batching/tests.py b/plone/batching/tests.py
+index 3b442cc..5b92a44 100644
+--- a/plone/batching/tests.py
++++ b/plone/batching/tests.py
+@@ -97,6 +97,13 @@ def test_lastpage(self):
+         lastbatch = BaseBatch(range(20), 5, start=batch.last)
+         self.assertTrue(lastbatch.islastpage)
+ 
++    def test_lastpage_with_orphans(self):
++        batch = BaseBatch(range(11), 10, orphan=1)
++        self.assertEqual(1, batch.lastpage)
++        batch = BaseBatch(range(109), 10, orphan=9)
++        self.assertEqual(10, batch.lastpage)
++        self.assertRaises(AssertionError, BaseBatch, [], 10, orphan=20)
 +
- - Use plone_layout for getIcon.
-   [pbauer]
+     def test_items_not_on_page(self):
+         batch = BaseBatch(range(20), 5, start=5)
+         self.assertEqual(batch.items_not_on_page,
+
+
+Repository: plone.batching
+Branch: refs/heads/master
+Date: 2015-01-31T01:54:31+01:00
+Author: Daniel Widerin (saily) <daniel@widerin.net>
+Commit: https://github.com/plone/plone.batching/commit/697da305f5e8589c0121b537d2c8d37c74556745
+
+Merge pull request #4 from plone/orphaning
+
+Fix issue with orphaning
+
+Files changed:
+M CHANGES.rst
+M plone/batching/batch.py
+M plone/batching/tests.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index a2eb2dc..420d228 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,7 +4,8 @@ Changelog
+ 1.0.3 (unreleased)
+ ------------------
  
-diff --git a/plone/app/portlets/browser/templates/manage-contextual.pt b/plone/app/portlets/browser/templates/manage-contextual.pt
-index 1db5528..d01927c 100644
---- a/plone/app/portlets/browser/templates/manage-contextual.pt
-+++ b/plone/app/portlets/browser/templates/manage-contextual.pt
-@@ -13,7 +13,7 @@
- </head>
+-- Nothing changed yet.
++- Fix issue with orphaning
++  [do3cc]
  
- <body>
--<metal:main fill-slot="main" tal:define="ploneview context/@@plone">
-+<metal:main fill-slot="main" tal:define="plone_view context/@@plone">
  
-   <h1 class="documentFirstHeading"
-       i18n:translate="title_manage_contextual_portlets">
-@@ -40,7 +40,7 @@
-     </tal:block>
+ 1.0.2 (2014-04-13)
+diff --git a/plone/batching/batch.py b/plone/batching/batch.py
+index c5e57d0..f6d3e87 100644
+--- a/plone/batching/batch.py
++++ b/plone/batching/batch.py
+@@ -31,6 +31,8 @@ def __init__(self, sequence, size, start=0, end=0, orphan=0, overlap=0,
+         overlap   - the number of overlapping elements in each batch
+         pagerange - the number of pages to display in the navigation
+         """
++        assert orphan < size, "Having an orphan size, higher than batch size" \
++                              " is undefined"
+         start += 1
+         self._sequence = sequence
+         self._size = size
+@@ -155,7 +157,7 @@ def lastpage(self):
+         """ Last page of batch
+         """
+         pages = self.sequence_length / self.pagesize
+-        if self.sequence_length % self.pagesize:
++        if (self.sequence_length - self.orphan) % self.pagesize:
+             pages += 1
+         return pages
  
-       <div class="portalMessage info"
--          tal:condition="ploneview/isDefaultPageInFolder|nothing">
-+          tal:condition="plone_view/isDefaultPageInFolder|nothing">
-         <strong i18n:translate="">
-             Info
-         </strong>
-diff --git a/plone/app/portlets/browser/templates/topbar-manage-portlets.pt b/plone/app/portlets/browser/templates/topbar-manage-portlets.pt
-index f501d48..f8199e4 100644
---- a/plone/app/portlets/browser/templates/topbar-manage-portlets.pt
-+++ b/plone/app/portlets/browser/templates/topbar-manage-portlets.pt
-@@ -6,9 +6,9 @@
-       i18n:domain="plone">
- <body>
+diff --git a/plone/batching/tests.py b/plone/batching/tests.py
+index 3b442cc..5b92a44 100644
+--- a/plone/batching/tests.py
++++ b/plone/batching/tests.py
+@@ -97,6 +97,13 @@ def test_lastpage(self):
+         lastbatch = BaseBatch(range(20), 5, start=batch.last)
+         self.assertTrue(lastbatch.islastpage)
  
--  <div metal:fill-slot="main">
-+  <div metal:fill-slot="main" tal:define="plone_view context/@@plone">
-     <div class="portalMessage info"
--        tal:condition="ploneview/isDefaultPageInFolder|nothing">
-+        tal:condition="plone_view/isDefaultPageInFolder|nothing">
-       <strong>
-           Info
-       </strong>
-diff --git a/plone/app/portlets/portlets/recent.pt b/plone/app/portlets/portlets/recent.pt
-index f5c0a26..a5ab758 100644
---- a/plone/app/portlets/portlets/recent.pt
-+++ b/plone/app/portlets/portlets/recent.pt
-@@ -15,6 +15,7 @@
-         tal:condition="view/recent_items">
-       <ul>
-         <tal:items tal:define="plone_layout context/@@plone_layout;
-+                           plone_view context/@@plone;
-                            getIcon nocall:plone_layout/getIcon;
-                            normalizeString nocall:plone_view/normalizeString;
-                            toLocalizedTime nocall:plone_view/toLocalizedTime;"
++    def test_lastpage_with_orphans(self):
++        batch = BaseBatch(range(11), 10, orphan=1)
++        self.assertEqual(1, batch.lastpage)
++        batch = BaseBatch(range(109), 10, orphan=9)
++        self.assertEqual(10, batch.lastpage)
++        self.assertRaises(AssertionError, BaseBatch, [], 10, orphan=20)
++
+     def test_items_not_on_page(self):
+         batch = BaseBatch(range(20), 5, start=5)
+         self.assertEqual(batch.items_not_on_page,
 
 
