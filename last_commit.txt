@@ -1,144 +1,225 @@
-Repository: plone.batching
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-27T20:10:02+01:00
-Author: Patrick Gerken (do3cc) <do3cc@patrick-gerken.de>
-Commit: https://github.com/plone/plone.batching/commit/d6b8296d95f6bf7b8a0467c5804f646fa48790ef
+Date: 2015-01-31T21:25:54-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/4edb0a00251f4a6cdeec20a88aa5d17b5dbc2573
 
-Fix issue with orphaning
-
-Orphaning did not work...
-Added a test and an assertion for funny folks
-trying to have orphan ranges higher than batch size.
+fix trigger was changed out for emit
 
 Files changed:
-M CHANGES.rst
-M plone/batching/batch.py
-M plone/batching/tests.py
+M mockup/patterns/querystring/pattern.js
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index a2eb2dc..420d228 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 1.0.3 (unreleased)
- ------------------
+diff --git a/mockup/patterns/querystring/pattern.js b/mockup/patterns/querystring/pattern.js
+index c3d141c..c06257a 100644
+--- a/mockup/patterns/querystring/pattern.js
++++ b/mockup/patterns/querystring/pattern.js
+@@ -128,7 +128,7 @@ define([
+           self.removeValue();
+           self.createOperator(e.val);
+           self.createClear();
+-          self.emit('index-changed');
++          self.trigger('index-changed');
+         });
  
--- Nothing changed yet.
-+- Fix issue with orphaning
-+  [do3cc]
+       if (index !== undefined) {
+@@ -137,7 +137,7 @@ define([
+         self.createClear();
+       }
  
+-      self.emit('create-criteria');
++      self.trigger('create-criteria');
+     },
+     createOperator: function(index, operator, value) {
+       var self = this;
+@@ -167,7 +167,7 @@ define([
+         .on('change', function(e) {
+           self.createValue(index);
+           self.createClear();
+-          self.emit('operator-changed');
++          self.trigger('operator-changed');
+         });
  
- 1.0.2 (2014-04-13)
-diff --git a/plone/batching/batch.py b/plone/batching/batch.py
-index c5e57d0..f6d3e87 100644
---- a/plone/batching/batch.py
-+++ b/plone/batching/batch.py
-@@ -31,6 +31,8 @@ def __init__(self, sequence, size, start=0, end=0, orphan=0, overlap=0,
-         overlap   - the number of overlapping elements in each batch
-         pagerange - the number of pages to display in the navigation
-         """
-+        assert orphan < size, "Having an orphan size, higher than batch size" \
-+                              " is undefined"
-         start += 1
-         self._sequence = sequence
-         self._size = size
-@@ -155,7 +157,7 @@ def lastpage(self):
-         """ Last page of batch
-         """
-         pages = self.sequence_length / self.pagesize
--        if self.sequence_length % self.pagesize:
-+        if (self.sequence_length - self.orphan) % self.pagesize:
-             pages += 1
-         return pages
+       if (operator === undefined) {
+@@ -177,7 +177,7 @@ define([
+       self.$operator.select2('val', operator);
+       self.createValue(index, value);
  
-diff --git a/plone/batching/tests.py b/plone/batching/tests.py
-index 3b442cc..5b92a44 100644
---- a/plone/batching/tests.py
-+++ b/plone/batching/tests.py
-@@ -97,6 +97,13 @@ def test_lastpage(self):
-         lastbatch = BaseBatch(range(20), 5, start=batch.last)
-         self.assertTrue(lastbatch.islastpage)
+-      self.emit('create-operator');
++      self.trigger('create-operator');
+     },
+     createValue: function(index, value) {
+       var self = this,
+@@ -194,7 +194,7 @@ define([
+                 .val(value)
+                 .appendTo($wrapper)
+                 .change(function() {
+-                  self.emit('value-changed');
++                  self.trigger('value-changed');
+                 });
  
-+    def test_lastpage_with_orphans(self):
-+        batch = BaseBatch(range(11), 10, orphan=1)
-+        self.assertEqual(1, batch.lastpage)
-+        batch = BaseBatch(range(109), 10, orphan=9)
-+        self.assertEqual(10, batch.lastpage)
-+        self.assertRaises(AssertionError, BaseBatch, [], 10, orphan=20)
-+
-     def test_items_not_on_page(self):
-         batch = BaseBatch(range(20), 5, start=5)
-         self.assertEqual(batch.items_not_on_page,
+       } else if (widget === 'DateWidget') {
+@@ -206,7 +206,7 @@ define([
+                   date: { format: 'dd/mm/yyyy' }
+                 })
+                 .change(function() {
+-                  self.emit('value-changed');
++                  self.trigger('value-changed');
+                 });
+ 
+       } else if (widget === 'DateRangeWidget') {
+@@ -234,7 +234,7 @@ define([
+                           date: { format: 'dd/mm/yyyy' }
+                         });
+         $wrapper.find('.picker__input').change(function() {
+-          self.emit('value-changed');
++          self.trigger('value-changed');
+         });
+         self.$value = [startdt, enddt];
+ 
+@@ -244,7 +244,7 @@ define([
+                 .addClass(self.options.classValueName + '-' + widget)
+                 .appendTo($wrapper)
+                 .change(function() {
+-                  self.emit('value-changed');
++                  self.trigger('value-changed');
+                 });
+ 
+       } else if (widget === 'ReferenceWidget') {
+@@ -252,7 +252,7 @@ define([
+                 .addClass(self.options.classValueName + '-' + widget)
+                 .appendTo($wrapper)
+                 .change(function() {
+-                  self.emit('value-changed');
++                  self.trigger('value-changed');
+                 });
+ 
+       } else if (widget === 'RelativePathWidget') {
+@@ -261,7 +261,7 @@ define([
+                 .appendTo($wrapper)
+                 .val(value)
+                 .change(function() {
+-                  self.emit('value-changed');
++                  self.trigger('value-changed');
+                 });
+ 
+       } else if (widget === 'MultipleSelectionWidget') {
+@@ -269,7 +269,7 @@ define([
+                 .addClass(self.options.classValueName + '-' + widget)
+                 .appendTo($wrapper)
+                 .change(function() {
+-                  self.emit('value-changed');
++                  self.trigger('value-changed');
+                 });
+         if (self.indexes[index]) {
+           $.each(self.indexes[index].values, function(value, options) {
+@@ -286,7 +286,7 @@ define([
+         self.$value.select2('val', value);
+       }
+ 
+-      self.emit('create-value');
++      self.trigger('create-value');
+ 
+     },
+     createClear: function() {
+@@ -298,7 +298,7 @@ define([
+     },
+     remove: function() {
+       var self = this;
+-      self.emit('remove');
++      self.trigger('remove');
+       self.$remove.remove();
+       self.$index.parent().remove();
+       self.removeOperator();
+@@ -308,21 +308,21 @@ define([
+     },
+     removeClear: function() {
+       var self = this;
+-      self.emit('remove-clear');
++      self.trigger('remove-clear');
+       if (self.$clear) {
+         self.$clear.remove();
+       }
+     },
+     removeOperator: function() {
+       var self = this;
+-      self.emit('remove-operator');
++      self.trigger('remove-operator');
+       if (self.$operator) {
+         self.$operator.parent().remove();
+       }
+     },
+     removeValue: function() {
+       var self = this;
+-      self.emit('remove-value');
++      self.trigger('remove-value');
+       if (self.$value) {
+         if ($.isArray(self.$value)) { // date ranges have 2 values
+           self.$value[0].parents('.querystring-criteria-value').remove();
 
 
-Repository: plone.batching
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-01-31T01:54:31+01:00
-Author: Daniel Widerin (saily) <daniel@widerin.net>
-Commit: https://github.com/plone/plone.batching/commit/697da305f5e8589c0121b537d2c8d37c74556745
+Date: 2015-01-31T21:26:10-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/179bdd0d6c5d3ed12701d1c000d1d2e2ce53b6c1
 
-Merge pull request #4 from plone/orphaning
-
-Fix issue with orphaning
+forgot title
 
 Files changed:
-M CHANGES.rst
-M plone/batching/batch.py
-M plone/batching/tests.py
+M mockup/patterns/structure/templates/tablerow.xml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index a2eb2dc..420d228 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,7 +4,8 @@ Changelog
- 1.0.3 (unreleased)
- ------------------
+diff --git a/mockup/patterns/structure/templates/tablerow.xml b/mockup/patterns/structure/templates/tablerow.xml
+index 4714066..90eb345 100644
+--- a/mockup/patterns/structure/templates/tablerow.xml
++++ b/mockup/patterns/structure/templates/tablerow.xml
+@@ -1,6 +1,6 @@
+ <td class="selection"><input type="checkbox" <% if(selected){ %> checked="checked" <% } %>/></td>
+ <td class="title">
+-  <a href="<%- getURL %>" class="state-<%- review_state %> contenttype-<%- Type.toLowerCase() %>">
++  <a href="<%- getURL %>" class="state-<%- review_state %> contenttype-<%- Type.toLowerCase() %>"><%- Title %></a>
+ </td>
+ <% _.each(activeColumns, function(column){ %>
+   <% if(_.has(availableColumns, column)) { %>
+
+
+Repository: mockup
+Branch: refs/heads/master
+Date: 2015-01-31T21:26:55-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/0b35dc64a19fbc0989c6909b2b3eace90504ab61
+
+keep hash of path in folder contents so you can share links
+
+Files changed:
+M mockup/patterns/structure/js/views/app.js
+M mockup/patterns/structure/pattern.js
+
+diff --git a/mockup/patterns/structure/js/views/app.js b/mockup/patterns/structure/js/views/app.js
+index 7b80c37..e78c3c5 100644
+--- a/mockup/patterns/structure/js/views/app.js
++++ b/mockup/patterns/structure/js/views/app.js
+@@ -179,6 +179,7 @@ define([
  
--- Nothing changed yet.
-+- Fix issue with orphaning
-+  [do3cc]
+       self.collection.on('pager', function() {
+         self.loading.show();
++        window.location.hash = self.queryHelper.getCurrentPath();
+       });
  
+       /* detect key events */
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index a203a27..ddb4b83 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -135,6 +135,10 @@ define([
+       self.options.queryHelper = new utils.QueryHelper(
+         $.extend(true, {}, self.options, {pattern: self}));
  
- 1.0.2 (2014-04-13)
-diff --git a/plone/batching/batch.py b/plone/batching/batch.py
-index c5e57d0..f6d3e87 100644
---- a/plone/batching/batch.py
-+++ b/plone/batching/batch.py
-@@ -31,6 +31,8 @@ def __init__(self, sequence, size, start=0, end=0, orphan=0, overlap=0,
-         overlap   - the number of overlapping elements in each batch
-         pagerange - the number of pages to display in the navigation
-         """
-+        assert orphan < size, "Having an orphan size, higher than batch size" \
-+                              " is undefined"
-         start += 1
-         self._sequence = sequence
-         self._size = size
-@@ -155,7 +157,7 @@ def lastpage(self):
-         """ Last page of batch
-         """
-         pages = self.sequence_length / self.pagesize
--        if self.sequence_length % self.pagesize:
-+        if (self.sequence_length - self.orphan) % self.pagesize:
-             pages += 1
-         return pages
++      // check and see if a hash is provided for initial path
++      if(window.location.hash.substring(0, 2) === '#/'){
++        self.options.queryHelper.currentPath = window.location.hash.substring(1);
++      }
+       delete self.options.attributes; // not compatible with backbone
  
-diff --git a/plone/batching/tests.py b/plone/batching/tests.py
-index 3b442cc..5b92a44 100644
---- a/plone/batching/tests.py
-+++ b/plone/batching/tests.py
-@@ -97,6 +97,13 @@ def test_lastpage(self):
-         lastbatch = BaseBatch(range(20), 5, start=batch.last)
-         self.assertTrue(lastbatch.islastpage)
- 
-+    def test_lastpage_with_orphans(self):
-+        batch = BaseBatch(range(11), 10, orphan=1)
-+        self.assertEqual(1, batch.lastpage)
-+        batch = BaseBatch(range(109), 10, orphan=9)
-+        self.assertEqual(10, batch.lastpage)
-+        self.assertRaises(AssertionError, BaseBatch, [], 10, orphan=20)
-+
-     def test_items_not_on_page(self):
-         batch = BaseBatch(range(20), 5, start=5)
-         self.assertEqual(batch.items_not_on_page,
+       self.view = new AppView(self.options);
 
 
