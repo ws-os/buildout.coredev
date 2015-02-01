@@ -1,24 +1,24 @@
 Repository: plone.formwidget.namedfile
 Branch: refs/heads/master
-Date: 2015-02-01T19:48:24+01:00
+Date: 2015-02-01T20:07:08+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.formwidget.namedfile/commit/7f8792b2ac76add765246614f4e6fc9120598845
+Commit: https://github.com/plone/plone.formwidget.namedfile/commit/32e036ebf246269973b947e9222c4f87d2806bd3
 
-Remove tag_build = dev from setup.cfg.
+Remove egg_info section in setup.cfg.
 
 Files changed:
 M setup.cfg
 
 diff --git a/setup.cfg b/setup.cfg
-index a682ec3..ba7a150 100644
+index ba7a150..8e7c464 100644
 --- a/setup.cfg
 +++ b/setup.cfg
-@@ -3,5 +3,5 @@ index-servers =
+@@ -2,6 +2,3 @@
+ index-servers =
      pypi
  
- [egg_info]
--tag_build = dev
-+tag_build =
- tag_svn_revision = true
+-[egg_info]
+-tag_build =
+-tag_svn_revision = true
 
 
