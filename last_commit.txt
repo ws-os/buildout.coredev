@@ -1,84 +1,24 @@
 Repository: plone.formwidget.namedfile
 Branch: refs/heads/master
-Date: 2015-02-01T18:53:27+01:00
+Date: 2015-02-01T19:48:24+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.formwidget.namedfile/commit/c01fc6683e27289120cc222cc4e6f533eb2a0b6d
+Commit: https://github.com/plone/plone.formwidget.namedfile/commit/7f8792b2ac76add765246614f4e6fc9120598845
 
-Preparing release 1.0.12
+Remove tag_build = dev from setup.cfg.
 
 Files changed:
-M CHANGES.rst
-M setup.py
+M setup.cfg
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 5ebfd19..170b80f 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -1,7 +1,7 @@
- Changelog
- =========
+diff --git a/setup.cfg b/setup.cfg
+index a682ec3..ba7a150 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -3,5 +3,5 @@ index-servers =
+     pypi
  
--1.0.12 (unreleased)
-+1.0.12 (2015-02-01)
- -------------------
- 
- - Add Base64 data converter for NamedImage and NamedFile widgets on ASCII
-diff --git a/setup.py b/setup.py
-index d634338..c608fc6 100644
---- a/setup.py
-+++ b/setup.py
-@@ -1,7 +1,7 @@
- from setuptools import setup
- from setuptools import find_packages
- 
--version = '1.0.12.dev0'
-+version = '1.0.12'
- 
- setup(
-     name='plone.formwidget.namedfile',
-
-
-Repository: plone.formwidget.namedfile
-Branch: refs/heads/master
-Date: 2015-02-01T18:53:48+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.formwidget.namedfile/commit/4f091101ddaa555d61a7e6401f5ad51e8929212e
-
-Back to development: 1.0.13
-
-Files changed:
-M CHANGES.rst
-M setup.py
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 170b80f..f0ae038 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -1,6 +1,12 @@
- Changelog
- =========
- 
-+1.0.13 (unreleased)
-+-------------------
-+
-+- Nothing changed yet.
-+
-+
- 1.0.12 (2015-02-01)
- -------------------
- 
-diff --git a/setup.py b/setup.py
-index c608fc6..e4a4743 100644
---- a/setup.py
-+++ b/setup.py
-@@ -1,7 +1,7 @@
- from setuptools import setup
- from setuptools import find_packages
- 
--version = '1.0.12'
-+version = '1.0.13.dev0'
- 
- setup(
-     name='plone.formwidget.namedfile',
+ [egg_info]
+-tag_build = dev
++tag_build =
+ tag_svn_revision = true
 
 
