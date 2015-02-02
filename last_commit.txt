@@ -1,45 +1,125 @@
-Repository: Products.CMFPlone
+Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-02-02T16:22:38+01:00
-Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/0ad0fd72b8d0545d87e47ef9830919de95814f5f
+Date: 2015-02-02T20:02:40+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.event/commit/50a8fe21a944d2b6f84c83f82428d98f8ab64e88
 
-Adding a check for env var FEDEV to allow run plone on frontend development
+Fix construct_calendar in plone.app.event.base to also return events for the first day in the calendar month.
 
 Files changed:
-M Products/CMFPlone/resources/browser/resource.py
+M CHANGES.rst
+M plone/app/event/base.py
+M plone/app/event/tests/base_setup.py
+M plone/app/event/tests/test_base_module.py
 
-diff --git a/Products/CMFPlone/resources/browser/resource.py b/Products/CMFPlone/resources/browser/resource.py
-index 38d8ae1..32b1af4 100644
---- a/Products/CMFPlone/resources/browser/resource.py
-+++ b/Products/CMFPlone/resources/browser/resource.py
-@@ -14,6 +14,7 @@
- from zope.component import getUtility
- from zope.ramcache.interfaces import ram
- from Products.CMFCore.utils import _getAuthenticatedUser
-+import os
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 77a558c..509db43 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,10 @@ Changelog
+ 2.0.0 (unreleased)
+ ------------------
  
- 
- class ResourceView(ViewletBase):
-@@ -22,6 +23,19 @@ class ResourceView(ViewletBase):
- 
-     @property
-     def development(self):
-+        """
-+        To set development mode:
++- Fix ``construct_calendar`` in plone.app.event.base to also return events for
++  the first day in the calendar month.
++  [thet]
 +
-+        - we can define a envvar: FEDEV
-+        - otherwise if its anonymous is using production mode
-+        - finally is checked on the registry entry
+ - Remove ``data_postprocessing`` logic, which was handling ``open_end`` and
+   ``whole_day`` events and was manipulating the object on form submission.
+   Instead, just adapt start/end dates on indexing and when accessing them via
+diff --git a/plone/app/event/base.py b/plone/app/event/base.py
+index 10276ac..a0e5454 100644
+--- a/plone/app/event/base.py
++++ b/plone/app/event/base.py
+@@ -372,8 +372,8 @@ def _add_to_cal(cal_data, event, date):
+             # avoid long loops
+             if start and end_date < start:
+                 break  # if the date is completly outside the range
+-            if start and next_start_date <= start:
+-                continue  # if start is outside but end reaches into range
++            if start and next_start_date < start:
++                continue  # if start_date is outside but end reaches into range
+             if end and next_start_date > end:
+                 break  # if date is outside range
+ 
+diff --git a/plone/app/event/tests/base_setup.py b/plone/app/event/tests/base_setup.py
+index 255b272..0ba1bd5 100644
+--- a/plone/app/event/tests/base_setup.py
++++ b/plone/app/event/tests/base_setup.py
+@@ -44,7 +44,7 @@ def event_factory(self, container, **kwargs):
+     def make_dates(self):
+         tz = pytz.timezone(TEST_TIMEZONE)
+         now = self.now = patched_now()
+-        tomorrow = self.tomorrow = tz.normalize(now + timedelta(days=1))
++        self.tomorrow = tz.normalize(now + timedelta(days=1))
+         past = self.past = tz.normalize(now - timedelta(days=10))
+         future = self.future = tz.normalize(now + timedelta(days=10))
+         far = self.far = tz.normalize(now + timedelta(days=30))
+@@ -52,6 +52,23 @@ def make_dates(self):
+         return (now, past, future, far, duration)
+ 
+     def setUp(self):
++        """Construct sample contents.
++
++        These are all events:
++
++        'Long Event: 2013-04-25T10:00:00+02:00 - 2013-06-04T10:00:00+02:00'
++
++        'Past Event: 2013-04-25T00:00:00+02:00 - 2013-04-25T23:59:59+02:00'
++        'Past Event: 2013-04-26T00:00:00+02:00 - 2013-04-26T23:59:59+02:00'
++        'Past Event: 2013-04-27T00:00:00+02:00 - 2013-04-27T23:59:59+02:00'
++
++        'Now Event: 2013-05-05T10:00:00+02:00 - 2013-05-05T11:00:00+02:00'
++        'Now Event: 2013-05-07T10:00:00+02:00 - 2013-05-07T11:00:00+02:00'
++        'Now Event: 2013-05-09T10:00:00+02:00 - 2013-05-09T11:00:00+02:00'
++
++        'Future Event: 2013-05-15T10:00:00+02:00 - 2013-05-15T11:00:00+02:00'
++
 +        """
-+        env_development = os.getenv('FEDEV')
-+        if env_development:
-+            if env_development.lower() == 'false':
-+                return False
-+            elif env_development.lower() == 'true':
-+                return True
-         if _getAuthenticatedUser(self.context).getUserName() == 'Anonymous User':
-             return False
-         return self.registry.records['plone.resources.development'].value
+         self.portal = self.layer['portal']
+         self.app = self.layer['app']
+         self.request = self.layer['request']
+diff --git a/plone/app/event/tests/test_base_module.py b/plone/app/event/tests/test_base_module.py
+index 81e88c3..1d2ec0c 100644
+--- a/plone/app/event/tests/test_base_module.py
++++ b/plone/app/event/tests/test_base_module.py
+@@ -104,7 +104,7 @@ def test_DT(self):
+             DateTime('2011/11/11 11:00:00 Europe/Vienna')
+         )
+ 
+-        ## TEST WITH/WITHOUT MICROSECONDS
++        # TEST WITH/WITHOUT MICROSECONDS
+ 
+         # From Python datetime
+ 
+@@ -604,7 +604,9 @@ def _num_events(values):
+             start=date(2013, 5, 1),
+             end=date(2013, 5, 31)
+         )
+-        self.assertEqual(_num_events(cal.values()), 34)
++        self.assertEqual(_num_events(cal.values()), 35)
++        # First day must also be set in the calendar
++        self.assertTrue('2013-05-01' in cal.keys())
+ 
+         # invalid start
+         def _invalid_start():
+@@ -687,7 +689,7 @@ def fmt(self, seq):
+                  x.end.strftime('%Y-%m-%d %H:%M:%S'))
+                 for x in seq]
+ 
+-    ### expand=True: events
++    # expand=True: events
+ 
+     def test_expand_all(self):
+         # all occurrences, sorted by start
+@@ -719,7 +721,7 @@ def test_expand_start_limit(self):
+         expect = self.occ[1:2] + self.occ[6:8]  # includes ongoing long event
+         self.assertEqual(res, expect, self.diff(res, expect))
+ 
+-    ### expand=False: events
++    # expand=False: events
+ 
+     def test_noexpand_all(self):
+         # all events
 
 
