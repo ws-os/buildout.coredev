@@ -1,125 +1,211 @@
 Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-02-02T20:02:40+01:00
+Date: 2015-02-02T20:26:28+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.event/commit/50a8fe21a944d2b6f84c83f82428d98f8ab64e88
+Commit: https://github.com/plone/plone.app.event/commit/1179793a8835b4d489e13076c69316637c2179b4
 
-Fix construct_calendar in plone.app.event.base to also return events for the first day in the calendar month.
+remove obsolete references to plone.app.collection and ATTopic
 
 Files changed:
-M CHANGES.rst
-M plone/app/event/base.py
+M plone/app/event/browser/event_listing.pt
+M plone/app/event/browser/event_listing.py
+M plone/app/event/ical/configure.zcml
+M plone/app/event/profiles/default/actions.xml
+M plone/app/event/profiles/default/types.xml
 M plone/app/event/tests/base_setup.py
-M plone/app/event/tests/test_base_module.py
+M plone/app/event/tests/test_icalendar.py
+M setup.py
+D plone/app/event/profiles/default/types/Topic.xml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 77a558c..509db43 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,10 @@ Changelog
- 2.0.0 (unreleased)
- ------------------
+diff --git a/plone/app/event/browser/event_listing.pt b/plone/app/event/browser/event_listing.pt
+index f8125a3..eb29398 100644
+--- a/plone/app/event/browser/event_listing.pt
++++ b/plone/app/event/browser/event_listing.pt
+@@ -20,7 +20,7 @@
  
-+- Fix ``construct_calendar`` in plone.app.event.base to also return events for
-+  the first day in the calendar month.
-+  [thet]
-+
- - Remove ``data_postprocessing`` logic, which was handling ``open_end`` and
-   ``whole_day`` events and was manipulating the object on form submission.
-   Instead, just adapt start/end dates on indexing and when accessing them via
-diff --git a/plone/app/event/base.py b/plone/app/event/base.py
-index 10276ac..a0e5454 100644
---- a/plone/app/event/base.py
-+++ b/plone/app/event/base.py
-@@ -372,8 +372,8 @@ def _add_to_cal(cal_data, event, date):
-             # avoid long loops
-             if start and end_date < start:
-                 break  # if the date is completly outside the range
--            if start and next_start_date <= start:
--                continue  # if start is outside but end reaches into range
-+            if start and next_start_date < start:
-+                continue  # if start_date is outside but end reaches into range
-             if end and next_start_date > end:
-                 break  # if date is outside range
+   <div class="event_listing">
+     <header>
+-      <nav tal:define="show_filter python:not (view.is_collection or view.is_topic)">
++      <nav tal:define="show_filter python:not view.is_collection">
+         <ul class="mode_selector">
+           <tal:cond condition="show_filter">
+           <li class="" tal:attributes="class python:mode=='future' and 'selected' or ''">
+diff --git a/plone/app/event/browser/event_listing.py b/plone/app/event/browser/event_listing.py
+index 3fcfc92..6b148f6 100644
+--- a/plone/app/event/browser/event_listing.py
++++ b/plone/app/event/browser/event_listing.py
+@@ -31,13 +31,9 @@
+ from zope.interface import implements
  
+ try:
+-    from plone.app.collection.interfaces import ICollection
++    from plone.app.contenttypes.interfaces import ICollection
+ except ImportError:
+     ICollection = None
+-try:
+-    from Products.ATContentTypes.interfaces import IATTopic
+-except ImportError:
+-    IATTopic = None
+ 
+ 
+ class EventListing(BrowserView):
+@@ -90,11 +86,6 @@ def is_collection(self):
+         return ICollection and ICollection.providedBy(ctx) or False
+ 
+     @property
+-    def is_topic(self):
+-        ctx = self.default_context
+-        return IATTopic and IATTopic.providedBy(ctx) or False
+-
+-    @property
+     def date(self):
+         dt = None
+         if self._date:
+@@ -143,16 +134,10 @@ def _get_events(self, ret_mode=RET_MODE_ACCESSORS, expand=True):
+ 
+     def events(self, ret_mode=RET_MODE_ACCESSORS, expand=True, batch=True):
+         res = []
+-        is_col = self.is_collection
+-        is_top = self.is_topic
+-        if is_col or is_top:
++        if self.is_collection:
+             ctx = self.default_context
+-            if is_col:
+-                res = ctx.results(batch=False, sort_on='start', brains=True)
+-                query = queryparser.parseFormquery(ctx, ctx.getRawQuery())
+-            else:
+-                res = ctx.queryCatalog(batch=False, full_objects=False)
+-                query = ctx.buildQuery()
++            res = ctx.results(batch=False, sort_on='start', brains=True)
++            query = queryparser.parseFormquery(ctx, ctx.getRawQuery())
+             if expand:
+                 # get start and end values from the query to ensure limited
+                 # listing for occurrences
+@@ -399,7 +384,7 @@ def prev_month_url(self):
+     # COLLECTION daterange start/end determination
+     def _expand_events_start_end(self, start, end):
+         # make sane start and end values for expand_events from
+-        # Collection/Topic start/end criterions.
++        # Collection start/end criterions.
+         # if end/min is given, it overrides start/min settings to make sure,
+         # ongoing events are shown in the listing!
+         # XXX: This actually fits most needs, but not all. Maybe someone
+diff --git a/plone/app/event/ical/configure.zcml b/plone/app/event/ical/configure.zcml
+index 581a946..d7dfe96 100644
+--- a/plone/app/event/ical/configure.zcml
++++ b/plone/app/event/ical/configure.zcml
+@@ -39,13 +39,6 @@
+         />
+ 
+     <adapter
+-        for="plone.app.collection.interfaces.ICollection"
+-        provides="plone.event.interfaces.IICalendar"
+-        factory=".exporter.calendar_from_collection"
+-        zcml:condition="installed plone.app.collection"
+-        />
+-
+-    <adapter
+         for="plone.app.contenttypes.interfaces.ICollection"
+         provides="plone.event.interfaces.IICalendar"
+         factory=".exporter.calendar_from_collection"
+@@ -86,15 +79,6 @@
+         />
+ 
+     <browser:page
+-        for="plone.app.collection.interfaces.ICollection"
+-        name="ics_view"
+-        class=".exporter.EventsICal"
+-        permission="zope2.View"
+-        zcml:condition="installed plone.app.collection"
+-        layer="..interfaces.IBrowserLayer"
+-        />
+-
+-    <browser:page
+         for="plone.app.contenttypes.interfaces.ICollection"
+         name="ics_view"
+         class=".exporter.EventsICal"
+diff --git a/plone/app/event/profiles/default/actions.xml b/plone/app/event/profiles/default/actions.xml
+index 5ba4ac7..87d8e9c 100644
+--- a/plone/app/event/profiles/default/actions.xml
++++ b/plone/app/event/profiles/default/actions.xml
+@@ -8,7 +8,7 @@
+    <property name="description" i18n:translate="help_event_listing_settings">Settings for the event listing view.</property>
+    <property name="url_expr">string:${object_url}/@@event_listing_settings</property>
+    <property name="icon_expr"></property>
+-   <property name="available_expr">python:object.defaultView()=='event_listing' and object.portal_type not in ('Collection', 'Topic')</property>
++   <property name="available_expr">python:object.defaultView() == 'event_listing' and object.portal_type != 'Collection'</property>
+    <property name="permissions">
+     <element value="Manage properties"/>
+    </property>
+diff --git a/plone/app/event/profiles/default/types.xml b/plone/app/event/profiles/default/types.xml
+index 296c504..f62133b 100644
+--- a/plone/app/event/profiles/default/types.xml
++++ b/plone/app/event/profiles/default/types.xml
+@@ -1,11 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <object name="portal_types" meta_type="Plone Types Tool">
+-  <object name="Plone Site"
+-    meta_type="Factory-based Type Information with dynamic views"/>
+-  <object name="Folder"
+-    meta_type="Factory-based Type Information with dynamic views"/>
+-  <object name="Collection"
+-    meta_type="Factory-based Type Information with dynamic views"/>
+-  <object name="Topic"
+-    meta_type="Factory-based Type Information with dynamic views"/>
++  <object name="Plone Site" meta_type="Factory-based Type Information with dynamic views"/>
++  <object name="Folder"     meta_type="Dexterity FTI"/>
++  <object name="Collection" meta_type="Dexterity FTI"/>
+ </object>
+diff --git a/plone/app/event/profiles/default/types/Topic.xml b/plone/app/event/profiles/default/types/Topic.xml
+deleted file mode 100644
+index d726815..0000000
+--- a/plone/app/event/profiles/default/types/Topic.xml
++++ /dev/null
+@@ -1,6 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<object name="Topic">
+- <property name="view_methods" purge="False">
+-  <element value="event_listing"/>
+- </property>
+-</object>
 diff --git a/plone/app/event/tests/base_setup.py b/plone/app/event/tests/base_setup.py
-index 255b272..0ba1bd5 100644
+index 0ba1bd5..dee3fef 100644
 --- a/plone/app/event/tests/base_setup.py
 +++ b/plone/app/event/tests/base_setup.py
-@@ -44,7 +44,7 @@ def event_factory(self, container, **kwargs):
-     def make_dates(self):
-         tz = pytz.timezone(TEST_TIMEZONE)
-         now = self.now = patched_now()
--        tomorrow = self.tomorrow = tz.normalize(now + timedelta(days=1))
-+        self.tomorrow = tz.normalize(now + timedelta(days=1))
-         past = self.past = tz.normalize(now - timedelta(days=10))
-         future = self.future = tz.normalize(now + timedelta(days=10))
-         far = self.far = tz.normalize(now + timedelta(days=30))
-@@ -52,6 +52,23 @@ def make_dates(self):
-         return (now, past, future, far, duration)
+@@ -136,8 +136,7 @@ def setUp(self):
+         workflow.doActionFor(self.long_event, 'publish')
+         self.long_event.reindexObject()
  
-     def setUp(self):
-+        """Construct sample contents.
-+
-+        These are all events:
-+
-+        'Long Event: 2013-04-25T10:00:00+02:00 - 2013-06-04T10:00:00+02:00'
-+
-+        'Past Event: 2013-04-25T00:00:00+02:00 - 2013-04-25T23:59:59+02:00'
-+        'Past Event: 2013-04-26T00:00:00+02:00 - 2013-04-26T23:59:59+02:00'
-+        'Past Event: 2013-04-27T00:00:00+02:00 - 2013-04-27T23:59:59+02:00'
-+
-+        'Now Event: 2013-05-05T10:00:00+02:00 - 2013-05-05T11:00:00+02:00'
-+        'Now Event: 2013-05-07T10:00:00+02:00 - 2013-05-07T11:00:00+02:00'
-+        'Now Event: 2013-05-09T10:00:00+02:00 - 2013-05-09T11:00:00+02:00'
-+
-+        'Future Event: 2013-05-15T10:00:00+02:00 - 2013-05-15T11:00:00+02:00'
-+
-+        """
-         self.portal = self.layer['portal']
-         self.app = self.layer['app']
-         self.request = self.layer['request']
-diff --git a/plone/app/event/tests/test_base_module.py b/plone/app/event/tests/test_base_module.py
-index 81e88c3..1d2ec0c 100644
---- a/plone/app/event/tests/test_base_module.py
-+++ b/plone/app/event/tests/test_base_module.py
-@@ -104,7 +104,7 @@ def test_DT(self):
-             DateTime('2011/11/11 11:00:00 Europe/Vienna')
-         )
+-        # For AT based tests, this is a plone.app.collection ICollection type
+-        # For DX based tests, it's a plone.app.contenttypes ICollection type
++        # plone.app.contenttypes ICollection type
+         self.portal.invokeFactory('Collection', 'collection', title=u'Col')
+         collection = self.portal.collection
+         collection.sort_on = u'start'
+diff --git a/plone/app/event/tests/test_icalendar.py b/plone/app/event/tests/test_icalendar.py
+index 704837c..9f5fbbe 100644
+--- a/plone/app/event/tests/test_icalendar.py
++++ b/plone/app/event/tests/test_icalendar.py
+@@ -223,7 +223,7 @@ def test_event_listing_ical_portal__specific_date(self):
+         self.assertTrue('Long Event' in icalstr)
  
--        ## TEST WITH/WITHOUT MICROSECONDS
-+        # TEST WITH/WITHOUT MICROSECONDS
- 
-         # From Python datetime
- 
-@@ -604,7 +604,9 @@ def _num_events(values):
-             start=date(2013, 5, 1),
-             end=date(2013, 5, 31)
-         )
--        self.assertEqual(_num_events(cal.values()), 34)
-+        self.assertEqual(_num_events(cal.values()), 35)
-+        # First day must also be set in the calendar
-+        self.assertTrue('2013-05-01' in cal.keys())
- 
-         # invalid start
-         def _invalid_start():
-@@ -687,7 +689,7 @@ def fmt(self, seq):
-                  x.end.strftime('%Y-%m-%d %H:%M:%S'))
-                 for x in seq]
- 
--    ### expand=True: events
-+    # expand=True: events
- 
-     def test_expand_all(self):
-         # all occurrences, sorted by start
-@@ -719,7 +721,7 @@ def test_expand_start_limit(self):
-         expect = self.occ[1:2] + self.occ[6:8]  # includes ongoing long event
-         self.assertEqual(res, expect, self.diff(res, expect))
- 
--    ### expand=False: events
-+    # expand=False: events
- 
-     def test_noexpand_all(self):
-         # all events
+     def test_collection_ical(self):
+-        """Test basic icalendar export from ATTopics.
++        """Test basic icalendar export from Collections.
+         """
+         headers, output, request = make_fake_response(self.request)
+         view = getMultiAdapter(
+diff --git a/setup.py b/setup.py
+index cbbf862..e3dcc23 100644
+--- a/setup.py
++++ b/setup.py
+@@ -91,7 +91,6 @@
+         'dexterity': [],  # BBB, remove with next version
+         'test': [
+             'mock',
+-            'plone.app.collection',
+             'plone.app.contenttypes >= 1.2a3',
+             'plone.app.robotframework',
+             'plone.app.testing [robot]',
 
 
