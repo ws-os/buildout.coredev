@@ -1,135 +1,368 @@
-Repository: Products.CMFPlone
+Repository: plone.app.contentrules
 Branch: refs/heads/master
-Date: 2015-02-02T15:59:09-06:00
+Date: 2015-02-02T17:25:39-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/90f7385344dde0fa147d2bba60d2d606416ff0cf
+Commit: https://github.com/plone/plone.app.contentrules/commit/b46a75e9d942f17dab07829d401e40841a62f11e
 
-forgot parser.js
+Fix control panel to work with Plone 5 Modals
 
 Files changed:
-A Products/CMFPlone/static/components/mockup-core/js/parser.js
+M plone/app/contentrules/browser/contentrule-elements.js
+M plone/app/contentrules/browser/contentrules.js
+M plone/app/contentrules/browser/templates/controlpanel.pt
+M plone/app/contentrules/browser/templates/manage-elements.pt
+M plone/app/contentrules/tests/assignment.txt
+M plone/app/contentrules/tests/multipublish.txt
+M plone/app/contentrules/tests/simplepublish.txt
+M plone/app/contentrules/tests/test_ui.txt
 
-diff --git a/Products/CMFPlone/static/components/mockup-core/js/parser.js b/Products/CMFPlone/static/components/mockup-core/js/parser.js
-new file mode 100644
-index 0000000..581d588
---- /dev/null
-+++ b/Products/CMFPlone/static/components/mockup-core/js/parser.js
-@@ -0,0 +1,42 @@
-+define([
-+  'jquery'
+diff --git a/plone/app/contentrules/browser/contentrule-elements.js b/plone/app/contentrules/browser/contentrule-elements.js
+index 4eda4e9..5fa9f4b 100644
+--- a/plone/app/contentrules/browser/contentrule-elements.js
++++ b/plone/app/contentrules/browser/contentrule-elements.js
+@@ -1,25 +1,30 @@
++/* global require */
++
+ var SKIP_OVERLAY_ACTIONS = [
+   'plone.actions.Delete'
+ ];
+ 
+-(function ($) {
+-$(function () {
++require([
++  'jquery',
++  'mockup-patterns-modal'
++], function($, Modal) {
++  'use strict';
+   function initforms(){
+     $('#configure-conditions .rule-element input, #configure-actions .rule-element input').unbind('click').click(function(){
+       var name = $(this).attr('name');
+       if(name=='form.button.EditCondition' || name=='form.button.EditAction'){
+         return true;
+       }
+-      $('#kss-spinner').show();
++      $('#spinner').show();
+       var form = $(this).parents('form').first();
+       var fieldset = form.parents('fieldset').first();
+-      var data = form.serialize() + "&" + name + "=1";
++      var data = form.serialize() + '&' + name + '=1';
+       var url = form.attr('action');
+       $.post(url, data, function(html){
+         var newfieldset = $(html).find('#' + fieldset.attr('id'));
+         fieldset.replaceWith(newfieldset);
+         initforms();
+-        $('#kss-spinner').hide();
++        $('#spinner').hide();
+       });
+       return false;
+     });
+@@ -35,34 +40,16 @@ $(function () {
+       e.preventDefault();
+       var url = form.attr('action') + '?' + data;
+       var conditionAnchor = $('<a href="' + url + '" />').css('display', 'none');
+-      conditionAnchor.prepOverlay({
+-        subtype: 'ajax',
+-        filter: '#content > *',
+-        closeselector: '[name="form.actions.cancel"]',
+-        formselector: '#content-core form[id="zc.page.browser_form"]',
+-        noform: function(el) {return $.plonepopups.noformerrorshow(el, 'redirect');},
+-        redirect: function(el, responseText){
+-          var anchor = form.parents('fieldset').children('a').first().attr('name');
+-          var timestamp = Math.floor(+new Date() / 1000);
+-          return window.location.href.split('#')[0] + '?' + timestamp + '#' + anchor;
+-        }
+-      });
++      conditionAnchor.insertAfter(this);
++      new Modal(conditionAnchor);
+       conditionAnchor.trigger('click');
+     });
+-
+-    /* simple overlay to trigger on forms here */
+-    $('.popup').prepOverlay({
+-      subtype: 'ajax',
+-      filter: '#content > *',
+-      closeselector: '[name="form.actions.cancel"]'
+-    });
+-
+   }
+-  initforms();
+-
++  $(document).ready(function(){
++    initforms();
++  });
++});
+   /* To enable ajax overlay loading with the current widget
+      used for the add button, we'll create a hidden anchor
+      tag that'll we'll manually trigger clicks for.
+      We'll add one for conditions and one for actions. */
+-});
+-}(jQuery));
+diff --git a/plone/app/contentrules/browser/contentrules.js b/plone/app/contentrules/browser/contentrules.js
+index 693475d..985c243 100644
+--- a/plone/app/contentrules/browser/contentrules.js
++++ b/plone/app/contentrules/browser/contentrules.js
+@@ -1,5 +1,9 @@
+-(function ($) {
+-$(function () {
++/* global require */
++
++require([
++  'jquery',
 +], function($) {
 +  'use strict';
+ 
+ 	function updatezebra(table){
+     table.find('tr:visible:odd').removeClass('odd even').addClass('odd');
+@@ -17,36 +21,34 @@ $(function () {
+                 '</dl>');
+       $('#content').before(msg);
+       msg.fadeIn();
+-    }
++    };
+     var vis = $('dl.portalMessage:visible');
+-    if(vis.length == 0){
++    if(vis.length === 0){
+       _show();
+     }else{
+       vis.fadeOut(_show);
+     }
+   }
+ 
+-  var filter = [];
+-
+   // TODO find out why is it binding multiple times
+   $('.btn-rule-action').unbind('click').bind('click', function(e) {
+     e.preventDefault();
+ 
+     var $this = $(this),
+         $row = $this.parents('tr').first(),
+-        $table = $row.parent();
++        $table = $row.parent(),
+         id = $this.data('value'),
+         url = $this.data('url');
+ 
+     $.ajax({
+-      type: "POST",
++      type: 'POST',
+       url: url,
+       data: {
+         'rule-id': id,
+         '_authenticator': $('input[name="_authenticator"]').val()
+       },
+       beforeSend: function() {
+-        $('#kss-spinner').show();
++        $('#spinner').show();
+       },
+       error: function() {
+         addStatusMessage($('#trns_form_error').html(), 'warn');
+@@ -73,7 +75,7 @@ $(function () {
+         addStatusMessage($('#trns_form_success').html(), 'info');
+       },
+       complete: function() {
+-      	$('#kss-spinner').hide();
++      	$('#spinner').hide();
+       }
+     });
+   });
+@@ -82,8 +84,8 @@ $(function () {
+   $('.filter-option input').unbind('change').bind('change', function() {
+       // Go through the checkboxes and map up what is the filtering criterea
+   	var $table = $('#rules_table_form table');
+-  	state_filters = $('.state-filters input:checked');
+-  	type_filters = $('.type-filters input:checked');
++  	var state_filters = $('.state-filters input:checked');
++  	var type_filters = $('.type-filters input:checked');
+ 
+   	$table.find('tr').show();
+   	if(state_filters.length > 0){
+@@ -101,21 +103,20 @@ $(function () {
+ 
+   $('#rules_disable_globally').change(function(){
+     var form = $('#fieldset-global form');
+-    if($('#rules_disable_globally').attr('checked')){
+-    	var disabled = 'True';
+-    }
+-    else{
+-    	var disabled = 'False';
++    var disabled = '';
++    if($('#rules_disable_globally')[0].checked){
++    	disabled = 'True';
+     }
 +
-+  var parser = {
-+    getOptions: function getOptions($el, patternName, options) {
-+      /* This is the Mockup parser. It parses a DOM element for pattern
-+      * configuration options.
-+      */
-+      options = options || {};
-+      // get options from parent element first, stop if element tag name is 'body'
-+      if ($el.length !== 0 && !$.nodeName($el[0], 'body')) {
-+        options = getOptions($el.parent(), patternName, options);
-+      }
-+      // collect all options from element
-+      var elOptions = {};
-+      if ($el.length !== 0) {
-+        elOptions = $el.data('pat-' + patternName);
-+        if (elOptions) {
-+          // parse options if string
-+          if (typeof(elOptions) === 'string') {
-+              var tmpOptions = {};
-+              $.each(elOptions.split(';'), function(i, item) {
-+                  item = item.split(':');
-+                  item.reverse();
-+                  var key = item.pop();
-+                  key = key.replace(/^\s+|\s+$/g, '');  // trim
-+                  item.reverse();
-+                  var value = item.join(':');
-+                  value = value.replace(/^\s+|\s+$/g, '');  // trim
-+                  tmpOptions[key] = value;
-+              });
-+              elOptions = tmpOptions;
-+          }
-+        }
-+      }
-+      return $.extend(true, {}, options, elOptions);
-+    }
-+  };
-+  return parser;
-+});
-
-
-Repository: Products.CMFPlone
-Branch: refs/heads/master
-Date: 2015-02-02T15:59:24-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/1519584ae18a5f9c97826aa3468ffc7a7f7a17ff
-
-add gitignore for components folder
-
-Files changed:
-A Products/CMFPlone/static/.gitignore
-
-diff --git a/Products/CMFPlone/static/.gitignore b/Products/CMFPlone/static/.gitignore
-new file mode 100644
-index 0000000..2dbe359
---- /dev/null
-+++ b/Products/CMFPlone/static/.gitignore
-@@ -0,0 +1,55 @@
-+components/slides/
-+components/r.js/.*
-+components/spectrum/
-+components/prefixfree
-+components/patternslib/src/*.js
-+components/patternslib/src/legacy/*
-+components/patternslib/src/lib/*
-+components/patternslib/src/pat/*
-+components/patternslib/*.js
-+components/patternslib/tests/
-+components/patternslib/.*
-+components/patternslib/*.md
-+components/patternslib/*.txt
-+components/patternslib/Makefile
-+components/patternslib/bower.json
-+components/patternslib/demo/
-+components/patternslib/docs/
-+components/patternslib/jshintrc
-+components/patternslib/jshintrc-tests
-+components/patternslib/lib/
-+components/patternslib/package.json
-+components/ace-builds
-+components/AnythingSlider/
-+components/almond/
-+components/chosen/
-+components/doc-ready/
-+components/eventEmitter/
-+components/eventie/
-+components/fullcalendar/
-+components/get-size/
-+components/get-style-property/
-+components/imagesloaded/
-+components/jcrop/
-+components/jquery-placeholder/
-+components/jquery-textchange/
-+components/jquery.tinymce/
-+components/klass/
-+components/less.js/
-+components/logging/.bower.json
-+components/logging/LICENSE.txt
-+components/logging/README.md
-+components/logging/bower.json
-+components/logging/changes.md
-+components/logging/grunt.js
-+components/logging/package.json
-+components/masonry/
-+components/matches-selector/
-+components/modernizr/
-+components/moment-timezone/
-+components/outlayer/
-+components/parsleyjs/
-+components/mockup-core/.nix/
-+components/mockup-core/CHANGES.rst
-+components/mockup-core/LICENSE.rst
-+components/mockup-core/tests/parser-test.js
+     $.ajax({
+-      type: "POST",
++      type: 'POST',
+       url: form.attr('action'),
+       data: {
+         'global_disable:boolean': disabled,
+         '_authenticator': $('input[name="_authenticator"]').val()
+       },
+       beforeSend: function() {
+-        $('#kss-spinner').show();
++        $('#spinner').show();
+       },
+       error: function() {
+         addStatusMessage($('#trns_form_error').html(), 'warn');
+@@ -124,16 +125,9 @@ $(function () {
+         addStatusMessage($('#trns_form_success').html(), 'info');
+       },
+       complete: function() {
+-        $('#kss-spinner').hide();
++        $('#spinner').hide();
+       }
+     });
+   });
+ 
+-  $('form.addContentRule a').prepOverlay({
+-    subtype: 'ajax',
+-    filter: '#content > *',
+-    closeselector: '[name="form.actions.cancel"]'
+-  });
+-
+ });
+-}(jQuery));
+diff --git a/plone/app/contentrules/browser/templates/controlpanel.pt b/plone/app/contentrules/browser/templates/controlpanel.pt
+index e65da61..a4d9599 100644
+--- a/plone/app/contentrules/browser/templates/controlpanel.pt
++++ b/plone/app/contentrules/browser/templates/controlpanel.pt
+@@ -182,13 +182,8 @@
+                 </tbody>
+             </table>
+             </div>
+-            <form class="formControls inlineDisplay addContentRule" method="GET" tal:attributes="action add_url">
+-              <a tal:attributes="href add_url">
+-                <input class="context" type="submit" value="Add content rule" name="form.button.Add"
+-                       i18n:attributes="value label_contentrule_add;" />
+-              </a>
+-            </form>
+-
++            <a id="#addcontentrule" tal:attributes="href add_url"
++               class="pat-modal plone-btn plone-btn-primary" i18n:translate="label_contentrule_add">Add content rule</a>
+        </fieldset>
+ </div>
+ </body>
+diff --git a/plone/app/contentrules/browser/templates/manage-elements.pt b/plone/app/contentrules/browser/templates/manage-elements.pt
+index e40b755..960f52a 100644
+--- a/plone/app/contentrules/browser/templates/manage-elements.pt
++++ b/plone/app/contentrules/browser/templates/manage-elements.pt
+@@ -8,7 +8,8 @@
+ 
+ <body>
+ 
+-<div metal:fill-slot="prefs_configlet_main">
++<div metal:fill-slot="prefs_configlet_main"
++     tal:define="auth_token context/@@authenticator/token">
+ 
+     <script type="text/javascript" src="++resource++manage-contentrule-elements.js"
+         tal:attributes="src string:${context/portal_url}/++resource++manage-contentrule-elements.js">
+@@ -115,15 +116,9 @@
+             <input type="hidden" name="element_id:int" tal:attributes="value condition/idx" />
+             <div class="rule-element">
+                 <div class="rule-operations">
+-                    <a tal:attributes="href string:${condition/editview}" class="popup"
+-                       tal:condition="condition/editview">
+-                      <input type="submit"
+-                             name="form.button.EditCondition"
+-                             value="Edit"
+-                             class="context"
+-                             i18n:attributes="value label_edit;"
+-                             />
+-                    </a>
++                    <a tal:attributes="href string:${condition/editview}?_authenticator=${auth_token}"
++                       class="pat-modal plone-btn plone-btn-primary"
++                       tal:condition="condition/editview" i18n:translate="label_edit">Edit</a>
+                     <input type="submit"
+                            name="form.button.DeleteCondition"
+                            value="Remove"
+@@ -197,7 +192,7 @@
+             <input type="hidden" name="element_id:int" tal:attributes="value action/idx" />
+             <div class="rule-element">
+                 <div class="rule-operations">
+-                    <a tal:attributes="href string:${action/editview}" class="popup"
++                    <a tal:attributes="href string:${action/editview}" class="pat-modal"
+                        tal:condition="action/editview">
+                       <input type="submit"
+                              name="form.button.EditAction"
+diff --git a/plone/app/contentrules/tests/assignment.txt b/plone/app/contentrules/tests/assignment.txt
+index 859b795..08f1175 100644
+--- a/plone/app/contentrules/tests/assignment.txt
++++ b/plone/app/contentrules/tests/assignment.txt
+@@ -23,7 +23,7 @@ First, we add a rule with a triggering event of `Workflow state changed`:
+   >>> browser.open(portal.absolute_url())
+   >>> browser.getLink('Site Setup').click()
+   >>> browser.getLink('Content Rules').click()
+-  >>> browser.getControl('Add content rule').click()
++  >>> browser.getLink('Add content rule').click()
+   >>> browser.getControl('Title').value = 'Copy Published News'
+   >>> ctrl = browser.getControl('Triggering event')
+   >>> ctrl.value = ['Workflow state changed']
+@@ -64,7 +64,7 @@ A second rule will be added to notify users when a content is added.
+   >>> browser.open(portal.absolute_url())
+   >>> browser.getLink('Site Setup').click()
+   >>> browser.getLink('Content Rules').click()
+-  >>> browser.getControl('Add content rule', index=0).click()
++  >>> browser.getLink('Add content rule', index=0).click()
+   >>> browser.getControl('Title').value = 'Notify User'
+   >>> ctrl = browser.getControl('Triggering event')
+   >>> ctrl.value = ['Object added to this container']
+diff --git a/plone/app/contentrules/tests/multipublish.txt b/plone/app/contentrules/tests/multipublish.txt
+index f7325a7..df63c57 100644
+--- a/plone/app/contentrules/tests/multipublish.txt
++++ b/plone/app/contentrules/tests/multipublish.txt
+@@ -19,7 +19,7 @@ rule with a triggering event of `Workflow state changed`:
+   >>> browser.open(portal.absolute_url())
+   >>> browser.getLink('Site Setup').click()
+   >>> browser.getLink('Content Rules').click()
+-  >>> browser.getControl('Add content rule').click()
++  >>> browser.getLink('Add content rule').click()
+   >>> browser.getControl('Title').value = 'Move Published News'
+   >>> ctrl = browser.getControl('Triggering event')
+   >>> ctrl.value = ['Workflow state changed']
+diff --git a/plone/app/contentrules/tests/simplepublish.txt b/plone/app/contentrules/tests/simplepublish.txt
+index ae8044e..d008f2d 100644
+--- a/plone/app/contentrules/tests/simplepublish.txt
++++ b/plone/app/contentrules/tests/simplepublish.txt
+@@ -21,7 +21,7 @@ rule with a triggering event of `Workflow state changed`:
+   >>> browser.open(portal.absolute_url())
+   >>> browser.getLink('Site Setup').click()
+   >>> browser.getLink('Content Rules').click()
+-  >>> browser.getControl('Add content rule').click()
++  >>> browser.getLink('Add content rule').click()
+   >>> browser.getControl('Title').value = 'Copy Published News'
+   >>> ctrl = browser.getControl('Triggering event')
+   >>> ctrl.value = ['Workflow state changed']
+diff --git a/plone/app/contentrules/tests/test_ui.txt b/plone/app/contentrules/tests/test_ui.txt
+index 0111abe..cdc8f3c 100644
+--- a/plone/app/contentrules/tests/test_ui.txt
++++ b/plone/app/contentrules/tests/test_ui.txt
+@@ -24,7 +24,7 @@ Add content rule condition
+     Add content rule
+     Select From List  css=#contentrules-add-condition  plone.conditions.WorkflowState
+     Click Button  form.button.AddCondition
+-    Wait Until Page Contains Element  css=div.pb-ajax div#content-core
++    Wait Until Page Contains Element  css=#plone-modal div#content-core
+     Select From List  css=#form.wf_states  published
+     Click Button  form.actions.save
+     Page should contain  Workflow states are
+@@ -33,7 +33,7 @@ Add content rule action
+     Add content rule
+     Select From List  css=#contentrules-add-action  plone.actions.Logger
+     Click Button  form.button.AddAction
+-    Wait Until Page Contains Element  css=div.pb-ajax div#content-core
++    Wait Until Page Contains Element  css=#plone-modal div#content-core
+     Click Button  form.actions.save
+     Page should contain  Log message
+ 
+@@ -73,8 +73,8 @@ Log out
+ Add content rule
+     Log in as site owner
+     Goto contentrules
+-    Click Button  Add content rule
+-    Wait Until Page Contains Element  css=div.pb-ajax div#content-core
++    Click Link  Add content rule
++    Wait Until Page Contains Element  css=#plone-modal div#content-core
+     Input Text  form.title  test-rule1
+     Select From List  form.event  Object modified
+     Click Button  Save
 
 
