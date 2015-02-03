@@ -1,150 +1,76 @@
-Repository: plone.app.upgrade
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-03T09:56:13-06:00
+Date: 2015-02-03T15:29:36-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/0f0c923ae807ab826295d296c31b3bc9917eaf1c
+Commit: https://github.com/plone/mockup/commit/f91e633febd3100c74db8defab64a68b34b76117
 
-sync registry
+hide and remove build frames
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+M mockup/patterns/resourceregistry/js/registry.js
 
-diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-index 94c1214..b02037b 100644
---- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-@@ -108,7 +108,7 @@
-     <field type="plone.registry.field.ASCII">
-       <title>URL of less.js</title>
-     </field>
--    <value>++plone++static/components/less/dist/less-1.7.4.js</value>
-+    <value>++plone++static/components/less/dist/less.js</value>
-   </record>
-   <record name="plone.resources.less-modify">
-     <field type="plone.registry.field.ASCII">
-@@ -120,7 +120,7 @@
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index 8bb058a..b08483f 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -194,7 +194,7 @@ define([
+           'we will try to keep you updated on the progress.</p><p> Press the "Build it" ' +
+           'button to proceed.</p></div>' +
+         '<ul class="list-group hidden"></ul>' +
+-        '<button class="plone-btn plone-btn-default cancel hidden">Close</button>' +
++        '<button class="plone-btn plone-btn-default cancel hidden cancel-build">Close</button>' +
+         '<button class="plone-btn plone-btn-primary build">Build it</button>' +
+       '</div>', bundleListItem.options),
+       content: null,
+@@ -204,7 +204,7 @@ define([
+     self.modal.on('shown', function() {
+       var $el = self.modal.$modal;
+       var $info = $el.find('.start-info');
+-      self.$btnClose = $el.find('button.cancel');
++      self.$btnClose = $el.find('button.cancel-build');
+       var $btn = $el.find('button.build');
+       $btn.off('click').on('click', function(e){
+         e.preventDefault();
+@@ -264,13 +264,13 @@ define([
+     };
  
-   <records prefix="plone.resources/less"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++plone++static/components/less/dist/less-1.7.4.js</value>
-+      <value key="js">++plone++static/components/less/dist/less.js</value>
-   </records>
- 
-   <record name="plone.resources.less-variables">
-@@ -138,6 +138,10 @@
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++plone++static/components/mockup-core/js/pattern.js</value>
-   </records>
-+  <records prefix="plone.resources/mockup-parser"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/mockup-core/js/parser.js</value>
-+  </records>
- 
-   <records prefix="plone.resources/jquery"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-@@ -629,6 +633,11 @@
-       <value key="js">++resource++mockupjs/i18n.js</value>
-   </records>
- 
-+  <records prefix="plone.resources/translate"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++mockupjs/i18n-wrapper.js</value>
-+  </records>
-+
- 
-  <!-- Patterns -->
- 
-@@ -642,7 +651,7 @@
- 
-   <records prefix="plone.resources/mockup-patterns-select2"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++resource++mockup/select2/patterns.js</value>
-+      <value key="js">++resource++mockup/select2/pattern.js</value>
-       <value key="css">
-         <element>++resource++mockup/select2/pattern.select2.less</element>
-       </value>
-@@ -666,6 +675,11 @@
-       <value key="js">++resource++mockup/backdrop/pattern.js</value>
-   </records>
- 
-+  <records prefix="plone.resources/mockup-patterns-cookietrigger"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++mockup/cookietrigger/pattern.js</value>
-+  </records>
-+
-   <records prefix="plone.resources/mockup-patterns-sortable"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++resource++mockup/sortable/pattern.js</value>
-@@ -681,6 +695,11 @@
-       <value key="js">++resource++mockup/formunloadalert/pattern.js</value>
-   </records>
- 
-+  <records prefix="plone.resources/mockup-patterns-inlinevalidation"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++mockup/inlinevalidation/pattern.js</value>
-+  </records>
-+
-   <records prefix="plone.resources/mockup-patterns-modal"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++resource++mockup/modal/pattern.js</value>
-@@ -726,6 +745,9 @@
-   <records prefix="plone.resources/mockup-patterns-select2"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++resource++mockup/select2/pattern.js</value>
-+      <value key="css">
-+        <element>++resource++mockup/select2/pattern.select2.less</element>
-+      </value>
-   </records>
- 
-   <records prefix="plone.resources/mockup-patterns-structure"
-@@ -751,6 +773,11 @@
-       <value key="js">++resource++mockup/tablesorter/pattern.js</value>
-   </records>
- 
-+  <records prefix="plone.resources/mockup-patterns-textareamimetypeselector"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++mockup/textareamimetypeselector/pattern.js</value>
-+  </records>
-+
-   <records prefix="plone.resources/mockup-patterns-tinymce"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++resource++mockup/tinymce/pattern.js</value>
-@@ -818,6 +845,36 @@
-       <value key="js">++plone++static/components/r.js/dist/r.js</value>
-   </records>
- 
-+ <!-- patternslib dependencies -->
-+  <records prefix="plone.resources/pat-compat"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/patternslib/src/core/compat</value>
-+  </records>
-+  <records prefix="plone.resources/pat-jquery-ext"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/patternslib/src/core/jquery-ext</value>
-+  </records>
-+  <records prefix="plone.resources/pat-logger"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/patternslib/src/core/logger</value>
-+  </records>
-+  <records prefix="plone.resources/pat-parser"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/patternslib/src/core/parser</value>
-+  </records>
-+  <records prefix="plone.resources/pat-registry"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/patternslib/src/core/registry</value>
-+  </records>
-+  <records prefix="plone.resources/pat-utils"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/patternslib/src/core/utils</value>
-+  </records>
-+  <records prefix="plone.resources/logging"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/logging/src/logging</value>
-+  </records>
-+
-   <!-- legacy js -->
- 
- 
+     self._buildCSSBundle = function(config){
+-      var $iframe = $('<iframe><html><head></head><body></body></html></iframe>').
++      var $iframe = $('<iframe style="display:none"><html><head></head><body></body></html></iframe>').
+           appendTo('body').on('load', function(){
+       });
+       var iframe = $iframe[0];
+       var win = iframe.contentWindow || iframe;
+       win.lessErrorReporting = function(what, error, href){
+-        if(what !== "remove"){
++        if(what !== 'remove'){
+           self.addResult('less compilation error on file ' + href + ': ' + error);
+         }
+       };
+@@ -312,6 +312,7 @@ define([
+             var $el = $(this);
+             data['data-' + $el.attr('id')] = $el.html();
+           });
++          $iframe.remove();
+           $.ajax({
+             url: self.rview.options.data.manageUrl,
+             type: 'POST',
+@@ -387,7 +388,7 @@ define([
+           }
+         });
+       };
+-      var $iframe = $('<iframe><html><head></head><body></body></html></iframe').appendTo('body');
++      var $iframe = $('<iframe style="display:none"><html><head></head><body></body></html></iframe').appendTo('body');
+       var iframe = $iframe[0];
+       var win = iframe.contentWindow || iframe;
+       var head = $iframe.contents().find('head')[0];
+@@ -398,6 +399,7 @@ define([
+         win.requirejs.optimize(config, function(combined_files){
+           self.addResult('Saved javascript bundle, Build results: <pre>' + combined_files + '</pre>');
+           self.buildCSSBundle();
++          $iframe.remove();
+         });
+       };
+       head.appendChild(script);
 
 
