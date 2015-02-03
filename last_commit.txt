@@ -1,30 +1,42 @@
-Repository: Products.CMFPlone
+Repository: plone.app.registry
 Branch: refs/heads/master
-Date: 2015-02-03T17:20:57-06:00
+Date: 2015-02-03T17:28:01-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/c5a3808db7d4476b7e0ee7721fe47d4dbfe8bac1
+Commit: https://github.com/plone/plone.app.registry/commit/a0d1699498515d4a0e0eee6187165446361752f0
 
-add a few non-installable products
+note about versions
 
 Files changed:
-M Products/CMFPlone/setuphandlers.py
+M README.rst
+M setup.py
 
-diff --git a/Products/CMFPlone/setuphandlers.py b/Products/CMFPlone/setuphandlers.py
-index 7991410..5cde95b 100644
---- a/Products/CMFPlone/setuphandlers.py
-+++ b/Products/CMFPlone/setuphandlers.py
-@@ -55,9 +55,11 @@ def getNonInstallableProducts(self):
-             'plone.app.discussion',
-             'plone.app.folder',
-             'plone.app.imaging',
-+            'plone.app.intid',
-             'plone.app.registry',
-             'plone.app.search',
--            'plone.app.z3cform',
-+            'plone.app.widgets',
-+            'plone.app.z3cform'
-             ]
+diff --git a/README.rst b/README.rst
+index fc1a078..f975ff6 100644
+--- a/README.rst
++++ b/README.rst
+@@ -42,6 +42,11 @@ Each record has a unique name, which must be a *dotted name* prefixed by the
+ package owning the record. For example, a record owned by the package
+ ``my.package`` could have a name like ``my.package.myrecord``.
  
++Notes about versions
++====================
++
++1.3.x versions are for Plone 5. 1.2.x versions are for Plone 4.
++
+ Usage
+ =====
  
+diff --git a/setup.py b/setup.py
+index 4f77189..1452655 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,6 +1,6 @@
+ from setuptools import setup, find_packages
+ 
+-version = '1.2.4.dev0'
++version = '1.3.0.dev0'
+ 
+ setup(name='plone.app.registry',
+       version=version,
 
 
