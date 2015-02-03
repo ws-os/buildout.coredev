@@ -1,26 +1,118 @@
-Repository: Products.CMFPlone
+Repository: plone.app.contentlisting
 Branch: refs/heads/master
-Date: 2015-02-03T16:26:46-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/00b3efe240ac1a566e2a431002c9a434af4d5716
+Date: 2015-01-27T18:46:58+01:00
+Author: Mathieu Le Marec - Pasquet (kiorky) <kiorky@cryptelium.net>
+Commit: https://github.com/plone/plone.app.contentlisting/commit/76322f57d4b910289c0e3101a825cfbfc907bcdc
 
-provide correct baseUrl for uploading
+forward getURL's relative kw for contentlistings (plone4 compat)
 
 Files changed:
-M Products/CMFPlone/patterns/tinymce.py
+M CHANGES.txt
+M plone/app/contentlisting/catalog.py
+M plone/app/contentlisting/interfaces.py
 
-diff --git a/Products/CMFPlone/patterns/tinymce.py b/Products/CMFPlone/patterns/tinymce.py
-index 84e9fd9..5ebb4d3 100644
---- a/Products/CMFPlone/patterns/tinymce.py
-+++ b/Products/CMFPlone/patterns/tinymce.py
-@@ -67,7 +67,7 @@ def __call__(self):
-             'upload': {
-                 'initialFolder': initial,
-                 'currentPath': current_path,
--                'baseUrl': self.config['document_base_url'],
-+                'baseUrl': folder.absolute_url(),
-                 'relativePath': format_pattern_settings(
-                     self.settings.rel_upload_path,
-                     self.config),
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 39226a0..bf48e4c 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,8 +4,8 @@ Changelog
+ 1.1.1 (unreleased)
+ ------------------
+ 
+-- Nothing changed yet.
+-
++- forward getURL's relative kw for contentlistings (plone4 compat)
++  [kiorky]
+ 
+ 1.1.0 (2014-04-16)
+ ------------------
+diff --git a/plone/app/contentlisting/catalog.py b/plone/app/contentlisting/catalog.py
+index aa75d91..df1bd31 100644
+--- a/plone/app/contentlisting/catalog.py
++++ b/plone/app/contentlisting/catalog.py
+@@ -73,8 +73,8 @@ def getId(self):
+     def getPath(self):
+         return self._brain.getPath()
+ 
+-    def getURL(self):
+-        return self._brain.getURL()
++    def getURL(self, relative=False):
++        return self._brain.getURL(relative=relative)
+ 
+     def uuid(self):
+         # content objects might have UID and might not.
+diff --git a/plone/app/contentlisting/interfaces.py b/plone/app/contentlisting/interfaces.py
+index 0118e0b..b5a8bde 100644
+--- a/plone/app/contentlisting/interfaces.py
++++ b/plone/app/contentlisting/interfaces.py
+@@ -21,7 +21,7 @@ def getDataOrigin():
+     def getPath():
+         """Path to the object, relative to the portal root"""
+ 
+-    def getURL():
++    def getURL(relative=False):
+         """Full url to the object, including the portal root"""
+ 
+     def uuid():
+
+
+Repository: plone.app.contentlisting
+Branch: refs/heads/master
+Date: 2015-02-03T16:31:05-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.app.contentlisting/commit/385d1b898ed3889511c6f63e3bf8f7901624d2de
+
+Merge pull request #5 from plone/pac
+
+forward getURL's relative kw for contentlistings (plone4 compat)
+
+Files changed:
+M CHANGES.txt
+M plone/app/contentlisting/catalog.py
+M plone/app/contentlisting/interfaces.py
+
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 39226a0..bf48e4c 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,8 +4,8 @@ Changelog
+ 1.1.1 (unreleased)
+ ------------------
+ 
+-- Nothing changed yet.
+-
++- forward getURL's relative kw for contentlistings (plone4 compat)
++  [kiorky]
+ 
+ 1.1.0 (2014-04-16)
+ ------------------
+diff --git a/plone/app/contentlisting/catalog.py b/plone/app/contentlisting/catalog.py
+index aa75d91..df1bd31 100644
+--- a/plone/app/contentlisting/catalog.py
++++ b/plone/app/contentlisting/catalog.py
+@@ -73,8 +73,8 @@ def getId(self):
+     def getPath(self):
+         return self._brain.getPath()
+ 
+-    def getURL(self):
+-        return self._brain.getURL()
++    def getURL(self, relative=False):
++        return self._brain.getURL(relative=relative)
+ 
+     def uuid(self):
+         # content objects might have UID and might not.
+diff --git a/plone/app/contentlisting/interfaces.py b/plone/app/contentlisting/interfaces.py
+index 0118e0b..b5a8bde 100644
+--- a/plone/app/contentlisting/interfaces.py
++++ b/plone/app/contentlisting/interfaces.py
+@@ -21,7 +21,7 @@ def getDataOrigin():
+     def getPath():
+         """Path to the object, relative to the portal root"""
+ 
+-    def getURL():
++    def getURL(relative=False):
+         """Full url to the object, including the portal root"""
+ 
+     def uuid():
 
 
