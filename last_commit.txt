@@ -1,42 +1,34 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-04T12:06:08+01:00
-Author: JC Brand (jcbrand) <jc@opkode.com>
-Commit: https://github.com/plone/mockup/commit/b48e37d9308247005484fd29ca99527380062447
+Date: 2015-02-04T07:58:35-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/a4d7e22d83ada9965de1f6b5202eae64ec8b945a
 
-Use pinned versions of Patternslib and mockup-core
+update bower versions to releases for patternslib and mockup-core
 
 Files changed:
-M mockup/bower.json
+M Products/CMFPlone/static/bower.json
 
-diff --git a/mockup/bower.json b/mockup/bower.json
-index b924566..2319d25 100644
---- a/mockup/bower.json
-+++ b/mockup/bower.json
-@@ -15,13 +15,13 @@
+diff --git a/Products/CMFPlone/static/bower.json b/Products/CMFPlone/static/bower.json
+index 4b3f0f1..1ad6ab7 100644
+--- a/Products/CMFPlone/static/bower.json
++++ b/Products/CMFPlone/static/bower.json
+@@ -15,14 +15,14 @@
+     "jquery-form": "3.46.0",
      "jquery.cookie": "1.4.1",
      "lodash": "2.4.1",
-     "logging": "",
 -    "mockup-core": "master",
 +    "mockup-core": "2.0.0",
      "moment": "2.8.3",
      "pickadate": "3.4.0",
      "requirejs-text": "2.0.12",
      "select2": "3.5.1",
+ 
      "tinymce-builded": "4.1.6",
--    "patternslib": "master"
-+    "patternslib": "2.0.7"
-   },
-   "devDependencies": {
-     "expect": "0.3.1",
-@@ -29,6 +29,7 @@
-   },
-   "resolutions": {
-     "jquery": "1.11.1",
--    "select2": "3.5.1"
-+    "select2": "3.5.1",
-+    "patternslib": "2.0.7"
-   }
- }
+-    "patternslib": "master",
++    "patternslib": "2.0.7",
+ 
+     "requirejs": "",
+     "less": "2.1.2",
 
 
