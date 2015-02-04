@@ -1,108 +1,195 @@
-Repository: plone.app.widgets
+Repository: plone.app.robotframework
 Branch: refs/heads/master
-Date: 2015-02-04T12:28:59-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.widgets/commit/31ab96809c46b22522abd5db2cf6db0dc66fc320
+Date: 2015-01-25T12:29:31+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/plone.app.robotframework/commit/44dee804871546da18bab57ac6721fb6ada13f4b
 
-fix running robot tests in dev mode, mostly stupid timing issues. Really annoying. robot tests eat my soul
+Read "use_email_as_login" from registry instead of portal properties
 
 Files changed:
-M plone/app/widgets/tests/robot/common.robot
-M plone/app/widgets/tests/robot/test_datetime_widget.robot
-M plone/app/widgets/tests/robot/test_querystring_widget.robot
-M plone/app/widgets/tests/robot/test_select_widget.robot
+M CHANGES.txt
+M src/plone/app/robotframework/users.py
 
-diff --git a/plone/app/widgets/tests/robot/common.robot b/plone/app/widgets/tests/robot/common.robot
-index 483e1f9..d158bc6 100644
---- a/plone/app/widgets/tests/robot/common.robot
-+++ b/plone/app/widgets/tests/robot/common.robot
-@@ -38,11 +38,11 @@ I edit
- I create a collection
-   [Arguments]  ${title}
-   Go to  ${PLONE_URL}/++add++Collection
--  Wait until page contains  Add Collection
--  Input text  name=form.widgets.IDublinCore.title  ${title}
-+  Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
-+  Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 373e43d..8de3ba7 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,7 +4,9 @@ Changelog
+ 0.9.9 (unreleased)
+ ------------------
  
- I create a folder
-   [Arguments]  ${title}
-   Go to  ${PLONE_URL}/++add++Folder
--  Wait until page contains  Add Folder
--  Input text  name=form.widgets.IDublinCore.title  ${title}
-+  Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
-+  Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
-diff --git a/plone/app/widgets/tests/robot/test_datetime_widget.robot b/plone/app/widgets/tests/robot/test_datetime_widget.robot
-index 88a235a..c8fa2a8 100644
---- a/plone/app/widgets/tests/robot/test_datetime_widget.robot
-+++ b/plone/app/widgets/tests/robot/test_datetime_widget.robot
-@@ -30,6 +30,7 @@ As a contributor I can enter the date and time
-    When I fill datetime field  Publishing Date  2010  1  30  4:00 a.m.
-     And When I save
-     And When I edit
-+    Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
-     And When I open tab  Dates
-    Then Page should contain datetime  Publishing Date  2010  1  30  4:00 a.m.
+-- Nothing changed yet.
++- Read ``use_email_as_login`` setting from the registry instead of portal
++  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
++  [jcerjak]
  
-diff --git a/plone/app/widgets/tests/robot/test_querystring_widget.robot b/plone/app/widgets/tests/robot/test_querystring_widget.robot
-index 92f4397..a1765cb 100644
---- a/plone/app/widgets/tests/robot/test_querystring_widget.robot
-+++ b/plone/app/widgets/tests/robot/test_querystring_widget.robot
-@@ -13,6 +13,7 @@ ${querywidget_selector}  \#formfield-form-widgets-ICollection-query
- Querystring Widget rows appear and disappear correctly
-   Given I'm logged in as a 'Site Administrator'
-     And I create a collection  My Collection
-+        Wait For Condition  return $('.querystring-wrapper:visible').size() > 0
-         Page should contain Element  css=${querywidget_selector} .querystring-criteria-wrapper:nth-child(1)
-         Page should not contain Element  css=${querywidget_selector} .querystring-criteria-wrapper:nth-child(2)
-    When I select criteria index in row  1  Expiration date
-@@ -90,6 +91,8 @@ I select criteria index in row
-   [Arguments]  ${number}  ${label}
-   ${criteria_row} =  Convert to String  ${querywidget_selector} .querystring-criteria-wrapper:nth-child(${number})
-   Click Element  css=${criteria_row} .querystring-criteria-index .select2-container a
-+  Input Text  css=.select2-drop-active .select2-input  text=${label}
-+  Press Key  css=.select2-drop-active .select2-input  \\13
-   Press Key  jquery=:focus  ${label}\n
  
- I select criteria operator in row
-diff --git a/plone/app/widgets/tests/robot/test_select_widget.robot b/plone/app/widgets/tests/robot/test_select_widget.robot
-index 7b464ae..b98bf1c 100644
---- a/plone/app/widgets/tests/robot/test_select_widget.robot
-+++ b/plone/app/widgets/tests/robot/test_select_widget.robot
-@@ -41,6 +41,7 @@ The Select Widget autocomplete function works
+ 0.9.8 (2014-11-11)
+diff --git a/src/plone/app/robotframework/users.py b/src/plone/app/robotframework/users.py
+index 22daf44..2603ea5 100644
+--- a/src/plone/app/robotframework/users.py
++++ b/src/plone/app/robotframework/users.py
+@@ -1,7 +1,10 @@
+ # -*- coding: utf-8 -*-
+ from Products.CMFCore.utils import getToolByName
+-from zope.component.hooks import getSite
++from Products.CMFPlone.interfaces import ISecuritySchema
+ from plone.app.robotframework.remote import RemoteLibrary
++from plone.registry.interfaces import IRegistry
++from zope.component import getUtility
++from zope.component.hooks import getSite
  
- The Select Multiple Widget allows to select multiple values
-   Given a form
+ 
+ class Users(RemoteLibrary):
+@@ -26,10 +29,13 @@ def create_user(self, *args, **kwargs):
+ 
+         portal = getSite()
+         registration = getToolByName(portal, 'portal_registration')
+-        portal_properties = getToolByName(portal, 'portal_properties')
+ 
+-        use_email_as_username =\
+-            portal_properties.site_properties.use_email_as_login
++        registry = getUtility(IRegistry)
++        settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
++        use_email_as_username = settings.use_email_as_login
+ 
+         user_id = use_email_as_username and properties['email'] or username
+         password = properties.pop('password', username)
+
+
+Repository: plone.app.robotframework
+Branch: refs/heads/master
+Date: 2015-02-01T15:49:46+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/plone.app.robotframework/commit/a5657543601526a528ac787a446427f0cd52f063
+
+restore Plone 4 compatibility
+
+Files changed:
+M src/plone/app/robotframework/users.py
+
+diff --git a/src/plone/app/robotframework/users.py b/src/plone/app/robotframework/users.py
+index 2603ea5..c92f296 100644
+--- a/src/plone/app/robotframework/users.py
++++ b/src/plone/app/robotframework/users.py
+@@ -1,11 +1,16 @@
+ # -*- coding: utf-8 -*-
+ from Products.CMFCore.utils import getToolByName
+-from Products.CMFPlone.interfaces import ISecuritySchema
+ from plone.app.robotframework.remote import RemoteLibrary
+ from plone.registry.interfaces import IRegistry
+ from zope.component import getUtility
+ from zope.component.hooks import getSite
+ 
++HAS_SECURITY_SETTINGS = True
++try:
++    from Products.CMFPlone.interfaces import ISecuritySchema
++except ImportError:
++    HAS_SECURITY_SETTINGS = False
 +
-    When I click on the element  2
-     And When I click on the element  1
-    Then the widget shows two elements  five  four
-@@ -62,22 +63,26 @@ a form
  
- I type on the autocomplete field
-   [Arguments]  ${text}
-+  Wait For Condition  return $('.select2-choices:visible').size() > 0
-   Open Dropdown  ${dropdown_select}  ${input_search}
-   Input Text  ${input_search}  ${text}
-   Click Element  ${results_label}
+ class Users(RemoteLibrary):
  
- I type on the multiple autocomplete field
-   [Arguments]  ${text}
-+  Wait For Condition  return $('.select2-choices:visible').size() > 0
-   Execute Javascript  var $input = $('.select2-input'); $input.click().val('${text}'); var keyup = $.Event('keyup-change'); $input.trigger(keyup); return 0
-   Click Element  ${results_label}
+@@ -30,12 +35,17 @@ def create_user(self, *args, **kwargs):
+         portal = getSite()
+         registration = getToolByName(portal, 'portal_registration')
  
- I select the option
-   [Arguments]  ${index}
-+  Wait For Condition  return $('.select2-choices:visible').size() > 0
-   Open Dropdown  ${dropdown_select}  ${input_search}
-   Click Element  css=li.select2-results-dept-0:nth-child(${index})
+-        registry = getUtility(IRegistry)
+-        settings = registry.forInterface(
+-            ISecuritySchema,
+-            prefix='plone',
+-        )
+-        use_email_as_username = settings.use_email_as_login
++        if HAS_SECURITY_SETTINGS:  # Plone 5
++            registry = getUtility(IRegistry)
++            settings = registry.forInterface(
++                ISecuritySchema,
++                prefix='plone',
++            )
++            use_email_as_username = settings.use_email_as_login
++        else:  # Plone < 5
++            portal_properties = getToolByName(portal, 'portal_properties')
++            use_email_as_username = \
++                portal_properties.site_properties.use_email_as_login
  
- I click on the element
-   [Arguments]  ${index}
-+  Wait For Condition  return $('.select2-choices:visible').size() > 0
-   Open Dropdown  css=#formfield-form-widgets-list_field input.select2-input  ${dropdown_multiple}
-   Click Element  css=li.select2-results-dept-0:nth-child(${index})
+         user_id = use_email_as_username and properties['email'] or username
+         password = properties.pop('password', username)
+
+
+Repository: plone.app.robotframework
+Branch: refs/heads/master
+Date: 2015-02-04T22:27:46+02:00
+Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
+Commit: https://github.com/plone/plone.app.robotframework/commit/c5e344a690449b891e4e80861666a0aad452d71d
+
+Merge pull request #35 from plone/plip10359-security-controlpanel
+
+Plip 10359 - Security Control Panel migration
+
+Files changed:
+M CHANGES.txt
+M src/plone/app/robotframework/users.py
+
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 373e43d..8de3ba7 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,7 +4,9 @@ Changelog
+ 0.9.9 (unreleased)
+ ------------------
  
+-- Nothing changed yet.
++- Read ``use_email_as_login`` setting from the registry instead of portal
++  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
++  [jcerjak]
+ 
+ 
+ 0.9.8 (2014-11-11)
+diff --git a/src/plone/app/robotframework/users.py b/src/plone/app/robotframework/users.py
+index 22daf44..c92f296 100644
+--- a/src/plone/app/robotframework/users.py
++++ b/src/plone/app/robotframework/users.py
+@@ -1,7 +1,15 @@
+ # -*- coding: utf-8 -*-
+ from Products.CMFCore.utils import getToolByName
+-from zope.component.hooks import getSite
+ from plone.app.robotframework.remote import RemoteLibrary
++from plone.registry.interfaces import IRegistry
++from zope.component import getUtility
++from zope.component.hooks import getSite
++
++HAS_SECURITY_SETTINGS = True
++try:
++    from Products.CMFPlone.interfaces import ISecuritySchema
++except ImportError:
++    HAS_SECURITY_SETTINGS = False
+ 
+ 
+ class Users(RemoteLibrary):
+@@ -26,10 +34,18 @@ def create_user(self, *args, **kwargs):
+ 
+         portal = getSite()
+         registration = getToolByName(portal, 'portal_registration')
+-        portal_properties = getToolByName(portal, 'portal_properties')
+ 
+-        use_email_as_username =\
+-            portal_properties.site_properties.use_email_as_login
++        if HAS_SECURITY_SETTINGS:  # Plone 5
++            registry = getUtility(IRegistry)
++            settings = registry.forInterface(
++                ISecuritySchema,
++                prefix='plone',
++            )
++            use_email_as_username = settings.use_email_as_login
++        else:  # Plone < 5
++            portal_properties = getToolByName(portal, 'portal_properties')
++            use_email_as_username = \
++                portal_properties.site_properties.use_email_as_login
+ 
+         user_id = use_email_as_username and properties['email'] or username
+         password = properties.pop('password', username)
 
 
