@@ -1,195 +1,25 @@
-Repository: plone.app.robotframework
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-01-25T12:29:31+01:00
-Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/plone.app.robotframework/commit/44dee804871546da18bab57ac6721fb6ada13f4b
+Date: 2015-02-04T14:46:54-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.app.widgets/commit/03b0e5253f032ff5ce965856405e0d9549751836
 
-Read "use_email_as_login" from registry instead of portal properties
+get rid of focus jquery selector in robot test
 
 Files changed:
-M CHANGES.txt
-M src/plone/app/robotframework/users.py
+M plone/app/widgets/tests/robot/test_querystring_widget.robot
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 373e43d..8de3ba7 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -4,7 +4,9 @@ Changelog
- 0.9.9 (unreleased)
- ------------------
+diff --git a/plone/app/widgets/tests/robot/test_querystring_widget.robot b/plone/app/widgets/tests/robot/test_querystring_widget.robot
+index a1765cb..4db2486 100644
+--- a/plone/app/widgets/tests/robot/test_querystring_widget.robot
++++ b/plone/app/widgets/tests/robot/test_querystring_widget.robot
+@@ -93,7 +93,6 @@ I select criteria index in row
+   Click Element  css=${criteria_row} .querystring-criteria-index .select2-container a
+   Input Text  css=.select2-drop-active .select2-input  text=${label}
+   Press Key  css=.select2-drop-active .select2-input  \\13
+-  Press Key  jquery=:focus  ${label}\n
  
--- Nothing changed yet.
-+- Read ``use_email_as_login`` setting from the registry instead of portal
-+  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
-+  [jcerjak]
- 
- 
- 0.9.8 (2014-11-11)
-diff --git a/src/plone/app/robotframework/users.py b/src/plone/app/robotframework/users.py
-index 22daf44..2603ea5 100644
---- a/src/plone/app/robotframework/users.py
-+++ b/src/plone/app/robotframework/users.py
-@@ -1,7 +1,10 @@
- # -*- coding: utf-8 -*-
- from Products.CMFCore.utils import getToolByName
--from zope.component.hooks import getSite
-+from Products.CMFPlone.interfaces import ISecuritySchema
- from plone.app.robotframework.remote import RemoteLibrary
-+from plone.registry.interfaces import IRegistry
-+from zope.component import getUtility
-+from zope.component.hooks import getSite
- 
- 
- class Users(RemoteLibrary):
-@@ -26,10 +29,13 @@ def create_user(self, *args, **kwargs):
- 
-         portal = getSite()
-         registration = getToolByName(portal, 'portal_registration')
--        portal_properties = getToolByName(portal, 'portal_properties')
- 
--        use_email_as_username =\
--            portal_properties.site_properties.use_email_as_login
-+        registry = getUtility(IRegistry)
-+        settings = registry.forInterface(
-+            ISecuritySchema,
-+            prefix='plone',
-+        )
-+        use_email_as_username = settings.use_email_as_login
- 
-         user_id = use_email_as_username and properties['email'] or username
-         password = properties.pop('password', username)
-
-
-Repository: plone.app.robotframework
-Branch: refs/heads/master
-Date: 2015-02-01T15:49:46+01:00
-Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/plone.app.robotframework/commit/a5657543601526a528ac787a446427f0cd52f063
-
-restore Plone 4 compatibility
-
-Files changed:
-M src/plone/app/robotframework/users.py
-
-diff --git a/src/plone/app/robotframework/users.py b/src/plone/app/robotframework/users.py
-index 2603ea5..c92f296 100644
---- a/src/plone/app/robotframework/users.py
-+++ b/src/plone/app/robotframework/users.py
-@@ -1,11 +1,16 @@
- # -*- coding: utf-8 -*-
- from Products.CMFCore.utils import getToolByName
--from Products.CMFPlone.interfaces import ISecuritySchema
- from plone.app.robotframework.remote import RemoteLibrary
- from plone.registry.interfaces import IRegistry
- from zope.component import getUtility
- from zope.component.hooks import getSite
- 
-+HAS_SECURITY_SETTINGS = True
-+try:
-+    from Products.CMFPlone.interfaces import ISecuritySchema
-+except ImportError:
-+    HAS_SECURITY_SETTINGS = False
-+
- 
- class Users(RemoteLibrary):
- 
-@@ -30,12 +35,17 @@ def create_user(self, *args, **kwargs):
-         portal = getSite()
-         registration = getToolByName(portal, 'portal_registration')
- 
--        registry = getUtility(IRegistry)
--        settings = registry.forInterface(
--            ISecuritySchema,
--            prefix='plone',
--        )
--        use_email_as_username = settings.use_email_as_login
-+        if HAS_SECURITY_SETTINGS:  # Plone 5
-+            registry = getUtility(IRegistry)
-+            settings = registry.forInterface(
-+                ISecuritySchema,
-+                prefix='plone',
-+            )
-+            use_email_as_username = settings.use_email_as_login
-+        else:  # Plone < 5
-+            portal_properties = getToolByName(portal, 'portal_properties')
-+            use_email_as_username = \
-+                portal_properties.site_properties.use_email_as_login
- 
-         user_id = use_email_as_username and properties['email'] or username
-         password = properties.pop('password', username)
-
-
-Repository: plone.app.robotframework
-Branch: refs/heads/master
-Date: 2015-02-04T22:27:46+02:00
-Author: Asko Soukka (datakurre) <asko.soukka@iki.fi>
-Commit: https://github.com/plone/plone.app.robotframework/commit/c5e344a690449b891e4e80861666a0aad452d71d
-
-Merge pull request #35 from plone/plip10359-security-controlpanel
-
-Plip 10359 - Security Control Panel migration
-
-Files changed:
-M CHANGES.txt
-M src/plone/app/robotframework/users.py
-
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 373e43d..8de3ba7 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -4,7 +4,9 @@ Changelog
- 0.9.9 (unreleased)
- ------------------
- 
--- Nothing changed yet.
-+- Read ``use_email_as_login`` setting from the registry instead of portal
-+  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
-+  [jcerjak]
- 
- 
- 0.9.8 (2014-11-11)
-diff --git a/src/plone/app/robotframework/users.py b/src/plone/app/robotframework/users.py
-index 22daf44..c92f296 100644
---- a/src/plone/app/robotframework/users.py
-+++ b/src/plone/app/robotframework/users.py
-@@ -1,7 +1,15 @@
- # -*- coding: utf-8 -*-
- from Products.CMFCore.utils import getToolByName
--from zope.component.hooks import getSite
- from plone.app.robotframework.remote import RemoteLibrary
-+from plone.registry.interfaces import IRegistry
-+from zope.component import getUtility
-+from zope.component.hooks import getSite
-+
-+HAS_SECURITY_SETTINGS = True
-+try:
-+    from Products.CMFPlone.interfaces import ISecuritySchema
-+except ImportError:
-+    HAS_SECURITY_SETTINGS = False
- 
- 
- class Users(RemoteLibrary):
-@@ -26,10 +34,18 @@ def create_user(self, *args, **kwargs):
- 
-         portal = getSite()
-         registration = getToolByName(portal, 'portal_registration')
--        portal_properties = getToolByName(portal, 'portal_properties')
- 
--        use_email_as_username =\
--            portal_properties.site_properties.use_email_as_login
-+        if HAS_SECURITY_SETTINGS:  # Plone 5
-+            registry = getUtility(IRegistry)
-+            settings = registry.forInterface(
-+                ISecuritySchema,
-+                prefix='plone',
-+            )
-+            use_email_as_username = settings.use_email_as_login
-+        else:  # Plone < 5
-+            portal_properties = getToolByName(portal, 'portal_properties')
-+            use_email_as_username = \
-+                portal_properties.site_properties.use_email_as_login
- 
-         user_id = use_email_as_username and properties['email'] or username
-         password = properties.pop('password', username)
+ I select criteria operator in row
+   [Arguments]  ${number}  ${label}
 
 
