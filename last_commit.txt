@@ -1,25 +1,26 @@
-Repository: plone.app.robotframework
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-04T20:52:24-06:00
+Date: 2015-02-05T08:30:27-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.robotframework/commit/967606909cf9a902a39394e43346268e5cbdc62b
+Commit: https://github.com/plone/mockup/commit/7c5552aab00bd31b765a49a5dc8969cd9deb2e82
 
-remove focus, causing problems.
+upgrade patternslib
 
 Files changed:
-M src/plone/app/robotframework/selenium.robot
+M mockup/bower.json
 
-diff --git a/src/plone/app/robotframework/selenium.robot b/src/plone/app/robotframework/selenium.robot
-index 6f4bb44..a902601 100644
---- a/src/plone/app/robotframework/selenium.robot
-+++ b/src/plone/app/robotframework/selenium.robot
-@@ -97,7 +97,6 @@ Input text and validate
-     [Documentation]  Locate input element by ${locator} and enter the given
-     ...              ${text}. Validate that the text has been entered.
-     [Arguments]  ${locator}  ${text}
--    Focus  ${locator}
-     Input text  ${locator}  ${text}
-     ${value} =  Get value  ${locator}
-     Should be equal  ${text}  ${value}
+diff --git a/mockup/bower.json b/mockup/bower.json
+index 2319d25..7d4ee98 100644
+--- a/mockup/bower.json
++++ b/mockup/bower.json
+@@ -21,7 +21,7 @@
+     "requirejs-text": "2.0.12",
+     "select2": "3.5.1",
+     "tinymce-builded": "4.1.6",
+-    "patternslib": "2.0.7"
++    "patternslib": "2.0.8"
+   },
+   "devDependencies": {
+     "expect": "0.3.1",
 
 
