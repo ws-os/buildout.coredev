@@ -1,25 +1,918 @@
-Repository: plone.app.widgets
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-04T14:46:54-06:00
+Date: 2015-02-04T19:50:54-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.widgets/commit/03b0e5253f032ff5ce965856405e0d9549751836
+Commit: https://github.com/plone/Products.CMFPlone/commit/a7f66c8d69e95399db3961cfacc9a39eaa11ed76
 
-get rid of focus jquery selector in robot test
+here we go, let me try again with some robot test fixes when in resource registry dev mode...
 
 Files changed:
-M plone/app/widgets/tests/robot/test_querystring_widget.robot
+M Products/CMFPlone/static/patterns/toolbar/src/toolbar.js
+M Products/CMFPlone/static/plone-compiled.js
+M Products/CMFPlone/static/plone-compiled.min.js
+M Products/CMFPlone/tests/robot/common.robot
+M Products/CMFPlone/tests/robot/test_actionmenu.robot
+M Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
+M Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
+M Products/CMFPlone/tests/robot/test_controlpanel_search.robot
+M Products/CMFPlone/tests/robot/test_controlpanel_security.robot
+M Products/CMFPlone/tests/robot/test_controlpanel_site.robot
+M Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot
+M Products/CMFPlone/tests/robot/test_edit.robot
+M Products/CMFPlone/tests/robot/test_folder_contents.robot
+M Products/CMFPlone/tests/robot/test_overlays.robot
 
-diff --git a/plone/app/widgets/tests/robot/test_querystring_widget.robot b/plone/app/widgets/tests/robot/test_querystring_widget.robot
-index a1765cb..4db2486 100644
---- a/plone/app/widgets/tests/robot/test_querystring_widget.robot
-+++ b/plone/app/widgets/tests/robot/test_querystring_widget.robot
-@@ -93,7 +93,6 @@ I select criteria index in row
-   Click Element  css=${criteria_row} .querystring-criteria-index .select2-container a
-   Input Text  css=.select2-drop-active .select2-input  text=${label}
-   Press Key  css=.select2-drop-active .select2-input  \\13
--  Press Key  jquery=:focus  ${label}\n
+diff --git a/Products/CMFPlone/static/patterns/toolbar/src/toolbar.js b/Products/CMFPlone/static/patterns/toolbar/src/toolbar.js
+index 0c248b2..8c093a0 100644
+--- a/Products/CMFPlone/static/patterns/toolbar/src/toolbar.js
++++ b/Products/CMFPlone/static/patterns/toolbar/src/toolbar.js
+@@ -9,201 +9,202 @@ define([
+     name: 'toolbar',
+     trigger: '.pat-toolbar',
+     init: function () {
+-      if ($(window).width() < "768"){//mobile
+-        // $( "html" ).has(".plone-toolbar-left").css({'margin-left':'0','margin-top':'0','margin-right':'0'});
+-        // $( "html" ).has(".plone-toolbar-top").css({'margin-left':'0','margin-top':'0','margin-right':'0'});
+-        // $( "html" ).has(".plone-toolbar-left.expanded").css({'margin-left':'0','margin-top':'0','margin-right':'0'});
+-        // $( "body" ).css('margin-left: 0px');
+-        $( "#edit-zone" ).css("right", "-120px");
+-        $( "#edit-zone .plone-toolbar-logo" ).click(function() {
+-          if ($(this).hasClass("open")){
+-            $( "#edit-zone" ).css("right", "-120px");
+-            $( "html" ).css("margin-left", "0");
+-            $( "html" ).css("margin-right", "0");
+-            $(this).removeClass("open");
+-            $( "#edit-zone nav li" ).removeClass("active");
++      if ($(window).width() < '768'){//mobile
++        // $( 'html' ).has('.plone-toolbar-left').css({'margin-left':'0','margin-top':'0','margin-right':'0'});
++        // $( 'html' ).has('.plone-toolbar-top').css({'margin-left':'0','margin-top':'0','margin-right':'0'});
++        // $( 'html' ).has('.plone-toolbar-left.expanded').css({'margin-left':'0','margin-top':'0','margin-right':'0'});
++        // $( 'body' ).css('margin-left: 0px');
++        $('#edit-zone').css('right', '-120px');
++        $( '#edit-zone .plone-toolbar-logo' ).click(function() {
++          if ($(this).hasClass('open')){
++            $( '#edit-zone' ).css('right', '-120px');
++            $( 'html' ).css('margin-left', '0');
++            $( 'html' ).css('margin-right', '0');
++            $(this).removeClass('open');
++            $( '#edit-zone nav li' ).removeClass('active');
+           } else {
+-            $( "#edit-zone" ).css("right", "0");
+-            $(this).addClass("open");
+-            $( "html" ).css("margin-left", "-120px");
+-            $( "html" ).css("margin-right", "120px");
++            $( '#edit-zone' ).css('right', '0');
++            $(this).addClass('open');
++            $( 'html' ).css('margin-left', '-120px');
++            $( 'html' ).css('margin-right', '120px');
+           }
+         });
+-        $( "#edit-zone nav li" ).has( "a .plone-toolbar-caret" ).click(function(e) {
++        $( '#edit-zone nav li' ).has( 'a .plone-toolbar-caret' ).click(function(e) {
+           e.preventDefault();
+           e.stopPropagation();
+-          if ($(this).hasClass("active")) {
+-            $( "#edit-zone" ).css("right", "0");
+-            $( "html" ).css("margin-left", "-120px");
+-            $( "html" ).css("margin-right", "120px");
+-            $( "#edit-zone nav li" ).removeClass("active");
++          if ($(this).hasClass('active')) {
++            $( '#edit-zone' ).css('right', '0');
++            $( 'html' ).css('margin-left', '-120px');
++            $( 'html' ).css('margin-right', '120px');
++            $( '#edit-zone nav li' ).removeClass('active');
+           } else {
+-            $( "#edit-zone nav li" ).removeClass("active");
+-            $(this).addClass("active");
+-            $( "#edit-zone" ).css("right", "180px");
+-            $( "html" ).css("margin-left", "-300px");
+-            $( "html" ).css("margin-right", "300px");
++            $( '#edit-zone nav li' ).removeClass('active');
++            $(this).addClass('active');
++            $( '#edit-zone' ).css('right', '180px');
++            $( 'html' ).css('margin-left', '-300px');
++            $( 'html' ).css('margin-right', '300px');
+           }
+         });
+       }
+       else { // not mobile
+         var toolbar_cookie = $.cookie('plone-toolbar');
+         window.plonetoolbar_state = toolbar_cookie;
+-        $("#edit-zone").attr('class', toolbar_cookie);
++        $('#edit-zone').attr('class', toolbar_cookie);
  
- I select criteria operator in row
-   [Arguments]  ${number}  ${label}
+-        $( "#edit-zone .plone-toolbar-logo" ).on('click', function() {
+-          if (plonetoolbar_state) {
+-            if (plonetoolbar_state.indexOf("expanded") != -1) {
++        $( '#edit-zone .plone-toolbar-logo' ).on('click', function() {
++          if (window.plonetoolbar_state) {
++            if (window.plonetoolbar_state.indexOf('expanded') != -1) {
+               // Switch to default (only icons)
+-              $( "#edit-zone" ).removeClass("expanded");
+-              $( "#edit-zone nav li" ).removeClass("active");
+-              if (plonetoolbar_state.indexOf("left") != -1) {
+-                $("body").addClass("plone-toolbar-left-default");
+-                $("body").removeClass("plone-toolbar-left-expanded");
++              $( '#edit-zone' ).removeClass('expanded');
++              $( '#edit-zone nav li' ).removeClass('active');
++              if (window.plonetoolbar_state.indexOf('left') != -1) {
++                $('body').addClass('plone-toolbar-left-default');
++                $('body').removeClass('plone-toolbar-left-expanded');
+               } else {
+-                $("body").addClass("plone-toolbar-top-default");
+-                $("body").removeClass("plone-toolbar-top-expanded");
++                $('body').addClass('plone-toolbar-top-default');
++                $('body').removeClass('plone-toolbar-top-expanded');
+               }
+-              $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-              plonetoolbar_state = plonetoolbar_state.replace(' expanded', '');
++              $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++              window.plonetoolbar_state = window.plonetoolbar_state.replace(' expanded', '');
+             } else {
+               // Switch to expanded
+-              $( "#edit-zone" ).addClass("expanded");
+-              $( "#edit-zone nav li" ).removeClass("active");
+-              if (plonetoolbar_state.indexOf("left") != -1) {
+-                $("body").addClass("plone-toolbar-left-expanded");
+-                $("body").removeClass("plone-toolbar-left-default");
++              $( '#edit-zone' ).addClass('expanded');
++              $( '#edit-zone nav li' ).removeClass('active');
++              if (window.plonetoolbar_state.indexOf('left') != -1) {
++                $('body').addClass('plone-toolbar-left-expanded');
++                $('body').removeClass('plone-toolbar-left-default');
+               } else {
+-                $("body").addClass("plone-toolbar-top-expanded");
+-                $("body").removeClass("plone-toolbar-top-default");
++                $('body').addClass('plone-toolbar-top-expanded');
++                $('body').removeClass('plone-toolbar-top-default');
+               }
+-              $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-              plonetoolbar_state = plonetoolbar_state + ' expanded';
++              $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++              window.plonetoolbar_state = window.plonetoolbar_state + ' expanded';
+             }
+           } else {
+             // Cookie not set, assume default (only icons)
+             window.plonetoolbar_state = 'pat-toolbar plone-toolbar-left';
+             // Switch to expanded left
+-            $( "#edit-zone" ).addClass("expanded");
+-            $( "#edit-zone nav li" ).removeClass("active");
+-            $("body").addClass("plone-toolbar-left-expanded");
+-            $("body").removeClass("plone-toolbar-left-default");
+-            $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-            plonetoolbar_state = plonetoolbar_state + ' expanded';
++            $( '#edit-zone' ).addClass('expanded');
++            $( '#edit-zone nav li' ).removeClass('active');
++            $('body').addClass('plone-toolbar-left-expanded');
++            $('body').removeClass('plone-toolbar-left-default');
++            $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++            window.plonetoolbar_state = window.plonetoolbar_state + ' expanded';
+           }
+         });
+ 
+         // Switch to compressed
+-        $( "#edit-zone .plone-toolbar-logo" ).on('dblclick', function() {
+-          if (plonetoolbar_state) {
+-            if (plonetoolbar_state.indexOf("compressed") != -1) {
++        $( '#edit-zone .plone-toolbar-logo' ).on('dblclick', function() {
++          if (window.plonetoolbar_state) {
++            if (window.plonetoolbar_state.indexOf('compressed') != -1) {
+               // Switch to default (only icons) not compressed
+-              $( "#edit-zone" ).removeClass("compressed");
+-              if (plonetoolbar_state.indexOf("left") != -1) {
+-                $("body").addClass("plone-toolbar-left-default");
+-                $("body").removeClass("plone-toolbar-compressed");
++              $( '#edit-zone' ).removeClass('compressed');
++              if (window.plonetoolbar_state.indexOf('left') != -1) {
++                $('body').addClass('plone-toolbar-left-default');
++                $('body').removeClass('plone-toolbar-compressed');
+               } else {
+-                $("body").addClass("plone-toolbar-top-default");
+-                $("body").removeClass("plone-toolbar-compressed");
++                $('body').addClass('plone-toolbar-top-default');
++                $('body').removeClass('plone-toolbar-compressed');
+               }
+-              $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-              plonetoolbar_state = plonetoolbar_state.replace(' expanded', '');
++              $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++              window.plonetoolbar_state = window.plonetoolbar_state.replace(' expanded', '');
+             } else {
+               // Switch to compressed
+-              $( "#edit-zone" ).addClass("compressed");
+-              if (plonetoolbar_state.indexOf("left") != -1) {
+-                $("body").addClass("plone-toolbar-compressed");
+-                $("body").removeClass("plone-toolbar-left-default");
+-                $("body").removeClass("plone-toolbar-left-expanded");
++              $( '#edit-zone' ).addClass('compressed');
++              if (window.plonetoolbar_state.indexOf('left') != -1) {
++                $('body').addClass('plone-toolbar-compressed');
++                $('body').removeClass('plone-toolbar-left-default');
++                $('body').removeClass('plone-toolbar-left-expanded');
+               } else {
+-                $("body").addClass("plone-toolbar-compressed");
+-                $("body").removeClass("plone-toolbar-top-default");
+-                $("body").removeClass("plone-toolbar-top-expanded");
++                $('body').addClass('plone-toolbar-compressed');
++                $('body').removeClass('plone-toolbar-top-default');
++                $('body').removeClass('plone-toolbar-top-expanded');
+               }
+-              $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-              plonetoolbar_state = plonetoolbar_state + ' compressed';
++              $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++              window.plonetoolbar_state = window.plonetoolbar_state + ' compressed';
+             }
+           } else {
+             // Cookie not set, assume default (only icons)
+             // Switch to compressed
+-            $( "#edit-zone" ).addClass("compressed");
+-            $("body").addClass("plone-toolbar-compressed");
+-            $("body").removeClass("plone-toolbar-left-default");
+-            $("body").removeClass("plone-toolbar-left-expanded");
+-            $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-            plonetoolbar_state = plonetoolbar_state + ' compressed';
++            $( '#edit-zone' ).addClass('compressed');
++            $('body').addClass('plone-toolbar-compressed');
++            $('body').removeClass('plone-toolbar-left-default');
++            $('body').removeClass('plone-toolbar-left-expanded');
++            $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++            window.plonetoolbar_state = window.plonetoolbar_state + ' compressed';
+           }
+         });
+ 
+ 
+-        $( "#edit-zone nav > ul > li li" ).on('click', function(event) {
++        $( '#edit-zone nav > ul > li li' ).on('click', function(event) {
+           event.stopImmediatePropagation();
+         });
+ 
+         // active
+-        $( "#edit-zone nav > ul > li" ).has( "a .plone-toolbar-caret" ).on('click', function(event) {
++        $( '#edit-zone nav > ul > li' ).has( 'a .plone-toolbar-caret' ).on('click', function(event) {
+           event.preventDefault();
+           event.stopPropagation();
+-          if ($(this).hasClass("active")) {
+-            $( "#edit-zone nav li" ).removeClass("active");
++          if ($(this).hasClass('active')) {
++            $( '#edit-zone nav li' ).removeClass('active');
+           } else {
+-            $("#edit-zone nav li").removeClass("active");
+-            $(this).addClass("active");
++            $('#edit-zone nav li').removeClass('active');
++            $(this).addClass('active');
+           }
+         });
+ 
+         $('body').on('click', function(event) {
+           if (!($(this).parent('#edit-zone').length > 0)) {
+             $('#edit-zone nav > ul > li').each(function(key, element){
+-              $(element).removeClass("active");
++              $(element).removeClass('active');
+             });
+           }
+         });
+ 
+         // top/left switcher
+-        $( "#edit-zone .plone-toolbar-switcher" ).on('click', function() {
+-          if (plonetoolbar_state) {
+-            if (plonetoolbar_state.indexOf("top") != -1) {
++        $( '#edit-zone .plone-toolbar-switcher' ).on('click', function() {
++          if (window.plonetoolbar_state) {
++            if (window.plonetoolbar_state.indexOf('top') != -1) {
+               // from top to left
+-              $( "#edit-zone" ).addClass("plone-toolbar-left");
+-              $( "#edit-zone" ).removeClass("plone-toolbar-top");
+-              if (plonetoolbar_state.indexOf("expanded") != -1) {
+-                $("body").addClass("plone-toolbar-left-expanded");
+-                $("body").removeClass("plone-toolbar-top-expanded");
++              $( '#edit-zone' ).addClass('plone-toolbar-left');
++              $( '#edit-zone' ).removeClass('plone-toolbar-top');
++              if (window.plonetoolbar_state.indexOf('expanded') != -1) {
++                $('body').addClass('plone-toolbar-left-expanded');
++                $('body').removeClass('plone-toolbar-top-expanded');
+               } else {
+-                $("body").addClass("plone-toolbar-left-default");
+-                $("body").removeClass("plone-toolbar-top-default");
++                $('body').addClass('plone-toolbar-left-default');
++                $('body').removeClass('plone-toolbar-top-default');
+               }
+-              $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-              plonetoolbar_state = plonetoolbar_state.replace('plone-toolbar-top', 'plone-toolbar-left');
++              $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++              window.plonetoolbar_state = window.plonetoolbar_state.replace('plone-toolbar-top', 'plone-toolbar-left');
+             } else {
+               // from left to top
+-              $( "#edit-zone" ).addClass("plone-toolbar-top");
+-              $( "#edit-zone" ).removeClass("plone-toolbar-left");
+-              if (plonetoolbar_state.indexOf("expanded") != -1) {
+-                $("body").addClass("plone-toolbar-top-expanded");
+-                $("body").removeClass("plone-toolbar-left-expanded");
++              $( '#edit-zone' ).addClass('plone-toolbar-top');
++              $( '#edit-zone' ).removeClass('plone-toolbar-left');
++              if (window.plonetoolbar_state.indexOf('expanded') != -1) {
++                $('body').addClass('plone-toolbar-top-expanded');
++                $('body').removeClass('plone-toolbar-left-expanded');
+               } else {
+-                $("body").addClass("plone-toolbar-top-default");
+-                $("body").removeClass("plone-toolbar-left-default");
++                $('body').addClass('plone-toolbar-top-default');
++                $('body').removeClass('plone-toolbar-left-default');
+               }
+-              $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-              plonetoolbar_state = plonetoolbar_state.replace('plone-toolbar-left', 'plone-toolbar-top');
++              $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++              window.plonetoolbar_state = window.plonetoolbar_state.replace('plone-toolbar-left', 'plone-toolbar-top');
+             }
+           } else {
+             // Cookie not set, assume left default (only icons)
+             window.plonetoolbar_state = 'pat-toolbar plone-toolbar-left';
+             // Switch to top
+-            $( "#edit-zone" ).addClass("plone-toolbar-left");
+-            $( "#edit-zone" ).removeClass("plone-toolbar-top");
+-            $("body").addClass("plone-toolbar-top-default");
+-            $("body").removeClass("plone-toolbar-left-default");
+-            $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+-            plonetoolbar_state = plonetoolbar_state.replace('plone-toolbar-left', 'plone-toolbar-top');
++            $( '#edit-zone' ).addClass('plone-toolbar-left');
++            $( '#edit-zone' ).removeClass('plone-toolbar-top');
++            $('body').addClass('plone-toolbar-top-default');
++            $('body').removeClass('plone-toolbar-left-default');
++            $.cookie('plone-toolbar', $('#edit-zone').attr('class'), {path: '/'});
++            window.plonetoolbar_state = window.plonetoolbar_state.replace('plone-toolbar-left', 'plone-toolbar-top');
+           }
+ 
+         });
+       }
++      this.$el.addClass('initialized');
+     }
+   });
+ 
+diff --git a/Products/CMFPlone/static/plone-compiled.js b/Products/CMFPlone/static/plone-compiled.js
+index 53f2535..cd0285c 100644
+--- a/Products/CMFPlone/static/plone-compiled.js
++++ b/Products/CMFPlone/static/plone-compiled.js
+@@ -15060,9 +15060,8 @@ define('plone-patterns-toolbar',[
+             $.cookie('plone-toolbar', $("#edit-zone").attr('class'), {path: '/'});
+             plonetoolbar_state = plonetoolbar_state.replace('plone-toolbar-left', 'plone-toolbar-top');
+           }
+-
+         });
+-      }
++      }this.$el.addClass('initialized');
+     }
+   });
+ 
+diff --git a/Products/CMFPlone/static/plone-compiled.min.js b/Products/CMFPlone/static/plone-compiled.min.js
+index 5bc5822..74ecf49 100644
+--- a/Products/CMFPlone/static/plone-compiled.min.js
++++ b/Products/CMFPlone/static/plone-compiled.min.js
+@@ -526,7 +526,7 @@ k("body").removeClass("plone-toolbar-left-expanded"),k.cookie("plone-toolbar",k(
+ k("body").on("click",function(h){0<k(this).parent("#edit-zone").length||k("#edit-zone nav > ul > li").each(function(e,h){k(h).removeClass("active")})});k("#edit-zone .plone-toolbar-switcher").on("click",function(){plonetoolbar_state?-1!=plonetoolbar_state.indexOf("top")?(k("#edit-zone").addClass("plone-toolbar-left"),k("#edit-zone").removeClass("plone-toolbar-top"),-1!=plonetoolbar_state.indexOf("expanded")?(k("body").addClass("plone-toolbar-left-expanded"),k("body").removeClass("plone-toolbar-top-expanded")):
+ (k("body").addClass("plone-toolbar-left-default"),k("body").removeClass("plone-toolbar-top-default")),k.cookie("plone-toolbar",k("#edit-zone").attr("class"),{path:"/"}),plonetoolbar_state=plonetoolbar_state.replace("plone-toolbar-top","plone-toolbar-left")):(k("#edit-zone").addClass("plone-toolbar-top"),k("#edit-zone").removeClass("plone-toolbar-left"),-1!=plonetoolbar_state.indexOf("expanded")?(k("body").addClass("plone-toolbar-top-expanded"),k("body").removeClass("plone-toolbar-left-expanded")):
+ (k("body").addClass("plone-toolbar-top-default"),k("body").removeClass("plone-toolbar-left-default")),k.cookie("plone-toolbar",k("#edit-zone").attr("class"),{path:"/"}),plonetoolbar_state=plonetoolbar_state.replace("plone-toolbar-left","plone-toolbar-top")):(window.plonetoolbar_state="pat-toolbar plone-toolbar-left",k("#edit-zone").addClass("plone-toolbar-left"),k("#edit-zone").removeClass("plone-toolbar-top"),k("body").addClass("plone-toolbar-top-default"),k("body").removeClass("plone-toolbar-left-default"),
+-k.cookie("plone-toolbar",k("#edit-zone").attr("class"),{path:"/"}),plonetoolbar_state=plonetoolbar_state.replace("plone-toolbar-left","plone-toolbar-top"))})}}})});
++k.cookie("plone-toolbar",k("#edit-zone").attr("class"),{path:"/"}),plonetoolbar_state=plonetoolbar_state.replace("plone-toolbar-left","plone-toolbar-top"))})}this.$el.addClass("initialized")}})});
+ define("mockup-patterns-accessibility",["jquery","mockup-patterns-base","jquery.cookie"],function(k,h){return h.extend({name:"accessibility",trigger:".pat-accessibility",defaults:{smallbtn:null,normalbtn:null,largebtn:null},setBaseFontSize:function(h,n){n&&(this.$el.removeClass("smallText").removeClass("largeText").removeClass("mediumText"),k.cookie("fontsize",h,{expires:365,path:"/"}));this.$el.addClass(h)},initBtn:function(h){var k=this;h.el.click(function(e){e.preventDefault();k.setBaseFontSize(h.name+
+ "Text",1)})},init:function(){var h=this,n=k.cookie("fontsize");n&&h.setBaseFontSize(n,0);k.each(["smallbtn","normalbtn","largebtn"],function(e,q){var m=q.replace("btn",""),a=h.options[q];null!==a&&(a=k(a,h.$el))&&(q={name:m,el:a},h[m]=q,h.initBtn(q))})}})});
+ define("mockup-patterns-autotoc",["jquery","mockup-patterns-base"],function(k,h){return h.extend({name:"autotoc",trigger:".pat-autotoc",defaults:{section:"section",levels:"h1,h2,h3",IDPrefix:"autotoc-item-",classTOCName:"autotoc-nav",classSectionName:"autotoc-section",classLevelPrefixName:"autotoc-level-",classActiveName:"active",scrollDuration:"slow",scrollEasing:"swing"},init:function(){var h=this;h.$toc=k("<nav/>").addClass(h.options.classTOCName);h.options.prependTo?h.$toc.prependTo(h.options.prependTo):
+diff --git a/Products/CMFPlone/tests/robot/common.robot b/Products/CMFPlone/tests/robot/common.robot
+index af1ad6b..37927d7 100644
+--- a/Products/CMFPlone/tests/robot/common.robot
++++ b/Products/CMFPlone/tests/robot/common.robot
+@@ -13,42 +13,44 @@ ${TEST_FOLDER}  test-folder
+ a document
+     [Arguments]  ${title}
+     Go to  ${PLONE_URL}/${TEST_FOLDER}/++add++Document
+-    Wait until keyword succeeds  5s  1s  Element Should Be Visible  css=input#form-widgets-IDublinCore-title
+-    Input text  name=form.widgets.IDublinCore.title  ${title}
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
+     Click Button  Save
+ 
+ a folder
+     [Arguments]  ${title}
+     Go to  ${PLONE_URL}/${TEST_FOLDER}/++add++Folder
+-    Wait until keyword succeeds  5s  1s  Element Should Be Visible  css=input#form-widgets-IDublinCore-title
+-    Input text  name=form.widgets.IDublinCore.title  ${title}
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
+     Click Button  Save
+ 
+ a folder '${foldername}' with a document '${documentname}'
+     Go to  ${PLONE_URL}/${TEST_FOLDER}/++add++Folder
+-    Input text  name=form.widgets.IDublinCore.title  ${foldername}
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${foldername}'); return 0;
+     Click Button  Save
+     Go to  ${PLONE_URL}/${TEST_FOLDER}/folder/edit
+-    Input text  name=form.widgets.IDublinCore.title  ${documentname}
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${documentname}'); return 0;
+     Click Button  Save
+ 
+ a collection
+     [Arguments]  ${title}
+     Go to  ${PLONE_URL}/${TEST_FOLDER}/++add++Collection
+-    Wait until keyword succeeds  5s  1s  Element Should Be Visible  css=input#form-widgets-IDublinCore-title
+-    Input text  name=form.widgets.IDublinCore.title  ${title}
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
+     Click Button  Save
+ 
+ a site owner
+-    Enable autologin as  Site Administrator
++    Log in as site owner
+ 
+ the site root
+     Go to  ${PLONE_URL}
+ 
+ a test folder
+     Go to  ${PLONE_URL}/++add++Folder
+-    Wait until keyword succeeds  5s  1s  Element Should Be Visible  css=input#form-widgets-IDublinCore-title
+-    Input text  name=form.widgets.IDublinCore.title  Test Folder
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('Test Folder'); return 0;
+     Click Button  Save
+ 
+ the test folder
+@@ -57,3 +59,9 @@ the test folder
+ there should be '${count}' livesearch results
+     Wait until keyword succeeds  5s  1s  Element Should Be Visible  css=div#LSResult
+     Wait until keyword succeeds  5s  1s  Xpath Should Match X Times  //div[@id = 'LSResult']/descendant::li  ${count}
++
++menu is loaded
++    Wait For Condition  return $('.pat-toolbar.initialized').size() > 0
++
++tabs are loaded
++    Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
+\ No newline at end of file
+diff --git a/Products/CMFPlone/tests/robot/test_actionmenu.robot b/Products/CMFPlone/tests/robot/test_actionmenu.robot
+index 408f8f4..fcb432b 100644
+--- a/Products/CMFPlone/tests/robot/test_actionmenu.robot
++++ b/Products/CMFPlone/tests/robot/test_actionmenu.robot
+@@ -85,7 +85,8 @@ Background
+ 
+ a test document
+     Go to  ${PLONE_URL}/++add++Document
+-    Input text  name=form.widgets.IDublinCore.title  ${TITLE}
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${TITLE}'); return 0;
+     Click Button  Save
+ 
+ an actionsmenu page
+@@ -98,15 +99,19 @@ delete link should not be visible
+      Element Should Not Be Visible  xpath=//div[@class='contentActions']//a[@id='plone-contentmenu-actions-delete']
+ 
+ menu link is clicked
++    Given menu is loaded
+     Click link  xpath=//li[@id='plone-contentmenu-moreoptions']/a
+ 
+ delete link should be visible
++    Given menu is loaded
+     Element Should Be Visible  xpath=//div[@class='contentActions']//a[@id='plone-contentmenu-actions-delete']
+ 
+ actions menu should be visible
++    Given menu is loaded
+     Element Should Be Visible  xpath=//li[@id='plone-contentmenu-actions']
+ 
+ first menu link is clicked
++    Given menu is loaded
+     Click Link  xpath=(//div[@class="contentActions"]//a[contains(@class, 'actionMenuHeader')])[1]
+ 
+ mouse moves to second menu
+@@ -116,9 +121,11 @@ second menu should be visible
+     Element Should Be Visible  xpath=(//li[contains(@class, 'actionMenu')])[2]
+ 
+ first menu should not be visible
++    Given menu is loaded
+     Wait until keyword succeeds  10s  1s  Element Should Not Be Visible  xpath=(//li[contains(@class, 'actionMenu')])[1]//li
+ 
+ actions menu should not be visible
++    Given menu is loaded
+     Wait until keyword succeeds  10s  1s  Element Should Not Be Visible  xpath=//li[@id='plone-contentmenu-actions']
+ 
+ I click outside of menu
+@@ -128,6 +135,7 @@ workflow link is clicked
+     # store current state
+     ${OLD_STATE} =  Get Text  xpath=(//span[contains(@class,'state-')])[2]
+     Set Suite Variable  ${OLD_STATE}  ${OLD_STATE}
++    Given menu is loaded
+     Click Link  xpath=//li[@id='plone-contentmenu-workflow']/a
+     Click Link  xpath=(//li[@id='plone-contentmenu-workflow']/ul/li/a)[1]
+     Page Should Contain  Item state changed.
+@@ -161,6 +169,7 @@ Open Menu
+     Wait until keyword succeeds  5  1  Element Should Be Visible  css=#${elementId} .actionMenuContent
+ 
+ Open Action Menu
++    Given menu is loaded
+     Click link  xpath=//li[@id='plone-contentmenu-moreoptions']/a
+     Wait until keyword succeeds  5  1  Element Should Be Visible  css=#plone-contentmenu-actions
+ 
+diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot b/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
+index 6ba9f90..5b7ce5b 100644
+--- a/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
++++ b/Products/CMFPlone/tests/robot/test_controlpanel_editing.robot
+@@ -6,6 +6,7 @@ Resource  plone/app/robotframework/saucelabs.robot
+ Library  Remote  ${PLONE_URL}/RobotRemote
+ 
+ Resource  keywords.robot
++Resource  common.robot
+ 
+ Test Setup  Open SauceLabs test browser
+ Test Teardown  Run keywords  Report test status  Close all browsers
+@@ -88,8 +89,8 @@ I enable lock on through the web
+ 
+ I can see an id field in the settings tab when I create a document
+   Go To  ${PLONE_URL}/++add++Document
+-  Wait until page contains  Add Page
+-  Input Text  name=form.widgets.IDublinCore.title  My Document
++  Given tabs are loaded
++  Execute Javascript  $('#form-widgets-IDublinCore-title').val('My Document'); return 0;
+   Click Link  Settings
+   Page should contain element  name=form.widgets.IShortName.id
+   Input Text  name=form.widgets.IShortName.id  this-is-my-custom-short-name
+diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
+index e3d77f6..dcab17e 100644
+--- a/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
++++ b/Products/CMFPlone/tests/robot/test_controlpanel_filter.robot
+@@ -71,18 +71,21 @@ Input RichText
+ 
+ I add '${tag}' to the nasty tags list
+   Click Button  Add Nasty tags
++  Given menu is loaded
+   Input Text  name=form.nasty_tags.6.  ${tag}
+   Click Button  Save
+   Wait until page contains  Changes saved
+ 
+ I add '${tag}' to the stripped tags list
+   Click Button  Add Stripped tags
++  Given menu is loaded
+   Input Text  name=form.stripped_tags.16.  ${tag}
+   Click Button  Save
+   Wait until page contains  Changes saved
+ 
+ I add '${tag}' to the custom tags list
+   Click Button  Add Custom tags
++  Given menu is loaded
+   Input Text  name=form.custom_tags.26.  ${tag}
+   Click Button  Save
+   Wait until page contains  Changes saved
+@@ -93,6 +96,7 @@ I add '${tag}' to the custom tags list
+ the 'h1' tag is filtered out when a document is saved
+   ${doc1_uid}=  Create content  id=doc1  title=Document 1  type=Document
+   Go To  ${PLONE_URL}/doc1/edit
++  Given menu is loaded
+   Input RichText  <h1>h1 heading</h1><p>lorem ipsum</p>
+   Click Button  Save
+   Wait until page contains  Changes saved
+@@ -101,6 +105,7 @@ the 'h1' tag is filtered out when a document is saved
+ the 'h1' tag is stripped when a document is saved
+   ${doc1_uid}=  Create content  id=doc1  title=Document 1  type=Document
+   Go To  ${PLONE_URL}/doc1/edit
++  Given menu is loaded
+   Input RichText  <h1>h1 heading</h1><p>lorem ipsum</p>
+   Click Button  Save
+   Wait until page contains  Changes saved
+@@ -110,6 +115,7 @@ the 'h1' tag is stripped when a document is saved
+ the 'marquee' tag is preserved when a document is saved
+   ${doc1_uid}=  Create content  id=doc1  title=Document 1  type=Document
+   Go To  ${PLONE_URL}/doc1/edit
++  Given menu is loaded
+   Input RichText  <marquee>lorem ipsum</marquee>
+   Click Button  Save
+   Wait until page contains  Changes saved
+diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_search.robot b/Products/CMFPlone/tests/robot/test_controlpanel_search.robot
+index 7f8e416..c13f860 100644
+--- a/Products/CMFPlone/tests/robot/test_controlpanel_search.robot
++++ b/Products/CMFPlone/tests/robot/test_controlpanel_search.robot
+@@ -6,6 +6,7 @@ Resource  plone/app/robotframework/saucelabs.robot
+ Library  Remote  ${PLONE_URL}/RobotRemote
+ 
+ Resource  keywords.robot
++Resource  common.robot
+ 
+ Test Setup  Open SauceLabs test browser
+ Test Teardown  Run keywords  Report test status  Close all browsers
+@@ -66,6 +67,7 @@ then searching for 'My Document' will show a live search
+ 
+ searching for '${search_term}' will not return any results
+   Go to  ${PLONE_URL}/@@search
++  Given menu is loaded
+   Wait until page contains  No results were found
+   Input Text  xpath=//form[@id='searchform']//input[@name='SearchableText']  ${search_term}
+   Submit Form  name=searchform
+diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_security.robot b/Products/CMFPlone/tests/robot/test_controlpanel_security.robot
+index 944964c..1d810fd 100644
+--- a/Products/CMFPlone/tests/robot/test_controlpanel_security.robot
++++ b/Products/CMFPlone/tests/robot/test_controlpanel_security.robot
+@@ -2,6 +2,7 @@
+ 
+ Resource  plone/app/robotframework/keywords.robot
+ Resource  plone/app/robotframework/saucelabs.robot
++Resource  plone/app/robotframework/selenium.robot
+ 
+ Library  Remote  ${PLONE_URL}/RobotRemote
+ 
+@@ -114,16 +115,16 @@ A user folder should be created when a user registers and logs in to the site
+ 
+   # I register to the site
+   Go to  ${PLONE_URL}/@@register
+-  Input Text  form.widgets.username  joe
+-  Input Text  form.widgets.email  joe@test.com
+-  Input Text  form.widgets.password  supersecret
+-  Input Text  form.widgets.password_ctl  supersecret
++  Input Text for sure  form.widgets.username  joe
++  Input Text for sure  form.widgets.email  joe@test.com
++  Input Text for sure  form.widgets.password  supersecret
++  Input Text for sure  form.widgets.password_ctl  supersecret
+   Click Button  Register
+ 
+   # I login to the site
+   Go to  ${PLONE_URL}/login
+-  Input Text  __ac_name  joe
+-  Input Text  __ac_password  supersecret
++  Input text for sure  __ac_name  joe
++  Input text for sure  __ac_password  supersecret
+   Click Button  Log in
+   Wait until page contains  You are now logged in
+ 
+@@ -138,16 +139,16 @@ UUID should be used for the user id
+ 
+   # I register to the site
+   Go to  ${PLONE_URL}/@@register
+-  Input Text  form.widgets.username  joe
+-  Input Text  form.widgets.email  joe@test.com
+-  Input Text  form.widgets.password  supersecret
+-  Input Text  form.widgets.password_ctl  supersecret
++  Input Text for sure  form.widgets.username  joe
++  Input Text for sure  form.widgets.email  joe@test.com
++  Input Text for sure  form.widgets.password  supersecret
++  Input Text for sure  form.widgets.password_ctl  supersecret
+   Click Button  Register
+ 
+   # I login to the site
+   Go to  ${PLONE_URL}/login
+-  Input Text  __ac_name  joe
+-  Input Text  __ac_password  supersecret
++  Input text for sure  __ac_name  joe
++  Input text for sure  __ac_password  supersecret
+   Click Button  Log in
+   Wait until page contains  You are now logged in
+ 
+diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_site.robot b/Products/CMFPlone/tests/robot/test_controlpanel_site.robot
+index ae08038..4b45251 100644
+--- a/Products/CMFPlone/tests/robot/test_controlpanel_site.robot
++++ b/Products/CMFPlone/tests/robot/test_controlpanel_site.robot
+@@ -11,6 +11,7 @@ Variables  Products/CMFPlone/tests/robot/variables.py
+ Library  Remote  ${PLONE_URL}/RobotRemote
+ 
+ Resource  keywords.robot
++Resource  common.robot
+ 
+ Test Setup  Open SauceLabs test browser
+ Test Teardown  Run keywords  Report test status  Close all browsers
+@@ -61,26 +62,31 @@ the site control panel
+ # --- WHEN -------------------------------------------------------------------
+ 
+ I enable the sitemap
++  Given menu is loaded
+   Select Checkbox  form.widgets.enable_sitemap:list
+   Click Button  Save
+   Wait until page contains  Changes saved
+ 
+ I set the site title to '${site_title}'
++  Given menu is loaded
+   Input Text  name=form.widgets.site_title  ${site_title}
+   Click Button  Save
+   Wait until page contains  Changes saved
+ 
+ I set a custom logo
++  Given menu is loaded
+   Choose File  name=form.widgets.site_logo  ${PATH_TO_TEST_FILES}/pixel.png
+   Click Button  Save
+   Wait until page contains  Changes saved
+ 
+ I enable dublin core metadata
++  Given menu is loaded
+   Select Checkbox  form.widgets.exposeDCMetaTags:list
+   Click Button  Save
+   Wait until page contains  Changes saved
+ 
+ I add a Javascript snippet to the webstats javascript
++  Given menu is loaded
+   Input Text  name=form.widgets.webstats_js  <script id="webstats_snippet"></script>
+   Click Button  Save
+   Wait until page contains  Changes saved
+diff --git a/Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot b/Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot
+index acf1eff..22dba16 100644
+--- a/Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot
++++ b/Products/CMFPlone/tests/robot/test_controlpanel_usergroups.robot
+@@ -16,6 +16,7 @@ Resource  plone/app/robotframework/saucelabs.robot
+ Library  Remote  ${PLONE_URL}/RobotRemote
+ 
+ Resource  keywords.robot
++Resource  common.robot
+ 
+ Test Setup  Open SauceLabs test browser
+ Test Teardown  Run keywords  Report test status  Close all browsers
+@@ -76,7 +77,7 @@ I click show all groups
+ 
+ I create new group
+   Click button  Add New Group
+-  Wait until page contains element  name=addname
++  Given menu is loaded
+   Input Text  name=addname  my-new-group
+   Input Text  name=title:string  My New Group
+   Input Text  name=description:text  This is my new group
+diff --git a/Products/CMFPlone/tests/robot/test_edit.robot b/Products/CMFPlone/tests/robot/test_edit.robot
+index bda3319..187a65c 100644
+--- a/Products/CMFPlone/tests/robot/test_edit.robot
++++ b/Products/CMFPlone/tests/robot/test_edit.robot
+@@ -66,7 +66,8 @@ Background
+ 
+ a test document
+     Go to  ${PLONE_URL}/++add++Document
+-    Input text  name=form.widgets.IDublinCore.title  ${TITLE}
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${TITLE}'); return 0;
+     Click Button  Save
+ 
+ an edited page
+@@ -76,11 +77,13 @@ I have the title input field
+     Element Should Be Visible  xpath=//fieldset[@id='fieldset-default']
+ 
+ I can only see the default tab
++    Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
+     Element Should Not Be Visible  xpath=//fieldset[@id='fieldset-settings']
+     Element Should Not Be Visible  xpath=//fieldset[@id='fieldset-dates']
+     Element Should Not Be Visible  xpath=//fieldset[@id='fieldset-categorization']
+ 
+ I click the ${tab} tab
++    Given tabs are loaded
+     Click link  ${tab}
+ 
+ the categorization tab is shown
+@@ -93,7 +96,8 @@ no other tab is shown
+ 
+ at least one other item
+     Go to  ${PLONE_URL}/++add++Document
+-    Input text  name=form.widgets.IDublinCore.title  ${TITLE}
++    Given tabs are loaded
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${TITLE}'); return 0;
+     Click Button  Save
+ 
+ I click the add related item button
+diff --git a/Products/CMFPlone/tests/robot/test_folder_contents.robot b/Products/CMFPlone/tests/robot/test_folder_contents.robot
+index e6827af..04c2b62 100644
+--- a/Products/CMFPlone/tests/robot/test_folder_contents.robot
++++ b/Products/CMFPlone/tests/robot/test_folder_contents.robot
+@@ -45,6 +45,7 @@ Scenario: Select All items
+ the folder contents view
+     Go to  ${PLONE_URL}/${TEST_FOLDER}/folder_contents
+     Page should contain element  css=.pat-structure
++    Given folder contents pattern loaded
+ 
+ I click the '${link_name}' link
+     Click Link  ${link_name}
+@@ -57,7 +58,8 @@ four dummy pages on test folder
+ 
+ a document '${title}' in the test folder
+     Go to  ${PLONE_URL}/${TEST_FOLDER}/++add++Document
+-    Input text  name=form.widgets.IDublinCore.title  ${title}
++    Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
+     Click Button  Save
+ 
+ I select all the elements
+@@ -129,3 +131,6 @@ Should be above
+     ${locator1-position} =  Get vertical position  ${locator1}
+     ${locator2-position} =  Get vertical position  ${locator2}
+     Should be true  ${locator1-position} < ${locator2-position}
++
++folder contents pattern loaded
++    Wait For Condition  return $('.pat-structure div.navbar').size() > 0
+\ No newline at end of file
+diff --git a/Products/CMFPlone/tests/robot/test_overlays.robot b/Products/CMFPlone/tests/robot/test_overlays.robot
+index 2800cde..4ec29dd 100644
+--- a/Products/CMFPlone/tests/robot/test_overlays.robot
++++ b/Products/CMFPlone/tests/robot/test_overlays.robot
+@@ -24,27 +24,35 @@ Scenario: Contact form overlay opens
+      Then overlay should open
+ 
+ Scenario: Contact form overlay closes
++    Go to  ${PLONE_URL}/logout
+     Given the 'Contact' overlay
+      When I close the overlay
+      Then overlay should close
+ 
+ Scenario: Log in form overlay opens
++    Go to  ${PLONE_URL}/logout
+     Given the site root
+      When I click the 'Log in' link
+      Then overlay should open
+ 
+ Scenario: Log in form overlay closes
++    Go to  ${PLONE_URL}/logout
++    Given the site root
+     Given the 'Log in' overlay
+      When I close the overlay
+      Then overlay should close
+ 
+ Scenario: Log in form overlay remains on wrong credentials
++    Go to  ${PLONE_URL}/logout
++    Given the site root
+     Given the 'Log in' overlay
+      When I enter wrong credentials
+      Then overlay should remain open
+       And overlay shows an error
+ 
+ Scenario: Log in form overlay closes on valid credentials
++    Go to  ${PLONE_URL}/logout
++    Given the site root
+     Given the 'Log in' overlay
+      When I enter valid credentials
+      Then overlay should close
+@@ -108,6 +116,7 @@ Scenario: Rename content action overlay closes
+ Scenario: Register user overlay opens
+     Given the mail setup configured
+       And the self registration enabled
++      Go to  ${PLONE_URL}/logout
+       And the site root
+      When I click the 'Register' link
+      Then overlay should open
+@@ -115,6 +124,7 @@ Scenario: Register user overlay opens
+ Scenario: Register user overlay closes
+     Given the mail setup configured
+       And the self registration enabled
++      Go to  ${PLONE_URL}/logout
+       And the site root
+       And the 'Register' overlay
+      When I close the overlay
+@@ -123,6 +133,7 @@ Scenario: Register user overlay closes
+ Scenario: Register user overlay remains on wrong data
+     Given the mail setup configured
+       And the self registration enabled
++      Go to  ${PLONE_URL}/logout
+       And the site root
+       And the 'Register' overlay
+      When I send the register form
+@@ -188,12 +199,15 @@ Background
+ 
+ the users and groups configlet
+     Go to  ${PLONE_URL}/@@usergroup-userprefs
++    Given modals loaded
+ 
+ I click the '${link_name}' link
++    Given modals loaded
+     Element should be visible  xpath=//a[descendant-or-self::*[contains(text(), '${link_name}')]]
+     Click Link  xpath=//a[descendant-or-self::*[contains(text(), '${link_name}')]]
+ 
+ the '${link_name}' overlay
++    Given modals loaded
+     Click Link  xpath=//a[descendant-or-self::*[contains(text(), '${link_name}')]]
+     Wait until keyword succeeds  30  1  Page should contain element  css=div.plone-modal-dialog
+ 
+@@ -249,17 +263,20 @@ I trigger the add a new user action
+ 
+ a document '${title}' in the test folder
+     Go to  ${PLONE_URL}/${TEST_FOLDER}/++add++Document
+-    Input text  name=form.widgets.IDublinCore.title  ${title}
++    Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
++    Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
+     Click Button  Save
+ 
+ I set the default content view of the test folder
+     Go to  ${PLONE_URL}/${TEST_FOLDER}
++    Given menu is loaded
+     Click link  xpath=//li[@id='plone-contentmenu-moreoptions']/a
+     Click link  id=contextSetDefaultPage
+ 
+ a document as the default view of the test folder
+     a document 'doc' in the test folder
+     Go to  ${PLONE_URL}/${TEST_FOLDER}
++    Given menu is loaded
+     Click link  xpath=//li[@id='plone-contentmenu-moreoptions']/a
+     Wait until element is visible  id=contextSetDefaultPage
+     Click link  id=contextSetDefaultPage
+@@ -268,12 +285,14 @@ a document as the default view of the test folder
+ 
+ I change the default content view of the test folder
+     Go to  ${PLONE_URL}/${TEST_FOLDER}
++    Given menu is loaded
+     Click link  xpath=//li[@id='plone-contentmenu-moreoptions']/a
+     Wait until element is visible  id=folderChangeDefaultPage
+     Click link  id=folderChangeDefaultPage
+ 
+ I trigger the '${action}' action menu item of the test folder
+     Go to  ${PLONE_URL}/${TEST_FOLDER}
++    Given menu is loaded
+     Element should be visible  xpath=//li[@id='plone-contentmenu-moreoptions']/a
+     Click link  xpath=//li[@id='plone-contentmenu-moreoptions']/a
+     Wait until element is visible  id=plone-contentmenu-actions-${action}
+@@ -284,3 +303,5 @@ I confirm deletion of the content
+     # Note: The 'delete' button has no standard z3c.form name attribute
+     Wait until keyword succeeds  2  2  Click Element  css=div.plone-modal-footer input#form-buttons-Delete
+ 
++modals loaded
++    Wait For Condition  return $('.plone-modal-wrapper').size() > 0
 
 
