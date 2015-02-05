@@ -1,45 +1,25 @@
-Repository: plone.app.widgets
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-05T08:31:51-06:00
+Date: 2015-02-05T09:04:23-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.widgets/commit/309c6da9e8269f77cfea98be92803411f75dd400
+Commit: https://github.com/plone/mockup/commit/f7f5a25f3970aee8141f6744696c1713d7885b65
 
-use patterns-loaded class
+fix patternslib dep
 
 Files changed:
-M plone/app/widgets/tests/robot/common.robot
-M plone/app/widgets/tests/robot/test_querystring_widget.robot
+M mockup/bower.json
 
-diff --git a/plone/app/widgets/tests/robot/common.robot b/plone/app/widgets/tests/robot/common.robot
-index d158bc6..68c4bff 100644
---- a/plone/app/widgets/tests/robot/common.robot
-+++ b/plone/app/widgets/tests/robot/common.robot
-@@ -38,11 +38,11 @@ I edit
- I create a collection
-   [Arguments]  ${title}
-   Go to  ${PLONE_URL}/++add++Collection
--  Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
-+  Wait For Condition  return $('body.patterns-loaded').size() > 0
-   Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
- 
- I create a folder
-   [Arguments]  ${title}
-   Go to  ${PLONE_URL}/++add++Folder
--  Wait For Condition  return $('.autotoc-nav .active:visible').size() > 0
-+  Wait For Condition  return $('body.patterns-loaded').size() > 0
-   Execute Javascript  $('#form-widgets-IDublinCore-title').val('${title}'); return 0;
-diff --git a/plone/app/widgets/tests/robot/test_querystring_widget.robot b/plone/app/widgets/tests/robot/test_querystring_widget.robot
-index 4db2486..90bbaf4 100644
---- a/plone/app/widgets/tests/robot/test_querystring_widget.robot
-+++ b/plone/app/widgets/tests/robot/test_querystring_widget.robot
-@@ -13,7 +13,7 @@ ${querywidget_selector}  \#formfield-form-widgets-ICollection-query
- Querystring Widget rows appear and disappear correctly
-   Given I'm logged in as a 'Site Administrator'
-     And I create a collection  My Collection
--        Wait For Condition  return $('.querystring-wrapper:visible').size() > 0
-+        Wait For Condition  return $('body.patterns-loaded').size() > 0
-         Page should contain Element  css=${querywidget_selector} .querystring-criteria-wrapper:nth-child(1)
-         Page should not contain Element  css=${querywidget_selector} .querystring-criteria-wrapper:nth-child(2)
-    When I select criteria index in row  1  Expiration date
+diff --git a/mockup/bower.json b/mockup/bower.json
+index 7d4ee98..0c5b700 100644
+--- a/mockup/bower.json
++++ b/mockup/bower.json
+@@ -30,6 +30,6 @@
+   "resolutions": {
+     "jquery": "1.11.1",
+     "select2": "3.5.1",
+-    "patternslib": "2.0.7"
++    "patternslib": "2.0.8"
+   }
+ }
 
 
