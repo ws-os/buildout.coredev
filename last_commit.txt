@@ -1,23 +1,250 @@
-Repository: plonetheme.barceloneta
+Repository: plone.app.registry
 Branch: refs/heads/master
-Date: 2015-02-05T18:44:51+01:00
-Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/plonetheme.barceloneta/commit/3647153016bdd5ab943dec247c8e7814dc4e8b5c
+Date: 2015-02-05T15:54:38-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.app.registry/commit/ad904f2d55ea6e45bb983f1fcc12ead7a191f50a
 
-Blur on any overlay on add templates content on folder_contents using modal
+fix control panel to work with plone 5 patterns, requirejs, etc
 
 Files changed:
-M plonetheme/barceloneta/theme/less/modal.plone.less
+A plone/app/registry/browser/resources/registry.js
+M CHANGES.rst
+M plone/app/registry/browser/records.pt
+M plone/app/registry/browser/resources/style.css
 
-diff --git a/plonetheme/barceloneta/theme/less/modal.plone.less b/plonetheme/barceloneta/theme/less/modal.plone.less
-index cfba0b7..e581fff 100644
---- a/plonetheme/barceloneta/theme/less/modal.plone.less
-+++ b/plonetheme/barceloneta/theme/less/modal.plone.less
-@@ -86,4 +86,4 @@
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 2ae5903..72ddb29 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -1,10 +1,11 @@
+ Changelog
+ =========
+ 
+-1.2.4 (unreleased)
++1.3.0 (unreleased)
+ ------------------
+ 
+-- Nothing changed yet.
++- fix control panel filtering to work with plone 5 and patterns
++  [vangheem]
+ 
+ 
+ 1.2.3 (2013-05-23)
+diff --git a/plone/app/registry/browser/records.pt b/plone/app/registry/browser/records.pt
+index e0876e7..a4493b5 100644
+--- a/plone/app/registry/browser/records.pt
++++ b/plone/app/registry/browser/records.pt
+@@ -10,87 +10,14 @@
+ <tal:defines tal:define="dummy python:request.set('disable_border',1);
+                                      disable_column_one python:request.set('disable_plone.leftcolumn',0);
+                                      disable_column_two python:request.set('disable_plone.rightcolumn',1);"/>
+-        <link rel="stylesheet" href="++resource++plone.app.registry/style.css" type="text/css"
+-    tal:attributes="href string:${context/portal_url}/++resource++plone.app.registry/style.css" />
+-
++    <link rel="stylesheet" type="text/css"
++          tal:attributes="href string:${context/portal_url}/++resource++plone.app.registry/style.css" />
+ </metal:block>
+ 
+ <body>
+ <div id="content" metal:fill-slot="prefs_configlet_content"
+   tal:define="records view/records">
+ 
+-<script type="text/javascript">
+-(function($) {
+-
+-    function prepOverlay(){
+-        $('a.recordsEditLink').prepOverlay({
+-            subtype: 'ajax',
+-            filter: common_content_filter,
+-            formselector: 'form:has(div[id^="formfield-form-widgets-value"])',
+-            closeselector: '[name="form.buttons.cancel"]',
+-            noform: function(el) {
+-                var o = $(el);
+-                var emsg = o.find('dl.portalMessage.error');
+-                if (emsg.length) {
+-                    o.children().replaceWith(emsg);
+-                    return false;
+-                } else {
+-                    return 'reload';
+-            }}
+-        });
+-    }
+-
+-    $().ready(function() {
+-
+-        /* expand the size of search as needed */
+-        $('#recordsContainer').delegate('#searchrow input[name="q"]', 'keypress', function(){
+-            var self = $(this);
+-            var count = self.val().length + 5;
+-            if(count > parseInt(self.attr('size'))){
+-                self.attr('size', count);
+-            }
+-        });
+-
+-        /* ajax retrieval of paging */
+-        $('#recordsContainer').delegate('div.listingBar a', 'click', function(){
+-            var self = $(this);
+-            $('#kss-spinner').show();
+-            $('#recordsContainer').load(self.attr('href') + ' #recordsTable', function(){
+-                $('#kss-spinner').hide();
+-                prepOverlay();
+-            });
+-            return false;
+-        });
+-
+-        /* ajax form submission */
+-        $('#recordsContainer').delegate('#searchrow form', 'submit', function(e){
+-            var self = $(this);
+-            $('#kss-spinner').show();
+-            $('#recordsContainer').load(
+-                $('base').attr('href') + '?' + self.serialize() + ' #recordsTable',
+-                function(){
+-                    $('#kss-spinner').hide();
+-                    $('#searchrow input[name="q"]').trigger('keypress');
+-                    prepOverlay();
+-                });
+-            e.preventDefault();
+-            return false;
+-        });
+-
+-        /* force submit on select change */
+-        $('#recordsContainer').delegate('#searchrow select', 'change', function(){
+-            $('#searchrow form#registry-filter').trigger('submit');
+-        });
+-
+-        /* some init */
+-        prepOverlay();
+-        $('#searchrow input[name="q"]').trigger('keypress');
+-    });
+-
+-})(jQuery);
+-</script>
+-
+-
+     <a href=""
+        id="setup-link"
+        tal:attributes="href string:$portal_url/plone_control_panel"
+@@ -149,7 +76,7 @@
+                         <tr tal:define="oddrow repeat/record/odd; field record/field/originalField | record/field"
+                             tal:attributes="class python:oddrow and 'odd' or 'even'">
+                             <td>
+-                                <a class="recordsEditLink"
++                                <a class="recordsEditLink pat-modal"
+                                    tal:content="python:record.__name__.replace('.', ' ')"
+                                    tal:attributes="href string:${context/absolute_url}/edit/${record/__name__}"
+                                    />
+@@ -171,6 +98,8 @@
+                 </tfoot>
+             </table>
+         </div>
++        <script type="text/javascript" src="${context/portal_url}/++resource++plone.app.registry/registry.js">
++        </script>
+     </div>
+ </div>
+ </body>
+diff --git a/plone/app/registry/browser/resources/registry.js b/plone/app/registry/browser/resources/registry.js
+new file mode 100644
+index 0000000..3686ce6
+--- /dev/null
++++ b/plone/app/registry/browser/resources/registry.js
+@@ -0,0 +1,84 @@
++/* global require */
++
++if(require === undefined){
++  require = function(reqs, torun){
++    'use strict';
++    return torun(window.jQuery, {
++      scan: function(){
++        /* I don't know if this is necessary.... 
++           but, this is a way to maintain plone 4 compatibility */
++        window.jQuery('a.recordsEditLink').prepOverlay({
++          subtype: 'ajax',
++          filter: '#content>*:not(div.configlet),dl.portalMessage.error,dl.portalMessage.info',
++          formselector: 'form:has(div[id^="formfield-form-widgets-value"])',
++          closeselector: '[name="form.buttons.cancel"]',
++          noform: function(el) {
++            var o = window.jQuery(el);
++            var emsg = o.find('dl.portalMessage.error');
++            if (emsg.length) {
++                o.children().replaceWith(emsg);
++                return false;
++            } else {
++                return 'reload';
++            }
++          }
++        });
++      }
++    });
++  };
++}
++
++require([
++  'jquery',
++  'pat-registry'
++], function($, Registry) {
++  'use strict';
++
++  $().ready(function() {
++
++    /* expand the size of search as needed */
++    $('#recordsContainer').delegate('#searchrow input[name="q"]', 'keypress', function(){
++      var self = $(this);
++      var count = self.val().length + 5;
++      if(count > parseInt(self.attr('size'))){
++        self.attr('size', count);
++      }
++    });
++
++    /* ajax retrieval of paging */
++    $('#recordsContainer').delegate('div.listingBar a', 'click', function(){
++      var self = $(this);
++      $('#spinner').show();
++      $('#recordsContainer').load(self.attr('href') + ' #recordsTable', function(){
++        /* scan registry */
++        Registry.scan($('#recordsTable'));
++      });
++      return false;
++    });
++
++    /* ajax form submission */
++    $('#recordsContainer').delegate('#searchrow form', 'submit', function(e){
++      var self = $(this);
++      $('#spinner').show();
++      $('#recordsContainer').load(
++        $('body').attr('data-base-url') + '?' + self.serialize() + ' #recordsTable',
++        function(){
++          $('#spinner').hide();
++          $('#searchrow input[name="q"]').trigger('keypress');
++          Registry.scan($('#recordsTable'));
++        }
++      );
++      e.preventDefault();
++      return false;
++    });
++
++    /* force submit on select change */
++    $('#recordsContainer').delegate('#searchrow select', 'change', function(){
++        $('#searchrow form#registry-filter').trigger('submit');
++    });
++
++    /* some init */
++    $('#searchrow input[name="q"]').trigger('keypress');
++  });
++
++});
+\ No newline at end of file
+diff --git a/plone/app/registry/browser/resources/style.css b/plone/app/registry/browser/resources/style.css
+index 7e75b09..35a88c7 100644
+--- a/plone/app/registry/browser/resources/style.css
++++ b/plone/app/registry/browser/resources/style.css
+@@ -14,6 +14,8 @@
+ 
+ #searchrow select{
+     margin-top: 7px;
++    display: inline-block;
++    width: 200px;
  }
- .plone-modal-loading{float:left;width:0%;height:100%;font-size:12px;line-height:20px;color:#fff;text-align:center;background-color:#428bca;-webkit-box-shadow:inset 0 -1px 0 rgba(0,0,0,0.15);box-shadow:inset 0 -1px 0 rgba(0,0,0,0.15);-webkit-transition:width .6s ease;transition:width .6s ease;-webkit-animation:progress-bar-stripes 2s linear infinite;animation:progress-bar-stripes 2s linear infinite;background-image:-webkit-linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);background-image:linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);background-size:40px 40px;border-radius:0.5em;width:40em;height:40px}
- .plone-modal-open  {padding-right:0; }
--.plone-modal-open > *:not(.plone-modal-wrapper,.select2-drop) {-webkit-filter: blur(1px); -moz-filter: blur(1px); -o-filter: blur(1px); -ms-filter: blur(1px); filter: blur(1px);}
-+.plone-modal-open > *:not(.plone-modal-wrapper,.select2-drop, .mce-floatpanel) {-webkit-filter: blur(1px); -moz-filter: blur(1px); -o-filter: blur(1px); -ms-filter: blur(1px); filter: blur(1px);}
+ 
+ #searchrow button{
 
 
