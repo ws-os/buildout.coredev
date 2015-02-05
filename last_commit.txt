@@ -1,25 +1,23 @@
-Repository: mockup
+Repository: plonetheme.barceloneta
 Branch: refs/heads/master
-Date: 2015-02-05T09:04:23-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/f7f5a25f3970aee8141f6744696c1713d7885b65
+Date: 2015-02-05T18:44:51+01:00
+Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
+Commit: https://github.com/plone/plonetheme.barceloneta/commit/3647153016bdd5ab943dec247c8e7814dc4e8b5c
 
-fix patternslib dep
+Blur on any overlay on add templates content on folder_contents using modal
 
 Files changed:
-M mockup/bower.json
+M plonetheme/barceloneta/theme/less/modal.plone.less
 
-diff --git a/mockup/bower.json b/mockup/bower.json
-index 7d4ee98..0c5b700 100644
---- a/mockup/bower.json
-+++ b/mockup/bower.json
-@@ -30,6 +30,6 @@
-   "resolutions": {
-     "jquery": "1.11.1",
-     "select2": "3.5.1",
--    "patternslib": "2.0.7"
-+    "patternslib": "2.0.8"
-   }
+diff --git a/plonetheme/barceloneta/theme/less/modal.plone.less b/plonetheme/barceloneta/theme/less/modal.plone.less
+index cfba0b7..e581fff 100644
+--- a/plonetheme/barceloneta/theme/less/modal.plone.less
++++ b/plonetheme/barceloneta/theme/less/modal.plone.less
+@@ -86,4 +86,4 @@
  }
+ .plone-modal-loading{float:left;width:0%;height:100%;font-size:12px;line-height:20px;color:#fff;text-align:center;background-color:#428bca;-webkit-box-shadow:inset 0 -1px 0 rgba(0,0,0,0.15);box-shadow:inset 0 -1px 0 rgba(0,0,0,0.15);-webkit-transition:width .6s ease;transition:width .6s ease;-webkit-animation:progress-bar-stripes 2s linear infinite;animation:progress-bar-stripes 2s linear infinite;background-image:-webkit-linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);background-image:linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);background-size:40px 40px;border-radius:0.5em;width:40em;height:40px}
+ .plone-modal-open  {padding-right:0; }
+-.plone-modal-open > *:not(.plone-modal-wrapper,.select2-drop) {-webkit-filter: blur(1px); -moz-filter: blur(1px); -o-filter: blur(1px); -ms-filter: blur(1px); filter: blur(1px);}
++.plone-modal-open > *:not(.plone-modal-wrapper,.select2-drop, .mce-floatpanel) {-webkit-filter: blur(1px); -moz-filter: blur(1px); -o-filter: blur(1px); -ms-filter: blur(1px); filter: blur(1px);}
 
 
