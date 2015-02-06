@@ -1,25 +1,111 @@
-Repository: Products.CMFPlone
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2015-02-06T14:19:48-06:00
+Date: 2015-02-06T14:29:53-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/51c4a081d6ed116a19598f05a224891f0aea3be1
+Commit: https://github.com/plone/plone.app.layout/commit/2140007537c36e425e4d7f3ae83cdb0c59383248
 
-add modal base pattern options
+actually use configuration registry pattern settings
 
 Files changed:
-M Products/CMFPlone/profiles/dependencies/registry.xml
+A plone/app/layout/globals/tests/test_pattern_settings.py
+M plone/app/layout/globals/patterns_settings.py
 
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index ff940da..a5a9c40 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -986,6 +986,7 @@
-     </field>
-     <value>
-       <element key="pickadate">{"selectYears": 200}</element>
-+      <element key="modal">{"actionOptions": {"displayInModal": false}}</element>
-     </value>
-   </record>
+diff --git a/plone/app/layout/globals/patterns_settings.py b/plone/app/layout/globals/patterns_settings.py
+index f72115d..669bbd1 100644
+--- a/plone/app/layout/globals/patterns_settings.py
++++ b/plone/app/layout/globals/patterns_settings.py
+@@ -2,12 +2,12 @@
  
+ from zope.interface import implements
+ from zope.component import getAdapters
+-from zope.component.hooks import getSite
+ from zope.publisher.browser import BrowserView
+ from .interfaces import IPatternsSettingsRenderer
+ from Products.CMFPlone.interfaces import IPatternsSettings
+-
+-import json
++from plone.registry.interfaces import IRegistry
++from zope.component import getUtility
++from zope.component import getMultiAdapter
+ 
+ 
+ class PatternsSettings(BrowserView):
+@@ -17,20 +17,28 @@ class PatternsSettings(BrowserView):
+     implements(IPatternsSettingsRenderer)
+ 
+     def __call__(self):
+-        modal_options = {
+-            'actionOptions': {
+-                'displayInModal': False,
+-            }
+-        }
+-        base_url = getSite().absolute_url()
++        portal_state = getMultiAdapter(
++            (self.context, self.request), name=u'plone_portal_state')
++        # do not use getSite because it's possible it could be different
++        # than the actual portal url
++        base_url = portal_state.portal_url()
+         result = {
+-            'data-pat-modal': json.dumps(modal_options),
+             'data-base-url': self.context.absolute_url(),
+             'data-portal-url': base_url,
+             'data-i18ncatalogurl': base_url + '/plonejsi18n'
+         }
++
++        # first, check for any adapters that need pattern data defined
+         adapters = getAdapters((self.context, self.request, None), IPatternsSettings)
+         [result.update(x[1]()) for x in adapters]
+-        return result
+ 
++        # Resources Registered UI patterns can override adapters
++        registry = getUtility(IRegistry)
++        try:
++            pattern_options = registry['plone.patternoptions']
++        except (AttributeError, KeyError):
++            pattern_options = {}
++        for key, value in pattern_options.items():
++            result['data-pat-' + key] = value
+ 
++        return result
+diff --git a/plone/app/layout/globals/tests/test_pattern_settings.py b/plone/app/layout/globals/tests/test_pattern_settings.py
+new file mode 100644
+index 0000000..a17cc1a
+--- /dev/null
++++ b/plone/app/layout/globals/tests/test_pattern_settings.py
+@@ -0,0 +1,33 @@
++from plone.app.layout.globals.tests.base import GlobalsTestCase
++from plone.app.layout.globals.patterns_settings import PatternsSettings
++from plone.registry.interfaces import IRegistry
++from zope.component import getUtility
++
++
++class TestPatternSettings(GlobalsTestCase):
++    """Ensure that the basic redirector setup is successful.
++    """
++
++    def testShouldReturnCorrectType(self):
++        settings = PatternsSettings(self.folder, self.app.REQUEST)
++        result = settings()
++        self.assertEquals(type(result), dict)
++        for key, value in result.items():
++            self.assertTrue(isinstance(key, basestring))
++            self.assertTrue(isinstance(value, basestring))
++
++    def testUrls(self):
++        settings = PatternsSettings(self.folder, self.app.REQUEST)
++        result = settings()
++        self.assertEquals(result['data-base-url'], self.folder.absolute_url())
++        self.assertEquals(result['data-portal-url'], self.portal.absolute_url())
++
++    def testPatternOptions(self):
++        registry = getUtility(IRegistry)
++        registry['plone.patternoptions'] = {
++            'foo': u'{"foo": "bar"}'
++        }
++
++        settings = PatternsSettings(self.folder, self.app.REQUEST)
++        result = settings()
++        self.assertEquals(result['data-pat-foo'], u'{"foo": "bar"}')
+\ No newline at end of file
 
 
