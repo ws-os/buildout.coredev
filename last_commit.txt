@@ -1,26 +1,25 @@
-Repository: plone.schema
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-06T18:50:58+01:00
-Author: Joscha Krutzki (joka) <joka@jokasis.de>
-Commit: https://github.com/plone/plone.schema/commit/6a71ec6a01534461e229aa9814a4fbee072ed429
+Date: 2015-02-06T14:19:48-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/51c4a081d6ed116a19598f05a224891f0aea3be1
 
-Fix: comma missing in install requirements
+add modal base pattern options
 
 Files changed:
-M setup.py
+M Products/CMFPlone/profiles/dependencies/registry.xml
 
-diff --git a/setup.py b/setup.py
-index a772259..23282e7 100644
---- a/setup.py
-+++ b/setup.py
-@@ -30,7 +30,7 @@
-         'setuptools',
-         'plone.app.z3cform',
-         'z3c.form',
--        'zope.component'
-+        'zope.component',
-         'zope.i18nmessageid',
-         'zope.interface',
-         'zope.schema',
+diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
+index ff940da..a5a9c40 100644
+--- a/Products/CMFPlone/profiles/dependencies/registry.xml
++++ b/Products/CMFPlone/profiles/dependencies/registry.xml
+@@ -986,6 +986,7 @@
+     </field>
+     <value>
+       <element key="pickadate">{"selectYears": 200}</element>
++      <element key="modal">{"actionOptions": {"displayInModal": false}}</element>
+     </value>
+   </record>
+ 
 
 
