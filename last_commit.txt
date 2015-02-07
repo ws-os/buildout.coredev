@@ -1,26 +1,27 @@
-Repository: mockup
+Repository: plone.app.search
 Branch: refs/heads/master
-Date: 2015-02-06T18:06:20-06:00
+Date: 2015-02-06T22:06:51-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/64505d2ceaa74fa67e325ee659b49d57193dfbfd
+Commit: https://github.com/plone/plone.app.search/commit/13134a9363ef51579efb66e9d1813740e6cd7d2a
 
-update text
+add note about merge
 
 Files changed:
-M mockup/patterns/resourceregistry/js/overrides.js
+M README.rst
 
-diff --git a/mockup/patterns/resourceregistry/js/overrides.js b/mockup/patterns/resourceregistry/js/overrides.js
-index 188c8a1..27a56c0 100644
---- a/mockup/patterns/resourceregistry/js/overrides.js
-+++ b/mockup/patterns/resourceregistry/js/overrides.js
-@@ -19,7 +19,7 @@ define([
-     template: _.template(
-       '<form class="row">' +
-         '<div class="col-md-12">' +
--          '<input class="select" type="hidden" placeholder="Search..." style="width: 100%" />' +
-+          '<input class="select" type="hidden" placeholder="Select resource to override..." style="width: 100%" />' +
-         '</div>' +
-       '</form>' +
-       '<div class="row">' +
+diff --git a/README.rst b/README.rst
+index 6868b6f..e9c61f9 100644
+--- a/README.rst
++++ b/README.rst
+@@ -8,4 +8,6 @@ plone.app.search also updates main search field (usually located at the top righ
+ plone.app.search has the aim to give intuitively clear and understandable interface for searching in Plone. But there might be some new things that are not so obvious. Let's see how the search results works now.
+ 
+ Notes
+-=====
+\ No newline at end of file
++=====
++
++This package is merge into Products.CMFPlone in Plone 5.
+\ No newline at end of file
 
 
