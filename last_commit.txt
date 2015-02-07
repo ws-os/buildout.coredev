@@ -1,27 +1,50 @@
-Repository: plone.app.search
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-06T22:06:51-06:00
+Date: 2015-02-06T22:53:08-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.search/commit/13134a9363ef51579efb66e9d1813740e6cd7d2a
+Commit: https://github.com/plone/plone.app.upgrade/commit/d783a284b7ce84b3938b9c3cd91b09e1a81c78da
 
-add note about merge
+fix plone.app.search work
 
 Files changed:
-M README.rst
+M plone/app/upgrade/v42/profiles/to_rc1/metadata.xml
+M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
 
-diff --git a/README.rst b/README.rst
-index 6868b6f..e9c61f9 100644
---- a/README.rst
-+++ b/README.rst
-@@ -8,4 +8,6 @@ plone.app.search also updates main search field (usually located at the top righ
- plone.app.search has the aim to give intuitively clear and understandable interface for searching in Plone. But there might be some new things that are not so obvious. Let's see how the search results works now.
+diff --git a/plone/app/upgrade/v42/profiles/to_rc1/metadata.xml b/plone/app/upgrade/v42/profiles/to_rc1/metadata.xml
+index 048b99f..df3a631 100644
+--- a/plone/app/upgrade/v42/profiles/to_rc1/metadata.xml
++++ b/plone/app/upgrade/v42/profiles/to_rc1/metadata.xml
+@@ -3,6 +3,5 @@
+   <version>1</version>
+   <dependencies>
+     <dependency>profile-plone.app.jquery:default</dependency>
+-    <dependency>profile-plone.app.search:default</dependency>
+   </dependencies>
+ </metadata>
+diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+index b4db4a8..e484c9a 100644
+--- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+@@ -883,6 +883,12 @@
+       <value key="js">plone_javascript_variables.js</value>
+   </records>
  
- Notes
--=====
-\ No newline at end of file
-+=====
++  <records prefix="plone.resources/resource-search-js"
++           interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++      <value key="js">++resource++search.js</value>
++      <value key="deps">jquery</value>
++  </records>
 +
-+This package is merge into Products.CMFPlone in Plone 5.
-\ No newline at end of file
+   <records prefix="plone.resources/cookie_functions"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">cookie_functions.js</value>
+@@ -986,6 +992,7 @@
+             interface='Products.CMFPlone.interfaces.IBundleRegistry'>
+     <value key="resources">
+       <element>plone</element>
++      <element>resource-search-js</element> 
+     </value>
+     <value key="enabled">True</value>
+     <value key="jscompilation">++plone++static/plone-compiled.js</value>
 
 
