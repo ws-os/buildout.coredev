@@ -1,39 +1,26 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-06T18:03:50-06:00
+Date: 2015-02-06T18:06:20-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/1923089f5604cfe9e58b1995e847e960df5e4b93
+Commit: https://github.com/plone/mockup/commit/64505d2ceaa74fa67e325ee659b49d57193dfbfd
 
-fix tests
+update text
 
 Files changed:
-M mockup/tests/pattern-resourceregistry-test.js
+M mockup/patterns/resourceregistry/js/overrides.js
 
-diff --git a/mockup/tests/pattern-resourceregistry-test.js b/mockup/tests/pattern-resourceregistry-test.js
-index a20dd6e..96d104d 100644
---- a/mockup/tests/pattern-resourceregistry-test.js
-+++ b/mockup/tests/pattern-resourceregistry-test.js
-@@ -82,20 +82,10 @@ define([
-       expect(this.$el.find('ul.resources li').length).to.equal(7);
-     });
- 
--    it('searches', function(){
--      this.pat.tabs.showOverrides = true;
--      this.pat.tabs.hideShow();
--      this.$el.find('.search-field').attr('value', 'bundles');
--      this.pat.tabs.overridesView.textChange();
--      expect(this.$el.find('.search-results li').length).to.equal(5);
--    });
--
-     it('customize resource', function(){
-       this.pat.tabs.showOverrides = true;
-       this.pat.tabs.hideShow();
--      this.$el.find('.search-field').attr('value', 'plone');
--      this.pat.tabs.overridesView.textChange();
--      this.$el.find('.search-results li:last button').trigger('click');
-+      this.$el.find('.select').select2('val', 'plone', true);
-       expect(this.pat.options.overrides.length).to.equal(2);
-     });
- 
+diff --git a/mockup/patterns/resourceregistry/js/overrides.js b/mockup/patterns/resourceregistry/js/overrides.js
+index 188c8a1..27a56c0 100644
+--- a/mockup/patterns/resourceregistry/js/overrides.js
++++ b/mockup/patterns/resourceregistry/js/overrides.js
+@@ -19,7 +19,7 @@ define([
+     template: _.template(
+       '<form class="row">' +
+         '<div class="col-md-12">' +
+-          '<input class="select" type="hidden" placeholder="Search..." style="width: 100%" />' +
++          '<input class="select" type="hidden" placeholder="Select resource to override..." style="width: 100%" />' +
+         '</div>' +
+       '</form>' +
+       '<div class="row">' +
 
 
