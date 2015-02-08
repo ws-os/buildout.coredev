@@ -1,53 +1,46 @@
-Repository: plone.app.upgrade
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-07T20:39:32-06:00
+Date: 2015-02-07T22:24:54-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/ad56d868feaffb214fa8e40a4affa220446f2f23
+Commit: https://github.com/plone/Products.CMFPlone/commit/98d4709cfe73c33e44d1f1026a27d7f3cf944255
 
-update with latest changes
+remove unnecessary test
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+M Products/CMFPlone/tests/testSearch.py
 
-diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-index e484c9a..e1b8d36 100644
---- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-@@ -657,6 +657,14 @@
-       </value>
-   </records>
+diff --git a/Products/CMFPlone/tests/testSearch.py b/Products/CMFPlone/tests/testSearch.py
+index dc0e930..36d74cd 100644
+--- a/Products/CMFPlone/tests/testSearch.py
++++ b/Products/CMFPlone/tests/testSearch.py
+@@ -90,21 +90,6 @@ class SearchTestCase(unittest.TestCase):
+     layer = SEARCH_INTEGRATION_TESTING
  
-+  <records prefix="plone.resources/mockup-patterns-livesearch"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++mockup/livesearch/pattern.js</value>
-+      <value key="css">
-+        <element>++resource++mockup/livesearch/pattern.livesearch.less</element>
-+      </value>
-+  </records>
-+
-   <records prefix="plone.resources/mockup-patterns-accessibility"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++resource++mockup/accessibility/pattern.js</value>
-@@ -883,12 +891,6 @@
-       <value key="js">plone_javascript_variables.js</value>
-   </records>
  
--  <records prefix="plone.resources/resource-search-js"
--           interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++resource++search.js</value>
--      <value key="deps">jquery</value>
--  </records>
+-class TestIntegration(SearchTestCase):
+-    """ Check that all bits of the package are inplace and work.
+-    """
 -
-   <records prefix="plone.resources/cookie_functions"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">cookie_functions.js</value>
-@@ -992,7 +994,6 @@
-             interface='Products.CMFPlone.interfaces.IBundleRegistry'>
-     <value key="resources">
-       <element>plone</element>
--      <element>resource-search-js</element> 
-     </value>
-     <value key="enabled">True</value>
-     <value key="jscompilation">++plone++static/plone-compiled.js</value>
+-    def test_searchjs_is_available(self):
+-        """Make sure search.js is available."""
+-        portal = self.layer['portal']
+-        resreg = getattr(portal, 'portal_registry')
+-        from Products.CMFPlone.interfaces import IResourceRegistry
+-        resources_ids = resreg.collectionOfInterface(
+-            IResourceRegistry, prefix="plone.resources").keys()
+-        self.assertTrue(
+-            'resource-search-js' in resources_ids)
+-
+-
+ class TestSection(SearchTestCase):
+     """The name of the class should be meaningful. This may be a class that
+     tests the installation of a particular product.
+@@ -214,6 +199,5 @@ def test_suite():
+     above
+     """
+     suite = unittest.TestSuite()
+-    suite.addTest(unittest.makeSuite(TestIntegration))
+     suite.addTest(unittest.makeSuite(TestSection))
+     return suite
 
 
