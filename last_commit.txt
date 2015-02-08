@@ -1,52 +1,75 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-08T16:06:37-06:00
+Date: 2015-02-08T17:48:21-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/6153382bd8709c1e1b4f3ad62b30e484d825c5a3
+Commit: https://github.com/plone/Products.CMFPlone/commit/e369d2c1494027f9c522639df2e898dcae756f2f
 
-trigger event that structure has caused a page url to change
+use z3c form properly here fixes #363
 
 Files changed:
-M mockup/patterns/structure/js/views/app.js
+M Products/CMFPlone/controlpanel/browser/mail.py
 
-diff --git a/mockup/patterns/structure/js/views/app.js b/mockup/patterns/structure/js/views/app.js
-index 56bb81f..391bafd 100644
---- a/mockup/patterns/structure/js/views/app.js
-+++ b/mockup/patterns/structure/js/views/app.js
-@@ -181,15 +181,18 @@ define([
-         self.loading.show();
+diff --git a/Products/CMFPlone/controlpanel/browser/mail.py b/Products/CMFPlone/controlpanel/browser/mail.py
+index ee1c718..da996d8 100644
+--- a/Products/CMFPlone/controlpanel/browser/mail.py
++++ b/Products/CMFPlone/controlpanel/browser/mail.py
+@@ -25,25 +25,33 @@ class MailControlPanelForm(controlpanel.RegistryEditForm):
  
-         /* maintain history here */
--        if (!self.doNotPushState && self.options.urlStructure && window.history && window.history.pushState){
--          var path = self.queryHelper.getCurrentPath();
--          if(path === '/'){
--            path = '';
-+        if(self.options.urlStructure && window.history && window.history.pushState){
-+          if (!self.doNotPushState){
-+            var path = self.queryHelper.getCurrentPath();
-+            if(path === '/'){
-+              path = '';
-+            }
-+            var url = self.options.urlStructure.base + path + self.options.urlStructure.appended;
-+            window.history.pushState(null, null, url);
-+            $('body').trigger('structure-url-changed', path);
-+          }else{
-+            self.doNotPushState = false;
-           }
--          var url = self.options.urlStructure.base + path + self.options.urlStructure.appended;
--          window.history.pushState(null, null, url);
--        }else{
--          self.doNotPushState = false;
-         }
-       });
+     @button.buttonAndHandler(_('Save'), name=None)
+     def handleSave(self, action):
+-        super(MailControlPanelForm, self).handleSave(self, action)
++        self.save()
  
-@@ -214,6 +217,7 @@ define([
-             path = '/';
-           }
-           self.queryHelper.currentPath = path;
-+          $('body').trigger('structure-url-changed', path);
-           // since this next call causes state to be pushed...
-           self.doNotPushState = true;
-           self.collection.goTo(self.collection.information.firstPage);
+     @button.buttonAndHandler(_('Cancel'), name='cancel')
+     def handleCancel(self, action):
+         super(MailControlPanelForm, self).handleCancel(self, action)
+ 
++    def save(self):
++        data, errors = self.extractData()
++        if errors:
++            self.status = self.formErrorsMessage
++            return False
++        self.applyChanges(data)
++        return True
++
+     @button.buttonAndHandler(
+         _('label_smtp_test', default='Save and send test e-mail'),
+         name='test')
+     def handle_test_action(self, action):
+-        data = self.request.form
+         # Save data first
+-        self.handle_edit_action.success(data)
++        if not self.save():
++            return
+         mailhost = getToolByName(self.context, 'MailHost')
+ 
+         registry = getUtility(IRegistry)
+         mail_settings = registry.forInterface(IMailSchema, prefix='plone')
+         fromaddr = mail_settings.email_from_address
+-        fromname = self.mail_settings.email_from_name
++        fromname = mail_settings.email_from_name
+ 
+         message = ("Hi,\n\nThis is a test message sent from the Plone "
+                    "'Mail settings' control panel. Your receipt of this "
+@@ -52,8 +60,7 @@ def handle_test_action(self, action):
+                    "working!\n\n"
+                    "Have a nice day.\n\n"
+                    "Love,\n\nPlone")
+-        email_charset = mail_settings.email_charset
+-        email_recipient, source = fromaddr, fromaddr
++        email_charset = self.context.getProperty('email_charset')
+         subject = "Test e-mail from Plone"
+ 
+         # Make the timeout incredibly short. This is enough time for most mail
+@@ -64,7 +71,8 @@ def handle_test_action(self, action):
+         try:
+             socket.setdefaulttimeout(3)
+             try:
+-                mailhost.send(message, email_recipient, source,
++                mailhost.send(message,
++                              mto=fromaddr,
+                               mfrom=fromname,
+                               subject=subject,
+                               charset=email_charset,
 
 
