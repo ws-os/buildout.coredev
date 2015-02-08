@@ -1,26 +1,28 @@
-Repository: mockup
+Repository: plone.app.content
 Branch: refs/heads/master
-Date: 2015-02-08T14:25:18-06:00
+Date: 2015-02-08T15:04:35-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/a8f9b2f0fa7167c96a7fbea4a836e178206e468c
+Commit: https://github.com/plone/plone.app.content/commit/35647b5bf296bead225208964c8fb406a2888a0d
 
-update minimum letter to type before search
+implement options for history support
 
 Files changed:
-M mockup/patterns/livesearch/pattern.js
+M plone/app/content/browser/folder.py
 
-diff --git a/mockup/patterns/livesearch/pattern.js b/mockup/patterns/livesearch/pattern.js
-index 38be03e..239469d 100644
---- a/mockup/patterns/livesearch/pattern.js
-+++ b/mockup/patterns/livesearch/pattern.js
-@@ -41,7 +41,7 @@ define([
-       ajaxUrl: null,
-       perPage: 7,
-       quietMillis: 350,
--      minimumInputLength: 3,
-+      minimumInputLength: 4,
-       inputSelector: 'input[type="text"]',
-       itemTemplate: '<li class="search-result <%- state %>">' +
-         '<h4 class="title"><a href="<%- url %>"><%- title %></a></h4>' +
+diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
+index 56ee9f7..1ed6303 100644
+--- a/plone/app/content/browser/folder.py
++++ b/plone/app/content/browser/folder.py
+@@ -50,6 +50,10 @@ def __call__(self):
+                 base_vocabulary),
+             'usersVocabularyUrl': '%splone.app.vocabularies.Users' % (
+                 base_vocabulary),
++            'urlStructure': {
++                'base': base_url,
++                'appended': '/folder_contents'
++            },
+             'moveUrl': '%s{path}/fc-itemOrder' % base_url,
+             'indexOptionsUrl': '%s/@@qsOptions' % base_url,
+             'contextInfoUrl': '%s{path}/@@fc-contextInfo' % base_url,
 
 
