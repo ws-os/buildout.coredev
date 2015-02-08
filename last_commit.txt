@@ -1,183 +1,94 @@
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-08T13:35:09-06:00
+Date: 2015-02-08T14:10:54-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/03dabac6f4569c2d682bdeaeb670326d770219d7
+Commit: https://github.com/plone/mockup/commit/a01fcce2988d972040a9192ff520cd36ad08c0a1
 
-handle errors cooking resources
+usability with resource registries
 
 Files changed:
-A Products/CMFPlone/tests/testResourceRegistries.py
-M Products/CMFPlone/resources/browser/cook.py
-M Products/CMFPlone/traversal.py
+M mockup/patterns/resourceregistry/js/registry.js
+M mockup/patterns/resourceregistry/pattern.resourceregistry.less
 
-diff --git a/Products/CMFPlone/resources/browser/cook.py b/Products/CMFPlone/resources/browser/cook.py
-index 29b4664..1e1f15d 100644
---- a/Products/CMFPlone/resources/browser/cook.py
-+++ b/Products/CMFPlone/resources/browser/cook.py
-@@ -23,26 +23,33 @@ def cookWhenChangingSettings(context, bundle):
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index b08483f..5470802 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -167,6 +167,11 @@ define([
+       });
+       var resource = new ResourceEntryView(options);
+       this.registryView.showResourceEditor(resource);
++
++      // and scroll to resource since huge list makes this hard to notice
++      $('html, body').animate({
++        scrollTop: resource.$el.offset().top
++      }, 1000);
+     },
+     deleteClicked: function(e){
+       e.preventDefault();
+@@ -526,12 +531,14 @@ define([
+           '<ul class="bundles list-group">' +
+             '<li class="list-group-item list-group-item-warning">Bundles</li>' +
+           '</ul>' +
+-          '<ul class="resources list-group">' +
++          '<ul class="resources-header list-group">' +
+             '<li class="list-group-item list-group-item-warning">Resources ' +
+               '<input class="float-right form-control input-xs" ' +
+                       'placeholder="Filter..." />' +
+             '</li>' +
+           '</ul>' +
++          '<ul class="resources list-group">' +
++          '</ul>' +
+         '</div>' +
+         '<div class="form col-md-7"></div>' +
+       '</div>'),
+@@ -540,7 +547,7 @@ define([
+       'click button.add-resource': 'addResourceClicked',
+       'click button.add-bundle': 'addBundleClicked',
+       'click button.cancel': 'revertChanges',
+-      'keyup .resources input': 'filterResources',
++      'keyup .resources-header input': 'filterResources',
+       'change .development-mode input': 'developmentModeChanged'
+     },
+     filterTimeout: 0,
+@@ -570,8 +577,8 @@ define([
+         clearTimeout(self.filterTimeout);
+       }
+       self.filterTimeout = setTimeout(function(){
+-        var filterText = self.$('.resources input').val().toLowerCase();
+-        var $els = self.$('.resources .list-group-item:not(.list-group-item-warning)');
++        var filterText = self.$('.resources-header input').val().toLowerCase();
++        var $els = self.$('.resources .list-group-item');
+         if(!filterText || filterText.length < 3){
+           $els.removeClass('hidden');
+         }else{
+diff --git a/mockup/patterns/resourceregistry/pattern.resourceregistry.less b/mockup/patterns/resourceregistry/pattern.resourceregistry.less
+index b754f62..e842c5f 100644
+--- a/mockup/patterns/resourceregistry/pattern.resourceregistry.less
++++ b/mockup/patterns/resourceregistry/pattern.resourceregistry.less
+@@ -18,7 +18,23 @@
+             font-size: 11px; /* need to try and fit long strings */
+         }
+     }
++    .resources-header.list-group{
++        margin-bottom: 0;
++        li{
++            border-bottom: 0;
++            border-bottom-right-radius: 0;
++            border-bottom-left-radius: 0;
++        }
++    }
+     .resources.list-group{
++        max-height: 700px;
++        overflow-x: scroll;
++
++        li{
++            border-top-right-radius: 0;
++            border-top-left-radius: 0;
++        }
++
+         .list-group-item-warning{
+             position: relative;
  
-     # Let's join all css and js
-     css_file = ""
--    js_file = ""
-+    cooked_js = ""
-     siteUrl = getSite().absolute_url()
-     request = getRequest()
-     for package in bundle.resources:
-         if package in resources:
-             resource = resources[package]
-             for css in resource.css:
--                response = subrequest(siteUrl + '/' + css, root=context)
-+                response = subrequest(siteUrl + '/' + css)
-                 if response.status == 200:
-                     css_file += response.getBody()
-                     css_file += '\n'
- 
-             if resource.js:
--                response = subrequest(
--                    siteUrl + '/' + resource.js, root=context)
-+                response = subrequest(siteUrl + '/' + resource.js)
-                 if response.status == 200:
--                    js_file += response.getBody()
--                    js_file += '\n'
-+                    js = response.getBody()
-+                    try:
-+                        cooked_js += '\n/* resource: %s */\n%s' % (
-+                            resource.js,
-+                            minify(js, mangle=True, mangle_toplevel=True)
-+                        )
-+                    except SyntaxError:
-+                        cooked_js += '\n/* resource(error cooking): %s */\n%s' % (
-+                            resource.js, js)
-+                else:
-+                    cooked_js += '\n/* Could not find resource: %s */\n\n' % resource.js
- 
--    cooked_js = minify(js_file, mangle=True, mangle_toplevel=True)
-     cooked_css = cssmin(css_file)
- 
-     js_path = bundle.jscompilation
-diff --git a/Products/CMFPlone/tests/testResourceRegistries.py b/Products/CMFPlone/tests/testResourceRegistries.py
-new file mode 100644
-index 0000000..c3348dc
---- /dev/null
-+++ b/Products/CMFPlone/tests/testResourceRegistries.py
-@@ -0,0 +1,91 @@
-+from Products.CMFPlone.tests import PloneTestCase
-+from Products.CMFPlone.resources.browser.cook import cookWhenChangingSettings
-+from zope.component import getUtility
-+from plone.registry.interfaces import IRegistry
-+from Products.CMFPlone.interfaces import IBundleRegistry
-+from Products.CMFPlone.interfaces import IResourceRegistry
-+from plone.subrequest import subrequest
-+from Products.CMFPlone.interfaces.resources import OVERRIDE_RESOURCE_DIRECTORY_NAME
-+from plone.resource.interfaces import IResourceDirectory
-+
-+
-+class TestResourceRegistries(PloneTestCase.PloneTestCase):
-+
-+    def test_cooking_resources(self):
-+        registry = getUtility(IRegistry)
-+        bundles = registry.collectionOfInterface(IBundleRegistry,
-+                                                 prefix="plone.bundles")
-+        bundle = bundles.add('foobar')
-+        bundle.jscompilation = '++plone++static/foobar-compiled.js'
-+        bundle.csscompilation = '++plone++static/foobar-compiled.css'
-+
-+        resources = registry.collectionOfInterface(IResourceRegistry,
-+                                                   prefix="plone.resources")
-+        resource = resources.add('foobar')
-+
-+        resource.js = '++plone++static/foobar.js'
-+        bundle.resources = ['foobar']
-+
-+        persistent_directory = getUtility(IResourceDirectory, name="persistent")
-+        if OVERRIDE_RESOURCE_DIRECTORY_NAME not in persistent_directory:
-+            persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)
-+        container = persistent_directory[OVERRIDE_RESOURCE_DIRECTORY_NAME]
-+        container.makeDirectory('static')
-+        directory = container['static']
-+        directory.writeFile('foobar.js', 'alert("Hi!");')
-+
-+        cookWhenChangingSettings(self.portal, bundle)
-+        resp = subrequest(
-+            '%s/++plone++static/foobar-compiled.js' % self.portal.absolute_url())
-+
-+        self.assertTrue('alert(' in resp.getBody())
-+
-+    def test_cooking_missing(self):
-+        registry = getUtility(IRegistry)
-+        bundles = registry.collectionOfInterface(IBundleRegistry,
-+                                                 prefix="plone.bundles")
-+        bundle = bundles.add('foobar')
-+        bundle.jscompilation = '++plone++static/foobar-compiled.js'
-+        bundle.csscompilation = '++plone++static/foobar-compiled.css'
-+
-+        resources = registry.collectionOfInterface(IResourceRegistry,
-+                                                   prefix="plone.resources")
-+        resource = resources.add('foobar')
-+
-+        resource.js = '++plone++static/foobar.js'
-+        bundle.resources = ['foobar']
-+
-+        cookWhenChangingSettings(self.portal, bundle)
-+        resp = subrequest(
-+            '%s/++plone++static/foobar-compiled.js' % self.portal.absolute_url())
-+
-+        self.assertTrue('Could not find resource' in resp.getBody())
-+
-+    def test_error(self):
-+        registry = getUtility(IRegistry)
-+        bundles = registry.collectionOfInterface(IBundleRegistry,
-+                                                 prefix="plone.bundles")
-+        bundle = bundles.add('foobar')
-+        bundle.jscompilation = '++plone++static/foobar-compiled.js'
-+        bundle.csscompilation = '++plone++static/foobar-compiled.css'
-+
-+        resources = registry.collectionOfInterface(IResourceRegistry,
-+                                                   prefix="plone.resources")
-+        resource = resources.add('foobar')
-+
-+        resource.js = '++plone++static/foobar.js'
-+        bundle.resources = ['foobar']
-+
-+        persistent_directory = getUtility(IResourceDirectory, name="persistent")
-+        if OVERRIDE_RESOURCE_DIRECTORY_NAME not in persistent_directory:
-+            persistent_directory.makeDirectory(OVERRIDE_RESOURCE_DIRECTORY_NAME)
-+        container = persistent_directory[OVERRIDE_RESOURCE_DIRECTORY_NAME]
-+        container.makeDirectory('static')
-+        directory = container['static']
-+        directory.writeFile('foobar.js', 'sdlfk ldsf lksdjfl s')
-+
-+        cookWhenChangingSettings(self.portal, bundle)
-+        resp = subrequest(
-+            '%s/++plone++static/foobar-compiled.js' % self.portal.absolute_url())
-+
-+        self.assertTrue('error cooking' in resp.getBody())
-diff --git a/Products/CMFPlone/traversal.py b/Products/CMFPlone/traversal.py
-index 27cfda8..4554d7d 100644
---- a/Products/CMFPlone/traversal.py
-+++ b/Products/CMFPlone/traversal.py
-@@ -3,6 +3,7 @@
- from plone.resource.interfaces import IResourceDirectory
- from Products.CMFPlone.interfaces.resources import (
-     OVERRIDE_RESOURCE_DIRECTORY_NAME)
-+from zope.globalrequest import getRequest
- 
- 
- class PloneBundlesTraverser(ResourceTraverser):
-@@ -11,10 +12,11 @@ class PloneBundlesTraverser(ResourceTraverser):
- 
-     def traverse(self, name, remaining):
-         # in case its not a request get the default one
--        if 'PATH_INFO' not in self.context.REQUEST.environ:
-+        req = getRequest()
-+        if 'PATH_INFO' not in req.environ:
-             return super(PloneBundlesTraverser, self).traverse(name, remaining)
- 
--        resource_path = self.context.REQUEST.environ['PATH_INFO'].split('++plone++')[-1]  # noqa
-+        resource_path = req.environ['PATH_INFO'].split('++plone++')[-1]
-         resource_name, resource_filepath = resource_path.split('/', 1)
- 
-         persistentDirectory = getUtility(IResourceDirectory, name="persistent")
 
 
