@@ -1,93 +1,53 @@
-Repository: plone.app.layout
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-07T20:38:48-06:00
+Date: 2015-02-07T20:39:32-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.layout/commit/7479e4afbad842022766979162d48bb2c55aa414
+Commit: https://github.com/plone/plone.app.upgrade/commit/ad56d868feaffb214fa8e40a4affa220446f2f23
 
-use livesearch pattern
+update with latest changes
 
 Files changed:
-M plone/app/layout/viewlets/common.py
-M plone/app/layout/viewlets/searchbox.pt
+M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
 
-diff --git a/plone/app/layout/viewlets/common.py b/plone/app/layout/viewlets/common.py
-index 0f65305..4a05b72 100644
---- a/plone/app/layout/viewlets/common.py
-+++ b/plone/app/layout/viewlets/common.py
-@@ -17,6 +17,7 @@
+diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+index e484c9a..e1b8d36 100644
+--- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+@@ -657,6 +657,14 @@
+       </value>
+   </records>
  
- from Products.CMFCore.utils import getToolByName
- from Products.CMFPlone.interfaces import ISiteSchema
-+from Products.CMFPlone.interfaces import ISearchSchema
- from Products.CMFPlone.utils import safe_unicode
- from Products.CMFPlone.interfaces import IPloneSiteRoot
- from Products.Five.browser import BrowserView
-@@ -175,13 +176,9 @@ def update(self):
-         context_state = getMultiAdapter((self.context, self.request),
-                                         name=u'plone_context_state')
++  <records prefix="plone.resources/mockup-patterns-livesearch"
++            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++      <value key="js">++resource++mockup/livesearch/pattern.js</value>
++      <value key="css">
++        <element>++resource++mockup/livesearch/pattern.livesearch.less</element>
++      </value>
++  </records>
++
+   <records prefix="plone.resources/mockup-patterns-accessibility"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">++resource++mockup/accessibility/pattern.js</value>
+@@ -883,12 +891,6 @@
+       <value key="js">plone_javascript_variables.js</value>
+   </records>
  
--        props = getToolByName(self.context, 'portal_properties')
--        livesearch = props.site_properties.getProperty(
--            'enable_livesearch', False)
--        if livesearch:
--            self.search_input_id = "searchGadget"
--        else:
--            self.search_input_id = "nolivesearchGadget"  # don't use "" here!
-+        registry = getUtility(IRegistry)
-+        search_settings = registry.forInterface(ISearchSchema, prefix='plone')
-+        self.livesearch = search_settings.enable_livesearch
- 
-         folder = context_state.folder()
-         self.folder_path = '/'.join(folder.getPhysicalPath())
-diff --git a/plone/app/layout/viewlets/searchbox.pt b/plone/app/layout/viewlets/searchbox.pt
-index 879a6d7..bde537c 100644
---- a/plone/app/layout/viewlets/searchbox.pt
-+++ b/plone/app/layout/viewlets/searchbox.pt
-@@ -1,30 +1,30 @@
- <div id="portal-searchbox"
-      i18n:domain="plone"
--     tal:define="navigation_root_url view/navigation_root_url;
--                 search_input_id view/search_input_id;">
-+     tal:define="navigation_root_url view/navigation_root_url;">
- 
-     <form id="searchGadget_form"
-           action="@@search"
-           role="search"
-           tal:attributes="action string:${navigation_root_url}/@@search;
--                          id string:${search_input_id}_form;">
-+                          data-pat-livesearch string:ajaxUrl:${navigation_root_url}/@@ajax-search;
-+                          class python: view.livesearch and 'pat-livesearch' or ''">
- 
-         <div class="LSBox">
-         <label class="hiddenStructure"
--               tal:attributes="for search_input_id"
-+               for="searchGadget"
-                i18n:translate="text_search">Search Site</label>
- 
-         <input name="SearchableText"
-                type="text"
-                size="18"
-                value=""
-+               id="searchGadget"
-                title="Search Site"
-                placeholder="Search Site"
-                accesskey="4"
-                i18n:attributes="title title_search_site;
-                                 placeholder title_search_site"
--               tal:attributes="value request/form/SearchableText|nothing;
--                               id search_input_id"
-+               tal:attributes="value request/form/SearchableText|nothing;"
-                class="searchField" />
- 
-         <input class="searchButton"
-@@ -46,8 +46,6 @@
-                 only in current section
-             </label>
-         </div>
+-  <records prefix="plone.resources/resource-search-js"
+-           interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">++resource++search.js</value>
+-      <value key="deps">jquery</value>
+-  </records>
 -
--        <div class="LSResult" id="LSResult"><div class="LSShadow" id="LSShadow"></div></div>
-         </div>
-     </form>
- 
+   <records prefix="plone.resources/cookie_functions"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">cookie_functions.js</value>
+@@ -992,7 +994,6 @@
+             interface='Products.CMFPlone.interfaces.IBundleRegistry'>
+     <value key="resources">
+       <element>plone</element>
+-      <element>resource-search-js</element> 
+     </value>
+     <value key="enabled">True</value>
+     <value key="jscompilation">++plone++static/plone-compiled.js</value>
 
 
