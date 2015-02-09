@@ -1,196 +1,84 @@
 Repository: plone.formwidget.contenttree
 Branch: refs/heads/master
-Date: 2015-02-09T12:16:36Z
+Date: 2015-02-09T12:28:35Z
 Author: Wilkes, Matthew (UK - Belfast) () <matwilkes@deloitte.co.uk>
-Commit: https://github.com/plone/plone.formwidget.contenttree/commit/822c5f896d84600748d975b401a4cb7a052adef0
+Commit: https://github.com/plone/plone.formwidget.contenttree/commit/e42abd2943a3bec959e367817e1f227785fbb030
 
-Add modern buildout pin to buildout, to prevent the new setuptools version format issues
+Release 1.0.11
 
 Files changed:
-M buildout.cfg
+M docs/HISTORY.rst
+M setup.py
 
-diff --git a/buildout.cfg b/buildout.cfg
-index 3479d76..24251b3 100644
---- a/buildout.cfg
-+++ b/buildout.cfg
-@@ -4,4 +4,5 @@ versions = versions
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index 1c35050..171395f 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -1,7 +1,7 @@
+ Changelog
+ =========
  
- [versions]
- setuptools = 7.0
-+zc.buildout = 2.2.0
- pytz = 2014.10
+-1.0.11 (Unreleased)
++1.0.11 (2015-02-09)
+ -------------------
+ 
+ - Add support for providing defaults to contenttrees. This wasn't reliable
+diff --git a/setup.py b/setup.py
+index 301da20..0062910 100644
+--- a/setup.py
++++ b/setup.py
+@@ -3,7 +3,7 @@
+ import os
+ 
+ 
+-version = '1.0.11dev0'
++version = '1.0.11'
+ desc = 'AJAX selection widget for Plone'
+ longdesc = '\n\n'.join([
+     open('README.rst').read(),
 
 
 Repository: plone.formwidget.contenttree
 Branch: refs/heads/master
-Date: 2015-02-09T12:18:35Z
+Date: 2015-02-09T13:15:05Z
 Author: Wilkes, Matthew (UK - Belfast) () <matwilkes@deloitte.co.uk>
-Commit: https://github.com/plone/plone.formwidget.contenttree/commit/698d8d1b80ecd7dee47959d5fd0f097bf2610e50
+Commit: https://github.com/plone/plone.formwidget.contenttree/commit/995d6d728aad2fc67413cb702d6ee1132ba82cdf
 
-Add support for supplying defaults to contenttree widgets. This is achieved as follows:
-
-    def get_default(context):
-        return utils.get_default_thing(context).UID()
-    directlyProvides(get_default, IContextAwareDefaultFactory)
-
-    thing_ref = schema.Choice(title=u"related_thing",
-                                defaultFactory=get_default,
-                                source=UUIDSourceBinder(
-                                    defaultFactory=get_default,
-                                    portal_type='MyThing',
-                                )
-                              )
-
-The first defaultFactory (or default) that is passed is to the field, setting its
-default value. The second is passed directly to the source binder, to ensure
-that it can be rendered as a valid option, regardless of the background query.
+Back to development 1.0.12
 
 Files changed:
 M docs/HISTORY.rst
-M plone/formwidget/contenttree/source.py
-M plone/formwidget/contenttree/widget.py
+M setup.py
 
 diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
-index ec5828f..1c35050 100644
+index 171395f..ba31e65 100644
 --- a/docs/HISTORY.rst
 +++ b/docs/HISTORY.rst
-@@ -4,7 +4,11 @@ Changelog
- 1.0.11 (Unreleased)
+@@ -1,6 +1,12 @@
+ Changelog
+ =========
+ 
++1.0.12 (Unreleased)
++-------------------
++
++- Nothing yet
++
++
+ 1.0.11 (2015-02-09)
  -------------------
  
--
-+- Add support for providing defaults to contenttrees. This wasn't reliable
-+  previously as only defaults that were found by the initial query were
-+  rendered. Now SourceBinders take an optional default or defaultFactory
-+  argument, in the same format as schema.Choice.
-+  [MatthewWilkes]
+diff --git a/setup.py b/setup.py
+index 0062910..154b50b 100644
+--- a/setup.py
++++ b/setup.py
+@@ -3,7 +3,7 @@
+ import os
  
- 1.0.10 (2015-01-16)
- -------------------
-diff --git a/plone/formwidget/contenttree/source.py b/plone/formwidget/contenttree/source.py
-index 893ca64..eb2e520 100644
---- a/plone/formwidget/contenttree/source.py
-+++ b/plone/formwidget/contenttree/source.py
-@@ -64,8 +64,9 @@ def __call__(self, brain, index_data):
- class PathSource(object):
-     implements(IContentSource)
  
--    def __init__(self, context, selectable_filter, navigation_tree_query=None):
-+    def __init__(self, context, selectable_filter, navigation_tree_query=None, default=None, defaultFactory=None):
-         self.context = context
-+        
-         nav_root = getNavigationRootObject(context, None)
-         query_builder = getMultiAdapter((nav_root, self),
-                                         INavigationQueryBuilder)
-@@ -91,10 +92,19 @@ def __init__(self, context, selectable_filter, navigation_tree_query=None):
-         portal_tool = getToolByName(context, "portal_url")
-         self.portal_path = portal_tool.getPortalPath()
- 
-+        self._default_terms = []
-+        if default is not None:
-+            term = self.getTerm(default)
-+            self._default_terms = [term]
-+        elif defaultFactory is not None:
-+            term = self.getTerm(defaultFactory(context))
-+            self._default_terms = [term]
-+
-+
-     # Tokenised vocabulary API
- 
-     def __iter__(self):
--        return [].__iter__()
-+        return iter(self._default_terms)
- 
-     def __contains__(self, value):
-         try:
-@@ -155,6 +165,13 @@ def isBrainSelectable(self, brain):
- 
-     def getTermByBrain(self, brain, real_value=True):
-         value = brain.getPath()[len(self.portal_path):]
-+        for term in self._default_terms:
-+            # Short-circuit the generation of a new term, so we can return the
-+            # same object if this represents a default term. This is required
-+            # because z3c.form coerces the terms to a list when rendering
-+            # radio buttons
-+            if term.value == value:
-+                return term
-         return SimpleTerm(value, token=brain.getPath(), title=brain.Title or
-                           brain.id)
- 
-@@ -194,6 +211,13 @@ def getTermByBrain(self, brain, real_value=True):
-             value = brain._unrestrictedGetObject()
-         else:
-             value = brain.getPath()[len(self.portal_path):]
-+        for term in self._default_terms:
-+            # Short-circuit the generation of a new term, so we can return the
-+            # same object if this represents a default term. This is required
-+            # because z3c.form coerces the terms to a list when rendering
-+            # radio buttons
-+            if term.value == value:
-+                return term
-         return SimpleTerm(value, token=brain.getPath(), title=brain.Title or
-                           brain.id)
- 
-@@ -217,6 +241,13 @@ def getTermByBrain(self, brain, real_value=True):
-             logger.warn("Brain in UUIDSource has missing UID value. Maybe you "
-                         "need to enable plone.app.referenceablebehavior on "
-                         "portal type %s?", brain.portal_type)
-+        for term in self._default_terms:
-+            # Short-circuit the generation of a new term, so we can return the
-+            # same object if this represents a default term. This is required
-+            # because z3c.form coerces the terms to a list when rendering
-+            # radio buttons
-+            if term.value == value:
-+                return term
-         return SimpleTerm(value, token=brain.getPath(), title=brain.Title or
-                           brain.id)
- 
-@@ -226,15 +257,19 @@ class PathSourceBinder(object):
- 
-     path_source = PathSource
- 
--    def __init__(self, navigation_tree_query=None, **kw):
-+    def __init__(self, navigation_tree_query=None, default=None, defaultFactory=None, **kw):
-         self.selectable_filter = CustomFilter(**kw)
-         self.navigation_tree_query = navigation_tree_query
-+        self.default = default
-+        self.defaultFactory = defaultFactory
- 
-     def __call__(self, context):
-         return self.path_source(
-             closest_content(context),
-             selectable_filter=self.selectable_filter,
--            navigation_tree_query=self.navigation_tree_query)
-+            navigation_tree_query=self.navigation_tree_query,
-+            default=self.default,
-+            defaultFactory=self.defaultFactory)
- 
-     def __contains__(self, value):
-         # If used without being properly bound (looks at DataGridField), bind
-diff --git a/plone/formwidget/contenttree/widget.py b/plone/formwidget/contenttree/widget.py
-index 087609e..bea4597 100644
---- a/plone/formwidget/contenttree/widget.py
-+++ b/plone/formwidget/contenttree/widget.py
-@@ -15,6 +15,7 @@
- import z3c.form.interfaces
- import z3c.form.widget
- import z3c.form.util
-+from z3c.formwidget.query.widget import SourceTerms
- 
- from plone.app.layout.navigation.interfaces import INavtreeStrategy
- from plone.app.layout.navigation.navtree import buildFolderTree
-@@ -199,6 +200,12 @@ class ContentTreeBase(Explicit):
-     def getTermByBrain(self, brain):
-         return self.bound_source.getTermByBrain(brain)
- 
-+    def update(self):
-+        super(ContentTreeBase, self).update()
-+        if not self.terms:
-+            self.terms = SourceTerms(self.context, self.request, self.form, self.field, self, self._bound_source)
-+            self.updateQueryWidget()
-+
-     def render_tree(self):
-         content = closest_content(self.context)
-         source = self.bound_source
+-version = '1.0.11'
++version = '1.0.12'
+ desc = 'AJAX selection widget for Plone'
+ longdesc = '\n\n'.join([
+     open('README.rst').read(),
 
 
