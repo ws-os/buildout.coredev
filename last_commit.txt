@@ -1,36 +1,128 @@
-Repository: mockup
+Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-02-09T11:49:41-06:00
+Date: 2015-02-09T11:50:02-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/2d5bcc1be0fc84cdee5a2f7f61b06d3d72e71470
+Commit: https://github.com/plone/plone.app.event/commit/9f6dae49c3d19805513f2e772b51c3b0e69ce915
 
-be able to get url from anchor tag
+use contentloader pattern instead of js file
 
 Files changed:
-M mockup/patterns/contentloader/pattern.js
+A plone/app/event/bbb/profiles/default/jsregistry.xml
+M plone/app/event/portlets/portlet_calendar.pt
+M plone/app/event/portlets/portlet_calendar.py
+M plone/app/event/profiles/default/jsregistry.xml
 
-diff --git a/mockup/patterns/contentloader/pattern.js b/mockup/patterns/contentloader/pattern.js
-index 9e0c16d..b69935e 100644
---- a/mockup/patterns/contentloader/pattern.js
-+++ b/mockup/patterns/contentloader/pattern.js
-@@ -1,7 +1,7 @@
- /* Content loader pattern.
-  *
-  * Options:
-- *    url(string): To load content from remote resource.
-+ *    url(string): To load content from remote resource. Use 'el' to use with anchor tag href.
-  *    content(string): CSS selector for content already on page. Can be used in conjunction with url to load remote content on page.
-  *    trigger(string): Event to trigger content loading. Defaults to "click"
-  *    target(string): CSS selector of target for content loading. If this is empty, it's assume content will replace pattern element.
-@@ -46,6 +46,9 @@ define([
-     },
-     init: function() {
-       var that = this;
-+      if(that.options.url === 'el' && that.$el[0].tagName === 'A'){
-+        that.options.url = that.$el.attr('href');
-+      }
-       that.$el.on(that.options.trigger, function(e){
-         e.preventDefault();
-         that.$el.addClass('loading-content');
+diff --git a/plone/app/event/bbb/profiles/default/jsregistry.xml b/plone/app/event/bbb/profiles/default/jsregistry.xml
+new file mode 100644
+index 0000000..a89a810
+--- /dev/null
++++ b/plone/app/event/bbb/profiles/default/jsregistry.xml
+@@ -0,0 +1,13 @@
++<?xml version="1.0"?>
++<object name="portal_javascripts" meta_type="JavaScripts Registry">
++
++  <javascript
++      cacheable="True"
++      compression="safe"
++      cookable="True"
++      enabled="True"
++      id="++resource++plone.app.event.portlet_calendar.js"
++      inline="False"
++      />
++
++</object>
+diff --git a/plone/app/event/portlets/portlet_calendar.pt b/plone/app/event/portlets/portlet_calendar.pt
+index 18f93bc..9f49b64 100644
+--- a/plone/app/event/portlets/portlet_calendar.pt
++++ b/plone/app/event/portlets/portlet_calendar.pt
+@@ -9,12 +9,13 @@
+                 year view/year;">
+ 
+   <header class="portletHeader">
+-    <a href="#" rel="nofollow" class="calendarPrevious" title="Previous month"
++    <a href="#" rel="nofollow" class="calendarPrevious pat-contentloader" title="Previous month"
+         tal:define="prev_month view/prev_month;
+                     prev_year view/prev_year"
+         tal:attributes="href view/prev_query;
+                         data-year prev_year;
+-                        data-month prev_month;"
++                        data-month prev_month;
++                        data-pat-contentloader view/nav_pattern_options"
+         i18n:attributes="title title_previous_month;">&laquo;</a>
+ 
+     <span i18n:translate="" tal:omit-tag="">
+@@ -26,12 +27,13 @@
+           tal:omit-tag="">year</span>
+     </span>
+ 
+-    <a href="#" rel="nofollow" class="calendarNext" title="Next month"
++    <a href="#" rel="nofollow" class="calendarNext pat-contentloader" title="Next month"
+          tal:define="next_month view/next_month;
+                      next_year view/next_year"
+          tal:attributes="href view/next_query;
+                          data-year next_year;
+-                         data-month next_month;"
++                         data-month next_month;
++                         data-pat-contentloader view/nav_pattern_options"
+          i18n:attributes="title title_next_month;">&raquo;</a>
+   </header>
+ 
+@@ -67,6 +69,7 @@
+                 tal:condition="events"
+                 tal:attributes="href python:view.date_events_url(day['date_string']);
+                                 title day/events_string;"
++                
+                 tal:content="day/day">31</a>
+ 
+           </td>
+diff --git a/plone/app/event/portlets/portlet_calendar.py b/plone/app/event/portlets/portlet_calendar.py
+index f6d997b..d8be1ca 100644
+--- a/plone/app/event/portlets/portlet_calendar.py
++++ b/plone/app/event/portlets/portlet_calendar.py
+@@ -20,6 +20,7 @@
+ from zope.interface import implements
+ 
+ import calendar
++import json
+ 
+ 
+ PLMF = MessageFactory('plonelocales')
+@@ -227,6 +228,18 @@ def cal_data(self):
+                  'events': date_events})
+         return caldata
+ 
++    @property
++    def nav_pattern_options(self):
++        return json.dumps({
++            'url': 'el',
++            'content': '#portletwrapper-%s' % self.hash,
++            'target': '#portletwrapper-%s' % self.hash
++        })
++
++    @property
++    def hash(self):
++        return self.__portlet_metadata__.get('hash', '')
++
+ 
+ class AddForm(base.AddForm):
+     schema = ICalendarPortlet
+diff --git a/plone/app/event/profiles/default/jsregistry.xml b/plone/app/event/profiles/default/jsregistry.xml
+index 49b8dc6..2704c91 100644
+--- a/plone/app/event/profiles/default/jsregistry.xml
++++ b/plone/app/event/profiles/default/jsregistry.xml
+@@ -10,13 +10,4 @@
+       inline="False"
+       />
+ 
+-  <javascript
+-      cacheable="True"
+-      compression="safe"
+-      cookable="True"
+-      enabled="True"
+-      id="++resource++plone.app.event.portlet_calendar.js"
+-      inline="False"
+-      />
+-
+ </object>
 
 
