@@ -1,85 +1,35 @@
 Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-02-09T12:06:47-06:00
+Date: 2015-02-09T14:01:41-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.event/commit/e59fdd3a909ef4d9b64b94d05a9bb0e4f83a5997
+Commit: https://github.com/plone/plone.app.event/commit/ca1d0fbf89f212a16aead35c4be1b03139740ceb
 
-use requirejs if we can
+hhmm, tests failing in jenkins. try going python expression
 
 Files changed:
-M CHANGES.rst
-M plone/app/event/browser/resources/event.js
+M plone/app/event/portlets/portlet_calendar.pt
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 3413a94..d2e3092 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 2.0.0 (unreleased)
- ------------------
+diff --git a/plone/app/event/portlets/portlet_calendar.pt b/plone/app/event/portlets/portlet_calendar.pt
+index 9f49b64..cb7cb2c 100644
+--- a/plone/app/event/portlets/portlet_calendar.pt
++++ b/plone/app/event/portlets/portlet_calendar.pt
+@@ -15,7 +15,7 @@
+         tal:attributes="href view/prev_query;
+                         data-year prev_year;
+                         data-month prev_month;
+-                        data-pat-contentloader view/nav_pattern_options"
++                        data-pat-contentloader python: view.nav_pattern_options"
+         i18n:attributes="title title_previous_month;">&laquo;</a>
  
-+- Some Plone 5 related js improvements
-+  [vangheem]
-+
- - Remove support for ``plone.app.collection`` and ``ATTopic`` - plone.app.event
-   2.x is Dexterity only.
-   [thet]
-diff --git a/plone/app/event/browser/resources/event.js b/plone/app/event/browser/resources/event.js
-index 313e008..9c0a40e 100644
---- a/plone/app/event/browser/resources/event.js
-+++ b/plone/app/event/browser/resources/event.js
-@@ -1,15 +1,21 @@
- /*jslint browser: true*/
--/*global $, jQuery, plone*/
-+/*global $, jQuery, plone, require*/
+     <span i18n:translate="" tal:omit-tag="">
+@@ -33,7 +33,7 @@
+          tal:attributes="href view/next_query;
+                          data-year next_year;
+                          data-month next_month;
+-                         data-pat-contentloader view/nav_pattern_options"
++                         data-pat-contentloader python: view.nav_pattern_options"
+          i18n:attributes="title title_next_month;">&raquo;</a>
+   </header>
  
--if (plone === undefined) {
--    // Make sure, plone global exists
--    var plone = {};
-+
-+if(require === undefined){
-+  require = function(reqs, torun){
-+    'use strict';
-+    return torun(window.jQuery);
-+  }
- }
- 
--(function ($, plone) {
- 
--    plone.paevent = plone.paevent || {};
--    plone.paevent.end_start_delta = 1 / 24;  // Delta in days
-+require([
-+    'jquery'
-+], function($){
-+    'use strict';
-+
-+    var end_start_delta = 1 / 24;  // Delta in days
- 
-     function a_or_b(a, b) {
-         var ret;
-@@ -47,7 +53,7 @@ if (plone === undefined) {
-         start_datetime = getDateTime(a_or_b($('#formfield-form-widgets-IEventBasic-start'), $('#archetypes-fieldname-startDate')));
-         end_datetime = getDateTime(a_or_b($('#formfield-form-widgets-IEventBasic-end'), $('#archetypes-fieldname-endDate')));
-         // delta in days
--        plone.paevent.end_start_delta = (end_datetime - start_datetime) / 1000 / 60;
-+        end_start_delta = (end_datetime - start_datetime) / 1000 / 60;
-     }
- 
-     function updateEndDate() {
-@@ -57,7 +63,7 @@ if (plone === undefined) {
- 
-         start_date = getDateTime(jq_start);
-         new_end_date = new Date(start_date);
--        new_end_date.setMinutes(start_date.getMinutes() + plone.paevent.end_start_delta);
-+        new_end_date.setMinutes(start_date.getMinutes() + end_start_delta);
- 
-         $('.pattern-pickadate-date', jq_end).pickadate('picker').set('select', new_end_date);
-         $('.pattern-pickadate-time', jq_end).pickatime('picker').set('select', new_end_date);
-@@ -167,4 +173,4 @@ if (plone === undefined) {
-         event_listing_calendar_init($("#event_listing_calendar"));
- 
-     });
--}(jQuery, plone));
-+});
 
 
