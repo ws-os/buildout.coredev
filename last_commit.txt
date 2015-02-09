@@ -1,67 +1,29 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-09T08:26:59-06:00
+Date: 2015-02-09T09:34:38-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/7b7cdaa55b20c2bbeaac5ff9ffb83dca05e999bd
+Commit: https://github.com/plone/Products.CMFPlone/commit/ce7c5c4dcdeee37655c603613739656822345904
 
-should not be able to build plone legacy bundle
+on registry settings save, make sure to reset last import time
 
 Files changed:
-M mockup/patterns/resourceregistry/js/registry.js
-M mockup/patterns/resourceregistry/pattern.js
+M Products/CMFPlone/controlpanel/browser/resourceregistry.py
 
-diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index 5470802..848e3d8 100644
---- a/mockup/patterns/resourceregistry/js/registry.js
-+++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -155,7 +155,10 @@ define([
-       this.$el.addClass(this.type + '-list-item-' + this.options.name);
-     },
-     serializedModel: function(){
--      return $.extend({}, {name: this.options.name}, this.options.data);
-+      return $.extend({}, {
-+        name: this.options.name,
-+        view: this.options.registryView
-+      }, this.options.data);
-     },
-     editResource: function(e){
-       if(e){
-@@ -419,8 +422,10 @@ define([
-     template: _.template(
-       '<a href="#"><%- name %></a> ' +
-       '<div class="plone-btn-group pull-right">' +
--        '<button class="plone-btn plone-btn-default build plone-btn-xs">Build</button>' +
--        '<button class="plone-btn plone-btn-danger delete plone-btn-xs">Delete</button>' +
-+        '<% if(view.options.data.nonBuildableBundles.indexOf(name) === -1){ %>' +
-+          '<button class="plone-btn plone-btn-default build plone-btn-xs">Build</button>' +
-+          '<button class="plone-btn plone-btn-danger delete plone-btn-xs">Delete</button>' +
-+        '<% } %>' +
-       '</div>'
-     ),
-     events: $.extend({}, RegistryResourceListItem.prototype.events, {
-diff --git a/mockup/patterns/resourceregistry/pattern.js b/mockup/patterns/resourceregistry/pattern.js
-index 863a068..75dd88c 100644
---- a/mockup/patterns/resourceregistry/pattern.js
-+++ b/mockup/patterns/resourceregistry/pattern.js
-@@ -75,7 +75,8 @@
-  *                                   "manageUrl": "/registry-manager",
-  *                                   "lessUrl": "node_modules/less/dist/less-1.7.4.min.js",
-  *                                   "lessConfigUrl": "tests/files/lessconfig.js",
-- *                                   "rjsUrl": "tests/files/r.js"}'>
-+ *                                   "rjsUrl": "tests/files/r.js",
-+ *                                   "nonBuildableBundles": ["plone-legacy"]}'>
-  *    </div>
-  *
-  */
-@@ -224,7 +225,8 @@ define([
-       baseUrl: null,
-       rjsUrl: null,
-       lessvariables: {},
--      patternoptions: {}
-+      patternoptions: {},
-+      nonBuildableBundles: ['plone-legacy']
-     },
-     init: function() {
-       var self = this;
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.py b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+index ff4937c..0383094 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.py
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+@@ -150,6 +150,11 @@ def save_registry(self):
+             IBundleRegistry, "plone.bundles",
+             json.loads(req.get('bundles')))
+ 
++        # it'd be difficult to know if the legacy bundle settings
++        # changed or not so we need to just set the last import date
++        # back so it gets re-built
++        self.registry.records['plone.resources.last_legacy_import'].value = datetime.now()
++
+         return json.dumps({
+             'success': True
+         })
 
 
