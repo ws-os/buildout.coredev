@@ -1,84 +1,516 @@
-Repository: plone.formwidget.contenttree
+Repository: Products.PasswordResetTool
 Branch: refs/heads/master
-Date: 2015-02-09T12:28:35Z
-Author: Wilkes, Matthew (UK - Belfast) () <matwilkes@deloitte.co.uk>
-Commit: https://github.com/plone/plone.formwidget.contenttree/commit/e42abd2943a3bec959e367817e1f227785fbb030
+Date: 2015-01-21T14:24:52+01:00
+Author: Stephan Geulette (sgeulette) <s.geulette@imio.be>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/340f7f3145621349de7560ee34ebcb734017e194
 
-Release 1.0.11
+ Added userid in reset mail. Usefull when an administrator resets a user password for a people having multiple users on a site.
 
 Files changed:
-M docs/HISTORY.rst
-M setup.py
+M CHANGES.txt
+M Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+M Products/PasswordResetTool/tests/browser.txt
 
-diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
-index 1c35050..171395f 100644
---- a/docs/HISTORY.rst
-+++ b/docs/HISTORY.rst
-@@ -1,7 +1,7 @@
- Changelog
- =========
- 
--1.0.11 (Unreleased)
-+1.0.11 (2015-02-09)
- -------------------
- 
- - Add support for providing defaults to contenttrees. This wasn't reliable
-diff --git a/setup.py b/setup.py
-index 301da20..0062910 100644
---- a/setup.py
-+++ b/setup.py
-@@ -3,7 +3,7 @@
- import os
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 4a3883f..4f951e3 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -7,6 +7,8 @@ Changelog
+ - Amend browser.txt test to the new p.a.registry-based control panels
+   (Plone 5 only).
+   [timo]
++- Added userid information in reset mail (useful when the administrator resets a user password)
++  [sgeulette]
  
  
--version = '1.0.11dev0'
-+version = '1.0.11'
- desc = 'AJAX selection widget for Plone'
- longdesc = '\n\n'.join([
-     open('README.rst').read(),
+ 2.1.1 (2014-10-22)
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+index 792967e..dc5b503 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+@@ -14,9 +14,11 @@ Precedence: bulk
+      tal:omit-tag=""
+      tal:define="fullname python: test(member.fullname,
+                  ' %s'%member.fullname, '')">
+-The following link will take you to a page where you can reset your password for <span i18n:name="site_name"
++The following link will take you to a page where you can reset your password for userid '<span i18n:name="userid"
+           tal:omit-tag=""
+-          tal:content="portal_state/navigation_root_title" /> site:
++          tal:content="member/id" />' on '<span i18n:name="site_name"
++          tal:omit-tag=""
++          tal:content="portal_state/navigation_root_title" />' site:
+ 
+ <span tal:content="python:here.pwreset_constructURL(reset['randomstring'])"
+           tal:omit-tag=""
+diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
+index b9a573e..a01146c 100644
+--- a/Products/PasswordResetTool/tests/browser.txt
++++ b/Products/PasswordResetTool/tests/browser.txt
+@@ -170,7 +170,7 @@ then we extract the address that lets us reset our password:
+   >>> msg = quopri.decodestring(msg)
+   >>> "To: jsmith@example.com" in msg
+   True
+-  >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
++  >>> please_visit_text = "The following link will take you to a page where you can reset your password for userid 'jsmith' on 'Plone site' site:"
+   >>> please_visit_text in msg
+   True
+   >>> url_index = msg.index(please_visit_text) + len(please_visit_text)
 
 
-Repository: plone.formwidget.contenttree
+Repository: Products.PasswordResetTool
 Branch: refs/heads/master
-Date: 2015-02-09T13:15:05Z
-Author: Wilkes, Matthew (UK - Belfast) () <matwilkes@deloitte.co.uk>
-Commit: https://github.com/plone/plone.formwidget.contenttree/commit/995d6d728aad2fc67413cb702d6ee1132ba82cdf
+Date: 2015-01-21T14:29:40+01:00
+Author: Stephan Geulette (sgeulette) <s.geulette@imio.be>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/eff5dd685a43984b08bd2e4b011b701e3f7d5a2e
 
-Back to development 1.0.12
+Invert Name and value
 
 Files changed:
-M docs/HISTORY.rst
-M setup.py
+M Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+M Products/PasswordResetTool/tests/browser.txt
 
-diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
-index 171395f..ba31e65 100644
---- a/docs/HISTORY.rst
-+++ b/docs/HISTORY.rst
-@@ -1,6 +1,12 @@
- Changelog
- =========
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+index dc5b503..a4d229b 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+@@ -14,9 +14,9 @@ Precedence: bulk
+      tal:omit-tag=""
+      tal:define="fullname python: test(member.fullname,
+                  ' %s'%member.fullname, '')">
+-The following link will take you to a page where you can reset your password for userid '<span i18n:name="userid"
++The following link will take you to a page where you can reset your password for '<span i18n:name="userid"
+           tal:omit-tag=""
+-          tal:content="member/id" />' on '<span i18n:name="site_name"
++          tal:content="member/id" />' userid on '<span i18n:name="site_name"
+           tal:omit-tag=""
+           tal:content="portal_state/navigation_root_title" />' site:
  
-+1.0.12 (Unreleased)
-+-------------------
+diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
+index a01146c..f665c65 100644
+--- a/Products/PasswordResetTool/tests/browser.txt
++++ b/Products/PasswordResetTool/tests/browser.txt
+@@ -170,7 +170,7 @@ then we extract the address that lets us reset our password:
+   >>> msg = quopri.decodestring(msg)
+   >>> "To: jsmith@example.com" in msg
+   True
+-  >>> please_visit_text = "The following link will take you to a page where you can reset your password for userid 'jsmith' on 'Plone site' site:"
++  >>> please_visit_text = "The following link will take you to a page where you can reset your password for 'jsmith' userid on 'Plone site' site:"
+   >>> please_visit_text in msg
+   True
+   >>> url_index = msg.index(please_visit_text) + len(please_visit_text)
+
+
+Repository: Products.PasswordResetTool
+Branch: refs/heads/master
+Date: 2015-01-22T09:10:26+01:00
+Author: Stephan Geulette (sgeulette) <s.geulette@imio.be>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/bda924b5b66c25435d2de59e9f19ba54bd792146
+
+Include userid only when a member (manager) resets a password
+
+Files changed:
+M Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+M Products/PasswordResetTool/tests/browser.txt
+
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+index a4d229b..d5a57a1 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+@@ -3,6 +3,7 @@
+                   member python:options['member'];
+                   portal_state context/@@plone_portal_state;
+                   view context/@@passwordreset_view;
++                  isAnon context/@@plone_portal_state/anonymous;
+                   reset python:options['reset']"
+ >From: <span tal:replace="structure view/encoded_mail_sender" />
+ To: <span tal:replace="python:member.getProperty('email')" />
+@@ -10,15 +11,22 @@ Subject: <span tal:replace="view/mail_password_subject" />
+ Precedence: bulk
+ 
+ <div i18n:domain="passwordresettool"
++     i18n:translate="mailtemplate_reset_information"
++     tal:omit-tag=""
++     tal:condition="not:isAnon">
++The site administrator asks you to reset your password for '<span i18n:name="userid"
++          tal:omit-tag=""
++          tal:content="member/id" />' userid. Your old password doesn't work anymore.
++</div>
 +
-+- Nothing yet
++<div i18n:domain="passwordresettool"
+      i18n:translate="mailtemplate_text_linkreset"
+      tal:omit-tag=""
+      tal:define="fullname python: test(member.fullname,
+                  ' %s'%member.fullname, '')">
+-The following link will take you to a page where you can reset your password for '<span i18n:name="userid"
+-          tal:omit-tag=""
+-          tal:content="member/id" />' userid on '<span i18n:name="site_name"
++The following link will take you to a page where you can reset your password for <span i18n:name="site_name"
+           tal:omit-tag=""
+-          tal:content="portal_state/navigation_root_title" />' site:
++          tal:content="portal_state/navigation_root_title" /> site:
+ 
+ <span tal:content="python:here.pwreset_constructURL(reset['randomstring'])"
+           tal:omit-tag=""
+@@ -34,7 +42,8 @@ The following link will take you to a page where you can reset your password for
+ 
+ <div i18n:domain="passwordresettool"
+      i18n:translate="mailtemplate_tracking_information"
+-     tal:omit-tag="">
++     tal:omit-tag=""
++     tal:condition="isAnon">
+ If you didn't expect to receive this email, please ignore it. Your password has not been changed.
+ Request made from IP address <span tal:define="host request/HTTP_X_FORWARDED_FOR|request/REMOTE_ADDR"
+           tal:content="host"
+diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
+index f665c65..d4dc5b1 100644
+--- a/Products/PasswordResetTool/tests/browser.txt
++++ b/Products/PasswordResetTool/tests/browser.txt
+@@ -72,6 +72,7 @@ What we do here:
+   - Log in
+   - Log out again
+   - Forget our password (this is where PasswordResetTool comes in)
++  - Check if this is a soft reset (old password already works until changed)
+   - Read the e-mail that contains the URL we visit to reset our password
+   - Reset our password
+   - Log in with our new password
+@@ -154,6 +155,24 @@ password`` in the login form:
+   >>> form.getControl(name='userid').value = 'jsmith'
+   >>> form.submit()
+ 
++We check if the old password always works.
 +
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = 'jsmith'
++  >>> browser.getControl(name='__ac_password').value = 'secret'
++  >>> browser.getControl(name='submit').click()
 +
- 1.0.11 (2015-02-09)
- -------------------
++We should be logged in now:
++
++  >>> "You are now logged in" in browser.contents
++  True
++
++Log out again:
++
++  >>> browser.getLink('Log out').click()
++  >>> "You are now logged out" in browser.contents
++  True
++
+ As part of our test setup, we replaced the original MailHost with our
+ own version.  Our version doesn't mail messages, it just collects them
+ in a list called ``messages``:
+@@ -170,13 +189,17 @@ then we extract the address that lets us reset our password:
+   >>> msg = quopri.decodestring(msg)
+   >>> "To: jsmith@example.com" in msg
+   True
+-  >>> please_visit_text = "The following link will take you to a page where you can reset your password for 'jsmith' userid on 'Plone site' site:"
++  >>> "The site administrator asks you to reset your password for 'jsmith' userid" in msg
++  False
++  >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
+   >>> please_visit_text in msg
+   True
+   >>> url_index = msg.index(please_visit_text) + len(please_visit_text)
+   >>> address = msg[url_index:].strip().split()[0]
+- >>> address # doctest: +ELLIPSIS
++  >>> address # doctest: +ELLIPSIS
+   'http://nohost/plone/passwordreset/...'
++  >>> "If you didn't expect to receive this email" in msg
++  True
  
-diff --git a/setup.py b/setup.py
-index 0062910..154b50b 100644
---- a/setup.py
-+++ b/setup.py
-@@ -3,7 +3,7 @@
- import os
+ Now that we have the address, we will reset our password:
+ 
+@@ -221,6 +244,9 @@ Log out again:
+   - Register a member (with send email checked???)
+   - Log out
+   - Log in as the new member
++  - A manager resets a user password
++  - Check if this is a hard reset (old password is changed)
++  - Check the received mail
+ 
+ First, we want to login as the portal owner:
+ 
+@@ -261,6 +287,56 @@ We want to logout and login as the new member:
+ 
+   >>> browser.getLink('Log out').click()
+ 
++Again, we want to login as the portal owner:
++
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = SITE_OWNER_NAME
++  >>> browser.getControl(name='__ac_password').value = SITE_OWNER_PASSWORD
++  >>> browser.getControl(name='submit').click()
++  >>> "You are now logged in" in browser.contents
++  True
++
++We navigate to the Users Overview page and reset a password user:
++
++  >>> browser.getLink('Site Setup').click()
++  >>> browser.getLink('Users and Groups').click()
++  >>> resets = browser.getControl(name='users.resetpassword:records')
++  >>> reset = resets.getControl(value='wsmith')
++  >>> reset.selected = True  
++  >>> browser.getControl(name="form.button.Modify").click()
++  >>> "Changes applied." in browser.contents
++  True
++  >>> browser.getLink('Log out').click()
++  >>> "You are now logged out" in browser.contents
++  True
++
++We check if the old password is well changed.
++
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = 'wsmith'
++  >>> browser.getControl(name='__ac_password').value = 'supersecret'
++  >>> browser.getControl(name='submit').click()
++
++We should not be logged in:
++
++  >>> "Login failed" in browser.contents
++  True
++
++We should have received an e-mail at this point:
++
++  >>> mailhost = layer['portal'].MailHost
++  >>> len(mailhost.messages)
++  2
++  >>> import quopri
++  >>> msg = quopri.decodestring(str(mailhost.messages[-1]))
++  >>> "The site administrator asks you to reset your password for 'wsmith' userid" in msg
++  True
++  >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
++  >>> please_visit_text in msg
++  True
++  >>> "If you didn't expect to receive this email" in msg
++  False
++
+ 
+ 1B. User joins with e-mail validation enabled and forgets password
+ ------------------------------------------------------------------
+@@ -311,7 +387,7 @@ We should have received an e-mail at this point:
+ 
+   >>> mailhost = layer['portal'].MailHost
+   >>> len(mailhost.messages)
+-  2
++  3
+   >>> msg = str(mailhost.messages[-1])
+ 
+ Now that we have the message, we want to look at its contents, and
+@@ -397,7 +473,7 @@ We should have received an e-mail at this point:
+ 
+   >>> mailhost = layer['portal'].MailHost
+   >>> len(mailhost.messages)
+-  3
++  4
+   >>> msg = str(mailhost.messages[-1])
+ 
+ Now that we have the message, we want to look at its contents, and
+
+
+Repository: Products.PasswordResetTool
+Branch: refs/heads/master
+Date: 2015-02-09T07:42:00-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/506c6c37a56656def0c2cbe82f22676e460d9ea3
+
+Merge pull request #6 from sgeulette/master
+
+Add userid information in reset mail
+
+Files changed:
+M CHANGES.txt
+M Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+M Products/PasswordResetTool/tests/browser.txt
+
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 4a3883f..4f951e3 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -7,6 +7,8 @@ Changelog
+ - Amend browser.txt test to the new p.a.registry-based control panels
+   (Plone 5 only).
+   [timo]
++- Added userid information in reset mail (useful when the administrator resets a user password)
++  [sgeulette]
  
  
--version = '1.0.11'
-+version = '1.0.12'
- desc = 'AJAX selection widget for Plone'
- longdesc = '\n\n'.join([
-     open('README.rst').read(),
+ 2.1.1 (2014-10-22)
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+index 792967e..d5a57a1 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+@@ -3,6 +3,7 @@
+                   member python:options['member'];
+                   portal_state context/@@plone_portal_state;
+                   view context/@@passwordreset_view;
++                  isAnon context/@@plone_portal_state/anonymous;
+                   reset python:options['reset']"
+ >From: <span tal:replace="structure view/encoded_mail_sender" />
+ To: <span tal:replace="python:member.getProperty('email')" />
+@@ -10,6 +11,15 @@ Subject: <span tal:replace="view/mail_password_subject" />
+ Precedence: bulk
+ 
+ <div i18n:domain="passwordresettool"
++     i18n:translate="mailtemplate_reset_information"
++     tal:omit-tag=""
++     tal:condition="not:isAnon">
++The site administrator asks you to reset your password for '<span i18n:name="userid"
++          tal:omit-tag=""
++          tal:content="member/id" />' userid. Your old password doesn't work anymore.
++</div>
++
++<div i18n:domain="passwordresettool"
+      i18n:translate="mailtemplate_text_linkreset"
+      tal:omit-tag=""
+      tal:define="fullname python: test(member.fullname,
+@@ -32,7 +42,8 @@ The following link will take you to a page where you can reset your password for
+ 
+ <div i18n:domain="passwordresettool"
+      i18n:translate="mailtemplate_tracking_information"
+-     tal:omit-tag="">
++     tal:omit-tag=""
++     tal:condition="isAnon">
+ If you didn't expect to receive this email, please ignore it. Your password has not been changed.
+ Request made from IP address <span tal:define="host request/HTTP_X_FORWARDED_FOR|request/REMOTE_ADDR"
+           tal:content="host"
+diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
+index b9a573e..d4dc5b1 100644
+--- a/Products/PasswordResetTool/tests/browser.txt
++++ b/Products/PasswordResetTool/tests/browser.txt
+@@ -72,6 +72,7 @@ What we do here:
+   - Log in
+   - Log out again
+   - Forget our password (this is where PasswordResetTool comes in)
++  - Check if this is a soft reset (old password already works until changed)
+   - Read the e-mail that contains the URL we visit to reset our password
+   - Reset our password
+   - Log in with our new password
+@@ -154,6 +155,24 @@ password`` in the login form:
+   >>> form.getControl(name='userid').value = 'jsmith'
+   >>> form.submit()
+ 
++We check if the old password always works.
++
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = 'jsmith'
++  >>> browser.getControl(name='__ac_password').value = 'secret'
++  >>> browser.getControl(name='submit').click()
++
++We should be logged in now:
++
++  >>> "You are now logged in" in browser.contents
++  True
++
++Log out again:
++
++  >>> browser.getLink('Log out').click()
++  >>> "You are now logged out" in browser.contents
++  True
++
+ As part of our test setup, we replaced the original MailHost with our
+ own version.  Our version doesn't mail messages, it just collects them
+ in a list called ``messages``:
+@@ -170,13 +189,17 @@ then we extract the address that lets us reset our password:
+   >>> msg = quopri.decodestring(msg)
+   >>> "To: jsmith@example.com" in msg
+   True
++  >>> "The site administrator asks you to reset your password for 'jsmith' userid" in msg
++  False
+   >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
+   >>> please_visit_text in msg
+   True
+   >>> url_index = msg.index(please_visit_text) + len(please_visit_text)
+   >>> address = msg[url_index:].strip().split()[0]
+- >>> address # doctest: +ELLIPSIS
++  >>> address # doctest: +ELLIPSIS
+   'http://nohost/plone/passwordreset/...'
++  >>> "If you didn't expect to receive this email" in msg
++  True
+ 
+ Now that we have the address, we will reset our password:
+ 
+@@ -221,6 +244,9 @@ Log out again:
+   - Register a member (with send email checked???)
+   - Log out
+   - Log in as the new member
++  - A manager resets a user password
++  - Check if this is a hard reset (old password is changed)
++  - Check the received mail
+ 
+ First, we want to login as the portal owner:
+ 
+@@ -261,6 +287,56 @@ We want to logout and login as the new member:
+ 
+   >>> browser.getLink('Log out').click()
+ 
++Again, we want to login as the portal owner:
++
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = SITE_OWNER_NAME
++  >>> browser.getControl(name='__ac_password').value = SITE_OWNER_PASSWORD
++  >>> browser.getControl(name='submit').click()
++  >>> "You are now logged in" in browser.contents
++  True
++
++We navigate to the Users Overview page and reset a password user:
++
++  >>> browser.getLink('Site Setup').click()
++  >>> browser.getLink('Users and Groups').click()
++  >>> resets = browser.getControl(name='users.resetpassword:records')
++  >>> reset = resets.getControl(value='wsmith')
++  >>> reset.selected = True  
++  >>> browser.getControl(name="form.button.Modify").click()
++  >>> "Changes applied." in browser.contents
++  True
++  >>> browser.getLink('Log out').click()
++  >>> "You are now logged out" in browser.contents
++  True
++
++We check if the old password is well changed.
++
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = 'wsmith'
++  >>> browser.getControl(name='__ac_password').value = 'supersecret'
++  >>> browser.getControl(name='submit').click()
++
++We should not be logged in:
++
++  >>> "Login failed" in browser.contents
++  True
++
++We should have received an e-mail at this point:
++
++  >>> mailhost = layer['portal'].MailHost
++  >>> len(mailhost.messages)
++  2
++  >>> import quopri
++  >>> msg = quopri.decodestring(str(mailhost.messages[-1]))
++  >>> "The site administrator asks you to reset your password for 'wsmith' userid" in msg
++  True
++  >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
++  >>> please_visit_text in msg
++  True
++  >>> "If you didn't expect to receive this email" in msg
++  False
++
+ 
+ 1B. User joins with e-mail validation enabled and forgets password
+ ------------------------------------------------------------------
+@@ -311,7 +387,7 @@ We should have received an e-mail at this point:
+ 
+   >>> mailhost = layer['portal'].MailHost
+   >>> len(mailhost.messages)
+-  2
++  3
+   >>> msg = str(mailhost.messages[-1])
+ 
+ Now that we have the message, we want to look at its contents, and
+@@ -397,7 +473,7 @@ We should have received an e-mail at this point:
+ 
+   >>> mailhost = layer['portal'].MailHost
+   >>> len(mailhost.messages)
+-  3
++  4
+   >>> msg = str(mailhost.messages[-1])
+ 
+ Now that we have the message, we want to look at its contents, and
 
 
