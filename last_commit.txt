@@ -1,75 +1,158 @@
 Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-02-09T14:43:23-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.event/commit/ab6dee5670291e42a8449dfe2b968e49198e108d
+Date: 2015-02-09T22:48:34+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.event/commit/f425187e6f47961a37bf02b8fd3b950039aa1848
 
-mod again to only get portlet data instead of reloading the whole page
+move portlet_calendar.js to bbb package - plone 5 uses patterns for reloading calendar views
 
 Files changed:
-M plone/app/event/portlets/portlet_calendar.pt
-M plone/app/event/portlets/portlet_calendar.py
+A plone/app/event/bbb/portlets/portlet_calendar.js
+M plone/app/event/bbb/portlets/configure.zcml
+M plone/app/event/portlets/configure.zcml
+D plone/app/event/portlets/portlet_calendar.js
 
-diff --git a/plone/app/event/portlets/portlet_calendar.pt b/plone/app/event/portlets/portlet_calendar.pt
-index cb7cb2c..6909b49 100644
---- a/plone/app/event/portlets/portlet_calendar.pt
-+++ b/plone/app/event/portlets/portlet_calendar.pt
-@@ -15,7 +15,7 @@
-         tal:attributes="href view/prev_query;
-                         data-year prev_year;
-                         data-month prev_month;
--                        data-pat-contentloader python: view.nav_pattern_options"
-+                        data-pat-contentloader python: view.nav_pattern_options(prev_year, prev_month)"
-         i18n:attributes="title title_previous_month;">&laquo;</a>
+diff --git a/plone/app/event/bbb/portlets/configure.zcml b/plone/app/event/bbb/portlets/configure.zcml
+index 851bf74..d46fdcf 100644
+--- a/plone/app/event/bbb/portlets/configure.zcml
++++ b/plone/app/event/bbb/portlets/configure.zcml
+@@ -1,7 +1,14 @@
+ <configure xmlns="http://namespaces.zope.org/zope"
++           xmlns:browser="http://namespaces.zope.org/browser"
+            xmlns:plone="http://namespaces.plone.org/plone"
+            i18n_domain="plone.app.event">
  
-     <span i18n:translate="" tal:omit-tag="">
-@@ -33,7 +33,7 @@
-          tal:attributes="href view/next_query;
-                          data-year next_year;
-                          data-month next_month;
--                         data-pat-contentloader python: view.nav_pattern_options"
-+                         data-pat-contentloader python: view.nav_pattern_options(next_year, next_month)"
-          i18n:attributes="title title_next_month;">&raquo;</a>
-   </header>
++  <browser:resource
++      name="plone.app.event.portlet_calendar.js"
++      file="portlet_calendar.js"
++      permission="zope.Public"
++      />
++
+   <plone:portlet
+       name="portlets.Calendar"
+       interface="..portlets.portlet_calendar.ICalendarPortlet"
+diff --git a/plone/app/event/bbb/portlets/portlet_calendar.js b/plone/app/event/bbb/portlets/portlet_calendar.js
+new file mode 100644
+index 0000000..d50b880
+--- /dev/null
++++ b/plone/app/event/bbb/portlets/portlet_calendar.js
+@@ -0,0 +1,45 @@
++/*jslint browser: true*/
++/*global $, jQuery, plone, portal_url */
++
++(function ($) {
++
++    function load_portlet_calendar(event, elem) {
++        // depends on plone_javascript_variables.js for portal_url
++        event.preventDefault();
++        var pw, elem_data, portlethash, url;
++        pw = elem.closest('.portletWrapper');
++        elem_data = elem.data();
++        portlethash = pw.attr('id');
++        portlethash = portlethash.substring(15, portlethash.length);
++        url = portal_url +
++              '/@@render-portlet?portlethash=' + portlethash +
++              '&year=' + elem_data.year +
++              '&month=' + elem_data.month;
++        $.ajax({
++            url: url,
++            success: function (data) {
++                pw.html(data);
++                rebind_portlet_calendar();
++            }
++        });
++    }
++
++    function rebind_portlet_calendar() {
++        // ajaxify each portletCalendar
++        $('.portletCalendar a.calendarNext').click(function (event) {
++            load_portlet_calendar(event, $(this));
++        });
++        $('.portletCalendar a.calendarPrevious').click(function (event) {
++            load_portlet_calendar(event, $(this));
++        });
++        $('.portletCalendar dd a[title]').tooltip({
++            offset: [-10, 0],
++            tipClass: 'pae_calendar_tooltip'
++        });
++    }
++
++    $(document).ready(function () {
++        rebind_portlet_calendar();
++    });
++
++}(jQuery));
+diff --git a/plone/app/event/portlets/configure.zcml b/plone/app/event/portlets/configure.zcml
+index 30c6979..40c0fd1 100644
+--- a/plone/app/event/portlets/configure.zcml
++++ b/plone/app/event/portlets/configure.zcml
+@@ -1,16 +1,8 @@
+ <configure xmlns="http://namespaces.zope.org/zope"
+-    xmlns:browser="http://namespaces.zope.org/browser"
+     xmlns:plone="http://namespaces.plone.org/plone"
+     xmlns:zcml="http://namespaces.zope.org/zcml"
+     i18n_domain="plone.app.event">
  
-diff --git a/plone/app/event/portlets/portlet_calendar.py b/plone/app/event/portlets/portlet_calendar.py
-index d8be1ca..07cdbc7 100644
---- a/plone/app/event/portlets/portlet_calendar.py
-+++ b/plone/app/event/portlets/portlet_calendar.py
-@@ -18,6 +18,7 @@
- from zope import schema
- from zope.i18nmessageid import MessageFactory
- from zope.interface import implements
-+from zope.component.hooks import getSite
- 
- import calendar
- import json
-@@ -228,17 +229,20 @@ def cal_data(self):
-                  'events': date_events})
-         return caldata
- 
--    @property
--    def nav_pattern_options(self):
-+    def nav_pattern_options(self, year, month):
-         return json.dumps({
--            'url': 'el',
--            'content': '#portletwrapper-%s' % self.hash,
--            'target': '#portletwrapper-%s' % self.hash
-+            'url': '%s/@@render-portlet?portlethash=%s&year=%s&month=%s' % (
-+                getSite().absolute_url(),
-+                self.hash,
-+                year, month),
-+            'target': '#portletwrapper-%s > *' % self.hash
-         })
- 
-     @property
-     def hash(self):
--        return self.__portlet_metadata__.get('hash', '')
-+        return self.request.form.get(
-+            'portlethash',
-+            getattr(self, '__portlet_metadata__', {}).get('hash', ''))
- 
- 
- class AddForm(base.AddForm):
+-    <browser:resource
+-        name="plone.app.event.portlet_calendar.js"
+-        file="portlet_calendar.js"
+-        permission="zope.Public"
+-        layer="..interfaces.IBrowserLayer"
+-        />
+-
+     <plone:portlet
+         name="portlets.Calendar"
+         interface=".portlet_calendar.ICalendarPortlet"
+diff --git a/plone/app/event/portlets/portlet_calendar.js b/plone/app/event/portlets/portlet_calendar.js
+deleted file mode 100644
+index d50b880..0000000
+--- a/plone/app/event/portlets/portlet_calendar.js
++++ /dev/null
+@@ -1,45 +0,0 @@
+-/*jslint browser: true*/
+-/*global $, jQuery, plone, portal_url */
+-
+-(function ($) {
+-
+-    function load_portlet_calendar(event, elem) {
+-        // depends on plone_javascript_variables.js for portal_url
+-        event.preventDefault();
+-        var pw, elem_data, portlethash, url;
+-        pw = elem.closest('.portletWrapper');
+-        elem_data = elem.data();
+-        portlethash = pw.attr('id');
+-        portlethash = portlethash.substring(15, portlethash.length);
+-        url = portal_url +
+-              '/@@render-portlet?portlethash=' + portlethash +
+-              '&year=' + elem_data.year +
+-              '&month=' + elem_data.month;
+-        $.ajax({
+-            url: url,
+-            success: function (data) {
+-                pw.html(data);
+-                rebind_portlet_calendar();
+-            }
+-        });
+-    }
+-
+-    function rebind_portlet_calendar() {
+-        // ajaxify each portletCalendar
+-        $('.portletCalendar a.calendarNext').click(function (event) {
+-            load_portlet_calendar(event, $(this));
+-        });
+-        $('.portletCalendar a.calendarPrevious').click(function (event) {
+-            load_portlet_calendar(event, $(this));
+-        });
+-        $('.portletCalendar dd a[title]').tooltip({
+-            offset: [-10, 0],
+-            tipClass: 'pae_calendar_tooltip'
+-        });
+-    }
+-
+-    $(document).ready(function () {
+-        rebind_portlet_calendar();
+-    });
+-
+-}(jQuery));
 
 
