@@ -1,234 +1,36 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-09T10:37:37-06:00
+Date: 2015-02-09T11:49:41-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/26f0457144d774a2695499b0573607e1da25f21b
+Commit: https://github.com/plone/mockup/commit/2d5bcc1be0fc84cdee5a2f7f61b06d3d72e71470
 
-add content loader pattern
+be able to get url from anchor tag
 
 Files changed:
-A mockup/patterns/contentloader/pattern.js
-A mockup/tests/pattern-contentloader-test.js
-M mockup/js/bundles/docs.js
-M mockup/js/config.js
+M mockup/patterns/contentloader/pattern.js
 
-diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
-index 3fdd5bd..963ad62 100644
---- a/mockup/js/bundles/docs.js
-+++ b/mockup/js/bundles/docs.js
-@@ -181,6 +181,11 @@ require([
-             title: 'Live search',
-             description: 'Live search widget',
-             url: 'patterns/livesearch/pattern.js'
-+          },
-+          { id: 'contentloader',
-+            title: 'Content Loader',
-+            description: 'Dynamically configure content to be reloaded',
-+            url: 'patterns/contentloader/pattern.js'
-           }
-         ]
-       },
-diff --git a/mockup/js/config.js b/mockup/js/config.js
-index fba3253..3f26298 100644
---- a/mockup/js/config.js
-+++ b/mockup/js/config.js
-@@ -65,6 +65,7 @@
-       'mockup-patterns-autotoc': 'patterns/autotoc/pattern',
-       'mockup-patterns-backdrop': 'patterns/backdrop/pattern',
-       'mockup-patterns-base': 'bower_components/mockup-core/js/pattern',
-+      'mockup-patterns-contentloader': 'patterns/contentloader/pattern', 
-       'mockup-patterns-cookietrigger': 'patterns/cookietrigger/pattern',
-       'mockup-patterns-eventedit': 'patterns/eventedit/pattern',
-       'mockup-patterns-filemanager': 'patterns/filemanager/pattern',
 diff --git a/mockup/patterns/contentloader/pattern.js b/mockup/patterns/contentloader/pattern.js
-new file mode 100644
-index 0000000..9e0c16d
---- /dev/null
+index 9e0c16d..b69935e 100644
+--- a/mockup/patterns/contentloader/pattern.js
 +++ b/mockup/patterns/contentloader/pattern.js
-@@ -0,0 +1,101 @@
-+/* Content loader pattern.
-+ *
-+ * Options:
-+ *    url(string): To load content from remote resource.
-+ *    content(string): CSS selector for content already on page. Can be used in conjunction with url to load remote content on page.
-+ *    trigger(string): Event to trigger content loading. Defaults to "click"
-+ *    target(string): CSS selector of target for content loading. If this is empty, it's assume content will replace pattern element.
-+ *
-+ * Documentation:
-+ *    # With selector
-+ *    {{ example-1 }}
-+ *
-+ *    # With remote content
-+ *    {{ example-2 }}
-+ *
-+ * Example: example-1
-+ *    <a href="#" class="pat-contentloader" data-pat-contentloader="content:#clexample1;target:#clexample1target;">Load content</a>
-+ *    <div id="clexample1target">Original Content</div>
-+ *    <div id="clexample1" style="display:none">Replaced Content</div>
-+ *
-+ * Example: example-2
-+ *    <a href="#" class="pat-contentloader" data-pat-contentloader="url:something.html;">Load content</a>
-+ *
-+ *
-+ */
-+
-+
-+define([
-+  'jquery',
-+  'mockup-patterns-base',
-+  'pat-logger',
-+  'pat-registry',
-+  'mockup-utils'
-+], function($, Base, logger, Registry, utils) {
-+  'use strict';
-+  var log = logger.getLogger('pat-contentloader');
-+
-+  var ContentLoader = Base.extend({
-+    name: 'contentloader',
-+    trigger: '.pat-contentloader',
-+    defaults: {
-+      url: null,
-+      content: null,
-+      trigger: 'click',
-+      target: null
-+    },
-+    init: function() {
-+      var that = this;
-+      that.$el.on(that.options.trigger, function(e){
-+        e.preventDefault();
-+        that.$el.addClass('loading-content');
-+        if(that.options.url){
-+          that.loadRemote();
-+        }else{
-+          that.loadLocal();
-+        }
-+      });
-+    },
-+    loadRemote: function(){
-+      var that = this;
-+      $.ajax({
-+        url: that.options.url
-+      }).done(function(data){
-+        if(data.indexOf('<html') !== -1){
-+          data = utils.parseBodyTag(data);
-+        }
-+        var $el = $(data);
-+        if(that.options.content !== null){
-+          $el = $el.find(that.options.content);
-+        }
-+        that.loadLocal($el);
-+      });
-+    },
-+    loadLocal: function($content){
-+      var that = this;
-+      if(!$content && that.options.content === null){
-+        log.warn('No selector configured');
-+        return;
+@@ -1,7 +1,7 @@
+ /* Content loader pattern.
+  *
+  * Options:
+- *    url(string): To load content from remote resource.
++ *    url(string): To load content from remote resource. Use 'el' to use with anchor tag href.
+  *    content(string): CSS selector for content already on page. Can be used in conjunction with url to load remote content on page.
+  *    trigger(string): Event to trigger content loading. Defaults to "click"
+  *    target(string): CSS selector of target for content loading. If this is empty, it's assume content will replace pattern element.
+@@ -46,6 +46,9 @@ define([
+     },
+     init: function() {
+       var that = this;
++      if(that.options.url === 'el' && that.$el[0].tagName === 'A'){
++        that.options.url = that.$el.attr('href');
 +      }
-+      var $target = that.$el;
-+      if(that.options.target !== null){
-+        $target = $(that.options.target);
-+        if($target.size() === 0){
-+          log.warn('No target nodes found');
-+          return;
-+        }
-+      }
-+
-+      if(!$content){
-+        $content = $(that.options.content).clone();
-+      }
-+      $content.show();
-+      $target.replaceWith($content);
-+      Registry.scan($content);
-+      that.$el.removeClass('loading-content');
-+    }
-+  });
-+
-+  return ContentLoader;
-+
-+});
-diff --git a/mockup/tests/pattern-contentloader-test.js b/mockup/tests/pattern-contentloader-test.js
-new file mode 100644
-index 0000000..0c38eab
---- /dev/null
-+++ b/mockup/tests/pattern-contentloader-test.js
-@@ -0,0 +1,77 @@
-+define([
-+  'expect',
-+  'jquery',
-+  'sinon',
-+  'pat-registry',
-+  'mockup-patterns-contentloader'
-+], function(expect, $, sinon, registry, ContentLoader) {
-+  'use strict';
-+
-+  window.mocha.setup('bdd');
-+  $.fx.off = true;
-+
-+   /* ==========================
-+   TEST: Livesearch 
-+  ========================== */
-+
-+  describe('Livesearch', function() {
-+    beforeEach(function() {
-+      this.server = sinon.fakeServer.create();
-+      this.server.autoRespond = true;
-+      this.server.respondWith('GET', /something\.html/, [
-+        200,
-+        { 'Content-Type': 'text/html' },
-+        '<html> ' +
-+        '<head></head>' +
-+        '<body> ' +
-+        '<div id="content">' +
-+        '<h1>Content from AJAX</h1>' +
-+        '<p>Ah, it is a rock, though. Should beat everything.</p>' +
-+        '</body> ' +
-+        '</html>'
-+      ]);
-+      this.clock = sinon.useFakeTimers();
-+
-+      this.$el = $('<a href="#" class="pat-contentloader">Loader</a>').appendTo($('body'));
-+
-+    });
-+
-+    afterEach(function() {
-+      $('body').empty();
-+      this.server.restore();
-+      this.clock.restore();
-+    });
-+
-+    it('load local content', function() {
-+      $('<div class="content">foobar</div>').appendTo($('body'));
-+      var loader = new ContentLoader(this.$el, {
-+        content: '.content'
-+      });
-+      this.$el.trigger('click');
-+      expect($('.content').size()).to.equal(2);
-+    });
-+
-+    it('load local content to target', function() {
-+      $('<div class="content">foobar</div>').appendTo($('body'));
-+      $('<div class="target">blah</div>').appendTo($('body'));
-+      var loader = new ContentLoader(this.$el, {
-+        content: '.content',
-+        target: '.target'
-+      });
-+      this.$el.trigger('click');
-+      expect($('.content').size()).to.equal(2);
-+      expect($('.target').size()).to.equal(0);
-+    });
-+
-+    it('load remote content', function() {
-+      var loader = new ContentLoader(this.$el, {
-+        url: 'something.html'
-+      });
-+      this.$el.trigger('click');
-+      this.clock.tick(1000);
-+      expect($('#content').size()).to.equal(1);
-+    });
-+
-+  });
-+
-+});
+       that.$el.on(that.options.trigger, function(e){
+         e.preventDefault();
+         that.$el.addClass('loading-content');
 
 
