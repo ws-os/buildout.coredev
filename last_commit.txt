@@ -1,128 +1,28 @@
-Repository: plone.app.event
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-09T11:50:02-06:00
+Date: 2015-02-09T11:52:29-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.event/commit/9f6dae49c3d19805513f2e772b51c3b0e69ce915
+Commit: https://github.com/plone/plone.app.upgrade/commit/51c3957d66fdceab235dbb8523bcc8286f64216c
 
-use contentloader pattern instead of js file
+add contentloader pattern
 
 Files changed:
-A plone/app/event/bbb/profiles/default/jsregistry.xml
-M plone/app/event/portlets/portlet_calendar.pt
-M plone/app/event/portlets/portlet_calendar.py
-M plone/app/event/profiles/default/jsregistry.xml
+M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
 
-diff --git a/plone/app/event/bbb/profiles/default/jsregistry.xml b/plone/app/event/bbb/profiles/default/jsregistry.xml
-new file mode 100644
-index 0000000..a89a810
---- /dev/null
-+++ b/plone/app/event/bbb/profiles/default/jsregistry.xml
-@@ -0,0 +1,13 @@
-+<?xml version="1.0"?>
-+<object name="portal_javascripts" meta_type="JavaScripts Registry">
+diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+index 12883fa..6a5ea7d 100644
+--- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+@@ -8,4 +8,10 @@
+            prefix="plone" />
+   <records interface="Products.CMFPlone.interfaces.ISiteSchema"
+            prefix="plone" />
 +
-+  <javascript
-+      cacheable="True"
-+      compression="safe"
-+      cookable="True"
-+      enabled="True"
-+      id="++resource++plone.app.event.portlet_calendar.js"
-+      inline="False"
-+      />
++  <records prefix="plone.resources/mockup-patterns-contentloader"
++            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++      <value key="js">++resource++mockup/contentloader/pattern.js</value>
++  </records>
 +
-+</object>
-diff --git a/plone/app/event/portlets/portlet_calendar.pt b/plone/app/event/portlets/portlet_calendar.pt
-index 18f93bc..9f49b64 100644
---- a/plone/app/event/portlets/portlet_calendar.pt
-+++ b/plone/app/event/portlets/portlet_calendar.pt
-@@ -9,12 +9,13 @@
-                 year view/year;">
- 
-   <header class="portletHeader">
--    <a href="#" rel="nofollow" class="calendarPrevious" title="Previous month"
-+    <a href="#" rel="nofollow" class="calendarPrevious pat-contentloader" title="Previous month"
-         tal:define="prev_month view/prev_month;
-                     prev_year view/prev_year"
-         tal:attributes="href view/prev_query;
-                         data-year prev_year;
--                        data-month prev_month;"
-+                        data-month prev_month;
-+                        data-pat-contentloader view/nav_pattern_options"
-         i18n:attributes="title title_previous_month;">&laquo;</a>
- 
-     <span i18n:translate="" tal:omit-tag="">
-@@ -26,12 +27,13 @@
-           tal:omit-tag="">year</span>
-     </span>
- 
--    <a href="#" rel="nofollow" class="calendarNext" title="Next month"
-+    <a href="#" rel="nofollow" class="calendarNext pat-contentloader" title="Next month"
-          tal:define="next_month view/next_month;
-                      next_year view/next_year"
-          tal:attributes="href view/next_query;
-                          data-year next_year;
--                         data-month next_month;"
-+                         data-month next_month;
-+                         data-pat-contentloader view/nav_pattern_options"
-          i18n:attributes="title title_next_month;">&raquo;</a>
-   </header>
- 
-@@ -67,6 +69,7 @@
-                 tal:condition="events"
-                 tal:attributes="href python:view.date_events_url(day['date_string']);
-                                 title day/events_string;"
-+                
-                 tal:content="day/day">31</a>
- 
-           </td>
-diff --git a/plone/app/event/portlets/portlet_calendar.py b/plone/app/event/portlets/portlet_calendar.py
-index f6d997b..d8be1ca 100644
---- a/plone/app/event/portlets/portlet_calendar.py
-+++ b/plone/app/event/portlets/portlet_calendar.py
-@@ -20,6 +20,7 @@
- from zope.interface import implements
- 
- import calendar
-+import json
- 
- 
- PLMF = MessageFactory('plonelocales')
-@@ -227,6 +228,18 @@ def cal_data(self):
-                  'events': date_events})
-         return caldata
- 
-+    @property
-+    def nav_pattern_options(self):
-+        return json.dumps({
-+            'url': 'el',
-+            'content': '#portletwrapper-%s' % self.hash,
-+            'target': '#portletwrapper-%s' % self.hash
-+        })
-+
-+    @property
-+    def hash(self):
-+        return self.__portlet_metadata__.get('hash', '')
-+
- 
- class AddForm(base.AddForm):
-     schema = ICalendarPortlet
-diff --git a/plone/app/event/profiles/default/jsregistry.xml b/plone/app/event/profiles/default/jsregistry.xml
-index 49b8dc6..2704c91 100644
---- a/plone/app/event/profiles/default/jsregistry.xml
-+++ b/plone/app/event/profiles/default/jsregistry.xml
-@@ -10,13 +10,4 @@
-       inline="False"
-       />
- 
--  <javascript
--      cacheable="True"
--      compression="safe"
--      cookable="True"
--      enabled="True"
--      id="++resource++plone.app.event.portlet_calendar.js"
--      inline="False"
--      />
--
- </object>
+ </registry>
 
 
