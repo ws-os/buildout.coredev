@@ -1,75 +1,49 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-08T17:48:21-06:00
+Date: 2015-02-08T18:00:54-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/e369d2c1494027f9c522639df2e898dcae756f2f
+Commit: https://github.com/plone/Products.CMFPlone/commit/25c204389023a0cc5c778200bdee94b40a6d9bbc
 
-use z3c form properly here fixes #363
+toolbar code not quite right, go back for now
 
 Files changed:
-M Products/CMFPlone/controlpanel/browser/mail.py
+M Products/CMFPlone/browser/templates/main_template.pt
 
-diff --git a/Products/CMFPlone/controlpanel/browser/mail.py b/Products/CMFPlone/controlpanel/browser/mail.py
-index ee1c718..da996d8 100644
---- a/Products/CMFPlone/controlpanel/browser/mail.py
-+++ b/Products/CMFPlone/controlpanel/browser/mail.py
-@@ -25,25 +25,33 @@ class MailControlPanelForm(controlpanel.RegistryEditForm):
+diff --git a/Products/CMFPlone/browser/templates/main_template.pt b/Products/CMFPlone/browser/templates/main_template.pt
+index 3f9c9f2..fd6d4cd 100644
+--- a/Products/CMFPlone/browser/templates/main_template.pt
++++ b/Products/CMFPlone/browser/templates/main_template.pt
+@@ -45,14 +45,28 @@
+   <body tal:define="isRTL portal_state/is_rtl;
+                     sl python:plone_layout.have_portlets('plone.leftcolumn', view);
+                     sr python:plone_layout.have_portlets('plone.rightcolumn', view);
+-                    body_class python:plone_layout.bodyClass(template, view);"
++                    body_class python:plone_layout.bodyClass(template, view);
++                    toolbar_class python:request.cookies.get('plone-toolbar', 'plone-toolbar-left pat-toolbar');"
+         tal:attributes="class body_class;
+                         dir python:isRTL and 'rtl' or 'ltr';
+                         python:plone_view.patterns_settings()"
+         id="visual-portal-wrapper">
  
-     @button.buttonAndHandler(_('Save'), name=None)
-     def handleSave(self, action):
--        super(MailControlPanelForm, self).handleSave(self, action)
-+        self.save()
+-    <section id="edit-bar" role="toolbar" tal:replace="structure context/@@render-toolbar"
+-             tal:on-error="structure string:Error rendering toolbar, try @@render-toolbar for info"/>
++    <section id="edit-bar" role="toolbar">
++      <div id="edit-zone" role="toolbar" tal:attributes="class toolbar_class">
++        <div class="plone-toolbar-container">
++          <a class="plone-toolbar-logo">
++            <img alt="Plone Toolbar" tal:attributes="src string:${portal_url}/++plone++static/plone-toolbarlogo.svg" />
++          </a>
++          <a class="plone-toolbar-switcher"><span>Left-Top switcher</span></a>
++          <nav role="navigation">
++            <ul>
++              <div tal:replace="structure provider:plone.toolbar">
++              </div>
++            </ul>
++        </div>
++      </div>
++    </section>
  
-     @button.buttonAndHandler(_('Cancel'), name='cancel')
-     def handleCancel(self, action):
-         super(MailControlPanelForm, self).handleCancel(self, action)
- 
-+    def save(self):
-+        data, errors = self.extractData()
-+        if errors:
-+            self.status = self.formErrorsMessage
-+            return False
-+        self.applyChanges(data)
-+        return True
-+
-     @button.buttonAndHandler(
-         _('label_smtp_test', default='Save and send test e-mail'),
-         name='test')
-     def handle_test_action(self, action):
--        data = self.request.form
-         # Save data first
--        self.handle_edit_action.success(data)
-+        if not self.save():
-+            return
-         mailhost = getToolByName(self.context, 'MailHost')
- 
-         registry = getUtility(IRegistry)
-         mail_settings = registry.forInterface(IMailSchema, prefix='plone')
-         fromaddr = mail_settings.email_from_address
--        fromname = self.mail_settings.email_from_name
-+        fromname = mail_settings.email_from_name
- 
-         message = ("Hi,\n\nThis is a test message sent from the Plone "
-                    "'Mail settings' control panel. Your receipt of this "
-@@ -52,8 +60,7 @@ def handle_test_action(self, action):
-                    "working!\n\n"
-                    "Have a nice day.\n\n"
-                    "Love,\n\nPlone")
--        email_charset = mail_settings.email_charset
--        email_recipient, source = fromaddr, fromaddr
-+        email_charset = self.context.getProperty('email_charset')
-         subject = "Test e-mail from Plone"
- 
-         # Make the timeout incredibly short. This is enough time for most mail
-@@ -64,7 +71,8 @@ def handle_test_action(self, action):
-         try:
-             socket.setdefaulttimeout(3)
-             try:
--                mailhost.send(message, email_recipient, source,
-+                mailhost.send(message,
-+                              mto=fromaddr,
-                               mfrom=fromname,
-                               subject=subject,
-                               charset=email_charset,
+     <header id="portal-top" i18n:domain="plone">
+       <div tal:replace="structure provider:plone.portaltop" />
 
 
