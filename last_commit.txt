@@ -1,158 +1,26 @@
-Repository: plone.app.event
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-09T22:48:34+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.event/commit/f425187e6f47961a37bf02b8fd3b950039aa1848
+Date: 2015-02-10T12:00:18-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/8c89e732fcb50433d3fbf84b78b7dcc71cd4b4d2
 
-move portlet_calendar.js to bbb package - plone 5 uses patterns for reloading calendar views
+upgrade mockup core
 
 Files changed:
-A plone/app/event/bbb/portlets/portlet_calendar.js
-M plone/app/event/bbb/portlets/configure.zcml
-M plone/app/event/portlets/configure.zcml
-D plone/app/event/portlets/portlet_calendar.js
+M mockup/bower.json
 
-diff --git a/plone/app/event/bbb/portlets/configure.zcml b/plone/app/event/bbb/portlets/configure.zcml
-index 851bf74..d46fdcf 100644
---- a/plone/app/event/bbb/portlets/configure.zcml
-+++ b/plone/app/event/bbb/portlets/configure.zcml
-@@ -1,7 +1,14 @@
- <configure xmlns="http://namespaces.zope.org/zope"
-+           xmlns:browser="http://namespaces.zope.org/browser"
-            xmlns:plone="http://namespaces.plone.org/plone"
-            i18n_domain="plone.app.event">
- 
-+  <browser:resource
-+      name="plone.app.event.portlet_calendar.js"
-+      file="portlet_calendar.js"
-+      permission="zope.Public"
-+      />
-+
-   <plone:portlet
-       name="portlets.Calendar"
-       interface="..portlets.portlet_calendar.ICalendarPortlet"
-diff --git a/plone/app/event/bbb/portlets/portlet_calendar.js b/plone/app/event/bbb/portlets/portlet_calendar.js
-new file mode 100644
-index 0000000..d50b880
---- /dev/null
-+++ b/plone/app/event/bbb/portlets/portlet_calendar.js
-@@ -0,0 +1,45 @@
-+/*jslint browser: true*/
-+/*global $, jQuery, plone, portal_url */
-+
-+(function ($) {
-+
-+    function load_portlet_calendar(event, elem) {
-+        // depends on plone_javascript_variables.js for portal_url
-+        event.preventDefault();
-+        var pw, elem_data, portlethash, url;
-+        pw = elem.closest('.portletWrapper');
-+        elem_data = elem.data();
-+        portlethash = pw.attr('id');
-+        portlethash = portlethash.substring(15, portlethash.length);
-+        url = portal_url +
-+              '/@@render-portlet?portlethash=' + portlethash +
-+              '&year=' + elem_data.year +
-+              '&month=' + elem_data.month;
-+        $.ajax({
-+            url: url,
-+            success: function (data) {
-+                pw.html(data);
-+                rebind_portlet_calendar();
-+            }
-+        });
-+    }
-+
-+    function rebind_portlet_calendar() {
-+        // ajaxify each portletCalendar
-+        $('.portletCalendar a.calendarNext').click(function (event) {
-+            load_portlet_calendar(event, $(this));
-+        });
-+        $('.portletCalendar a.calendarPrevious').click(function (event) {
-+            load_portlet_calendar(event, $(this));
-+        });
-+        $('.portletCalendar dd a[title]').tooltip({
-+            offset: [-10, 0],
-+            tipClass: 'pae_calendar_tooltip'
-+        });
-+    }
-+
-+    $(document).ready(function () {
-+        rebind_portlet_calendar();
-+    });
-+
-+}(jQuery));
-diff --git a/plone/app/event/portlets/configure.zcml b/plone/app/event/portlets/configure.zcml
-index 30c6979..40c0fd1 100644
---- a/plone/app/event/portlets/configure.zcml
-+++ b/plone/app/event/portlets/configure.zcml
-@@ -1,16 +1,8 @@
- <configure xmlns="http://namespaces.zope.org/zope"
--    xmlns:browser="http://namespaces.zope.org/browser"
-     xmlns:plone="http://namespaces.plone.org/plone"
-     xmlns:zcml="http://namespaces.zope.org/zcml"
-     i18n_domain="plone.app.event">
- 
--    <browser:resource
--        name="plone.app.event.portlet_calendar.js"
--        file="portlet_calendar.js"
--        permission="zope.Public"
--        layer="..interfaces.IBrowserLayer"
--        />
--
-     <plone:portlet
-         name="portlets.Calendar"
-         interface=".portlet_calendar.ICalendarPortlet"
-diff --git a/plone/app/event/portlets/portlet_calendar.js b/plone/app/event/portlets/portlet_calendar.js
-deleted file mode 100644
-index d50b880..0000000
---- a/plone/app/event/portlets/portlet_calendar.js
-+++ /dev/null
-@@ -1,45 +0,0 @@
--/*jslint browser: true*/
--/*global $, jQuery, plone, portal_url */
--
--(function ($) {
--
--    function load_portlet_calendar(event, elem) {
--        // depends on plone_javascript_variables.js for portal_url
--        event.preventDefault();
--        var pw, elem_data, portlethash, url;
--        pw = elem.closest('.portletWrapper');
--        elem_data = elem.data();
--        portlethash = pw.attr('id');
--        portlethash = portlethash.substring(15, portlethash.length);
--        url = portal_url +
--              '/@@render-portlet?portlethash=' + portlethash +
--              '&year=' + elem_data.year +
--              '&month=' + elem_data.month;
--        $.ajax({
--            url: url,
--            success: function (data) {
--                pw.html(data);
--                rebind_portlet_calendar();
--            }
--        });
--    }
--
--    function rebind_portlet_calendar() {
--        // ajaxify each portletCalendar
--        $('.portletCalendar a.calendarNext').click(function (event) {
--            load_portlet_calendar(event, $(this));
--        });
--        $('.portletCalendar a.calendarPrevious').click(function (event) {
--            load_portlet_calendar(event, $(this));
--        });
--        $('.portletCalendar dd a[title]').tooltip({
--            offset: [-10, 0],
--            tipClass: 'pae_calendar_tooltip'
--        });
--    }
--
--    $(document).ready(function () {
--        rebind_portlet_calendar();
--    });
--
--}(jQuery));
+diff --git a/mockup/bower.json b/mockup/bower.json
+index 52a5d3e..395a4f0 100644
+--- a/mockup/bower.json
++++ b/mockup/bower.json
+@@ -15,7 +15,7 @@
+     "jquery.cookie": "1.4.1",
+     "lodash": "2.4.1",
+     "logging": "",
+-    "mockup-core": "2.1.0",
++    "mockup-core": "2.1.1",
+     "moment": "2.8.3",
+     "pickadate": "3.4.0",
+     "requirejs-text": "2.0.12",
 
 
