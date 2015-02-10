@@ -1,50 +1,30 @@
-Repository: plone.app.upgrade
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2015-02-10T16:02:38-06:00
+Date: 2015-02-10T16:03:57-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/f04fd10ffe0243c5fe86270fdfa2795a0b751d87
+Commit: https://github.com/plone/plone.app.layout/commit/5ec8aa53766be76efa8d35dcb6403dc229cda696
 
-add recurrence widget resources
+changelog
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+M CHANGES.rst
 
-diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-index 3a8b071..44d7c8b 100644
---- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-@@ -55,4 +55,32 @@
-     <value key="last_compilation">2014-11-26 00:00:00</value>
-   </records>
+diff --git a/CHANGES.rst b/CHANGES.rst
+index ee37d4c..7051605 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,12 @@ Changelog
+ 2.5.4 (unreleased)
+ ------------------
  
-+    <!-- recurrence widget registrations -->
-+  <records prefix="plone.resources/jquery.recurrenceinput"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/jquery.recurrenceinput.js/src/jquery.recurrenceinput</value>
-+      <value key="deps">jquery,jquery.tools.overlay,jquery.tools.dateinput,jquery.tmpl</value>
-+  </records>
-+  <records prefix="plone.resources/jquery.tools.dateinput"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/jquery.recurrenceinput.js/lib/jquery.tools.dateinput</value>
-+      <value key="deps">jquery</value>
-+  </records>
-+   <records prefix="plone.resources/jquery.tools.overlay"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/jquery.recurrenceinput.js/lib/jquery.tools.overlay</value>
-+      <value key="deps">jquery</value>
-+  </records>
-+  <records prefix="plone.resources/jquery.tools.overlay"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/jquery.recurrenceinput.js/lib/jquery.tools.overlay</value>
-+      <value key="deps">jquery</value>
-+  </records>
-+  <records prefix="plone.resources/jquery.tmpl"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/jquery.recurrenceinput.js/lib/jquery.tmpl</value>
-+      <value key="deps">jquery</value>
-+  </records>
++- use livesearch pattern
++  [vangheem]
 +
++- use configuration registry pattern options
++  [vangheem]
 +
- </registry>
+ - Added support for site logos stored in the portal registry via the site
+   control panel for the logo viewlet with a fallback to the ``OFS.Image``
+   based ``logo.png`` file. Removed support of long-gone
 
 
