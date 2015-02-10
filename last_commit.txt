@@ -1,47 +1,57 @@
-Repository: plone.app.upgrade
+Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-02-10T16:13:20-06:00
+Date: 2015-02-10T16:21:17-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/f43b7ce6d8b2d5dbcc0dd70fa3ca43ad38882245
+Commit: https://github.com/plone/plone.app.discussion/commit/ad3953f7942129e79cefbe792cfdc3fc4eca0d08
 
-update recurrence resources
+use requirejs if available
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+M CHANGES.rst
+M plone/app/discussion/browser/javascripts/comments.js
 
-diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-index 44d7c8b..f32c143 100644
---- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-@@ -55,26 +55,12 @@
-     <value key="last_compilation">2014-11-26 00:00:00</value>
-   </records>
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 437ae9a..b0bbbb8 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ Changelog
+ 2.4.0 (unreleased)
+ ------------------
  
--    <!-- recurrence widget registrations -->
-+  <!-- recurrence widget registrations -->
-   <records prefix="plone.resources/jquery.recurrenceinput"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++plone++static/components/jquery.recurrenceinput.js/src/jquery.recurrenceinput</value>
--      <value key="deps">jquery,jquery.tools.overlay,jquery.tools.dateinput,jquery.tmpl</value>
--  </records>
--  <records prefix="plone.resources/jquery.tools.dateinput"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++plone++static/components/jquery.recurrenceinput.js/lib/jquery.tools.dateinput</value>
--      <value key="deps">jquery</value>
--  </records>
--   <records prefix="plone.resources/jquery.tools.overlay"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++plone++static/components/jquery.recurrenceinput.js/lib/jquery.tools.overlay</value>
--      <value key="deps">jquery</value>
--  </records>
--  <records prefix="plone.resources/jquery.tools.overlay"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++plone++static/components/jquery.recurrenceinput.js/lib/jquery.tools.overlay</value>
--      <value key="deps">jquery</value>
-+      <!-- Perhaps a bit wonky here for now, depending on legacy jquery tools stuff here -->
-+      <value key="deps">jquery,resource-plone-app-jquerytools-js,resource-plone-app-jquerytools-dateinput-js,jquery.tmpl</value>
-   </records>
-   <records prefix="plone.resources/jquery.tmpl"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++- use requirejs if available
++  [vangheem]
++
+ - Rename @@discussion-settings to @@discussion-controlpanel
+   [maartenkling]
+ 
+diff --git a/plone/app/discussion/browser/javascripts/comments.js b/plone/app/discussion/browser/javascripts/comments.js
+index 927c00d..4b2ea30 100644
+--- a/plone/app/discussion/browser/javascripts/comments.js
++++ b/plone/app/discussion/browser/javascripts/comments.js
+@@ -3,7 +3,17 @@
+  * jQuery functions for the plone.app.discussion comment viewlet and form.
+  *
+  ******************************************************************************/
+-(function ($) {
++
++if(require === undefined){
++    require = function(reqs, torun){
++        'use strict';
++        return torun(window.jQuery);
++    }
++}
++
++require([
++    'jquery'
++], function ($) {
+     // This unnamed function allows us to use $ inside of a block of code
+     // without permanently overwriting $.
+     // http://docs.jquery.com/Using_jQuery_with_Other_Libraries
+@@ -249,4 +259,4 @@
+ 
+     //#JSCOVERAGE_ENDIF
+ 
+-}(jQuery));
++});
 
 
