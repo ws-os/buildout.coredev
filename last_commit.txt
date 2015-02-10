@@ -1,26 +1,79 @@
-Repository: mockup
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-10T12:00:18-06:00
+Date: 2015-02-10T12:37:37-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/8c89e732fcb50433d3fbf84b78b7dcc71cd4b4d2
+Commit: https://github.com/plone/plone.app.upgrade/commit/6a565bad6b1097cc124a94c708ac0436a6645ee6
 
-upgrade mockup core
+update registry for plone bundle split
 
 Files changed:
-M mockup/bower.json
+M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
 
-diff --git a/mockup/bower.json b/mockup/bower.json
-index 52a5d3e..395a4f0 100644
---- a/mockup/bower.json
-+++ b/mockup/bower.json
-@@ -15,7 +15,7 @@
-     "jquery.cookie": "1.4.1",
-     "lodash": "2.4.1",
-     "logging": "",
--    "mockup-core": "2.1.0",
-+    "mockup-core": "2.1.1",
-     "moment": "2.8.3",
-     "pickadate": "3.4.0",
-     "requirejs-text": "2.0.12",
+diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+index e1b8d36..fd50832 100644
+--- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+@@ -870,10 +870,6 @@
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">++plone++static/components/patternslib/src/core/parser</value>
+   </records>
+-  <records prefix="plone.resources/pat-registry"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">++plone++static/components/patternslib/src/core/registry</value>
+-  </records>
+   <records prefix="plone.resources/pat-utils"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+       <value key="js">++plone++static/components/patternslib/src/core/utils</value>
+diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+index 6a5ea7d..3a8b071 100644
+--- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+@@ -14,4 +14,45 @@
+       <value key="js">++resource++mockup/contentloader/pattern.js</value>
+   </records>
+ 
++  <!-- Plone bundle resources -->
++  <records prefix="plone.resources/plone"
++            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++      <value key="js">++resource++plone.js</value>
++      <value key="css">
++        <element>++plone++static/plone.less</element>
++      </value>
++  </records>
++  <records prefix="plone.resources/plone-logged-in"
++            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++      <value key="js">++resource++plone-logged-in.js</value>
++      <value key="css">
++        <element>++plone++static/plone-logged-in.less</element>
++      </value>
++  </records>
++
++  <!-- Bundles -->
++  <records prefix="plone.bundles/plone"
++            interface='Products.CMFPlone.interfaces.IBundleRegistry'>
++    <value key="resources">
++      <element>plone</element>
++    </value>
++    <value key="enabled">True</value>
++    <value key="jscompilation">++plone++static/plone-compiled.min.js</value>
++    <value key="csscompilation">++plone++static/plone-compiled.css</value>
++    <value key="last_compilation">2014-11-26 00:00:00</value>
++    <value key="depends">plone-logged-in</value>
++  </records>
++
++  <records prefix="plone.bundles/plone-logged-in"
++            interface='Products.CMFPlone.interfaces.IBundleRegistry'>
++    <value key="resources">
++      <element>plone-logged-in</element>
++    </value>
++    <value key="enabled">True</value>
++    <value key="expression">python: member is not None</value>
++    <value key="jscompilation">++plone++static/plone-logged-in-compiled.min.js</value>
++    <value key="csscompilation">++plone++static/plone-logged-in-compiled.css</value>
++    <value key="last_compilation">2014-11-26 00:00:00</value>
++  </records>
++
+ </registry>
 
 
