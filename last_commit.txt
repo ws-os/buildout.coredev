@@ -1,181 +1,44 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-10T14:36:49-06:00
+Date: 2015-02-10T15:03:38-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/c68e8cbd1682dd1a84a073fc5d35102a565c57a3
+Commit: https://github.com/plone/mockup/commit/ae869edf749c24532b931f20c8a89a668f52feb9
 
-add initial implementation of recurrence widget
+upgrade recurrence
 
 Files changed:
-A mockup/patterns/recurrence/pattern.js
-A mockup/patterns/recurrence/pattern.recurrence.less
 M mockup/bower.json
-M mockup/js/bundles/docs.js
 M mockup/js/config.js
-M mockup/less/docs.less
 
 diff --git a/mockup/bower.json b/mockup/bower.json
-index 395a4f0..3183d09 100644
+index 3183d09..159a108 100644
 --- a/mockup/bower.json
 +++ b/mockup/bower.json
-@@ -21,7 +21,8 @@
-     "requirejs-text": "2.0.12",
+@@ -22,7 +22,7 @@
      "select2": "3.5.1",
      "tinymce-builded": "4.1.6",
--    "patternslib": "2.0.8"
-+    "patternslib": "2.0.8",
-+    "jquery.recurrenceinput.js": "v1.0.1"
+     "patternslib": "2.0.8",
+-    "jquery.recurrenceinput.js": "v1.0.1"
++    "jquery.recurrenceinput.js": "v1.2"
    },
    "devDependencies": {
      "expect": "0.3.1",
-diff --git a/mockup/js/bundles/docs.js b/mockup/js/bundles/docs.js
-index 963ad62..eaae54b 100644
---- a/mockup/js/bundles/docs.js
-+++ b/mockup/js/bundles/docs.js
-@@ -186,6 +186,11 @@ require([
-             title: 'Content Loader',
-             description: 'Dynamically configure content to be reloaded',
-             url: 'patterns/contentloader/pattern.js'
-+          },
-+          { id: 'recurrence',
-+            title: 'Recurrence Widget',
-+            description: 'Recurrence widget',
-+            url: 'patterns/recurrence/pattern.js'
-           }
-         ]
-       },
 diff --git a/mockup/js/config.js b/mockup/js/config.js
-index 297077d..a435f99 100644
+index a435f99..4716762 100644
 --- a/mockup/js/config.js
 +++ b/mockup/js/config.js
-@@ -44,6 +44,10 @@
-       'jquery.event.drag': 'lib/jquery.event.drag',
+@@ -45,9 +45,9 @@
        'jquery.event.drop': 'lib/jquery.event.drop',
        'jquery.form': 'bower_components/jquery-form/jquery.form',
-+      'jquery.recurrenceinput': 'bower_components/jquery.recurrenceinput.js/src/jquery.recurrenceinput',
-+      'jquery.tools.dateinput': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.dateinput-1.2.7',
-+      'jquery.tools.overlay': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.overlay-1.2.7',
-+      'jquery.tmpl': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tmpl-beta1',
+       'jquery.recurrenceinput': 'bower_components/jquery.recurrenceinput.js/src/jquery.recurrenceinput',
+-      'jquery.tools.dateinput': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.dateinput-1.2.7',
+-      'jquery.tools.overlay': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.overlay-1.2.7',
+-      'jquery.tmpl': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tmpl-beta1',
++      'jquery.tools.dateinput': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.dateinput',
++      'jquery.tools.overlay': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.overlay',
++      'jquery.tmpl': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tmpl',
        'translate': 'js/i18n-wrapper',
        'marked': 'bower_components/marked/lib/marked',
        'mockup-bundles-docs': 'js/bundles/docs',
-@@ -80,6 +84,7 @@
-       'mockup-patterns-preventdoublesubmit': 'patterns/preventdoublesubmit/pattern',
-       'mockup-patterns-querystring': 'patterns/querystring/pattern',
-       'mockup-patterns-relateditems': 'patterns/relateditems/pattern',
-+      'mockup-patterns-recurrence': 'patterns/recurrence/pattern',
-       'mockup-patterns-resourceregistry': 'patterns/resourceregistry/pattern',
-       'mockup-patterns-resourceregistry-url': 'patterns/resourceregistry',
-       'mockup-patterns-select2': 'patterns/select2/pattern',
-@@ -118,11 +123,11 @@
-       'underscore': 'bower_components/lodash/dist/lodash.underscore',
- 
-       // Patternslib
--      "pat-compat": "bower_components/patternslib/src/core/compat",
--      "pat-jquery-ext": "bower_components/patternslib/src/core/jquery-ext",
--      "pat-logger": "bower_components/patternslib/src/core/logger",
--      "pat-utils": "bower_components/patternslib/src/core/utils",
--      "logging": "bower_components/logging/src/logging"
-+      'pat-compat': 'bower_components/patternslib/src/core/compat',
-+      'pat-jquery-ext': 'bower_components/patternslib/src/core/jquery-ext',
-+      'pat-logger': 'bower_components/patternslib/src/core/logger',
-+      'pat-utils': 'bower_components/patternslib/src/core/utils',
-+      'logging': 'bower_components/logging/src/logging'
-     },
-     shim: {
-       'JSXTransformer': { exports: 'window.JSXTransformer' },
-@@ -149,7 +154,18 @@
-         }
-       },
-       'tinymce-modern-theme': { deps: ['tinymce'] },
--      'underscore': { exports: 'window._' }
-+      'underscore': { exports: 'window._' },
-+      'jquery.recurrenceinput': {
-+        deps: [
-+          'jquery',
-+          'jquery.tools.overlay',
-+          'jquery.tools.dateinput',
-+          'jquery.tmpl'
-+        ]
-+      },
-+      'jquery.tools.dateinput': { deps: ['jquery'] },
-+      'jquery.tools.overlay': { deps: ['jquery'] },
-+      'jquery.tmpl': { deps: ['jquery'] }
-     },
-     wrapShim: true
-   };
-diff --git a/mockup/less/docs.less b/mockup/less/docs.less
-index 8dabd23..5e557c5 100644
---- a/mockup/less/docs.less
-+++ b/mockup/less/docs.less
-@@ -24,5 +24,6 @@
- @import "../patterns/thememapper/pattern.thememapper.less";
- @import "../patterns/resourceregistry/pattern.resourceregistry.less";
- @import "../patterns/livesearch/pattern.livesearch.less";
-+@import "../patterns/recurrence/pattern.recurrence.less";
- 
- @import "@{bowerPath}/mockup-core/less/docs.less";
-diff --git a/mockup/patterns/recurrence/pattern.js b/mockup/patterns/recurrence/pattern.js
-new file mode 100644
-index 0000000..86b8d77
---- /dev/null
-+++ b/mockup/patterns/recurrence/pattern.js
-@@ -0,0 +1,47 @@
-+/* Recurrence pattern.
-+ *
-+ * Options:
-+ *    locatization(object): Customizations to locatizations. Default to null
-+ *    configuration(object): recurrent input widget configuration
-+ *
-+ * Documentation:
-+ *
-+ *    # Simple
-+ *
-+ *    {{ example-1 }}
-+ *
-+ * Example: example-1
-+ *    <textarea class="pat-recurrence"></textarea>
-+ *
-+ *
-+ */
-+
-+
-+define([
-+  'jquery',
-+  'mockup-patterns-base',
-+  'jquery.recurrenceinput'
-+], function($, Base) {
-+  'use strict';
-+
-+  var Recurrence = Base.extend({
-+    name: 'recurrence',
-+    trigger: '.pat-recurrence',
-+    defaults: {
-+      // just passed onto the widget
-+      language: 'en',
-+      locatization: null,
-+      configuration: {}
-+    },
-+    init: function() {
-+      this.$el.addClass('recurrence-widget');
-+      if(this.options.locatization){
-+        $.tools.recurrenceinput.localize(this.options.language, this.options.locatization);
-+      }
-+      this.$el.recurrenceinput(this.options.configuration);
-+    }
-+  });
-+
-+  return Recurrence;
-+
-+});
-diff --git a/mockup/patterns/recurrence/pattern.recurrence.less b/mockup/patterns/recurrence/pattern.recurrence.less
-new file mode 100644
-index 0000000..4e573f6
---- /dev/null
-+++ b/mockup/patterns/recurrence/pattern.recurrence.less
-@@ -0,0 +1,3 @@
-+@import (less) "@{bowerPath}/jquery.recurrenceinput.js/lib/jquery.tools.dateinput.css";
-+@import (less) "@{bowerPath}/jquery.recurrenceinput.js/lib/jquery.tools.overlay.css";
-+@import (less) "@{bowerPath}/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css";
 
 
