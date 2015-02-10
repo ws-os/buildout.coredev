@@ -1,44 +1,36 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-10T15:03:38-06:00
+Date: 2015-02-10T16:01:08-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/ae869edf749c24532b931f20c8a89a668f52feb9
+Commit: https://github.com/plone/mockup/commit/2168ba3cb081ba8a9dda512d8112fa91cec86ac9
 
-upgrade recurrence
+changelog
 
 Files changed:
-M mockup/bower.json
-M mockup/js/config.js
+M CHANGES.rst
 
-diff --git a/mockup/bower.json b/mockup/bower.json
-index 3183d09..159a108 100644
---- a/mockup/bower.json
-+++ b/mockup/bower.json
-@@ -22,7 +22,7 @@
-     "select2": "3.5.1",
-     "tinymce-builded": "4.1.6",
-     "patternslib": "2.0.8",
--    "jquery.recurrenceinput.js": "v1.0.1"
-+    "jquery.recurrenceinput.js": "v1.2"
-   },
-   "devDependencies": {
-     "expect": "0.3.1",
-diff --git a/mockup/js/config.js b/mockup/js/config.js
-index a435f99..4716762 100644
---- a/mockup/js/config.js
-+++ b/mockup/js/config.js
-@@ -45,9 +45,9 @@
-       'jquery.event.drop': 'lib/jquery.event.drop',
-       'jquery.form': 'bower_components/jquery-form/jquery.form',
-       'jquery.recurrenceinput': 'bower_components/jquery.recurrenceinput.js/src/jquery.recurrenceinput',
--      'jquery.tools.dateinput': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.dateinput-1.2.7',
--      'jquery.tools.overlay': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.overlay-1.2.7',
--      'jquery.tmpl': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tmpl-beta1',
-+      'jquery.tools.dateinput': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.dateinput',
-+      'jquery.tools.overlay': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tools.overlay',
-+      'jquery.tmpl': 'bower_components/jquery.recurrenceinput.js/lib/jquery.tmpl',
-       'translate': 'js/i18n-wrapper',
-       'marked': 'bower_components/marked/lib/marked',
-       'mockup-bundles-docs': 'js/bundles/docs',
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 23f197c..d7a860b 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,18 @@ Changelog
+ 2.0.0 (unreleased)
+ ------------------
+ 
++- fix bootstrap css bleeding into global namespaces
++  [vangheem]
++
++- add recurrence pattern
++  [vangheem]
++
++- add livesearch pattern
++  [vangheem]
++
++- add history support for structure
++  [vangheem]
++
+ - Patternslib merge: Use Patternslib's scanner and registry.  This allows us
+   to: Use Patternslib patterns with Mockup/Plone and use Mockup patterns with
+   Patternslib outside of Plone. For changes required to patterns, see:
 
 
