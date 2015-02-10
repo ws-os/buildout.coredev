@@ -1,79 +1,52 @@
-Repository: plone.app.upgrade
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-10T12:37:37-06:00
+Date: 2015-02-10T13:05:33-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/6a565bad6b1097cc124a94c708ac0436a6645ee6
+Commit: https://github.com/plone/mockup/commit/0ecfa513d5f9f0d7ca5508187b5e712406d447cc
 
-update registry for plone bundle split
+fix missing bootstrap styles
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+M mockup/patterns/resourceregistry/js/registry.js
+M mockup/patterns/resourceregistry/pattern.resourceregistry.less
+M mockup/patterns/select2/pattern.select2.less
 
-diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-index e1b8d36..fd50832 100644
---- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-@@ -870,10 +870,6 @@
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++plone++static/components/patternslib/src/core/parser</value>
-   </records>
--  <records prefix="plone.resources/pat-registry"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">++plone++static/components/patternslib/src/core/registry</value>
--  </records>
-   <records prefix="plone.resources/pat-utils"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++plone++static/components/patternslib/src/core/utils</value>
-diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-index 6a5ea7d..3a8b071 100644
---- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-@@ -14,4 +14,45 @@
-       <value key="js">++resource++mockup/contentloader/pattern.js</value>
-   </records>
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index 848e3d8..acbc147 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -375,6 +375,7 @@ define([
+         self.addResult('No javascripts to build, skipping');
+         return self.buildCSSBundle();
+       }
++
+       config.out = function(results){
+         $.ajax({
+           url: self.rview.options.data.manageUrl,
+diff --git a/mockup/patterns/resourceregistry/pattern.resourceregistry.less b/mockup/patterns/resourceregistry/pattern.resourceregistry.less
+index e842c5f..5c6bca0 100644
+--- a/mockup/patterns/resourceregistry/pattern.resourceregistry.less
++++ b/mockup/patterns/resourceregistry/pattern.resourceregistry.less
+@@ -7,6 +7,8 @@
+     @import "@{bowerPath}/bootstrap/less/forms.less";
+     @import "@{bowerPath}/bootstrap/less/input-groups.less";
+     @import "@{bowerPath}/bootstrap/less/type.less";
++    @import "@{bowerPath}/bootstrap/less/navs.less";
++    @import "@{bowerPath}/bootstrap/less/input-groups.less";
  
-+  <!-- Plone bundle resources -->
-+  <records prefix="plone.resources/plone"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++plone.js</value>
-+      <value key="css">
-+        <element>++plone++static/plone.less</element>
-+      </value>
-+  </records>
-+  <records prefix="plone.resources/plone-logged-in"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++plone-logged-in.js</value>
-+      <value key="css">
-+        <element>++plone++static/plone-logged-in.less</element>
-+      </value>
-+  </records>
-+
-+  <!-- Bundles -->
-+  <records prefix="plone.bundles/plone"
-+            interface='Products.CMFPlone.interfaces.IBundleRegistry'>
-+    <value key="resources">
-+      <element>plone</element>
-+    </value>
-+    <value key="enabled">True</value>
-+    <value key="jscompilation">++plone++static/plone-compiled.min.js</value>
-+    <value key="csscompilation">++plone++static/plone-compiled.css</value>
-+    <value key="last_compilation">2014-11-26 00:00:00</value>
-+    <value key="depends">plone-logged-in</value>
-+  </records>
-+
-+  <records prefix="plone.bundles/plone-logged-in"
-+            interface='Products.CMFPlone.interfaces.IBundleRegistry'>
-+    <value key="resources">
-+      <element>plone-logged-in</element>
-+    </value>
-+    <value key="enabled">True</value>
-+    <value key="expression">python: member is not None</value>
-+    <value key="jscompilation">++plone++static/plone-logged-in-compiled.min.js</value>
-+    <value key="csscompilation">++plone++static/plone-logged-in-compiled.css</value>
-+    <value key="last_compilation">2014-11-26 00:00:00</value>
-+  </records>
-+
- </registry>
+     .nav-tabs{
+         a {
+diff --git a/mockup/patterns/select2/pattern.select2.less b/mockup/patterns/select2/pattern.select2.less
+index 7f03628..44a0b43 100644
+--- a/mockup/patterns/select2/pattern.select2.less
++++ b/mockup/patterns/select2/pattern.select2.less
+@@ -12,3 +12,6 @@
+     cursor: move;
+ }
+ 
++.pat-select2{
++    min-width:50%;
++}
+\ No newline at end of file
 
 
