@@ -1,53 +1,556 @@
 Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-02-10T16:21:17-06:00
+Date: 2015-02-10T16:41:00-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.discussion/commit/ad3953f7942129e79cefbe792cfdc3fc4eca0d08
+Commit: https://github.com/plone/plone.app.discussion/commit/c49c9707ecec3ef7cc518a6a86d485a87eb1d5b9
 
-use requirejs if available
+more js improvements
 
 Files changed:
-M CHANGES.rst
+M plone/app/discussion/browser/controlpanel.pt
 M plone/app/discussion/browser/javascripts/comments.js
+M plone/app/discussion/browser/javascripts/controlpanel.js
+M plone/app/discussion/browser/javascripts/moderation.js
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 437ae9a..b0bbbb8 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 2.4.0 (unreleased)
- ------------------
+diff --git a/plone/app/discussion/browser/controlpanel.pt b/plone/app/discussion/browser/controlpanel.pt
+index 0ccb3e1..4d84e7e 100644
+--- a/plone/app/discussion/browser/controlpanel.pt
++++ b/plone/app/discussion/browser/controlpanel.pt
+@@ -6,22 +6,12 @@
+       metal:use-macro="here/prefs_main_template/macros/master"
+       i18n:domain="plone">
  
-+- use requirejs if available
-+  [vangheem]
-+
- - Rename @@discussion-settings to @@discussion-controlpanel
-   [maartenkling]
+-<metal:javascript_head_slot fill-slot="javascript_head_slot">
+-    <script type="text/javascript"
+-        tal:attributes="src string:${context/portal_url}/++resource++plone.app.discussion.javascripts/controlpanel.js">
+-    </script>
+-</metal:javascript_head_slot>
+-
+-
+ <body>
+ <article id="content"
+      tal:attributes="class view/settings"
+      metal:fill-slot="prefs_configlet_content">
  
+-    <script type="text/javascript"
+-        tal:attributes="src string:${context/portal_url}/++resource++plone.app.discussion.javascripts/controlpanel.js">
+-    </script>
+-
++    
+     <div class="portalMessage warning"
+         tal:condition="view/mailhost_warning">
+         <strong i18n:translate="">
+@@ -99,6 +89,9 @@
+         </div>
+     </div>
+ 
++  <script type="text/javascript"
++          tal:attributes="src string:${context/portal_url}/++resource++plone.app.discussion.javascripts/controlpanel.js">
++  </script>
+ </article>
+ </body>
+ </html>
 diff --git a/plone/app/discussion/browser/javascripts/comments.js b/plone/app/discussion/browser/javascripts/comments.js
-index 927c00d..4b2ea30 100644
+index 4b2ea30..0b56d51 100644
 --- a/plone/app/discussion/browser/javascripts/comments.js
 +++ b/plone/app/discussion/browser/javascripts/comments.js
-@@ -3,7 +3,17 @@
+@@ -3,17 +3,20 @@
+  * jQuery functions for the plone.app.discussion comment viewlet and form.
+  *
+  ******************************************************************************/
++/* global require */
+ 
+ if(require === undefined){
+-    require = function(reqs, torun){
++    require = function(reqs, torun){  // jshint ignore:line
+         'use strict';
+         return torun(window.jQuery);
+-    }
++    };
+ }
+ 
+-require([
++require([  // jshint ignore:line
+     'jquery'
+ ], function ($) {
++    'use strict';
++
+     // This unnamed function allows us to use $ inside of a block of code
+     // without permanently overwriting $.
+     // http://docs.jquery.com/Using_jQuery_with_Other_Libraries
+@@ -24,39 +27,39 @@ require([
+      **************************************************************************/
+     $.createReplyForm = function (comment_div) {
+ 
+-        var comment_id = comment_div.attr("id");
++        var comment_id = comment_div.attr('id');
+ 
+-        var reply_button = comment_div.find(".reply-to-comment-button");
++        var reply_button = comment_div.find('.reply-to-comment-button');
+ 
+         /* Clone the reply div at the end of the page template that contains
+          * the regular comment form.
+          */
+-        var reply_div = $("#commenting").clone(true);
++        var reply_div = $('#commenting').clone(true);
+ 
+         /* Remove the ReCaptcha JS code before appending the form. If not
+          * removed, this causes problems
+          */
+-        reply_div.find("#formfield-form-widgets-captcha")
+-                 .find("script")
++        reply_div.find('#formfield-form-widgets-captcha')
++                 .find('script')
+                  .remove();
+ 
+         /* Insert the cloned comment form right after the reply button of the
+          * current comment.
+          */
+-        reply_div.appendTo(comment_div).css("display", "none");
++        reply_div.appendTo(comment_div).css('display', 'none');
+ 
+-        /* Remove id="commenting" attribute, since we use it to uniquely define
++        /* Remove id='commenting' attribute, since we use it to uniquely define
+            the main reply form. */
+-        // Still belongs to class="reply"
+-        reply_div.removeAttr("id");
++        // Still belongs to class='reply'
++        reply_div.removeAttr('id');
+ 
+         /* Hide the reply button (only hide, because we may want to show it
+          * again if the user hits the cancel button).
+          */
+-        $(reply_button).css("display", "none");
++        $(reply_button).css('display', 'none');
+ 
+         /* Fetch the reply form inside the reply div */
+-        var reply_form = reply_div.find("form");
++        var reply_form = reply_div.find('form');
+ 
+         /* Change the id of the textarea of the reply form
+          * To avoid conflict later between textareas with same id 'form-widgets-comment-text' while implementing a seperate instance of TinyMCE
+@@ -67,23 +70,23 @@ require([
+ 
+         /* Populate the hidden 'in_reply_to' field with the correct comment
+            id */
+-        reply_form.find("input[name='form.widgets.in_reply_to']")
++        reply_form.find('input[name="form.widgets.in_reply_to"]')
+                   .val(comment_id);
+ 
+         /* Add a remove-reply-to-comment Javascript function to remove the
+            form */
+-        var cancel_reply_button = reply_div.find(".cancelreplytocomment");
+-        cancel_reply_button.attr("id", comment_id);
++        var cancel_reply_button = reply_div.find('.cancelreplytocomment');
++        cancel_reply_button.attr('id', comment_id);
+ 
+         /* Show the cancel buttons. */
+-        reply_form.find("input[name='form.buttons.cancel']")
+-                  .css("display", "inline");
++        reply_form.find('input[name="form.buttons.cancel"]')
++                  .css('display', 'inline');
+ 
+         /* Show the reply layer with a slide down effect */
+-        reply_div.slideDown("slow");
++        reply_div.slideDown('slow');
+ 
+         /* Show the cancel button in the reply-to-comment form */
+-        cancel_reply_button.css("display", "inline");
++        cancel_reply_button.css('display', 'inline');
+     };
+ 
+ 
+@@ -92,10 +95,10 @@ require([
+      * to the function.
+      **************************************************************************/
+     $.clearForm = function (form_div) {
+-        form_div.find(".error").removeClass("error");
+-        form_div.find(".fieldErrorBox").remove();
+-        form_div.find("input[type='text']").attr("value", "");
+-        form_div.find("textarea").attr("value", "");
++        form_div.find('.error').removeClass('error');
++        form_div.find('.fieldErrorBox').remove();
++        form_div.find('input[type="text"]').attr('value', '');
++        form_div.find('textarea').attr('value', '');
+         /* XXX: Clean all additional form extender fields. */
+     };
+ 
+@@ -110,50 +113,50 @@ require([
+ 
+         /**********************************************************************
+          * If the user has hit the reply button of a reply-to-comment form
+-         * (form was submitted with a value for the "in_reply_to" field in the
++         * (form was submitted with a value for the 'in_reply_to' field in the
+          * request), create a reply-to-comment form right under this comment.
+          **********************************************************************/
+-        var post_comment_div = $("#commenting");
++        var post_comment_div = $('#commenting');
+         var in_reply_to_field =
+-            post_comment_div.find("input[name='form.widgets.in_reply_to']");
+-        if (in_reply_to_field.length !== 0 && in_reply_to_field.val() !== "") {
+-            var current_reply_id = "#" + in_reply_to_field.val();
+-            var current_reply_to_div = $(".discussion").find(current_reply_id);
++            post_comment_div.find('input[name="form.widgets.in_reply_to"]');
++        if (in_reply_to_field.length !== 0 && in_reply_to_field.val() !== '') {
++            var current_reply_id = '#' + in_reply_to_field.val();
++            var current_reply_to_div = $('.discussion').find(current_reply_id);
+             $.createReplyForm(current_reply_to_div);
+             $.clearForm(post_comment_div);
+         }
+ 
+ 
+          /**********************************************************************
+-         * If the user hits the "reply" button of an existing comment, create a
++         * If the user hits the 'reply' button of an existing comment, create a
+          * reply form right beneath this comment.
+          **********************************************************************/
+-        $(".reply-to-comment-button").bind("click", function (e) {
+-            var comment_div = $(this).parents().filter(".comment");
++        $('.reply-to-comment-button').bind('click', function (e) {  // jshint ignore:line
++            var comment_div = $(this).parents().filter('.comment');
+             $.createReplyForm(comment_div);
+             $.clearForm(comment_div);
+         });
+ 
+ 
+         /**********************************************************************
+-         * If the user hits the "clear" button of an open reply-to-comment form,
+-         * remove the form and show the "reply" button again.
++         * If the user hits the 'clear' button of an open reply-to-comment form,
++         * remove the form and show the 'reply' button again.
+          **********************************************************************/
+-        $("#commenting #form-buttons-cancel").bind("click", function (e) {
++        $('#commenting #form-buttons-cancel').bind('click', function (e) {
+             e.preventDefault();
+             var reply_to_comment_button = $(this).
+                                               parents().
+-                                              filter(".comment").
+-                                              find(".reply-to-comment-button");
++                                              filter('.comment').
++                                              find('.reply-to-comment-button');
+ 
+             /* Find the reply-to-comment form and hide and remove it again. */
+-            $.reply_to_comment_form = $(this).parents().filter(".reply");
+-            $.reply_to_comment_form.slideUp("slow", function () {
++            $.reply_to_comment_form = $(this).parents().filter('.reply');
++            $.reply_to_comment_form.slideUp('slow', function () {
+                 $(this).remove();
+             });
+ 
+             /* Show the reply-to-comment button again. */
+-            reply_to_comment_button.css("display", "inline");
++            reply_to_comment_button.css('display', 'inline');
+ 
+         });
+ 
+@@ -161,22 +164,22 @@ require([
+         /**********************************************************************
+          * Publish a single comment.
+          **********************************************************************/
+-        $("input[name='form.button.PublishComment']").on('click', function () {
++        $('input[name="form.button.PublishComment"]').on('click', function () {
+             var trigger = this;
+-            var form = $(this).parents("form");
++            var form = $(this).parents('form');
+             var data = $(form).serialize();
+-            var form_url = $(form).attr("action");
++            var form_url = $(form).attr('action');
+             $.ajax({
+-                type: "GET",
++                type: 'GET',
+                 url: form_url,
+                 data: data,
+                 context: trigger,
+-                success: function (msg) {
++                success: function (msg) {  // jshint ignore:line
+                     // remove button (trigger object can't be directly removed)
+-                    form.find("input[name='form.button.PublishComment']").remove();
+-                    form.parents(".state-pending").toggleClass('state-pending').toggleClass('state-published');
++                    form.find('input[name="form.button.PublishComment"]').remove();
++                    form.parents('.state-pending').toggleClass('state-pending').toggleClass('state-published');
+                 },
+-                error: function (msg) {
++                error: function (msg) {  // jshint ignore:line
+                     return true;
+                 }
+             });
+@@ -186,35 +189,35 @@ require([
+         /**********************************************************************
+          * Edit a comment
+          **********************************************************************/
+-	$("form[name='edit']").prepOverlay({
+-                cssclass: 'overlay-edit-comment',
+-                width: '60%',
++	$('form[name="edit"]').prepOverlay({
++        cssclass: 'overlay-edit-comment',
++        width: '60%',
+ 		subtype: 'ajax',
+ 		filter: '#content>*'
+-		})
++	});
+ 
+         /**********************************************************************
+          * Delete a comment and its answers.
+          **********************************************************************/
+-        $("input[name='form.button.DeleteComment']").on('click', function () {
++        $('input[name="form.button.DeleteComment"]').on('click', function () {
+             var trigger = this;
+-            var form = $(this).parents("form");
++            var form = $(this).parents('form');
+             var data = $(form).serialize();
+-            var form_url = $(form).attr("action");
++            var form_url = $(form).attr('action');
+             $.ajax({
+                 type: 'POST',
+                 url: form_url,
+                 data: data,
+-                context: $(trigger).parents(".comment"),
+-                success: function (data) {
++                context: $(trigger).parents('.comment'),
++                success: function (data) {  // jshint ignore:line
+                     var comment = $(this);
+                     var clss = comment.attr('class');
+                     // remove replies
+                     var treelevel = parseInt(clss[clss.indexOf('replyTreeLevel') + 'replyTreeLevel'.length], 10);
+                     // selector for all the following elements of lower level
+-                    var selector = ".replyTreeLevel" + treelevel;
++                    var selector = '.replyTreeLevel' + treelevel;
+                     for (var i = 0; i < treelevel; i++) {
+-                        selector += ", .replyTreeLevel" + i;
++                        selector += ', .replyTreeLevel' + i;
+                     }
+                     comment.nextUntil(selector).each(function () {
+                         $(this).fadeOut('fast', function () {
+@@ -229,7 +232,7 @@ require([
+                         $(this).remove();
+                     });
+                 },
+-                error: function (req, error) {
++                error: function (req, error) {  // jshint ignore:line
+                     return true;
+                 }
+             });
+@@ -241,10 +244,10 @@ require([
+          * By default, hide the reply and the cancel button for the regular add
+          * comment form.
+          **********************************************************************/
+-        $(".reply").find("input[name='form.buttons.reply']")
+-                    .css("display", "none");
+-        $(".reply").find("input[name='form.buttons.cancel']")
+-                    .css("display", "none");
++        $('.reply').find('input[name="form.buttons.reply"]')
++                    .css('display', 'none');
++        $('.reply').find('input[name="form.buttons.cancel"]')
++                    .css('display', 'none');
+ 
+ 
+         /**********************************************************************
+@@ -252,7 +255,7 @@ require([
+          * Otherwise hide it, since the reply functions only work with JS
+          * enabled.
+          **********************************************************************/
+-        $(".reply-to-comment-button").css("display" , "inline");
++        $('.reply-to-comment-button').css('display' , 'inline');
+ 
+     });
+ 
+diff --git a/plone/app/discussion/browser/javascripts/controlpanel.js b/plone/app/discussion/browser/javascripts/controlpanel.js
+index 9d242ce..b4742a0 100644
+--- a/plone/app/discussion/browser/javascripts/controlpanel.js
++++ b/plone/app/discussion/browser/javascripts/controlpanel.js
+@@ -3,7 +3,19 @@
   * jQuery functions for the plone.app.discussion comment viewlet and form.
   *
   ******************************************************************************/
 -(function ($) {
++/* global require */
 +
 +if(require === undefined){
-+    require = function(reqs, torun){
++    require = function(reqs, torun){  // jshint ignore:line
 +        'use strict';
 +        return torun(window.jQuery);
-+    }
++    };
 +}
 +
-+require([
++require([  // jshint ignore:line
 +    'jquery'
 +], function ($) {
++    'use strict';
      // This unnamed function allows us to use $ inside of a block of code
      // without permanently overwriting $.
      // http://docs.jquery.com/Using_jQuery_with_Other_Libraries
-@@ -249,4 +259,4 @@
+@@ -12,7 +24,7 @@
+     $.disableSettings = function (settings) {
+         $.each(settings, function (intIndex, setting) {
+             setting.addClass('unclickable');
+-            var setting_field = $(setting).find("input,select");
++            var setting_field = $(setting).find('input,select');
+             setting_field.attr('disabled', 'disabled');
+         });
+     };
+@@ -21,7 +33,7 @@
+     $.enableSettings = function (settings) {
+         $.each(settings, function (intIndex, setting) {
+             setting.removeClass('unclickable');
+-            var setting_field = $(setting).find("input,select");
++            var setting_field = $(setting).find('input,select');
+             setting_field.removeAttr('disabled');
+         });
+     };
+@@ -29,11 +41,9 @@
+     /* Update settings */
+     $.updateSettings = function () {
+ 
+-        var globally_enabled = $("#content").hasClass("globally_enabled");
+-        var anonymous_comments = $("#content").hasClass("anonymous_comments");
+-        var moderation_enabled = $("#content").hasClass("moderation_enabled");
+-        var moderation_custom = $("#content").hasClass("moderation_custom");
+-        var invalid_mail_setup = $("#content").hasClass("invalid_mail_setup");
++        var globally_enabled = $('#content').hasClass('globally_enabled');
++        var moderation_custom = $('#content').hasClass('moderation_custom');
++        var invalid_mail_setup = $('#content').hasClass('invalid_mail_setup');
+ 
+         /* If commenting is globally disabled, disable all settings. */
+         if (globally_enabled === true) {
+@@ -104,17 +114,14 @@
+         $.updateSettings();
+ 
+         // Set #content class and update settings afterwards
+-        $("input,select").on("change", function (e) {
+-            var id = $(this).attr("id");
+-            if (id === "form-widgets-globally_enabled-0") {
+-                if ($(this).attr("checked")) {
+-                    $("#content").addClass("globally_enabled");
+-                }
+-                else {
+-                    $("#content").removeClass("globally_enabled");
+-                }
+-                $.updateSettings();
++        $('#form-widgets-globally_enabled-0').on('change', function(){
++            if (this.checked) {
++                $('#content').addClass('globally_enabled');
++            }
++            else {
++                $('#content').removeClass('globally_enabled');
+             }
++            $.updateSettings();
+         });
+ 
+         /**********************************************************************
+@@ -122,12 +129,12 @@
+          * submitting the form. Otherwise the z3c.form will raise errors on
+          * the required attributes.
+          **********************************************************************/
+-        $("form#DiscussionSettingsEditForm").bind("submit", function (e) {
+-            $(this).find("input,select").removeAttr('disabled');
++        $('form#DiscussionSettingsEditForm').bind('submit', function () {
++            $(this).find('input,select').removeAttr('disabled');
+         });
+ 
+     });
+ 
+     //#JSCOVERAGE_ENDIF
+ 
+-}(jQuery));
++});
+diff --git a/plone/app/discussion/browser/javascripts/moderation.js b/plone/app/discussion/browser/javascripts/moderation.js
+index 320477d..98b1341 100644
+--- a/plone/app/discussion/browser/javascripts/moderation.js
++++ b/plone/app/discussion/browser/javascripts/moderation.js
+@@ -3,8 +3,20 @@
+  * jQuery functions for the plone.app.discussion bulk moderation.
+  *
+  ******************************************************************************/
++/* global require, alert */
++/* jshint quotmark: false */
+ 
+-(function ($) {
++if(require === undefined){
++    require = function(reqs, torun){  // jshint ignore:line
++        'use strict';
++        return torun(window.jQuery);
++    };
++}
++
++require([  // jshint ignore:line
++    'jquery'
++], function ($) {
++    'use strict';
+     // This unnamed function allows us to use $ inside of a block of code
+     // without permanently overwriting $.
+     // http://docs.jquery.com/Using_jQuery_with_Other_Libraries
+@@ -22,16 +34,13 @@
+          **********************************************************************/
+         $("input[name='form.button.Delete']").click(function (e) {
+             e.preventDefault();
+-            var button = $(this);
+             var row = $(this).parent().parent();
+-            var form = $(row).parents("form");
+             var path = $(row).find("[name='selected_obj_paths:list']").attr("value");
+             var target = path + "/@@moderate-delete-comment";
+-            var comment_id = $(this).attr("id");
+             $.ajax({
+                 type: "GET",
+                 url: target,
+-                success: function (msg) {
++                success: function (msg) {  // jshint ignore:line
+                     // fade out row
+                     $(row).fadeOut("normal", function () {
+                         $(this).remove();
+@@ -42,7 +51,7 @@
+                         location.reload();
+                     }
+                 },
+-                error: function (msg) {
++                error: function (msg) {  // jshint ignore:line
+                     alert("Error sending AJAX request:" + target);
+                 }
+             });
+@@ -54,15 +63,13 @@
+          **********************************************************************/
+         $("input[name='form.button.Publish']").click(function (e) {
+             e.preventDefault();
+-            var button = $(this);
+             var row = $(this).parent().parent();
+-            var form = $(row).parents("form");
+             var path = $(row).find("[name='selected_obj_paths:list']").attr("value");
+             var target = path + "/@@moderate-publish-comment";
+             $.ajax({
+                 type: "GET",
+                 url: target,
+-                success: function (msg) {
++                success: function (msg) {  // jshint ignore:line
+                     // fade out row
+                     $(row).fadeOut("normal", function () {
+                         $(this).remove();
+@@ -73,7 +80,7 @@
+                         location.reload();
+                     }
+                 },
+-                error: function (msg) {
++                error: function (msg) {  // jshint ignore:line
+                     alert("Error sending AJAX request:" + target);
+                 }
+             });
+@@ -98,7 +105,7 @@
+                 alert("You haven't selected any comment for this bulk action." +
+                       "Please select at least one comment.");
+             } else {
+-                $.post(target, params, function (data) {
++                $.post(target, params, function (data) {  // jshint ignore:line
+                     valArray.each(function () {
+                         /* Remove all selected lines. */
+                         var row = $(this).parent().parent();
+@@ -151,7 +158,7 @@
+                     // show full text
+                     td.replaceWith("<td>" + data + "</td>");
+                 },
+-                error: function (msg) {
++                error: function (msg) {  // jshint ignore:line
+                     alert("Error getting full comment text:" + target);
+                 }
+             });
+@@ -161,4 +168,4 @@
  
      //#JSCOVERAGE_ENDIF
  
