@@ -1,28 +1,26 @@
-Repository: Products.CMFPlone
+Repository: plone.app.collection
 Branch: refs/heads/master
-Date: 2015-02-10T17:09:15-06:00
+Date: 2015-02-10T23:50:38-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/4ba47ba9e026f8bfe67928c1e8a3f6eaef276914
+Commit: https://github.com/plone/plone.app.collection/commit/c249f048e859c9e419761210d317ff26751f3c24
 
-fix create plone site select/input sizes
+updating title so people do not think this package is actually new anymore...
 
 Files changed:
-M Products/CMFPlone/browser/static/plone-admin-ui.css
+M plone/app/collection/configure.zcml
 
-diff --git a/Products/CMFPlone/browser/static/plone-admin-ui.css b/Products/CMFPlone/browser/static/plone-admin-ui.css
-index a3cf92d..bf0e7e7 100644
---- a/Products/CMFPlone/browser/static/plone-admin-ui.css
-+++ b/Products/CMFPlone/browser/static/plone-admin-ui.css
-@@ -29,8 +29,8 @@ footer {border-top:1px solid #d9d9d9; padding-top: 40px; margin-top: 40px;}
- h1 + .upgrade-info {margin-top: -20px;}
- .version-list {font-size: 87.5%; margin-left: 20px;}
+diff --git a/plone/app/collection/configure.zcml b/plone/app/collection/configure.zcml
+index 33ce9dc..d2bda5d 100644
+--- a/plone/app/collection/configure.zcml
++++ b/plone/app/collection/configure.zcml
+@@ -14,7 +14,7 @@
+     name="default"
+     title="plone.app.collection"
+     directory="profiles/default"
+-    description="Adds support for new style collections to Plone"
++    description="Archetypes-based collections"
+     provides="Products.GenericSetup.interfaces.EXTENSION"
+     />
  
--input, select {background:#fff;outline:0;font-family: 'Roboto', sans-serif; font-size: 16px; height: 18px; border-radius: 2px; width:180px; min-width: 180px; display: block; border:1px solid #ccc; padding:10px; margin:5px 0 0;}
--select {height: 40px; width: 200px;}
-+input, select {background:#fff;outline:0;font-family: 'Roboto', sans-serif; font-size: 16px; height: 18px; border-radius: 2px; width:280px; min-width: 180px; display: block; border:1px solid #ccc; padding:10px; margin:5px 0 0;}
-+select {height: 45px; width: 300px;}
- input:focus, select:focus {border-color: #a2a2a2; background: #fffbea; box-shadow: inset 0 1px 3px rgba(0,0,0,.15);}
- [type="submit"], .plone-btn {background: #0184bf; color: #fff; font-family: 'Roboto', sans-serif; font-size: 16px; height: 40px; border: 0; border-radius: 2px; min-width: 200px; display: block; cursor: pointer; margin:10px 0;}
- .plone-btn-secondary {background: #a2a2a2;}
 
 
