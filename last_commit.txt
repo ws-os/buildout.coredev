@@ -1,28 +1,107 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-11T11:37:20-06:00
+Date: 2015-02-11T11:38:30-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/ab8fa88729ffbc7c0e0d5911bbe27cefb6986031
+Commit: https://github.com/plone/Products.CMFPlone/commit/e9dc08979b7439bd5f9ec3e82f377c0980e82b1b
 
-add pat-registry again
+update mockup-core
 
 Files changed:
-M Products/CMFPlone/profiles/dependencies/registry.xml
+M Products/CMFPlone/static/bower.json
+M Products/CMFPlone/static/components/mockup-core/.bower.json
+M Products/CMFPlone/static/components/mockup-core/js/config.js
+M Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js
+M Products/CMFPlone/static/components/mockup-core/js/pattern.js
+M Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js
 
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index 2c925bb..9f12d2e 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -861,6 +861,10 @@
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++plone++static/components/patternslib/src/core/compat</value>
-   </records>
-+  <records prefix="plone.resources/pat-registry"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/components/patternslib/src/core/registry</value>
-+  </records>
-   <records prefix="plone.resources/pat-jquery-ext"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++plone++static/components/patternslib/src/core/jquery-ext</value>
+diff --git a/Products/CMFPlone/static/bower.json b/Products/CMFPlone/static/bower.json
+index 2864fb5..e0e9807 100644
+--- a/Products/CMFPlone/static/bower.json
++++ b/Products/CMFPlone/static/bower.json
+@@ -15,7 +15,7 @@
+     "jquery-form": "3.46.0",
+     "jquery.cookie": "1.4.1",
+     "lodash": "2.4.1",
+-    "mockup-core": "2.1.1",
++    "mockup-core": "2.1.3",
+     "moment": "2.8.3",
+     "pickadate": "3.4.0",
+     "requirejs-text": "2.0.12",
+diff --git a/Products/CMFPlone/static/components/mockup-core/.bower.json b/Products/CMFPlone/static/components/mockup-core/.bower.json
+index f89a888..1f69895 100644
+--- a/Products/CMFPlone/static/components/mockup-core/.bower.json
++++ b/Products/CMFPlone/static/components/mockup-core/.bower.json
+@@ -22,14 +22,14 @@
+     "jquery": "1.11.1"
+   },
+   "homepage": "https://github.com/plone/mockup-core",
+-  "version": "2.1.1",
+-  "_release": "2.1.1",
++  "version": "2.1.3",
++  "_release": "2.1.3",
+   "_resolution": {
+     "type": "version",
+-    "tag": "v2.1.1",
+-    "commit": "6b7452ce5b21f1dc777e4d5f00fc2bdbf2467273"
++    "tag": "v2.1.3",
++    "commit": "f89c9e06563836304627cdedcfee0fc6495e08f1"
+   },
+   "_source": "git://github.com/plone/mockup-core.git",
+-  "_target": "2.1.1",
++  "_target": "2.1.3",
+   "_originalSource": "mockup-core"
+ }
+\ No newline at end of file
+diff --git a/Products/CMFPlone/static/components/mockup-core/js/config.js b/Products/CMFPlone/static/components/mockup-core/js/config.js
+index 754f615..39432d5 100644
+--- a/Products/CMFPlone/static/components/mockup-core/js/config.js
++++ b/Products/CMFPlone/static/components/mockup-core/js/config.js
+@@ -35,6 +35,7 @@
+       'pat-jquery-ext': 'bower_components/patternslib/src/core/jquery-ext',
+       'pat-logger': 'bower_components/patternslib/src/core/logger',
+       'pat-parser': 'bower_components/patternslib/src/core/parser',
++      'pat-registry': 'bower_components/patternslib/src/core/registry',
+       'pat-utils': 'bower_components/patternslib/src/core/utils',
+       'logging': 'bower_components/logging/src/logging'
+     },
+diff --git a/Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js b/Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js
+index ca445af..6e79cca 100644
+--- a/Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js
++++ b/Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js
+@@ -2,7 +2,7 @@ define([
+   'underscore',
+   'marked',
+   'react',
+-  'mockup-registry'
++  'pat-registry'
+ ], function(_, marked, React, Registry) {
+   'use strict';
+ 
+diff --git a/Products/CMFPlone/static/components/mockup-core/js/pattern.js b/Products/CMFPlone/static/components/mockup-core/js/pattern.js
+index 6ba0349..b55fff7 100644
+--- a/Products/CMFPlone/static/components/mockup-core/js/pattern.js
++++ b/Products/CMFPlone/static/components/mockup-core/js/pattern.js
+@@ -3,7 +3,7 @@
+ 
+ define([
+   'jquery',
+-  'mockup-registry',
++  'pat-registry',
+   'mockup-parser',
+   "pat-logger"
+ ], function($, Registry, mockupParser, logger) {
+diff --git a/Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js b/Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js
+index 14a010f..be84a45 100644
+--- a/Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js
++++ b/Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js
+@@ -3,7 +3,7 @@ define([
+   'expect',
+   'sinon',
+   'jquery',
+-  'mockup-registry',
++  'pat-registry',
+   'mockup-patterns-base'
+ ], function(expect, sinon, $, Registry, Base) {
+   'use strict';
 
 
