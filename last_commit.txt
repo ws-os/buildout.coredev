@@ -1,241 +1,26 @@
-Repository: plone.app.content
+Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-02-11T12:05:38-06:00
+Date: 2015-02-11T16:30:03-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.content/commit/a51632a115423b2a15556872584b421c66ad09bb
+Commit: https://github.com/plone/plone.app.discussion/commit/bd0637e0b27dcf71e4c8e873c3c3a8dfc538020f
 
-fix datetime handling with json
+fix window load event to use
 
 Files changed:
-A plone/app/content/utils.py
-M CHANGES.rst
-M plone/app/content/browser/folder.py
-M plone/app/content/browser/vocabulary.py
+M plone/app/discussion/browser/javascripts/controlpanel.js
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 4b87c62..7ffddea 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 3.0.2 (unreleased)
- ------------------
+diff --git a/plone/app/discussion/browser/javascripts/controlpanel.js b/plone/app/discussion/browser/javascripts/controlpanel.js
+index b4742a0..da479f8 100644
+--- a/plone/app/discussion/browser/javascripts/controlpanel.js
++++ b/plone/app/discussion/browser/javascripts/controlpanel.js
+@@ -108,7 +108,7 @@ require([  // jshint ignore:line
+      * Window Load Function: Executes when complete page is fully loaded,
+      * including all frames,
+      **************************************************************************/
+-    $(window).load(function () {
++    $(document).ready(function () {
  
-+- fix json responses to be able to handle datetime objects and Missing.Value
-+  [vangheem]
-+
- - Keep default_page when renaming objects.
-   [pbauer]
- 
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index 8ff1de7..da67483 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -12,6 +12,7 @@
- from Products.CMFPlone.interfaces.siteroot import IPloneSiteRoot
- from Products.Five import BrowserView
- from ZODB.POSException import ConflictError
-+from plone.app.content.utils import json_dumps, json_loads
- from plone.dexterity.interfaces import IDexterityContent
- from plone.folder.interfaces import IExplicitOrdering
- from plone.protect.postonly import check as checkpost
-@@ -25,9 +26,7 @@
- from zope.interface import implements
- from zope.lifecycleevent import ObjectModifiedEvent
- 
--import json
- import transaction
--import Missing
- 
- try:
-     from plone.app.content.browser.file import TUS_ENABLED
-@@ -35,16 +34,6 @@
-     TUS_ENABLED = False
- 
- 
--def custom_json_handler(obj):
--    if obj == Missing.Value:
--        return None
--    return obj
--
--
--def dumps(data):
--    return json.dumps(data, default=custom_json_handler)
--
--
- class FolderContentsView(BrowserView):
-     implements(IFolderContentsView)
- 
-@@ -130,7 +119,7 @@ def __call__(self):
-                 'useTus': TUS_ENABLED
-             }
-         }
--        self.options = dumps(options)
-+        self.options = json_dumps(options)
-         return super(FolderContentsView, self).__call__()
- 
- 
-@@ -154,11 +143,11 @@ def protect(self):
- 
-     def json(self, data):
-         self.request.response.setHeader("Content-Type", "application/json")
--        return dumps(data)
-+        return json_dumps(data)
- 
-     def get_selection(self):
-         selection = self.request.form.get('selection', '[]')
--        return json.loads(selection)
-+        return json_loads(selection)
- 
-     def action(self, obj):
-         """
-@@ -180,8 +169,8 @@ def __call__(self):
-         self.mtool = getToolByName(self.context, 'portal_membership')
- 
-         for brain in self.catalog(UID=selection):
--            selection.remove(brain.UID)  # remove everyone so we know if we
--                                         # missed any
-+            # remove everyone so we know if we missed any
-+            selection.remove(brain.UID)
-             obj = brain.getObject()
-             if self.required_obj_permission:
-                 if not self.mtool.checkPermission(self.required_obj_permission,
-@@ -291,7 +280,7 @@ def __call__(self):
-         self.protect()
-         context = aq_inner(self.context)
- 
--        torename = json.loads(self.request.form['torename'])
-+        torename = json_loads(self.request.form['torename'])
- 
-         catalog = getToolByName(context, 'portal_catalog')
-         mtool = getToolByName(context, 'portal_membership')
-@@ -351,9 +340,9 @@ class TagsAction(FolderContentsActionView):
- 
-     def __call__(self):
-         self.remove = set([v.encode('utf8') for v in
--                           json.loads(self.request.form.get('remove'))])
-+                           json_loads(self.request.form.get('remove'))])
-         self.add = set([v.encode('utf8') for v in
--                        json.loads(self.request.form.get('add'))])
-+                        json_loads(self.request.form.get('add'))])
-         return super(TagsAction, self).__call__()
- 
-     def action(self, obj):
-@@ -431,9 +420,9 @@ def __call__(self):
-         if self.expirationDate and expirationTime:
-             self.expirationDate = self.expirationDate + ' ' + expirationTime
-         self.copyright = self.request.form.get('copyright', '')
--        self.contributors = json.loads(
-+        self.contributors = json_loads(
-             self.request.form.get('contributors', '[]'))
--        self.creators = json.loads(self.request.form.get('creators', '[]'))
-+        self.creators = json_loads(self.request.form.get('creators', '[]'))
-         self.exclude = self.request.form.get('exclude_from_nav', None)
-         return super(PropertiesAction, self).__call__()
- 
-@@ -489,7 +478,7 @@ def __call__(self):
-         id = self.request.form.get('id')
-         ordering = self.getOrdering()
-         delta = self.request.form['delta']
--        subset_ids = json.loads(self.request.form.get('subset_ids', '[]'))
-+        subset_ids = json_loads(self.request.form.get('subset_ids', '[]'))
-         if delta == 'top':
-             ordering.moveObjectsToTop([id])
-         elif delta == 'bottom':
-@@ -571,7 +560,7 @@ def __call__(self):
-                 if key == 'path':
-                     val = val[len(base_path):]
-                 item[key] = val
--        return dumps({
-+        return json_dumps({
-             'addButtons': factories_menu,
-             'defaultPage': self.context.getDefaultPage(),
-             'breadcrumbs': [c for c in reversed(crumbs)],
-diff --git a/plone/app/content/browser/vocabulary.py b/plone/app/content/browser/vocabulary.py
-index e1cc615..6bc2bde 100644
---- a/plone/app/content/browser/vocabulary.py
-+++ b/plone/app/content/browser/vocabulary.py
-@@ -5,6 +5,7 @@
- from Products.CMFPlone.interfaces import IPloneSiteRoot
- from Products.Five import BrowserView
- from logging import getLogger
-+from plone.app.content.utils import json_loads, json_dumps
- from plone.app.querystring import queryparser
- from plone.app.widgets.interfaces import IFieldPermissionChecker
- from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
-@@ -18,7 +19,6 @@
- from zope.security.interfaces import IPermission
- import inspect
- import itertools
--import json
- 
- logger = getLogger(__name__)
- 
-@@ -36,7 +36,7 @@ def _parseJSON(s):
-         s = s.strip()
-         if (s.startswith('{') and s.endswith('}')) or \
-                 (s.startswith('[') and s.endswith(']')):  # detect if json
--            return json.loads(s)
-+            return json_loads(s)
-     return s
- 
- 
-@@ -74,7 +74,7 @@ def __call__(self):
-         try:
-             vocabulary = self.get_vocabulary()
-         except VocabLookupException, e:
--            return json.dumps({'error': e.message})
-+            return json_dumps({'error': e.message})
- 
-         results_are_brains = False
-         if hasattr(vocabulary, 'search_catalog'):
-@@ -94,9 +94,10 @@ def __call__(self):
-         try:
-             total = len(results)
-         except TypeError:
--            total = 0  # do not error if object does not support __len__
--                       # we'll check again later if we can figure some size
--                       # out
-+            # do not error if object does not support __len__
-+            # we'll check again later if we can figure some size
-+            # out
-+            total = 0
- 
-         # get batch
-         batch = _parseJSON(self.request.get('batch', ''))
-@@ -157,7 +158,7 @@ def __call__(self):
-         if total == 0:
-             total = len(items)
- 
--        return json.dumps({
-+        return json_dumps({
-             'results': items,
-             'total': total
-         })
-diff --git a/plone/app/content/utils.py b/plone/app/content/utils.py
-new file mode 100644
-index 0000000..adbbbbf
---- /dev/null
-+++ b/plone/app/content/utils.py
-@@ -0,0 +1,19 @@
-+import json
-+import datetime
-+import Missing
-+
-+
-+def custom_json_handler(obj):
-+    if obj == Missing.Value:
-+        return None
-+    if type(obj) in (datetime.datetime, datetime.date):
-+        return obj.isoformat()
-+    return obj
-+
-+
-+def json_dumps(data):
-+    return json.dumps(data, default=custom_json_handler)
-+
-+
-+# can eventually provide custom handling here if we want
-+json_loads = json.loads
-\ No newline at end of file
+         // Update settings on page load
+         $.updateSettings();
 
 
