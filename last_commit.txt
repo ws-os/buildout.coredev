@@ -1,107 +1,241 @@
-Repository: Products.CMFPlone
+Repository: plone.app.content
 Branch: refs/heads/master
-Date: 2015-02-11T11:38:30-06:00
+Date: 2015-02-11T12:05:38-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/e9dc08979b7439bd5f9ec3e82f377c0980e82b1b
+Commit: https://github.com/plone/plone.app.content/commit/a51632a115423b2a15556872584b421c66ad09bb
 
-update mockup-core
+fix datetime handling with json
 
 Files changed:
-M Products/CMFPlone/static/bower.json
-M Products/CMFPlone/static/components/mockup-core/.bower.json
-M Products/CMFPlone/static/components/mockup-core/js/config.js
-M Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js
-M Products/CMFPlone/static/components/mockup-core/js/pattern.js
-M Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js
+A plone/app/content/utils.py
+M CHANGES.rst
+M plone/app/content/browser/folder.py
+M plone/app/content/browser/vocabulary.py
 
-diff --git a/Products/CMFPlone/static/bower.json b/Products/CMFPlone/static/bower.json
-index 2864fb5..e0e9807 100644
---- a/Products/CMFPlone/static/bower.json
-+++ b/Products/CMFPlone/static/bower.json
-@@ -15,7 +15,7 @@
-     "jquery-form": "3.46.0",
-     "jquery.cookie": "1.4.1",
-     "lodash": "2.4.1",
--    "mockup-core": "2.1.1",
-+    "mockup-core": "2.1.3",
-     "moment": "2.8.3",
-     "pickadate": "3.4.0",
-     "requirejs-text": "2.0.12",
-diff --git a/Products/CMFPlone/static/components/mockup-core/.bower.json b/Products/CMFPlone/static/components/mockup-core/.bower.json
-index f89a888..1f69895 100644
---- a/Products/CMFPlone/static/components/mockup-core/.bower.json
-+++ b/Products/CMFPlone/static/components/mockup-core/.bower.json
-@@ -22,14 +22,14 @@
-     "jquery": "1.11.1"
-   },
-   "homepage": "https://github.com/plone/mockup-core",
--  "version": "2.1.1",
--  "_release": "2.1.1",
-+  "version": "2.1.3",
-+  "_release": "2.1.3",
-   "_resolution": {
-     "type": "version",
--    "tag": "v2.1.1",
--    "commit": "6b7452ce5b21f1dc777e4d5f00fc2bdbf2467273"
-+    "tag": "v2.1.3",
-+    "commit": "f89c9e06563836304627cdedcfee0fc6495e08f1"
-   },
-   "_source": "git://github.com/plone/mockup-core.git",
--  "_target": "2.1.1",
-+  "_target": "2.1.3",
-   "_originalSource": "mockup-core"
- }
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 4b87c62..7ffddea 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,9 @@ Changelog
+ 3.0.2 (unreleased)
+ ------------------
+ 
++- fix json responses to be able to handle datetime objects and Missing.Value
++  [vangheem]
++
+ - Keep default_page when renaming objects.
+   [pbauer]
+ 
+diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
+index 8ff1de7..da67483 100644
+--- a/plone/app/content/browser/folder.py
++++ b/plone/app/content/browser/folder.py
+@@ -12,6 +12,7 @@
+ from Products.CMFPlone.interfaces.siteroot import IPloneSiteRoot
+ from Products.Five import BrowserView
+ from ZODB.POSException import ConflictError
++from plone.app.content.utils import json_dumps, json_loads
+ from plone.dexterity.interfaces import IDexterityContent
+ from plone.folder.interfaces import IExplicitOrdering
+ from plone.protect.postonly import check as checkpost
+@@ -25,9 +26,7 @@
+ from zope.interface import implements
+ from zope.lifecycleevent import ObjectModifiedEvent
+ 
+-import json
+ import transaction
+-import Missing
+ 
+ try:
+     from plone.app.content.browser.file import TUS_ENABLED
+@@ -35,16 +34,6 @@
+     TUS_ENABLED = False
+ 
+ 
+-def custom_json_handler(obj):
+-    if obj == Missing.Value:
+-        return None
+-    return obj
+-
+-
+-def dumps(data):
+-    return json.dumps(data, default=custom_json_handler)
+-
+-
+ class FolderContentsView(BrowserView):
+     implements(IFolderContentsView)
+ 
+@@ -130,7 +119,7 @@ def __call__(self):
+                 'useTus': TUS_ENABLED
+             }
+         }
+-        self.options = dumps(options)
++        self.options = json_dumps(options)
+         return super(FolderContentsView, self).__call__()
+ 
+ 
+@@ -154,11 +143,11 @@ def protect(self):
+ 
+     def json(self, data):
+         self.request.response.setHeader("Content-Type", "application/json")
+-        return dumps(data)
++        return json_dumps(data)
+ 
+     def get_selection(self):
+         selection = self.request.form.get('selection', '[]')
+-        return json.loads(selection)
++        return json_loads(selection)
+ 
+     def action(self, obj):
+         """
+@@ -180,8 +169,8 @@ def __call__(self):
+         self.mtool = getToolByName(self.context, 'portal_membership')
+ 
+         for brain in self.catalog(UID=selection):
+-            selection.remove(brain.UID)  # remove everyone so we know if we
+-                                         # missed any
++            # remove everyone so we know if we missed any
++            selection.remove(brain.UID)
+             obj = brain.getObject()
+             if self.required_obj_permission:
+                 if not self.mtool.checkPermission(self.required_obj_permission,
+@@ -291,7 +280,7 @@ def __call__(self):
+         self.protect()
+         context = aq_inner(self.context)
+ 
+-        torename = json.loads(self.request.form['torename'])
++        torename = json_loads(self.request.form['torename'])
+ 
+         catalog = getToolByName(context, 'portal_catalog')
+         mtool = getToolByName(context, 'portal_membership')
+@@ -351,9 +340,9 @@ class TagsAction(FolderContentsActionView):
+ 
+     def __call__(self):
+         self.remove = set([v.encode('utf8') for v in
+-                           json.loads(self.request.form.get('remove'))])
++                           json_loads(self.request.form.get('remove'))])
+         self.add = set([v.encode('utf8') for v in
+-                        json.loads(self.request.form.get('add'))])
++                        json_loads(self.request.form.get('add'))])
+         return super(TagsAction, self).__call__()
+ 
+     def action(self, obj):
+@@ -431,9 +420,9 @@ def __call__(self):
+         if self.expirationDate and expirationTime:
+             self.expirationDate = self.expirationDate + ' ' + expirationTime
+         self.copyright = self.request.form.get('copyright', '')
+-        self.contributors = json.loads(
++        self.contributors = json_loads(
+             self.request.form.get('contributors', '[]'))
+-        self.creators = json.loads(self.request.form.get('creators', '[]'))
++        self.creators = json_loads(self.request.form.get('creators', '[]'))
+         self.exclude = self.request.form.get('exclude_from_nav', None)
+         return super(PropertiesAction, self).__call__()
+ 
+@@ -489,7 +478,7 @@ def __call__(self):
+         id = self.request.form.get('id')
+         ordering = self.getOrdering()
+         delta = self.request.form['delta']
+-        subset_ids = json.loads(self.request.form.get('subset_ids', '[]'))
++        subset_ids = json_loads(self.request.form.get('subset_ids', '[]'))
+         if delta == 'top':
+             ordering.moveObjectsToTop([id])
+         elif delta == 'bottom':
+@@ -571,7 +560,7 @@ def __call__(self):
+                 if key == 'path':
+                     val = val[len(base_path):]
+                 item[key] = val
+-        return dumps({
++        return json_dumps({
+             'addButtons': factories_menu,
+             'defaultPage': self.context.getDefaultPage(),
+             'breadcrumbs': [c for c in reversed(crumbs)],
+diff --git a/plone/app/content/browser/vocabulary.py b/plone/app/content/browser/vocabulary.py
+index e1cc615..6bc2bde 100644
+--- a/plone/app/content/browser/vocabulary.py
++++ b/plone/app/content/browser/vocabulary.py
+@@ -5,6 +5,7 @@
+ from Products.CMFPlone.interfaces import IPloneSiteRoot
+ from Products.Five import BrowserView
+ from logging import getLogger
++from plone.app.content.utils import json_loads, json_dumps
+ from plone.app.querystring import queryparser
+ from plone.app.widgets.interfaces import IFieldPermissionChecker
+ from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
+@@ -18,7 +19,6 @@
+ from zope.security.interfaces import IPermission
+ import inspect
+ import itertools
+-import json
+ 
+ logger = getLogger(__name__)
+ 
+@@ -36,7 +36,7 @@ def _parseJSON(s):
+         s = s.strip()
+         if (s.startswith('{') and s.endswith('}')) or \
+                 (s.startswith('[') and s.endswith(']')):  # detect if json
+-            return json.loads(s)
++            return json_loads(s)
+     return s
+ 
+ 
+@@ -74,7 +74,7 @@ def __call__(self):
+         try:
+             vocabulary = self.get_vocabulary()
+         except VocabLookupException, e:
+-            return json.dumps({'error': e.message})
++            return json_dumps({'error': e.message})
+ 
+         results_are_brains = False
+         if hasattr(vocabulary, 'search_catalog'):
+@@ -94,9 +94,10 @@ def __call__(self):
+         try:
+             total = len(results)
+         except TypeError:
+-            total = 0  # do not error if object does not support __len__
+-                       # we'll check again later if we can figure some size
+-                       # out
++            # do not error if object does not support __len__
++            # we'll check again later if we can figure some size
++            # out
++            total = 0
+ 
+         # get batch
+         batch = _parseJSON(self.request.get('batch', ''))
+@@ -157,7 +158,7 @@ def __call__(self):
+         if total == 0:
+             total = len(items)
+ 
+-        return json.dumps({
++        return json_dumps({
+             'results': items,
+             'total': total
+         })
+diff --git a/plone/app/content/utils.py b/plone/app/content/utils.py
+new file mode 100644
+index 0000000..adbbbbf
+--- /dev/null
++++ b/plone/app/content/utils.py
+@@ -0,0 +1,19 @@
++import json
++import datetime
++import Missing
++
++
++def custom_json_handler(obj):
++    if obj == Missing.Value:
++        return None
++    if type(obj) in (datetime.datetime, datetime.date):
++        return obj.isoformat()
++    return obj
++
++
++def json_dumps(data):
++    return json.dumps(data, default=custom_json_handler)
++
++
++# can eventually provide custom handling here if we want
++json_loads = json.loads
 \ No newline at end of file
-diff --git a/Products/CMFPlone/static/components/mockup-core/js/config.js b/Products/CMFPlone/static/components/mockup-core/js/config.js
-index 754f615..39432d5 100644
---- a/Products/CMFPlone/static/components/mockup-core/js/config.js
-+++ b/Products/CMFPlone/static/components/mockup-core/js/config.js
-@@ -35,6 +35,7 @@
-       'pat-jquery-ext': 'bower_components/patternslib/src/core/jquery-ext',
-       'pat-logger': 'bower_components/patternslib/src/core/logger',
-       'pat-parser': 'bower_components/patternslib/src/core/parser',
-+      'pat-registry': 'bower_components/patternslib/src/core/registry',
-       'pat-utils': 'bower_components/patternslib/src/core/utils',
-       'logging': 'bower_components/logging/src/logging'
-     },
-diff --git a/Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js b/Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js
-index ca445af..6e79cca 100644
---- a/Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js
-+++ b/Products/CMFPlone/static/components/mockup-core/js/docs/pattern.js
-@@ -2,7 +2,7 @@ define([
-   'underscore',
-   'marked',
-   'react',
--  'mockup-registry'
-+  'pat-registry'
- ], function(_, marked, React, Registry) {
-   'use strict';
- 
-diff --git a/Products/CMFPlone/static/components/mockup-core/js/pattern.js b/Products/CMFPlone/static/components/mockup-core/js/pattern.js
-index 6ba0349..b55fff7 100644
---- a/Products/CMFPlone/static/components/mockup-core/js/pattern.js
-+++ b/Products/CMFPlone/static/components/mockup-core/js/pattern.js
-@@ -3,7 +3,7 @@
- 
- define([
-   'jquery',
--  'mockup-registry',
-+  'pat-registry',
-   'mockup-parser',
-   "pat-logger"
- ], function($, Registry, mockupParser, logger) {
-diff --git a/Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js b/Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js
-index 14a010f..be84a45 100644
---- a/Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js
-+++ b/Products/CMFPlone/static/components/mockup-core/tests/pattern-test.js
-@@ -3,7 +3,7 @@ define([
-   'expect',
-   'sinon',
-   'jquery',
--  'mockup-registry',
-+  'pat-registry',
-   'mockup-patterns-base'
- ], function(expect, sinon, $, Registry, Base) {
-   'use strict';
 
 
