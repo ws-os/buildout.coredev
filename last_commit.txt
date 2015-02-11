@@ -1,26 +1,71 @@
-Repository: plone.app.collection
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-10T23:50:38-06:00
+Date: 2015-02-10T23:53:20-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.collection/commit/c249f048e859c9e419761210d317ff26751f3c24
+Commit: https://github.com/plone/Products.CMFPlone/commit/f96c19e76142c19093beaadf68c2809fbf6803c5
 
-updating title so people do not think this package is actually new anymore...
+fix some products not showing in addons and other showing that should not fixes #342
 
 Files changed:
-M plone/app/collection/configure.zcml
+M Products/CMFPlone/controlpanel/browser/quickinstaller.py
+M Products/CMFPlone/setuphandlers.py
 
-diff --git a/plone/app/collection/configure.zcml b/plone/app/collection/configure.zcml
-index 33ce9dc..d2bda5d 100644
---- a/plone/app/collection/configure.zcml
-+++ b/plone/app/collection/configure.zcml
-@@ -14,7 +14,7 @@
-     name="default"
-     title="plone.app.collection"
-     directory="profiles/default"
--    description="Adds support for new style collections to Plone"
-+    description="Archetypes-based collections"
-     provides="Products.GenericSetup.interfaces.EXTENSION"
-     />
+diff --git a/Products/CMFPlone/controlpanel/browser/quickinstaller.py b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
+index 5d5a118..5d4eca3 100644
+--- a/Products/CMFPlone/controlpanel/browser/quickinstaller.py
++++ b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
+@@ -29,6 +29,7 @@ def marshall_addons(self):
+         for profile in profiles:
+             if profile['type'] != EXTENSION:
+                 continue
++
+             pid = profile['id']
+             pid_parts = pid.split(':')
+             if len(pid_parts) != 2:
+@@ -53,6 +54,15 @@ def marshall_addons(self):
+                     if not self.qi.isProductInstallable(product_id):
+                         continue
+ 
++                if profile_type in product_id:
++                    profile_type = 'default'
++                    # XXX override here so some products that do not
++                    # explicitly say "default" for their install
++                    # profile still work
++                    # I'm not sure this is right but this is a way
++                    # to get CMFPlacefulWorkflow to show up in addons
++                    # If it's safe to rename profiles, we can do that too
++
+                 addons[product_id] = {
+                     'id': product_id,
+                     'title': product_id,
+@@ -71,8 +81,10 @@ def marshall_addons(self):
+                 product['title'] = profile['title']
+                 product['description'] = profile['description']
+                 product['install_profile'] = profile
++                product['profile_type'] = profile_type
+             elif profile_type == 'uninstall':
+                 product['uninstall_profile'] = profile
++                product['profile_type'] = profile_type
+             else:
+                 if 'version' in profile:
+                     product['upgrade_profiles'][profile['version']] = profile
+diff --git a/Products/CMFPlone/setuphandlers.py b/Products/CMFPlone/setuphandlers.py
+index ab5e052..f9c0178 100644
+--- a/Products/CMFPlone/setuphandlers.py
++++ b/Products/CMFPlone/setuphandlers.py
+@@ -57,8 +57,12 @@ def getNonInstallableProducts(self):
+             'plone.app.imaging',
+             'plone.app.intid',
+             'plone.app.registry',
++            'plone.app.referenceablebehavior',
++            'plone.app.relationfield',
++            'plone.resource',
+             'plone.app.widgets',
+-            'plone.app.z3cform'
++            'plone.app.z3cform',
++            'plone.formwidget.recurrence'
+             ]
+ 
  
 
 
