@@ -1,26 +1,49 @@
-Repository: Products.CMFPlone
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-11T21:15:33-06:00
+Date: 2015-02-11T21:30:47-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/c46217c4fdacfd82ab18933264a3e027e5ab81e3
+Commit: https://github.com/plone/mockup/commit/e880d0ac44b7d9e9bc424e359d1a83da3f7b2452
 
-activate select2 widget for rss links
+disable add menu overlay
 
 Files changed:
-M Products/CMFPlone/controlpanel/browser/syndication.py
+M mockup/patterns/structure/js/views/addmenu.js
 
-diff --git a/Products/CMFPlone/controlpanel/browser/syndication.py b/Products/CMFPlone/controlpanel/browser/syndication.py
-index 50ae171..cd8ed5c 100644
---- a/Products/CMFPlone/controlpanel/browser/syndication.py
-+++ b/Products/CMFPlone/controlpanel/browser/syndication.py
-@@ -17,7 +17,7 @@ class SyndicationControlPanelForm(controlpanel.RegistryEditForm):
+diff --git a/mockup/patterns/structure/js/views/addmenu.js b/mockup/patterns/structure/js/views/addmenu.js
+index d84b44a..592be7b 100644
+--- a/mockup/patterns/structure/js/views/addmenu.js
++++ b/mockup/patterns/structure/js/views/addmenu.js
+@@ -6,10 +6,9 @@ define([
+   'backbone',
+   'mockup-ui-url/views/buttongroup',
+   'mockup-ui-url/views/button',
+-  'mockup-patterns-modal',
+   'mockup-utils',
+   'bootstrap-dropdown'
+-], function($, _, Backbone, ButtonGroup, ButtonView, Modal, utils) {
++], function($, _, Backbone, ButtonGroup, ButtonView, utils) {
+   'use strict';
  
-     def updateFields(self):
-         super(SyndicationControlPanelForm, self).updateFields()
--        #self.fields['site_rss_items'].widgetFactory = SelectFieldWidget
-+        self.fields['site_rss_items'].widgetFactory = SelectFieldWidget
- 
-     def getSyndicationSettingsButtonShown(self):
-         actions = getToolByName(self.context, 'portal_actions')
+   var AddMenu = ButtonGroup.extend({
+@@ -49,7 +48,10 @@ define([
+       var self = this;
+       e.preventDefault();
+       self.app.loading.show();
+-
++      window.location = button.url;
++      /* Do not launch in overlay otherwise you get overlays insides of
++         overlays potentials--nasty. Leave here if we change our mind
++         for some reason.
+       $.ajax({
+         url: button.url,
+         type: 'POST',
+@@ -95,6 +97,7 @@ define([
+           self.app.loading.hide();
+         }
+       });
++    */
+     },
+     render: function() {
+       var self = this;
 
 
