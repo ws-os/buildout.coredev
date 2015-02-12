@@ -1,60 +1,25 @@
 Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-12T16:38:30+01:00
+Date: 2015-02-12T16:44:41+01:00
 Author: Vincent Fretin (vincentfretin) <vincent.fretin@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/86eb93d50cd4735da36aa551562b80d4eef367b3
+Commit: https://github.com/plone/plone.app.upgrade/commit/be236d5428653b43a281a4acd77d30cf152682e9
 
-sync upgrade steps with plone.app.upgrade 1.2.x, the upgrade step from 42xx to 4300 wasn't executed if you started the Plone upgrade with Plone &gt; 4.2.2
+increment source version for 5000 upgrade step
 
 Files changed:
-M plone/app/upgrade/v42/configure.zcml
-M plone/app/upgrade/v43/configure.zcml
+M plone/app/upgrade/v50/configure.zcml
 
-diff --git a/plone/app/upgrade/v42/configure.zcml b/plone/app/upgrade/v42/configure.zcml
-index 11cdb91..8ee6574 100644
---- a/plone/app/upgrade/v42/configure.zcml
-+++ b/plone/app/upgrade/v42/configure.zcml
-@@ -185,4 +185,29 @@
- 
-     </genericsetup:upgradeSteps>
- 
-+    <genericsetup:upgradeSteps
-+        source="4211"
-+        destination="4212"
-+        profile="Products.CMFPlone:plone">
-+
-+        <genericsetup:upgradeStep
-+            title="Miscellaneous"
-+            description=""
-+            handler="..utils.null_upgrade_step"
-+            />
-+    </genericsetup:upgradeSteps>
-+
-+    <genericsetup:upgradeSteps
-+        source="4212"
-+        destination="4213"
-+        profile="Products.CMFPlone:plone">
-+
-+        <genericsetup:upgradeStep
-+            title="Miscellaneous"
-+            description=""
-+            handler="..utils.null_upgrade_step"
-+            />
-+    </genericsetup:upgradeSteps>
-+
-+
- </configure>
-diff --git a/plone/app/upgrade/v43/configure.zcml b/plone/app/upgrade/v43/configure.zcml
-index 523f731..71c0a87 100644
---- a/plone/app/upgrade/v43/configure.zcml
-+++ b/plone/app/upgrade/v43/configure.zcml
-@@ -8,7 +8,7 @@
+diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
+index 01dd8e9..b840fc8 100644
+--- a/plone/app/upgrade/v50/configure.zcml
++++ b/plone/app/upgrade/v50/configure.zcml
+@@ -7,7 +7,7 @@
      <include file="profiles.zcml" />
  
-     <genericsetup:upgradeSteps
--        source="4208"
-+        source="4213"
-         destination="4300"
+     <gs:upgradeSteps
+-        source="4309"
++        source="4310"
+         destination="5000"
          profile="Products.CMFPlone:plone">
  
 
