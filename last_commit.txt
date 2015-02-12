@@ -1,26 +1,59 @@
-Repository: plone.app.upgrade
+Repository: plone.resourceeditor
 Branch: refs/heads/master
-Date: 2015-02-12T16:44:41+01:00
-Author: Vincent Fretin (vincentfretin) <vincent.fretin@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/be236d5428653b43a281a4acd77d30cf152682e9
+Date: 2015-02-12T13:49:26-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.resourceeditor/commit/bee4ce982eef08bce612ea03bd362c01e51c6120
 
-increment source version for 5000 upgrade step
+update versions
 
 Files changed:
-M plone/app/upgrade/v50/configure.zcml
+M CHANGES.txt
+M README.txt
+M setup.py
 
-diff --git a/plone/app/upgrade/v50/configure.zcml b/plone/app/upgrade/v50/configure.zcml
-index 01dd8e9..b840fc8 100644
---- a/plone/app/upgrade/v50/configure.zcml
-+++ b/plone/app/upgrade/v50/configure.zcml
-@@ -7,7 +7,7 @@
-     <include file="profiles.zcml" />
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 2ed86bc..535fc33 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -1,10 +1,10 @@
+ Changelog
+ =========
  
-     <gs:upgradeSteps
--        source="4309"
-+        source="4310"
-         destination="5000"
-         profile="Products.CMFPlone:plone">
+-2.0a1 (unreleased)
++2.0.0 (unreleased)
+ ------------------
  
+-- move to mockup based file manager
++- move to mockup based file manager. Plone 5 only here.
+   [vangheem]
+ 
+ 
+diff --git a/README.txt b/README.txt
+index 71f394e..1508c5e 100644
+--- a/README.txt
++++ b/README.txt
+@@ -19,3 +19,9 @@ In both of these cases, ``resourceDirectory`` should be an in-ZODB
+ ``plone.resource`` resource directory instance.
+ 
+ The macros assume that jQuery is already loaded.
++
++
++Versions
++========
++
++2.x is for Plone 5.0 and up.
+\ No newline at end of file
+diff --git a/setup.py b/setup.py
+index 62e9057..bda987c 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,6 +1,6 @@
+ from setuptools import setup, find_packages
+ 
+-version = '2.x'
++version = '2.0.0.dev0'
+ 
+ setup(name='plone.resourceeditor',
+       version=version,
 
 
