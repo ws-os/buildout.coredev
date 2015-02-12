@@ -1,37 +1,26 @@
-Repository: plone.app.layout
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-11T21:13:29-06:00
+Date: 2015-02-11T21:15:33-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.layout/commit/5fbeaf76f547515ae6a2a2df184021cd270d6160
+Commit: https://github.com/plone/Products.CMFPlone/commit/c46217c4fdacfd82ab18933264a3e027e5ab81e3
 
-check that site_rss_items is actually set first, it is possible in some cases it will be None. This can cause a test failure
+activate select2 widget for rss links
 
 Files changed:
-M plone/app/layout/links/viewlets.py
+M Products/CMFPlone/controlpanel/browser/syndication.py
 
-diff --git a/plone/app/layout/links/viewlets.py b/plone/app/layout/links/viewlets.py
-index 555616a..238c61d 100644
---- a/plone/app/layout/links/viewlets.py
-+++ b/plone/app/layout/links/viewlets.py
-@@ -110,12 +110,13 @@ def update(self):
-                     settings = registry.forInterface(ISiteSyndicationSettings)
-                 except KeyError:
-                     return
--                for uid in settings.site_rss_items:
--                    obj = uuidToObject(uid)
--                    if obj is not None:
--                        self.rsslinks.extend(self.getRssLinks(obj))
--                self.rsslinks.extend(self.getRssLinks(
--                    self.portal_state.portal()))
-+                if settings.site_rss_items:
-+                    for uid in settings.site_rss_items:
-+                        obj = uuidToObject(uid)
-+                        if obj is not None:
-+                            self.rsslinks.extend(self.getRssLinks(obj))
-+                    self.rsslinks.extend(self.getRssLinks(
-+                        self.portal_state.portal()))
-         else:
-             if util.context_enabled():
-                 self.rsslinks.extend(self.getRssLinks(self.context))
+diff --git a/Products/CMFPlone/controlpanel/browser/syndication.py b/Products/CMFPlone/controlpanel/browser/syndication.py
+index 50ae171..cd8ed5c 100644
+--- a/Products/CMFPlone/controlpanel/browser/syndication.py
++++ b/Products/CMFPlone/controlpanel/browser/syndication.py
+@@ -17,7 +17,7 @@ class SyndicationControlPanelForm(controlpanel.RegistryEditForm):
+ 
+     def updateFields(self):
+         super(SyndicationControlPanelForm, self).updateFields()
+-        #self.fields['site_rss_items'].widgetFactory = SelectFieldWidget
++        self.fields['site_rss_items'].widgetFactory = SelectFieldWidget
+ 
+     def getSyndicationSettingsButtonShown(self):
+         actions = getToolByName(self.context, 'portal_actions')
 
 
