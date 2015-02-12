@@ -1,49 +1,61 @@
-Repository: mockup
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-11T21:30:47-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/e880d0ac44b7d9e9bc424e359d1a83da3f7b2452
+Date: 2015-02-12T16:38:30+01:00
+Author: Vincent Fretin (vincentfretin) <vincent.fretin@gmail.com>
+Commit: https://github.com/plone/plone.app.upgrade/commit/86eb93d50cd4735da36aa551562b80d4eef367b3
 
-disable add menu overlay
+sync upgrade steps with plone.app.upgrade 1.2.x, the upgrade step from 42xx to 4300 wasn't executed if you started the Plone upgrade with Plone &gt; 4.2.2
 
 Files changed:
-M mockup/patterns/structure/js/views/addmenu.js
+M plone/app/upgrade/v42/configure.zcml
+M plone/app/upgrade/v43/configure.zcml
 
-diff --git a/mockup/patterns/structure/js/views/addmenu.js b/mockup/patterns/structure/js/views/addmenu.js
-index d84b44a..592be7b 100644
---- a/mockup/patterns/structure/js/views/addmenu.js
-+++ b/mockup/patterns/structure/js/views/addmenu.js
-@@ -6,10 +6,9 @@ define([
-   'backbone',
-   'mockup-ui-url/views/buttongroup',
-   'mockup-ui-url/views/button',
--  'mockup-patterns-modal',
-   'mockup-utils',
-   'bootstrap-dropdown'
--], function($, _, Backbone, ButtonGroup, ButtonView, Modal, utils) {
-+], function($, _, Backbone, ButtonGroup, ButtonView, utils) {
-   'use strict';
+diff --git a/plone/app/upgrade/v42/configure.zcml b/plone/app/upgrade/v42/configure.zcml
+index 11cdb91..8ee6574 100644
+--- a/plone/app/upgrade/v42/configure.zcml
++++ b/plone/app/upgrade/v42/configure.zcml
+@@ -185,4 +185,29 @@
  
-   var AddMenu = ButtonGroup.extend({
-@@ -49,7 +48,10 @@ define([
-       var self = this;
-       e.preventDefault();
-       self.app.loading.show();
--
-+      window.location = button.url;
-+      /* Do not launch in overlay otherwise you get overlays insides of
-+         overlays potentials--nasty. Leave here if we change our mind
-+         for some reason.
-       $.ajax({
-         url: button.url,
-         type: 'POST',
-@@ -95,6 +97,7 @@ define([
-           self.app.loading.hide();
-         }
-       });
-+    */
-     },
-     render: function() {
-       var self = this;
+     </genericsetup:upgradeSteps>
+ 
++    <genericsetup:upgradeSteps
++        source="4211"
++        destination="4212"
++        profile="Products.CMFPlone:plone">
++
++        <genericsetup:upgradeStep
++            title="Miscellaneous"
++            description=""
++            handler="..utils.null_upgrade_step"
++            />
++    </genericsetup:upgradeSteps>
++
++    <genericsetup:upgradeSteps
++        source="4212"
++        destination="4213"
++        profile="Products.CMFPlone:plone">
++
++        <genericsetup:upgradeStep
++            title="Miscellaneous"
++            description=""
++            handler="..utils.null_upgrade_step"
++            />
++    </genericsetup:upgradeSteps>
++
++
+ </configure>
+diff --git a/plone/app/upgrade/v43/configure.zcml b/plone/app/upgrade/v43/configure.zcml
+index 523f731..71c0a87 100644
+--- a/plone/app/upgrade/v43/configure.zcml
++++ b/plone/app/upgrade/v43/configure.zcml
+@@ -8,7 +8,7 @@
+     <include file="profiles.zcml" />
+ 
+     <genericsetup:upgradeSteps
+-        source="4208"
++        source="4213"
+         destination="4300"
+         profile="Products.CMFPlone:plone">
+ 
 
 
