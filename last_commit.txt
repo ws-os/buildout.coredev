@@ -1,59 +1,32 @@
-Repository: plone.resourceeditor
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-12T13:49:26-06:00
+Date: 2015-02-12T14:34:53-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.resourceeditor/commit/bee4ce982eef08bce612ea03bd362c01e51c6120
+Commit: https://github.com/plone/mockup/commit/1e6f6e6810a0a9024b0ddb9c45f18ea8b60b2e84
 
-update versions
+check for unsaved changes first
 
 Files changed:
-M CHANGES.txt
-M README.txt
-M setup.py
+M mockup/patterns/resourceregistry/js/registry.js
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 2ed86bc..535fc33 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -1,10 +1,10 @@
- Changelog
- =========
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index 01c5381..11e496e 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -435,8 +435,12 @@ define([
+     buildClicked: function(e){
+       e.preventDefault();
+       var self = this;
+-      var builder = new Builder(self.options.name, self);
+-      builder.run(); 
++      if(this.options.registryView.dirty){
++        alert('You have unsaved changes. Save or discard before building.');
++      }else{
++        var builder = new Builder(self.options.name, self);
++        builder.run();
++      }
+     }
+   });
  
--2.0a1 (unreleased)
-+2.0.0 (unreleased)
- ------------------
- 
--- move to mockup based file manager
-+- move to mockup based file manager. Plone 5 only here.
-   [vangheem]
- 
- 
-diff --git a/README.txt b/README.txt
-index 71f394e..1508c5e 100644
---- a/README.txt
-+++ b/README.txt
-@@ -19,3 +19,9 @@ In both of these cases, ``resourceDirectory`` should be an in-ZODB
- ``plone.resource`` resource directory instance.
- 
- The macros assume that jQuery is already loaded.
-+
-+
-+Versions
-+========
-+
-+2.x is for Plone 5.0 and up.
-\ No newline at end of file
-diff --git a/setup.py b/setup.py
-index 62e9057..bda987c 100644
---- a/setup.py
-+++ b/setup.py
-@@ -1,6 +1,6 @@
- from setuptools import setup, find_packages
- 
--version = '2.x'
-+version = '2.0.0.dev0'
- 
- setup(name='plone.resourceeditor',
-       version=version,
 
 
