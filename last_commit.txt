@@ -1,42 +1,26 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-11T17:10:50-06:00
+Date: 2015-02-11T18:00:44-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/4e1456749674f794ebae8d9fb0c6fb1dce9150b8
+Commit: https://github.com/plone/Products.CMFPlone/commit/df2a41c3498b81093648d347bbc1ab8bee462172
 
-in and out widgets are horrible
+can not figure out all the robot failures right now. revert widget update for now
 
 Files changed:
 M Products/CMFPlone/controlpanel/browser/syndication.py
 
 diff --git a/Products/CMFPlone/controlpanel/browser/syndication.py b/Products/CMFPlone/controlpanel/browser/syndication.py
-index 912b825..cd8ed5c 100644
+index cd8ed5c..50ae171 100644
 --- a/Products/CMFPlone/controlpanel/browser/syndication.py
 +++ b/Products/CMFPlone/controlpanel/browser/syndication.py
-@@ -1,11 +1,11 @@
- from Products.CMFCore.utils import getToolByName
--from zope.component import getUtility
--from plone.registry.interfaces import IRegistry
- from zope.i18nmessageid import MessageFactory
- from Products.CMFPlone.interfaces.syndication import ISiteSyndicationSettings
- from plone.app.registry.browser import controlpanel
- from z3c.form import button
- from Products.statusmessages.interfaces import IStatusMessage
-+from plone.app.z3cform.widget import SelectFieldWidget
-+
+@@ -17,7 +17,7 @@ class SyndicationControlPanelForm(controlpanel.RegistryEditForm):
  
- _ = MessageFactory('plone')
+     def updateFields(self):
+         super(SyndicationControlPanelForm, self).updateFields()
+-        self.fields['site_rss_items'].widgetFactory = SelectFieldWidget
++        #self.fields['site_rss_items'].widgetFactory = SelectFieldWidget
  
-@@ -15,6 +15,10 @@ class SyndicationControlPanelForm(controlpanel.RegistryEditForm):
-     label = _(u'Syndication Settings')
-     description = _(u'Default syndication settings.')
- 
-+    def updateFields(self):
-+        super(SyndicationControlPanelForm, self).updateFields()
-+        self.fields['site_rss_items'].widgetFactory = SelectFieldWidget
-+
      def getSyndicationSettingsButtonShown(self):
          actions = getToolByName(self.context, 'portal_actions')
-         if 'syndication' in actions.object.objectIds():
 
 
