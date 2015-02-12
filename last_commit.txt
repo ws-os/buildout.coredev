@@ -1,554 +1,84 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-12T15:19:57-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/6af2426cd8e91fba880cff15c76c47cf514545f6
+Date: 2015-02-02T14:05:49+01:00
+Author: Patrick Gerken (do3cc) <do3cc@patrick-gerken.de>
+Commit: https://github.com/plone/Products.CMFPlone/commit/efb09393356299b4e948c0372309e985c2fcf626
 
-add translations to resource registry
+Fail explicitly if locales are missing.
+
+Else tests fail without good error messages.
 
 Files changed:
-M mockup/js/ui/views/base.js
-M mockup/patterns/resourceregistry/js/fields.js
-M mockup/patterns/resourceregistry/js/less.js
-M mockup/patterns/resourceregistry/js/overrides.js
-M mockup/patterns/resourceregistry/js/patternoptions.js
-M mockup/patterns/resourceregistry/js/registry.js
-M mockup/patterns/resourceregistry/pattern.js
+M Products/CMFPlone/tests/testUnicodeSplitter.py
 
-diff --git a/mockup/js/ui/views/base.js b/mockup/js/ui/views/base.js
-index 188300a..ba490f0 100644
---- a/mockup/js/ui/views/base.js
-+++ b/mockup/js/ui/views/base.js
-@@ -1,8 +1,9 @@
- define([
-   'jquery',
-   'underscore',
--  'backbone'
--], function($, _, Backbone) {
-+  'backbone',
-+  'translate'
-+], function($, _, Backbone, _t) {
-   'use strict';
+diff --git a/Products/CMFPlone/tests/testUnicodeSplitter.py b/Products/CMFPlone/tests/testUnicodeSplitter.py
+index 3c31eeb..116dcaf 100644
+--- a/Products/CMFPlone/tests/testUnicodeSplitter.py
++++ b/Products/CMFPlone/tests/testUnicodeSplitter.py
+@@ -1,7 +1,6 @@
+ # -*- coding: utf-8 -*-
+ import unittest
+ from Products.CMFPlone.tests import PloneTestCase
+-
+ from Products.CMFPlone.UnicodeSplitter import Splitter
+ from Products.CMFPlone.UnicodeSplitter import CaseNormalizer
  
-   var BaseView = Backbone.View.extend({
-@@ -36,7 +37,7 @@ define([
-     },
-     applyTemplate: function() {
-       if (this.template !== null) {
--        var data = $.extend({}, this.options, this.serializedModel());
-+        var data = $.extend({_t: _t}, this.options, this.serializedModel());
-         var template = this.template;
-         if(typeof(template) === 'string'){
-           template = _.template(template);
-diff --git a/mockup/patterns/resourceregistry/js/fields.js b/mockup/patterns/resourceregistry/js/fields.js
-index 0c34c27..3594f84 100644
---- a/mockup/patterns/resourceregistry/js/fields.js
-+++ b/mockup/patterns/resourceregistry/js/fields.js
-@@ -120,7 +120,7 @@ define([
-         '<span class="hidden glyphicon glyphicon-remove form-control-feedback"></span>' +
-       '</div>' +
-       '<div class="col-sm-1">' +
--        '<button class="plone-btn plone-btn-danger plone-btn-xs">Remove</button>' +
-+        '<button class="plone-btn plone-btn-danger plone-btn-xs"><%- _t("Remove") %></button>' +
-       '</div>')
-   });
- 
-@@ -154,7 +154,7 @@ define([
-     template: _.template(
-       '<label class="col-sm-3 control-label"><%- title %></label>' +
-       '<ul class="col-sm-9 fields list-group" />' +
--      '<button class="plone-btn plone-btn-default add pull-right">Add</button>'),
-+      '<button class="plone-btn plone-btn-default add pull-right"><%- _t("Add") %></button>'),
-     events: {
-       'click button.add': 'addRowClicked',
-       'change input': 'inputChanged',
-@@ -202,7 +202,7 @@ define([
-         $container.append('<li class="list-group-item"><div class="input-group">' +
-           '<input class="form-control input-sm" value="' + value + '" />' +
-           '<span class="input-group-btn">' +
--            '<button class="plone-btn plone-btn-default remove plone-btn-sm">Remove</button></div></li>');
-+            '<button class="plone-btn plone-btn-default remove plone-btn-sm"><%- _t("Remove") %></button></div></li>');
-       });
- 
-       if(self.sortable){
-diff --git a/mockup/patterns/resourceregistry/js/less.js b/mockup/patterns/resourceregistry/js/less.js
-index 3bf9f49..0495473 100644
---- a/mockup/patterns/resourceregistry/js/less.js
-+++ b/mockup/patterns/resourceregistry/js/less.js
-@@ -13,8 +13,8 @@ define([
-     template: _.template(
-       '<div class="clearfix">' +
-         '<div class="btn-group pull-right">' +
--          '<button class="plone-btn plone-btn-default add-variable">Add variable</button>' +
--          '<button class="plone-btn plone-btn-default save">save</button>' +
-+          '<button class="plone-btn plone-btn-default add-variable"><%- _t("Add variable") %></button>' +
-+          '<button class="plone-btn plone-btn-default save"><%- _t("save") %></button>' +
-         '</div>' +
-       '</div>' +
-       '<div class="row clearfix">' +
-diff --git a/mockup/patterns/resourceregistry/js/overrides.js b/mockup/patterns/resourceregistry/js/overrides.js
-index 52c486e..d9dcd05 100644
---- a/mockup/patterns/resourceregistry/js/overrides.js
-+++ b/mockup/patterns/resourceregistry/js/overrides.js
-@@ -6,8 +6,9 @@ define([
-   'mockup-ui-url/views/base',
-   'mockup-patterns-texteditor',
-   'mockup-utils',
--  'mockup-patterns-select2' 
--], function($, _, BaseView, TextEditor, utils, Select2) {
-+  'mockup-patterns-select2',
-+  'translate'
-+], function($, _, BaseView, TextEditor, utils, Select2, _t) {
-   'use strict';
- 
-   var OverridesView = BaseView.extend({
-@@ -19,8 +20,8 @@ define([
-     template: _.template(
-       '<form class="row">' +
-         '<div class="col-md-12">' +
--          '<p>Only ++plone++ resources are available to override</p>' +
--          '<input class="select" type="hidden" placeholder="Select resource to override..." style="width: 100%" />' +
-+          '<p><%- _t("Only ++plone++ resources are available to override") %></p>' +
-+          '<input class="select" type="hidden" placeholder="<%- _t("Select resource to override...") %>" style="width: 100%" />' +
-         '</div>' +
-       '</form>' +
-       '<div class="row">' +
-@@ -28,9 +29,9 @@ define([
-           '<% if(view.editing){ %>' +
-             '<p class="resource-name text-primary"><%- view.editing %></p> ' +
-             '<div class="plone-btn-group">' +
--              '<button class="plone-btn plone-btn-primary plone-btn-xs disabled">Save</button> ' +
--              '<button class="plone-btn plone-btn-default plone-btn-xs disabled">Cancel</button>' +
--              '<button class="plone-btn plone-btn-danger plone-btn-xs">Delete customizations</button>' +
-+              '<button class="plone-btn plone-btn-primary plone-btn-xs disabled"><%- _t("Save") %></button> ' +
-+              '<button class="plone-btn plone-btn-default plone-btn-xs disabled"><%- _t("Cancel") %></button>' +
-+              '<button class="plone-btn plone-btn-danger plone-btn-xs"><%- _t("Delete customizations") %></button>' +
-             '</div>' +
-           '<% } %>' +
-           '<div class="editor" />' +
-@@ -125,7 +126,7 @@ define([
- 
-       var format = function(data){
-         if(data.override){
--          return '<span class="customized">' + data.text + ' - customized</span>';
-+          return '<span class="customized">' + data.text + ' - ' + _t('customized') + '</span>';
-         }
-         return data.text;
-       };
-@@ -164,7 +165,7 @@ define([
-             that.$el.find('.plone-btn-primary,.plone-btn-default').removeClass('disabled');
-           });
-         }).fail(function(){
--          alert('error loading resource for editing');
-+          alert(_t('error loading resource for editing'));
-           that.tabView.loading.hide();
-         });
-       }
-diff --git a/mockup/patterns/resourceregistry/js/patternoptions.js b/mockup/patterns/resourceregistry/js/patternoptions.js
-index 7029615..be55fda 100644
---- a/mockup/patterns/resourceregistry/js/patternoptions.js
-+++ b/mockup/patterns/resourceregistry/js/patternoptions.js
-@@ -15,8 +15,8 @@ define([
-     template: _.template(
-       '<div class="clearfix">' +
-         '<div class="btn-group pull-right">' +
--          '<button class="plone-btn plone-btn-default add-pattern">Add pattern</button>' +
--          '<button class="plone-btn plone-btn-default save">save</button>' +
-+          '<button class="plone-btn plone-btn-default add-pattern"><%- _t("Add pattern") %></button>' +
-+          '<button class="plone-btn plone-btn-default save"><%- _t("save") %></button>' +
-         '</div>' +
-       '</div>' +
-       '<div class="row clearfix">' +
-diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index 11e496e..55d765e 100644
---- a/mockup/patterns/resourceregistry/js/registry.js
-+++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -7,8 +7,9 @@ define([
-   'mockup-utils',
-   'mockup-patterns-modal',
-   'mockup-patterns-resourceregistry-url/js/fields',
--  'mockup-patterns-resourceregistry-url/js/iframe'
--], function($, _, BaseView, utils, Modal, fields, IFrame) {
-+  'mockup-patterns-resourceregistry-url/js/iframe',
-+  'translate'
-+], function($, _, BaseView, utils, Modal, fields, IFrame, _t) {
-   'use strict';
+@@ -21,10 +20,12 @@ def _setlocale(*names):
+         try:
+             locale.setlocale(locale.LC_ALL, name)
+             break
+-        except locale.Error:
++        except locale.Error, e:
+             pass
+     else:
+-        return None
++        raise e.__class__("Unsupported locale. These tests need at least one "
++                          "of the following locales available on your system",
++                          str(LATIN1))
+     return saved
  
  
-@@ -53,37 +54,37 @@ define([
-   var ResourceEntryView = AbstractResourceEntryView.extend({
-     fields: [{
-       name: 'name',
--      title: 'Name',
-+      title: _t('Name'),
-       view: fields.ResourceNameFieldView
-     }, {
-       name: 'url',
--      title: 'URL',
--      description: 'Resources base URL'
-+      title: _t('URL'),
-+      description: _t('Resources base URL')
-     }, {
-       name: 'js',
--      title: 'JS',
--      description: 'Main JavaScript file'
-+      title: _t('JS'),
-+      description: _t('Main JavaScript file')
-     }, {
-       name: 'css',
--      title: 'CSS/LESS',
--      description: 'List of CSS/LESS files to use for resource',
-+      title: _t('CSS/LESS'),
-+      description: _t('List of CSS/LESS files to use for resource'),
-       view: fields.ResourceSortableListFieldView
-     },{
-       name: 'init',
--      title: 'Init', 
--      description: 'Init instruction for requirejs shim'
-+      title: _t('Init'), 
-+      description: _t('Init instruction for requirejs shim')
-     }, {
-       name: 'deps',
--      title: 'Dependencies',
--      description: 'Coma separated values of resources for requirejs shim'
-+      title: _t('Dependencies'),
-+      description: _t('Coma separated values of resources for requirejs shim')
-     }, {
-       name: 'export',
--      title: 'Export',
--      description: 'Export vars for requirejs shim'
-+      title: _t('Export'),
-+      description: _t('Export vars for requirejs shim')
-     }, {
-       name: 'conf',
--      title: 'Configuration',
--      description: 'Configuration in JSON for the widget',
-+      title: _t('Configuration'),
-+      description: _t('Configuration in JSON for the widget'),
-       view: fields.ResourceTextAreaFieldView
-     }]
-   });
-@@ -92,48 +93,48 @@ define([
-   var BundleEntryView = AbstractResourceEntryView.extend({
-     fields: [{
-       name: 'name',
--      title: 'Name',
-+      title: _t('Name'),
-       view: fields.ResourceNameFieldView
-     }, {
-       name: 'resources',
--      title: 'Resources',
--      description: 'A main resource file to bootstrap bundle or a list of resources to load.',
-+      title: _t('Resources'),
-+      description: _t('A main resource file to bootstrap bundle or a list of resources to load.'),
-       view: fields.BundleResourcesFieldView
-     }, {
-       name: 'depends',
--      title: 'Depends',
--      description: 'Bundle this depends on',
-+      title: _t('Depends'),
-+      description: _t('Bundle this depends on'),
-       view: fields.BundleDependsFieldView
-     }, {
-       name: 'expression',
--      title: 'Expression',
--      description: 'Conditional expression to decide if this resource will run'
-+      title: _t('Expression'),
-+      description: _t('Conditional expression to decide if this resource will run')
-     }, {
-       name: 'enabled',
--      title: 'Enabled',
-+      title: _t('Enabled'),
-       view: fields.ResourceBoolFieldView
-     }, {
-       name: 'conditionalcomment',
--      title: 'Conditional comment',
--      description: 'For Internet Exploder hacks...'
-+      title: _t('Conditional comment'),
-+      description: _t('For Internet Exploder hacks...')
-     }, {
-       name: 'compile',
--      title: 'Does your bundle contain any RequireJS or LESS files?',
-+      title: _t('Does your bundle contain any RequireJS or LESS files?'),
-       view: fields.ResourceBoolFieldView
-     }, {
-       name: 'last_compilation',
--      title: 'Last compilation',
--      description: 'Date/Time when your bundle was last compiled. Empty, if it was never compiled.',
-+      title: _t('Last compilation'),
-+      description: _t('Date/Time when your bundle was last compiled. Empty, if it was never compiled.'),
-       view: fields.ResourceDisplayFieldView
-     }, {
-       name: 'jscompilation',
--      title: 'Compiled JavaScript',
--      description: 'Automatically generated path to the compiled JavaScript.',
-+      title: _t('Compiled JavaScript'),
-+      description: _t('Automatically generated path to the compiled JavaScript.'),
-       view: fields.ResourceDisplayFieldView
-     }, {
-       name: 'csscompilation',
--      title: 'Compiled CSS',
--      description: 'Automatically generated path to the compiled CSS.',
-+      title: _t('Compiled CSS'),
-+      description: _t('Automatically generated path to the compiled CSS.'),
-       view: fields.ResourceDisplayFieldView
-     }]
-   });
-@@ -145,7 +146,7 @@ define([
-     className: 'list-group-item',
-     template: _.template(
-       '<a href="#"><%- name %></a> ' +
--      '<button class="pull-right plone-btn plone-btn-danger delete plone-btn-xs">Delete</button>'
-+      '<button class="pull-right plone-btn plone-btn-danger delete plone-btn-xs"><%- _t("Delete") %></button>'
-     ),
-     events: {
-       'click a': 'editResource',
-@@ -203,9 +204,9 @@ define([
-           'we will try to keep you updated on the progress.</p><p> Press the "Build it" ' +
-           'button to proceed.</p></div>' +
-         '<ul class="list-group hidden"></ul>' +
--        '<button class="plone-btn plone-btn-default cancel hidden cancel-build">Close</button>' +
--        '<button class="plone-btn plone-btn-primary build">Build it</button>' +
--      '</div>', bundleListItem.options),
-+        '<button class="plone-btn plone-btn-default cancel hidden cancel-build"><%- _t("Close") %></button>' +
-+        '<button class="plone-btn plone-btn-primary build"><%- _t("Build it") %></button>' +
-+      '</div>', $.extend({ _t: _t }, bundleListItem.options)),
-       content: null,
-       width: 500,
-       buttons: '.plone-btn'
-@@ -241,9 +242,9 @@ define([
-     };
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2015-02-12T15:35:17-06:00
+Author: Nathan Van Gheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/Products.CMFPlone/commit/b01a89a8637e518fba2d1df6ed15164ee2e8a9d7
+
+Merge pull request #366 from do3cc/unicode_explicit_failure_50_cherry
+
+Fail explicitly if locales are missing.
+
+Files changed:
+M Products/CMFPlone/tests/testUnicodeSplitter.py
+
+diff --git a/Products/CMFPlone/tests/testUnicodeSplitter.py b/Products/CMFPlone/tests/testUnicodeSplitter.py
+index 3c31eeb..116dcaf 100644
+--- a/Products/CMFPlone/tests/testUnicodeSplitter.py
++++ b/Products/CMFPlone/tests/testUnicodeSplitter.py
+@@ -1,7 +1,6 @@
+ # -*- coding: utf-8 -*-
+ import unittest
+ from Products.CMFPlone.tests import PloneTestCase
+-
+ from Products.CMFPlone.UnicodeSplitter import Splitter
+ from Products.CMFPlone.UnicodeSplitter import CaseNormalizer
  
-     self.finished = function(error){
--      var msg = 'Finished!';
-+      var msg = _t('Finished!');
-       if(error){
--        msg = 'Error in build process';
-+        msg = _t('Error in build process');
-       }
-       self.addResult(msg, 'list-group-item-warning');
-       self.$btnClose.removeClass('hidden');
-@@ -251,7 +252,7 @@ define([
-     };
- 
-     self.buildJS = function(){
--      self.addResult('building javascripts');
-+      self.addResult(_t('building javascripts'));
-       $.ajax({
-         url: self.rview.options.data.manageUrl,
-         type: 'POST',
-@@ -266,7 +267,7 @@ define([
-           self._buildJSBundle(data);
-         },
-         error: function(){
--          self.addResult('Error building resources');
-+          self.addResult(_t('Error building resources'));
-           self.finished(true);
-         }
-       });
-@@ -281,7 +282,7 @@ define([
-         configure: function(iframe){
-           iframe.window.lessErrorReporting = function(what, error, href){
-             if(what !== 'remove'){
--              self.addResult('less compilation error on file ' + href + ': ' + error);
-+              self.addResult(_t('less compilation error on file ') + href + ': ' + error);
-             }
-           };
-         }
-@@ -289,13 +290,13 @@ define([
- 
-       /* XXX okay, wish there were a better way,
-          but we need to pool to find the out if it's down loading less */
--      self.addResult(config.less.length + ' css files to build');
-+      self.addResult(config.less.length + _t(' css files to build'));
-       var checkFinished = function(){
-         var $styles =  $('style[type="text/css"][id]', iframe.document);
-         for(var i=0; i<$styles.length; i=i+1){
-           var $style = $styles.eq(i); 
-           if($style.attr('id') === 'less:error-message'){
--            self.addResult('Error compiling less');
-+            self.addResult(_t('Error compiling less'));
-             return self.finished(true);
-           }
-         }
-@@ -319,11 +320,11 @@ define([
-             success: function(data){
-               self.rview.options.data.overrides.push(data.filepath);
-               self.rview.tabView.overridesView.render();
--              self.addResult('finished saving css bundles');
-+              self.addResult(_t('finished saving css bundles'));
-               self.finished();
-             },
-             error: function(){
--              self.addResult('Error saving css bundle');
-+              self.addResult(_t('Error saving css bundle'));
-               self.finished(true);
-             }
-           });
-@@ -335,7 +336,7 @@ define([
-     };
- 
-     self.buildCSSBundle = function(){
--      self.addResult('building CSS bundle');
-+      self.addResult(_t('building CSS bundle'));
-       $.ajax({
-         url: self.rview.options.data.manageUrl,
-         type: 'POST',
-@@ -350,7 +351,7 @@ define([
-           self._buildCSSBundle(data);
-         },
-         error: function(){
--          self.addResult('Error building css bundle');
-+          self.addResult(_t('Error building css bundle'));
-           self.finished(true);
-         }
-       });
-@@ -358,7 +359,7 @@ define([
- 
-     self._buildJSBundle = function(config){
-       if(config.include.length === 0){
--        self.addResult('No javascripts to build, skipping');
-+        self.addResult(_t('No javascripts to build, skipping'));
-         return self.buildCSSBundle();
-       }
- 
-@@ -378,7 +379,7 @@ define([
-             self.rview.tabView.overridesView.render();
-           },
-           error: function(){
--            self.addResult('Error building bundle');
-+            self.addResult(_t('Error building bundle'));
-             self.finished(true);
-           }
-         });
-@@ -388,7 +389,7 @@ define([
-         resources: [self.rview.options.data.rjsUrl],
-         onLoad: function(iframe){
-           iframe.window.requirejs.optimize(config, function(combined_files){
--            self.addResult('Saved javascript bundle, Build results: <pre>' + combined_files + '</pre>');
-+            self.addResult(_t('Saved javascript bundle, Build results') + ': <pre>' + combined_files + '</pre>');
-             self.buildCSSBundle();
-             iframe.destroy();
-           });
-@@ -406,8 +407,8 @@ define([
-       '<a href="#"><%- name %></a> ' +
-       '<div class="plone-btn-group pull-right">' +
-         '<% if(view.options.data.nonBuildableBundles.indexOf(name) === -1){ %>' +
--          '<button class="plone-btn plone-btn-default build plone-btn-xs">Build</button>' +
--          '<button class="plone-btn plone-btn-danger delete plone-btn-xs">Delete</button>' +
-+          '<button class="plone-btn plone-btn-default build plone-btn-xs"><%- _t("Build") %></button>' +
-+          '<button class="plone-btn plone-btn-danger delete plone-btn-xs"><%- _t("Delete") %></button>' +
-         '<% } %>' +
-       '</div>'
-     ),
-@@ -436,7 +437,7 @@ define([
-       e.preventDefault();
-       var self = this;
-       if(this.options.registryView.dirty){
--        alert('You have unsaved changes. Save or discard before building.');
-+        alert(_t('You have unsaved changes. Save or discard before building.'));
-       }else{
-         var builder = new Builder(self.options.name, self);
-         builder.run();
-@@ -485,7 +486,7 @@ define([
-       if(e){
-         e.preventDefault();
-       }
--      if(confirm('Are you sure you want to cancel? You will lose all changes.')){
-+      if(confirm(_t('Are you sure you want to cancel? You will lose all changes.'))){
-         this._revertData(this.previousData);
-         this.render();
-       }
-@@ -501,12 +502,12 @@ define([
-     template: _.template(
-       '<div class="clearfix">' +
-         '<div class="plone-btn-group pull-right">' +
--          '<button class="plone-btn plone-btn-success save">Save</button>' +
--          '<button class="plone-btn plone-btn-default cancel">Cancel</button>' +
-+          '<button class="plone-btn plone-btn-success save"><%- _t("Save") %></button>' +
-+          '<button class="plone-btn plone-btn-default cancel"><%- _t("Cancel") %></button>' +
-         '</div>' +
-         '<div class="plone-btn-group pull-right">' +
--          '<button class="plone-btn plone-btn-default add-bundle">Add bundle</button>' +
--          '<button class="plone-btn plone-btn-default add-resource">Add resource</button>' +
-+          '<button class="plone-btn plone-btn-default add-bundle"><%- _t("Add bundle") %></button>' +
-+          '<button class="plone-btn plone-btn-default add-resource"><%- _t("Add resource") %></button>' +
-         '</div>' +
-       '</div>' +
-       '<div class="row">' +
-@@ -514,19 +515,19 @@ define([
-           '<label>' +
-             '<input type="checkbox" ' +
-               '<% if(data.development){ %> checked="checked" <% } %>' +
--              ' > Development Mode(only logged in users)' +
-+              ' > <%- _t("Development Mode(only logged in users)") %>' +
-           '</label>' +
-         '</div>' +
-       '</div>' +
-       '<div class="row">' +
-         '<div class="items col-md-5">' +
-           '<ul class="bundles list-group">' +
--            '<li class="list-group-item list-group-item-warning">Bundles</li>' +
-+            '<li class="list-group-item list-group-item-warning"><%- _t("Bundles") %></li>' +
-           '</ul>' +
-           '<ul class="resources-header list-group">' +
--            '<li class="list-group-item list-group-item-warning">Resources ' +
-+            '<li class="list-group-item list-group-item-warning"><%- _t("Resources") %> ' +
-               '<input class="float-right form-control input-xs" ' +
--                      'placeholder="Filter..." />' +
-+                      'placeholder="<%- _t("Filter...") %>" />' +
-             '</li>' +
-           '</ul>' +
-           '<ul class="resources list-group">' +
-diff --git a/mockup/patterns/resourceregistry/pattern.js b/mockup/patterns/resourceregistry/pattern.js
-index 75dd88c..82b81a8 100644
---- a/mockup/patterns/resourceregistry/pattern.js
-+++ b/mockup/patterns/resourceregistry/pattern.js
-@@ -93,8 +93,10 @@ define([
-   'mockup-patterns-resourceregistry-url/js/less',
-   'mockup-patterns-resourceregistry-url/js/overrides',
-   'mockup-patterns-resourceregistry-url/js/registry',
--  'mockup-patterns-resourceregistry-url/js/patternoptions'
--], function($, Base, _, BaseView, utils, LessVariablesView, OverridesView,RegistryView, PatternOptionsView) {
-+  'mockup-patterns-resourceregistry-url/js/patternoptions',
-+  'translate'
-+], function($, Base, _, BaseView, utils, LessVariablesView,
-+            OverridesView,RegistryView, PatternOptionsView, _t) {
-   'use strict';
+@@ -21,10 +20,12 @@ def _setlocale(*names):
+         try:
+             locale.setlocale(locale.LC_ALL, name)
+             break
+-        except locale.Error:
++        except locale.Error, e:
+             pass
+     else:
+-        return None
++        raise e.__class__("Unsupported locale. These tests need at least one "
++                          "of the following locales available on your system",
++                          str(LATIN1))
+     return saved
  
  
-@@ -103,10 +105,10 @@ define([
-     activeTab: 'registry',
-     template: _.template('' +
-       '<ul class="main-tabs nav nav-tabs" role="tablist">' +
--        '<li class="registry-btn"><a href="#">Registry</a></li>' +
--        '<li class="overrides-btn"><a href="#">Overrides</a></li>' +
--        '<li class="lessvariables-btn"><a href="#">Less Variables</a></li>' +
--        '<li class="patternoptions-btn"><a href="#">Pattern Options</a></li>' +
-+        '<li class="registry-btn"><a href="#"><%- _t("Registry") %></a></li>' +
-+        '<li class="overrides-btn"><a href="#"><%- _t("Overrides") %></a></li>' +
-+        '<li class="lessvariables-btn"><a href="#"><%- _t("Less Variables") %></a></li>' +
-+        '<li class="patternoptions-btn"><a href="#"><%- _t("Pattern Options") %></a></li>' +
-       '</div>' +
-       '<div class="tab-content" />'
-     ),
-@@ -147,7 +149,7 @@ define([
- 
-     render: function(){
-       var self = this;
--      self.$el.append(self.template());
-+      self.$el.append(self.template({_t: _t}));
-       self.loading = new utils.Loading();
-       self.$tabs = self.$('ul.main-tabs');
-       self.$content = self.$('.tab-content');
-@@ -205,7 +207,7 @@ define([
-         if(onError){
-           onError(resp);
-         }else{
--          alert('Error processing ajax request for action: ' + action);
-+          alert(_t('Error processing ajax request for action: ') + action);
-         }
-       });
-     }
 
 
