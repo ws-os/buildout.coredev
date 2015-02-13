@@ -1,35 +1,22 @@
 Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-13T11:30:48-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/4d1f02abdbe22a9a968c22f7929e44b0595a73ec
+Date: 2015-02-13T18:47:53+01:00
+Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
+Commit: https://github.com/plone/mockup/commit/edb20bfc5138148ea1f707ea3d924ef9a466754a
 
-more spelling
+we need to treat css as less
 
 Files changed:
-M mockup/patterns/recurrence/pattern.js
+M mockup/patterns/recurrence/pattern.recurrence.less
 
-diff --git a/mockup/patterns/recurrence/pattern.js b/mockup/patterns/recurrence/pattern.js
-index 46f0cbe..b77d1d7 100644
---- a/mockup/patterns/recurrence/pattern.js
-+++ b/mockup/patterns/recurrence/pattern.js
-@@ -1,7 +1,7 @@
- /* Recurrence pattern.
-  *
-  * Options:
-- *    locatization(object): Customizations to locatizations. Default to null
-+ *    localization(object): Customizations to locatizations. Default to null
-  *    configuration(object): recurrent input widget configuration
-  *
-  * Documentation:
-@@ -30,7 +30,7 @@ define([
-     defaults: {
-       // just passed onto the widget
-       language: 'en',
--      locatization: null,
-+      localization: null,
-       configuration: {}
-     },
-     init: function() {
+diff --git a/mockup/patterns/recurrence/pattern.recurrence.less b/mockup/patterns/recurrence/pattern.recurrence.less
+index c140070..796bac2 100644
+--- a/mockup/patterns/recurrence/pattern.recurrence.less
++++ b/mockup/patterns/recurrence/pattern.recurrence.less
+@@ -1,3 +1,3 @@
+ @import (inline) "@{bowerPath}/jquery.recurrenceinput.js/lib/jquery.tools.dateinput.css";
+ @import (inline) "@{bowerPath}/jquery.recurrenceinput.js/lib/jquery.tools.overlay.css";
+-@import (inline) "@{bowerPath}/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css";
++@import (less) "@{bowerPath}/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css";
 
 
