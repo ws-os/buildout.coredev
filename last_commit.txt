@@ -1,38 +1,50 @@
-Repository: mockup
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-13T14:08:55-06:00
+Date: 2015-02-13T14:13:58-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/3bf30e896f46c1820ae9613c206eebf234a93cc1
+Commit: https://github.com/plone/plone.app.upgrade/commit/dcb61945aaa38e68c71f03565574c69149a7ec9d
 
-fix translation
+mark special links pattern upgrades
 
 Files changed:
-M mockup/patterns/resourceregistry/js/fields.js
+M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
 
-diff --git a/mockup/patterns/resourceregistry/js/fields.js b/mockup/patterns/resourceregistry/js/fields.js
-index 3594f84..6d9ec6f 100644
---- a/mockup/patterns/resourceregistry/js/fields.js
-+++ b/mockup/patterns/resourceregistry/js/fields.js
-@@ -3,8 +3,9 @@ define([
-   'underscore',
-   'mockup-ui-url/views/base',
-   'mockup-patterns-sortable',
--  'mockup-patterns-select2'
--], function($, _, BaseView, Sortable, Select2) {
-+  'mockup-patterns-select2',
-+  'translate'
-+], function($, _, BaseView, Sortable, Select2, _t) {
-   'use strict';
+diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+index 462b1d0..de3f86f 100644
+--- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+@@ -861,12 +861,6 @@
+       <value key="js">jquery.highlightsearchterms.js</value>
+   </records>
  
+-  <!-- disabled -->
+-  <records prefix="plone.resources/mark_special_links"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">mark_special_links.js</value>
+-  </records>
+-
+   <record name="plone.resources.last_legacy_import">
+     <field type="plone.registry.field.Datetime">
+       <title>Last legacy js/css import date</title>
+diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+index 6a0e9de..f63a5dc 100644
+--- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+@@ -68,6 +68,14 @@
+       <value key="deps">jquery</value>
+   </records>
  
-@@ -202,7 +203,7 @@ define([
-         $container.append('<li class="list-group-item"><div class="input-group">' +
-           '<input class="form-control input-sm" value="' + value + '" />' +
-           '<span class="input-group-btn">' +
--            '<button class="plone-btn plone-btn-default remove plone-btn-sm"><%- _t("Remove") %></button></div></li>');
-+            '<button class="plone-btn plone-btn-default remove plone-btn-sm">' + _t('Remove') + '</button></div></li>');
-       });
- 
-       if(self.sortable){
++  <records prefix="plone.resources/mockup-patterns-markspeciallinks"
++            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
++      <value key="js">++resource++mockup/markspeciallinks/pattern.js</value>
++      <value key="css">
++        <element>++resource++mockup/markspeciallinks/pattern.markspeciallinks.less</element>
++      </value>
++  </records>
++
+    <!-- patternslib dependencies -->
+   <records prefix="plone.resources/pat-compat"
+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
 
 
