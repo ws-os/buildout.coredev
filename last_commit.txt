@@ -1,25 +1,28 @@
-Repository: plone.app.contenttypes
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-13T15:21:02+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/8beb8932419b73766f7e5dcb8a76a2f339db531d
+Date: 2015-02-13T11:27:59-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/19040c7d0ed3ccabced0723d4d203359f759dbc1
 
-Remove blank line.
+fix spelling
 
 Files changed:
-M docs/README.rst
+M mockup/patterns/recurrence/pattern.js
 
-diff --git a/docs/README.rst b/docs/README.rst
-index e22e623..b560657 100644
---- a/docs/README.rst
-+++ b/docs/README.rst
-@@ -13,7 +13,6 @@ plone.app.contenttypes documentation
- Introduction
- ------------
- 
--
- plone.app.contenttypes provides default content types for Plone based on Dexterity. It replaces ``Products.ATContentTypes`` and provides the default-types in Plone 5. It can be used as an add-on in Plone 4.x.
- 
- It contains the following types:
+diff --git a/mockup/patterns/recurrence/pattern.js b/mockup/patterns/recurrence/pattern.js
+index 86b8d77..46f0cbe 100644
+--- a/mockup/patterns/recurrence/pattern.js
++++ b/mockup/patterns/recurrence/pattern.js
+@@ -35,8 +35,8 @@ define([
+     },
+     init: function() {
+       this.$el.addClass('recurrence-widget');
+-      if(this.options.locatization){
+-        $.tools.recurrenceinput.localize(this.options.language, this.options.locatization);
++      if(this.options.localization){
++        $.tools.recurrenceinput.localize(this.options.language, this.options.localization);
+       }
+       this.$el.recurrenceinput(this.options.configuration);
+     }
 
 
