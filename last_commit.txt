@@ -1,22 +1,22 @@
 Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-02-13T14:57:30+01:00
+Date: 2015-02-13T15:04:29+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/9e0bd9713acd080367187b5d4ac130f6e1d2e5e4
+Commit: https://github.com/plone/plone.app.discussion/commit/13c013b15b14f14b2a577b007ede8a14054b14a5
 
-Trigger jenkins.
+Trigger jenkins again.
 
 Files changed:
-M setup.py
+M setup.cfg
 
-diff --git a/setup.py b/setup.py
-index abc69e9..e1b9862 100644
---- a/setup.py
-+++ b/setup.py
-@@ -64,3 +64,4 @@
-       target = plone
-       """,
-       )
+diff --git a/setup.cfg b/setup.cfg
+index deac03d..9155b60 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -5,3 +5,4 @@ all_files  = 1
+ 
+ [upload_sphinx]
+ upload-dir = docs/html
 +
 
 
