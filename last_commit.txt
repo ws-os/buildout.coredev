@@ -1,68 +1,107 @@
-Repository: plone.app.upgrade
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-02-13T13:13:59-06:00
+Date: 2015-02-13T13:29:33-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/b1fb2f30eeb837aeecd35e1b2c7edaa13f3e12fc
+Commit: https://github.com/plone/plone.app.widgets/commit/c816ddb5fc20fb2f03a14e52589fc09642bb406f
 
-remove unused legacy js
+fix getting tinymce settings. plone 5 is the only thing we care about now too
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+M plone/app/widgets/utils.py
 
-diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-index f8c4413..462b1d0 100644
---- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
-@@ -856,37 +856,10 @@
+diff --git a/plone/app/widgets/utils.py b/plone/app/widgets/utils.py
+index 1d570ce..f64ef0a 100644
+--- a/plone/app/widgets/utils.py
++++ b/plone/app/widgets/utils.py
+@@ -1,6 +1,5 @@
+ # -*- coding: utf-8 -*-
+ 
+-from Acquisition import aq_inner, aq_parent
+ from Products.CMFCore.interfaces import ISiteRoot
+ from Products.CMFCore.utils import getToolByName
+ from datetime import datetime
+@@ -12,10 +11,8 @@
+ from zope.i18nmessageid import MessageFactory
+ from zope.schema.interfaces import IVocabularyFactory
+ from z3c.form.interfaces import IAddForm
+-from Products.CMFCore.interfaces._content import IFolderish
+-from plone.uuid.interfaces import IUUID
+-from Products.CMFPlone.interfaces import IPloneSiteRoot
+ from zope.component import getMultiAdapter
++from zope.component import ComponentLookupError
+ import json
+ 
+ _ = MessageFactory('plone.app.widgets')
+@@ -159,62 +156,18 @@ def get_querystring_options(context, querystring_view):
  
  
-   <!-- legacy js -->
+ def get_tinymce_options(context, field, request):
++    """
++    We're just going to be looking up settings from
++    plone pattern options
++    """
+     args = {'pattern_options': {}}
+-    folder = context
+-    if not IFolderish.providedBy(context):
+-        folder = aq_parent(context)
+-    if IPloneSiteRoot.providedBy(folder):
+-        initial = None
+-    else:
+-        initial = IUUID(folder, None)
+-    portal_url = get_portal_url(context)
+-    current_path = folder.absolute_url()[len(portal_url):]
 -
+-    utility = getToolByName(aq_inner(context), 'portal_tinymce', None)
+-    if utility:
+-        # Plone 4.3
+-        config = utility.getConfiguration(context=context,
+-                                          field=field,
+-                                          request=request)
 -
--  <records prefix="plone.resources/plone_javascript_variables"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">plone_javascript_variables.js</value>
--  </records>
+-        config['content_css'] = config['portal_url'] + '/base.css'
+-        del config['customplugins']
+-        del config['plugins']
+-        del config['theme']
 -
--  <records prefix="plone.resources/cookie_functions"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">cookie_functions.js</value>
--  </records>
-   <records prefix="plone.resources/jquery-highlightsearchterms"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">jquery.highlightsearchterms.js</value>
-   </records>
--  <records prefix="plone.resources/inline-validation"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">inline_validation.js</value>
--  </records>
--  <records prefix="plone.resources/kss-bbb"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">kss-bbb.js</value>
--  </records>
--  <records prefix="plone.resources/table_sorter"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">table_sorter.js</value>
--  </records>
--  <records prefix="plone.resources/unlockOnFormUnload"
--            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
--      <value key="js">unlockOnFormUnload.js</value>
--  </records>
+-        config['content_css'] = '++resource++plone.app.widgets-tinymce-content.css'
+-        args['pattern_options'] = {
+-            'relatedItems': {
+-                'vocabularyUrl': config['portal_url'] +
+-                '/@@getVocabulary?name=plone.app.vocabularies.Catalog'
+-            },
+-            'upload': {
+-                'initialFolder': initial,
+-                'currentPath': current_path,
+-                'baseUrl': config['document_base_url'],
+-                'relativePath': '@@fileUpload',
+-                'uploadMultiple': False,
+-                'maxFiles': 1,
+-                'showTitle': False
+-            },
+-            'tiny': config,
+-            # This is for loading the languages on tinymce
+-            'loadingBaseUrl': '++resource++plone.app.widgets.tinymce',
+-            'prependToUrl': 'resolveuid/',
+-            'linkAttribute': 'UID',
+-            'prependToScalePart': '/@@images/image/',
+-            'folderTypes': utility.containsobjects.replace('\n', ','),
+-            'imageTypes': utility.imageobjects.replace('\n', ','),
+-            'anchorSelector': utility.anchor_selector,
+-            'linkableTypes': utility.linkable.replace('\n', ',')
+-        }
+-    else:
+-        # Plone 5
+-        # They are set on the body
++    try:
+         pattern_options = getMultiAdapter(
+             (context, request, field),
+-            name="tinymce_settings")()['data-pat-tinymce']
++            name="plone_settings").tinymce()['data-pat-tinymce']
+         args['pattern_options'] = json.loads(pattern_options)
++    except (ComponentLookupError, AttributeError):
++        pass
+     return args
  
-   <!-- disabled -->
-   <records prefix="plone.resources/mark_special_links"
-@@ -976,12 +949,7 @@
-   <records prefix="plone.bundles/plone-legacy"
-             interface='Products.CMFPlone.interfaces.IBundleRegistry'>
-     <value key="resources" purge="false">
--      <element>plone_javascript_variables</element>
--      <element>unlockOnFormUnload</element>
--      <element>table_sorter</element>
--      <element>inline-validation</element>
-       <element>jquery-highlightsearchterms</element>
--      <element>cookie_functions</element>
-     </value>
-     <value key="depends">plone</value>
-     <value key="jscompilation">++plone++static/plone-legacy-compiled.js</value>
+ 
 
 
