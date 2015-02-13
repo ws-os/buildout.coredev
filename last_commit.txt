@@ -1,37 +1,22 @@
-Repository: mockup
+Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-02-13T12:57:55+01:00
-Author: Ramon Navarro Bosch (bloodbare) <ramon.nb@gmail.com>
-Commit: https://github.com/plone/mockup/commit/0d567db8fe32a6e6dd89de2313edbd42cbab6502
+Date: 2015-02-13T14:57:30+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.discussion/commit/9e0bd9713acd080367187b5d4ac130f6e1d2e5e4
 
-Better css linking to source css
+Trigger jenkins.
 
 Files changed:
-M mockup/patterns/recurrence/pattern.recurrence.less
-M mockup/patterns/tinymce/less/pattern.tinymce.less
+M setup.py
 
-diff --git a/mockup/patterns/recurrence/pattern.recurrence.less b/mockup/patterns/recurrence/pattern.recurrence.less
-index 4e573f6..c140070 100644
---- a/mockup/patterns/recurrence/pattern.recurrence.less
-+++ b/mockup/patterns/recurrence/pattern.recurrence.less
-@@ -1,3 +1,3 @@
--@import (less) "@{bowerPath}/jquery.recurrenceinput.js/lib/jquery.tools.dateinput.css";
--@import (less) "@{bowerPath}/jquery.recurrenceinput.js/lib/jquery.tools.overlay.css";
--@import (less) "@{bowerPath}/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css";
-+@import (inline) "@{bowerPath}/jquery.recurrenceinput.js/lib/jquery.tools.dateinput.css";
-+@import (inline) "@{bowerPath}/jquery.recurrenceinput.js/lib/jquery.tools.overlay.css";
-+@import (inline) "@{bowerPath}/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css";
-diff --git a/mockup/patterns/tinymce/less/pattern.tinymce.less b/mockup/patterns/tinymce/less/pattern.tinymce.less
-index edea564..a15b854 100644
---- a/mockup/patterns/tinymce/less/pattern.tinymce.less
-+++ b/mockup/patterns/tinymce/less/pattern.tinymce.less
-@@ -1,5 +1,5 @@
--@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/skin.min.css";
--@import (inline) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/content.inline.min.css";
-+@import (less) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/skin.less";
-+@import (inline) "@{bowerPath}/tinymce-builded/js/tinymce/skins/lightgray/Content.less";
- @import (inline) "@{bowerPath}/tinymce-builded/js/tinymce/plugins/visualblocks/css/visualblocks.css";
- @import "@{mockupPath}/modal/pattern.modal.less";
- @import "@{mockupPath}/autotoc/pattern.autotoc.less";
+diff --git a/setup.py b/setup.py
+index abc69e9..e1b9862 100644
+--- a/setup.py
++++ b/setup.py
+@@ -64,3 +64,4 @@
+       target = plone
+       """,
+       )
++
 
 
