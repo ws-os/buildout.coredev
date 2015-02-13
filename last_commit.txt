@@ -1,170 +1,68 @@
-Repository: Products.CMFPlone
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-13T13:11:49-06:00
+Date: 2015-02-13T13:13:59-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/eb2eeb34a9be328797d509146c53e6d3ecd11a14
+Commit: https://github.com/plone/plone.app.upgrade/commit/b1fb2f30eeb837aeecd35e1b2c7edaa13f3e12fc
 
-remove plone_javascript_variables
+remove unused legacy js
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/browser/configure.zcml
-M Products/CMFPlone/profiles/dependencies/registry.xml
-M Products/CMFPlone/tests/testCSSandJSRegistry.py
-D Products/CMFPlone/browser/jsvariables.py
+M plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 78f4b4b..5fa6118 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,6 +8,10 @@ Changelog
- 5.0b1 (unreleased)
- ------------------
+diff --git a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+index f8c4413..462b1d0 100644
+--- a/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
++++ b/plone/app/upgrade/v50/profiles/to_alpha3/registry.xml
+@@ -856,37 +856,10 @@
  
-+- remove plone_javascript_variables.js as necessary values
-+  are provided on body tag and pattern options
-+  [vangheem]
-+
- - fix bootstrap css bleeding into global namespaces
-   [vangheem]
  
-diff --git a/Products/CMFPlone/browser/configure.zcml b/Products/CMFPlone/browser/configure.zcml
-index 5cbe10d..f9a6413 100644
---- a/Products/CMFPlone/browser/configure.zcml
-+++ b/Products/CMFPlone/browser/configure.zcml
-@@ -56,13 +56,6 @@
- 
-   <browser:page
-       for="*"
--      name="plone_javascript_variables.js"
--      class=".jsvariables.JSVariables"
--      permission="zope.Public"
--      />
--
--  <browser:page
--      for="*"
-       name="navtree_builder_view"
-       class=".navigation.CatalogNavigationTree"
-       permission="zope.Public"
-diff --git a/Products/CMFPlone/browser/jsvariables.py b/Products/CMFPlone/browser/jsvariables.py
-deleted file mode 100644
-index a2d205a..0000000
---- a/Products/CMFPlone/browser/jsvariables.py
-+++ /dev/null
-@@ -1,62 +0,0 @@
--from zope.i18n import translate
--from zope.publisher.browser import BrowserView
--
--from Products.CMFCore.utils import getToolByName
--from Products.CMFPlone import PloneMessageFactory as _
--
--
--TEMPLATE = """\
--var portal_url = '%(portal_url)s';
--var form_modified_message = '%(form_modified)s';
--var form_resubmit_message = '%(form_resubmit)s';
--var external_links_open_new_window = '%(open_links)s';
--var mark_special_links = '%(mark_links)s';
--var ajax_noresponse_message = '%(ajax_noresponse)s';
--"""
--
--FORM_MODIFIED = _(u'text_form_modified_message',
--                  default=u'Your form has not been saved. All changes you '
--                          u'have made will be lost.')
--
--FORM_RESUBMIT = _(u'text_form_resubmit_message',
--                  default=u'You already clicked the submit button. Do you '
--                          u'really want to submit this form again?')
--
--AJAX_NORESPONSE = _(u'text_ajax_noresponse_message',
--                    default=u'No response from server. Please try again '
--                            u'later.')
--
--
--class JSVariables(BrowserView):
--
--    def __call__(self, *args, **kwargs):
--        context = self.context
--        response = self.request.response
--        response.setHeader('content-type', 'text/javascript;;charset=utf-8')
--
--        props = getToolByName(context, 'portal_properties').site_properties
--        portal_url = getToolByName(context, 'portal_url')()
--
--        # the following are flags for mark_special_links.js
--        # links get the target="_blank" attribute
--        open_links = props.getProperty('external_links_open_new_window',
--                                       'false')
--        mark_links = props.getProperty('mark_special_links', 'false')
--
--        form_modified = translate(FORM_MODIFIED, context=self.request)
--        form_resubmit = translate(FORM_RESUBMIT, context=self.request)
--        ajax_noresponse = translate(AJAX_NORESPONSE, context=self.request)
--
--        # escape_for_js
--        form_modified = form_modified.replace("'", "\\'")
--        form_resubmit = form_resubmit.replace("'", "\\'")
--        ajax_noresponse = ajax_noresponse.replace("'", "\\'")
--
--        return TEMPLATE % dict(
--            portal_url=portal_url,
--            open_links=open_links,
--            mark_links=mark_links,
--            form_modified=form_modified,
--            form_resubmit=form_resubmit,
--            ajax_noresponse=ajax_noresponse,
--        )
-diff --git a/Products/CMFPlone/profiles/dependencies/registry.xml b/Products/CMFPlone/profiles/dependencies/registry.xml
-index 22a09f6..791d984 100644
---- a/Products/CMFPlone/profiles/dependencies/registry.xml
-+++ b/Products/CMFPlone/profiles/dependencies/registry.xml
-@@ -902,11 +902,6 @@
    <!-- legacy js -->
- 
- 
+-
+-
 -  <records prefix="plone.resources/plone_javascript_variables"
 -            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
 -      <value key="js">plone_javascript_variables.js</value>
 -  </records>
 -
+-  <records prefix="plone.resources/cookie_functions"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">cookie_functions.js</value>
+-  </records>
    <records prefix="plone.resources/jquery-highlightsearchterms"
              interface='Products.CMFPlone.interfaces.IResourceRegistry'>
        <value key="js">jquery.highlightsearchterms.js</value>
-@@ -1019,7 +1014,6 @@
+   </records>
+-  <records prefix="plone.resources/inline-validation"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">inline_validation.js</value>
+-  </records>
+-  <records prefix="plone.resources/kss-bbb"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">kss-bbb.js</value>
+-  </records>
+-  <records prefix="plone.resources/table_sorter"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">table_sorter.js</value>
+-  </records>
+-  <records prefix="plone.resources/unlockOnFormUnload"
+-            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+-      <value key="js">unlockOnFormUnload.js</value>
+-  </records>
+ 
+   <!-- disabled -->
+   <records prefix="plone.resources/mark_special_links"
+@@ -976,12 +949,7 @@
    <records prefix="plone.bundles/plone-legacy"
              interface='Products.CMFPlone.interfaces.IBundleRegistry'>
      <value key="resources" purge="false">
 -      <element>plone_javascript_variables</element>
+-      <element>unlockOnFormUnload</element>
+-      <element>table_sorter</element>
+-      <element>inline-validation</element>
        <element>jquery-highlightsearchterms</element>
+-      <element>cookie_functions</element>
      </value>
      <value key="depends">plone</value>
-diff --git a/Products/CMFPlone/tests/testCSSandJSRegistry.py b/Products/CMFPlone/tests/testCSSandJSRegistry.py
-index 9984aea..f028282 100644
---- a/Products/CMFPlone/tests/testCSSandJSRegistry.py
-+++ b/Products/CMFPlone/tests/testCSSandJSRegistry.py
-@@ -43,6 +43,7 @@ def testJSIsInsertedInPage(self):
-         page = self.portal.index_html()
-         self.assertTrue("++plone++static/plone.less" in page)
- 
-+
- class TestJSRegistry(PloneTestCase):
- 
-     def afterSetUp(self):
-@@ -54,14 +55,12 @@ def testDefaultJSIsInstalled(self):
-         expected = [
-             '++resource++plone.js',
-             'jquery.highlightsearchterms.js',
--            'mark_special_links.js',
--            'plone_javascript_variables.js',
-+            'mark_special_links.js'
-             ]
-         js_files = [x.js for x in installedResources.values()]
-         for e in expected:
-             self.assertTrue(e in js_files, e)
- 
--
-     def testJSIsInsertedInPage(self):
-         self.registry['plone.resources.development'] = True
-         page = self.portal.index_html()
+     <value key="jscompilation">++plone++static/plone-legacy-compiled.js</value>
 
 
