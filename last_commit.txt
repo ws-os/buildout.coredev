@@ -1,26 +1,64 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-13T12:04:12-06:00
+Date: 2015-02-13T12:05:54-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/af2b8b7c429c4ec874734559bf2b70c53b70a465
+Commit: https://github.com/plone/Products.CMFPlone/commit/46b41aad56d8680fd3634f70c7a1b24f7aa21a25
 
-upgrade recurrence
+upgrade recurrence widget
 
 Files changed:
-M mockup/bower.json
+M Products/CMFPlone/static/bower.json
+M Products/CMFPlone/static/components/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css
 
-diff --git a/mockup/bower.json b/mockup/bower.json
-index bab11ef..3f889c4 100644
---- a/mockup/bower.json
-+++ b/mockup/bower.json
-@@ -22,7 +22,7 @@
+diff --git a/Products/CMFPlone/static/bower.json b/Products/CMFPlone/static/bower.json
+index 5c736b6..5830ae5 100644
+--- a/Products/CMFPlone/static/bower.json
++++ b/Products/CMFPlone/static/bower.json
+@@ -20,7 +20,7 @@
+     "pickadate": "3.4.0",
+     "requirejs-text": "2.0.12",
      "select2": "3.5.1",
+-    "jquery.recurrenceinput.js": "v1.2",
++    "jquery.recurrenceinput.js": "v1.3",
      "tinymce-builded": "4.1.6",
      "patternslib": "2.0.8",
--    "jquery.recurrenceinput.js": "v1.2"
-+    "jquery.recurrenceinput.js": "v1.3"
-   },
-   "devDependencies": {
-     "expect": "0.3.1",
+     "requirejs": "",
+diff --git a/Products/CMFPlone/static/components/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css b/Products/CMFPlone/static/components/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css
+index a785847..73b8956 100644
+--- a/Products/CMFPlone/static/components/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css
++++ b/Products/CMFPlone/static/components/jquery.recurrenceinput.js/src/jquery.recurrenceinput.css
+@@ -68,7 +68,7 @@ div.riform #riweeklyweekdays .riweeklyweekday {
+ }
+ 
+ div.riform input.ricancelbutton {
+-    background-image: url(pb_close.png);
++    background-image: url('pb_close.png');
+     background-color: transparent;
+     font-size: 0; /* For IE8 */
+     color: transparent;
+@@ -163,19 +163,19 @@ div.rioccurrences a.exdate {
+ 
+ 
+ div.rioccurrences a.rrule {
+-    background-image: url(delete.png);
++    background-image: url('delete.png');
+ }
+ 
+ div.rioccurrences a.rdate {
+-    background-image: url(delete.png);
++    background-image: url('delete.png');
+ }
+ 
+ div.rioccurrences a.exdate {
+-    background-image: url(undelete.png);
++    background-image: url('undelete.png');
+ }
+ 
+ div.rioccurrencesactions a.rirefreshbutton {
+-    background-image: url(refresh.png);
++    background-image: url('refresh.png');
+     color: transparent;
+     margin-top: 4px;
+     margin-right: 5px;
 
 
