@@ -1,22 +1,24 @@
 Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-02-13T15:04:29+01:00
+Date: 2015-02-13T15:07:35+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/13c013b15b14f14b2a577b007ede8a14054b14a5
+Commit: https://github.com/plone/plone.app.discussion/commit/a55020939e2a3ab304bfda45216995fcea19e74b
 
-Trigger jenkins again.
+Revert "Trigger jenkins again."
+
+This reverts commit 13c013b15b14f14b2a577b007ede8a14054b14a5.
 
 Files changed:
 M setup.cfg
 
 diff --git a/setup.cfg b/setup.cfg
-index deac03d..9155b60 100644
+index 9155b60..deac03d 100644
 --- a/setup.cfg
 +++ b/setup.cfg
-@@ -5,3 +5,4 @@ all_files  = 1
+@@ -5,4 +5,3 @@ all_files  = 1
  
  [upload_sphinx]
  upload-dir = docs/html
-+
+-
 
 
