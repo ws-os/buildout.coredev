@@ -1,65 +1,61 @@
-Repository: plone.app.upgrade
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-13T15:29:09-06:00
+Date: 2015-02-13T22:27:18-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/156494d7ff3a2f5c78cfc9765c9cc18fd4e563d5
+Commit: https://github.com/plone/Products.CMFPlone/commit/f7941e5b572f7ada0bead41cf4aeaa45f8e85cc6
 
-add resoureregistry entries
+take rok off some of these files, he did not actually have anything to do with that. Just lots of copy pasting...
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+M Products/CMFPlone/static/plone-logged-in.js
+M Products/CMFPlone/static/plone.js
+M Products/CMFPlone/static/resourceregistry.js
 
-diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-index f63a5dc..721182e 100644
---- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-@@ -13,6 +13,15 @@
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-       <value key="js">++resource++mockup/contentloader/pattern.js</value>
-   </records>
-+  <records prefix="plone.resources/mockup-patterns-resourceregistry"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="url">++resource++mockup/resourceregistry</value>
-+      <value key="js">++resource++mockup/resourceregistry/pattern.js</value>
-+      <value key="css">
-+        <element>++resource++mockup/resourceregistry/pattern.resourceregistry.less</element>
-+      </value>
-+  </records>
-+
- 
-   <!-- Plone bundle resources -->
-   <records prefix="plone.resources/plone"
-@@ -29,6 +38,13 @@
-         <element>++plone++static/plone-logged-in.less</element>
-       </value>
-   </records>
-+  <records prefix="plone.resources/resourceregistry"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++plone++static/resourceregistry.js</value>
-+      <value key="css">
-+        <element>++plone++static/resourceregistry.less</element>
-+      </value>
-+  </records>
- 
-   <!-- Bundles -->
-   <records prefix="plone.bundles/plone"
-@@ -55,6 +71,17 @@
-     <value key="last_compilation">2014-11-26 00:00:00</value>
-   </records>
- 
-+  <records prefix="plone.bundles/resourceregistry"
-+            interface='Products.CMFPlone.interfaces.IBundleRegistry'>
-+    <value key="resources">
-+      <element>resourceregistry</element>
-+    </value>
-+    <value key="enabled">False</value>
-+    <value key="jscompilation">++plone++static/resourceregistry-compiled.min.js</value>
-+    <value key="csscompilation">++plone++static/resourceregistry-compiled.css</value>
-+    <value key="last_compilation">2015-02-13 00:00:00</value>
-+  </records>
-+
-   <!-- recurrence widget registrations -->
-   <records prefix="plone.resources/jquery.recurrenceinput"
-             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
+diff --git a/Products/CMFPlone/static/plone-logged-in.js b/Products/CMFPlone/static/plone-logged-in.js
+index 2f43b43..b89aa2e 100644
+--- a/Products/CMFPlone/static/plone-logged-in.js
++++ b/Products/CMFPlone/static/plone-logged-in.js
+@@ -1,10 +1,3 @@
+-// Author: Rok Garbas
+-// Contact: rok@garbas.si
+-// Version: 1.0
+-// Description:
+-//
+-// License:
+-//
+ // Copyright (C) 2010 Plone Foundation
+ //
+ // This program is free software; you can redistribute it and/or modify it
+diff --git a/Products/CMFPlone/static/plone.js b/Products/CMFPlone/static/plone.js
+index af8b5b3..9380a40 100644
+--- a/Products/CMFPlone/static/plone.js
++++ b/Products/CMFPlone/static/plone.js
+@@ -1,10 +1,3 @@
+-// Author: Rok Garbas
+-// Contact: rok@garbas.si
+-// Version: 1.0
+-// Description:
+-//
+-// License:
+-//
+ // Copyright (C) 2010 Plone Foundation
+ //
+ // This program is free software; you can redistribute it and/or modify it
+diff --git a/Products/CMFPlone/static/resourceregistry.js b/Products/CMFPlone/static/resourceregistry.js
+index 2d33878..e301b0c 100644
+--- a/Products/CMFPlone/static/resourceregistry.js
++++ b/Products/CMFPlone/static/resourceregistry.js
+@@ -1,11 +1,4 @@
+ /* globals requirejs */
+-// Author: Rok Garbas
+-// Contact: rok@garbas.si
+-// Version: 1.0
+-// Description:
+-//
+-// License:
+-//
+ // Copyright (C) 2010 Plone Foundation
+ //
+ // This program is free software; you can redistribute it and/or modify it
 
 
