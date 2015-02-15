@@ -1,12 +1,12 @@
-Repository: plone.app.users
+Repository: plone.app.upgrade
 Branch: refs/heads/master
-Date: 2015-02-16T00:18:18+01:00
+Date: 2015-02-16T00:20:00+01:00
 Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.users/commit/51828e4ea517ff613f1e0165fea48f95dc010c88
+Commit: https://github.com/plone/plone.app.upgrade/commit/23fe74b80184468a5d27d0bd1aba7df26b0a98cc
 
 Update MANIFEST.in
 
-No txt left on top-level folder
+No top-level txt files anymore
 
 Files changed:
 M MANIFEST.in
