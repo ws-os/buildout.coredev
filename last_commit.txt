@@ -1,63 +1,78 @@
-Repository: plone.app.upgrade
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-13T23:35:38-06:00
+Date: 2015-02-14T22:26:13-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.upgrade/commit/7d8b16a1c0ddef6116686c24bb45904ec024e9df
+Commit: https://github.com/plone/Products.CMFPlone/commit/66a37819474f0cf6d31af2436210c91c60eeca1d
 
-theme mapper related
+generate grunt task for every bundle. Need to work on the less compiling task--it is weird
 
 Files changed:
-M plone/app/upgrade/v50/profiles/to_beta1/registry.xml
+M Products/CMFPlone/_scripts/_generate_gruntfile.py
+M Products/CMFPlone/_scripts/compile_resources.py
 
-diff --git a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-index 721182e..6865f48 100644
---- a/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-+++ b/plone/app/upgrade/v50/profiles/to_beta1/registry.xml
-@@ -133,4 +133,45 @@
-       <value key="js">++plone++static/components/logging/src/logging</value>
-   </records>
+diff --git a/Products/CMFPlone/_scripts/_generate_gruntfile.py b/Products/CMFPlone/_scripts/_generate_gruntfile.py
+index e01da52..3eb05c4 100644
+--- a/Products/CMFPlone/_scripts/_generate_gruntfile.py
++++ b/Products/CMFPlone/_scripts/_generate_gruntfile.py
+@@ -63,7 +63,8 @@
+     grunt.loadNpmTasks('grunt-sed');
  
+     grunt.registerTask('default', ['watch']);
+-    grunt.registerTask('compile', ['requirejs', 'less', 'sed', 'uglify']);
++    grunt.registerTask('compile-all', ['requirejs', 'less', 'sed', 'uglify']);
++    {bundleTasks}
+ }}
+ """
+ 
+@@ -310,6 +311,8 @@ def resource_to_dir(resource, file_type='.js'):
+ sed_config_final = ""
+ watch_files = []
+ sed_count = 0
++bundle_grunt_tasks = ""
 +
-+  <!-- add theme mapper related -->
-+  
-+    <!-- pattern -->
-+    <records prefix="plone.resources/mockup-patterns-filemanager"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="url">++resource++mockup/filemanager</value>
-+      <value key="js">++resource++mockup/filemanager/pattern.js</value>
-+      <value key="css">
-+        <element>++resource++mockup/filemanager/pattern.filemanager.less</element>
-+      </value>
-+    </records>
-+    <records prefix="plone.resources/mockup-patterns-thememapper"
-+            interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="url">++resource++mockup/thememapper</value>
-+      <value key="js">++resource++mockup/thememapper/pattern.js</value>
-+      <value key="css">
-+        <element>++resource++mockup/thememapper/pattern.thememapper.less</element>
-+      </value>
-+    </records>
-+
-+    <!-- bundle resource -->
-+    <records prefix="plone.resources/thememapper"
-+             interface='Products.CMFPlone.interfaces.IResourceRegistry'>
-+      <value key="js">++resource++plone.app.theming/thememapper.js</value>
-+      <value key="css">
-+        <element>++resource++plone.app.theming/thememapper.less</element>
-+      </value>
-+    </records>
-+
-+    <!-- bundle -->
-+    <records prefix="plone.bundles/thememapper"
-+             interface='Products.CMFPlone.interfaces.IBundleRegistry'>
-+      <value key="resources">
-+        <element>thememapper</element>
-+       </value>
-+       <value key="enabled">False</value>
-+       <value key="jscompilation">++resource++plone.app.theming/thememapper-compiled.min.js</value>
-+       <value key="csscompilation">++resource++plone.app.theming/thememapper-compiled.css</value>
-+       <value key="last_compilation">2015-02-13 00:00:00</value>
-+    </records>
- </registry>
+ for bkey, bundle in bundles.items():
+     if bundle.compile:
+         for resource in bundle.resources:
+@@ -384,6 +387,10 @@ def resource_to_dir(resource, file_type='.js'):
+             files=less_files,
+             less_paths=json.dumps(less_paths),
+             sourcemap_url=sourceMap_url)
++        bundle_grunt_tasks += (
++            "\ngrunt.registerTask('compile-%s',"
++            "['requirejs:%s', 'less', 'sed', 'uglify:%s']);"
++        ) % (bkey, bkey, bkey)
+ 
+ 
+ gruntfile = open('Gruntfile.js', 'w')
+@@ -392,6 +399,7 @@ def resource_to_dir(resource, file_type='.js'):
+     requirejs=require_configs,
+     uglify=uglify_configs,
+     sed=sed_config_final,
+-    files=json.dumps(watch_files))
++    files=json.dumps(watch_files),
++    bundleTasks=bundle_grunt_tasks)
+ )
+ gruntfile.close()
+diff --git a/Products/CMFPlone/_scripts/compile_resources.py b/Products/CMFPlone/_scripts/compile_resources.py
+index a5de550..faca5f2 100644
+--- a/Products/CMFPlone/_scripts/compile_resources.py
++++ b/Products/CMFPlone/_scripts/compile_resources.py
+@@ -15,6 +15,8 @@
+                     help='path to instance executable. If not provided, '
+                          'will look in bin this was executed from for '
+                          'instance or client1')
++parser.add_argument('--bundle', dest='bundle', default='all',
++                    help='Name of bundle to compile. Defaults to all of them.')
+ 
+ this_dir = os.path.dirname(os.path.realpath(__file__))
+ 
+@@ -80,6 +82,6 @@ def main(argv=sys.argv):
+     print('Running command: %s' % ' '.join(cmd))
+     subprocess.check_call(cmd)
+ 
+-    cmd = [grunt, '--gruntfile=%s' % gruntfile, 'compile']
++    cmd = [grunt, '--gruntfile=%s' % gruntfile, 'compile-%s' % args.bundle]
+     print('Running command: %s' % ' '.join(cmd))
+     subprocess.check_call(cmd)
 
 
