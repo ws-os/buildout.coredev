@@ -1,78 +1,24 @@
-Repository: Products.CMFPlone
+Repository: plone.app.users
 Branch: refs/heads/master
-Date: 2015-02-14T22:26:13-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/66a37819474f0cf6d31af2436210c91c60eeca1d
+Date: 2015-02-16T00:18:18+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.users/commit/51828e4ea517ff613f1e0165fea48f95dc010c88
 
-generate grunt task for every bundle. Need to work on the less compiling task--it is weird
+Update MANIFEST.in
+
+No txt left on top-level folder
 
 Files changed:
-M Products/CMFPlone/_scripts/_generate_gruntfile.py
-M Products/CMFPlone/_scripts/compile_resources.py
+M MANIFEST.in
 
-diff --git a/Products/CMFPlone/_scripts/_generate_gruntfile.py b/Products/CMFPlone/_scripts/_generate_gruntfile.py
-index e01da52..3eb05c4 100644
---- a/Products/CMFPlone/_scripts/_generate_gruntfile.py
-+++ b/Products/CMFPlone/_scripts/_generate_gruntfile.py
-@@ -63,7 +63,8 @@
-     grunt.loadNpmTasks('grunt-sed');
+diff --git a/MANIFEST.in b/MANIFEST.in
+index 233d37d..6acb23e 100644
+--- a/MANIFEST.in
++++ b/MANIFEST.in
+@@ -1,4 +1,3 @@
+-include *.txt
+ include *.rst
  
-     grunt.registerTask('default', ['watch']);
--    grunt.registerTask('compile', ['requirejs', 'less', 'sed', 'uglify']);
-+    grunt.registerTask('compile-all', ['requirejs', 'less', 'sed', 'uglify']);
-+    {bundleTasks}
- }}
- """
- 
-@@ -310,6 +311,8 @@ def resource_to_dir(resource, file_type='.js'):
- sed_config_final = ""
- watch_files = []
- sed_count = 0
-+bundle_grunt_tasks = ""
-+
- for bkey, bundle in bundles.items():
-     if bundle.compile:
-         for resource in bundle.resources:
-@@ -384,6 +387,10 @@ def resource_to_dir(resource, file_type='.js'):
-             files=less_files,
-             less_paths=json.dumps(less_paths),
-             sourcemap_url=sourceMap_url)
-+        bundle_grunt_tasks += (
-+            "\ngrunt.registerTask('compile-%s',"
-+            "['requirejs:%s', 'less', 'sed', 'uglify:%s']);"
-+        ) % (bkey, bkey, bkey)
- 
- 
- gruntfile = open('Gruntfile.js', 'w')
-@@ -392,6 +399,7 @@ def resource_to_dir(resource, file_type='.js'):
-     requirejs=require_configs,
-     uglify=uglify_configs,
-     sed=sed_config_final,
--    files=json.dumps(watch_files))
-+    files=json.dumps(watch_files),
-+    bundleTasks=bundle_grunt_tasks)
- )
- gruntfile.close()
-diff --git a/Products/CMFPlone/_scripts/compile_resources.py b/Products/CMFPlone/_scripts/compile_resources.py
-index a5de550..faca5f2 100644
---- a/Products/CMFPlone/_scripts/compile_resources.py
-+++ b/Products/CMFPlone/_scripts/compile_resources.py
-@@ -15,6 +15,8 @@
-                     help='path to instance executable. If not provided, '
-                          'will look in bin this was executed from for '
-                          'instance or client1')
-+parser.add_argument('--bundle', dest='bundle', default='all',
-+                    help='Name of bundle to compile. Defaults to all of them.')
- 
- this_dir = os.path.dirname(os.path.realpath(__file__))
- 
-@@ -80,6 +82,6 @@ def main(argv=sys.argv):
-     print('Running command: %s' % ' '.join(cmd))
-     subprocess.check_call(cmd)
- 
--    cmd = [grunt, '--gruntfile=%s' % gruntfile, 'compile']
-+    cmd = [grunt, '--gruntfile=%s' % gruntfile, 'compile-%s' % args.bundle]
-     print('Running command: %s' % ' '.join(cmd))
-     subprocess.check_call(cmd)
+ recursive-include docs *
 
 
