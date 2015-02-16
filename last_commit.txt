@@ -1,86 +1,28 @@
-Repository: plone.app.textfield
+Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-02-16T13:41:19-08:00
-Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/plone.app.textfield/commit/87e02670715bfe95459613e38e032937e83762b2
+Date: 2015-02-16T22:43:03+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.event/commit/e992e647900f90ac26e24603061fdb2303e501f9
 
-add __eq__ for RichTextValue
+Fix version
+
+plone.app.contentypes depends on &gt;=2.0.4, and 2.0.dev0 is lower than that, putting back the same value as before.
 
 Files changed:
-M docs/HISTORY.rst
-M plone/app/textfield/field.rst
-M plone/app/textfield/value.py
+M setup.py
 
-diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
-index 4fae0b8..44584de 100644
---- a/docs/HISTORY.rst
-+++ b/docs/HISTORY.rst
-@@ -4,6 +4,9 @@ Changelog
- 1.2.5 (unreleased)
- ------------------
+diff --git a/setup.py b/setup.py
+index 638b4e0..78b817f 100644
+--- a/setup.py
++++ b/setup.py
+@@ -4,7 +4,7 @@
+ import os
  
-+- Add equality check (`__eq__`) for RawValueHolder and RichTextValue;
-+  [davisagli]
-+
- - Fix marshaler decode to always decode raw value into unicode
-   [datakurre]
  
-@@ -18,10 +21,6 @@ Changelog
-   of sort order of imports
-   [thet]
+-version = '2.0.dev0'
++version = '2.0a5'
  
--- For Plone 5, support getting markup control panel settings from the registry,
--  while still supporting normal portal_properties access for Plone < 5.
--  [thet]
--
  
- 1.2.4 (2014-10-20)
- ------------------
-diff --git a/plone/app/textfield/field.rst b/plone/app/textfield/field.rst
-index c6f8d54..d228481 100644
---- a/plone/app/textfield/field.rst
-+++ b/plone/app/textfield/field.rst
-@@ -115,6 +115,16 @@ Or to get the value encoded:
-     >>> value.raw_encoded
-     'Some plain text'
- 
-+Values are equal as long as they have the same `raw`, `mimeType`, `outputMimeType`,
-+and `encoding`:
-+
-+    >>> value == RichTextValue(raw=u"Some plain text",
-+    ...                        mimeType='text/plain',
-+    ...                        outputMimeType=field.output_mime_type,
-+    ...                        encoding='utf-8')
-+    True
-+
-+
- Converting a value from unicode
- -------------------------------
- 
-diff --git a/plone/app/textfield/value.py b/plone/app/textfield/value.py
-index 025ebb1..f70cc2b 100644
---- a/plone/app/textfield/value.py
-+++ b/plone/app/textfield/value.py
-@@ -19,6 +19,11 @@ def __init__(self, value):
-     def __repr__(self):
-         return u"<RawValueHolder: %s>" % self.value
- 
-+    def __eq__(self, other):
-+        if not isinstance(other, RawValueHolder):
-+            return NotImplemented
-+        return self.value == other.value
-+
- 
- class RichTextValue(object):
-     """The actual value.
-@@ -98,3 +103,8 @@ def output_relative_to(self, context):
-     def __repr__(self):
-         return u"RichTextValue object. (Did you mean <attribute>.raw or "\
-                u"<attribute>.output?)"
-+
-+    def __eq__(self, other):
-+        if not isinstance(other, RichTextValue):
-+            return NotImplemented
-+        return vars(self) == vars(other)
+ setup(
 
 
