@@ -1,88 +1,31 @@
-Repository: plone.app.discussion
+Repository: plone.app.z3cform
 Branch: refs/heads/master
-Date: 2015-02-16T10:22:09+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.discussion/commit/b4c1d9e42d50fa5528fa07dbd5696cd1db9180a2
+Date: 2015-02-16T16:50:55+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.z3cform/commit/6cb4e0b7fbe2e79a9aa00bae4e719d8381ca12ca
 
-Sort imports
-
-As per the styleguide
+add missing changelog entry
 
 Files changed:
-M plone/app/discussion/conversation.py
+M CHANGES.rst
 
-diff --git a/plone/app/discussion/conversation.py b/plone/app/discussion/conversation.py
-index ba27c0f..540bf97 100644
---- a/plone/app/discussion/conversation.py
-+++ b/plone/app/discussion/conversation.py
-@@ -9,46 +9,36 @@
- manipulating the comments directly in reply to a particular comment or at the
- top level of the conversation.
- """
--
--import time
--
--from persistent import Persistent
--
--from zope.interface import implements, implementer
--from zope.component import adapts
--from zope.component import adapter
--
--from zope.annotation.interfaces import IAnnotations, IAnnotatable
--
--from zope.event import notify
--
--from Acquisition import aq_base, aq_inner, aq_parent
-+from AccessControl.SpecialUsers import nobody as user_nobody
-+from Acquisition import aq_base
-+from Acquisition import aq_inner
-+from Acquisition import aq_parent
- from Acquisition import Explicit
--
--from OFS.Traversable import Traversable
--
-+from BTrees.LLBTree import LLSet
-+from BTrees.LOBTree import LOBTree
-+from BTrees.OIBTree import OIBTree
- from OFS.event import ObjectWillBeAddedEvent
- from OFS.event import ObjectWillBeRemovedEvent
--
-+from OFS.Traversable import Traversable
-+from Products.CMFPlone.interfaces import IHideFromBreadcrumbs
-+from persistent import Persistent
-+from plone.app.discussion.comment import Comment
-+from plone.app.discussion.interfaces import IConversation
-+from plone.app.discussion.interfaces import IReplies
-+from zope.annotation.interfaces import IAnnotatable
-+from zope.annotation.interfaces import IAnnotations
-+from zope.component import adapter
-+from zope.component import adapts
- from zope.container.contained import ContainerModifiedEvent
--
--from zope.lifecycleevent import ObjectCreatedEvent
--
-+from zope.event import notify
-+from zope.interface import implementer
-+from zope.interface import implements
- from zope.lifecycleevent import ObjectAddedEvent
-+from zope.lifecycleevent import ObjectCreatedEvent
- from zope.lifecycleevent import ObjectRemovedEvent
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 83dea0a..8dc4647 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -1,6 +1,13 @@
+ Changelog
+ =========
  
--from BTrees.OIBTree import OIBTree
--
--from BTrees.LOBTree import LOBTree
--from BTrees.LLBTree import LLSet
--
--from Products.CMFPlone.interfaces import IHideFromBreadcrumbs
--
--from plone.app.discussion.interfaces import IConversation
--from plone.app.discussion.interfaces import IReplies
--from plone.app.discussion.comment import Comment
-+import time
- 
--from AccessControl.SpecialUsers import nobody as user_nobody
- 
- ANNOTATION_KEY = 'plone.app.discussion:conversation'
++1.1 (unreleased)
++----------------
++
++- Integrate plone.app.widgets.
++  [vangheem]
++
++
+ 1.0.2 (unreleased)
+ ------------------
  
 
 
