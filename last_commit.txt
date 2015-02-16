@@ -1,54 +1,26 @@
-Repository: plone.app.robotframework
+Repository: plone.app.dexterity
 Branch: refs/heads/master
-Date: 2015-02-15T17:31:58-08:00
+Date: 2015-02-15T17:32:28-08:00
 Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/plone.app.robotframework/commit/1b809c7d8635afa5de9042b09a36e7f695cee5bf
+Commit: https://github.com/plone/plone.app.dexterity/commit/a96eeb91da984201fd153dae5590450ed03336fa
 
-find mockup-based modals too
+fix test
 
 Files changed:
-M CHANGES.txt
-M src/plone/app/robotframework/keywords.robot
+M plone/app/dexterity/tests/editing.txt
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 8de3ba7..6cc6e84 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -4,6 +4,10 @@ Changelog
- 0.9.9 (unreleased)
- ------------------
- 
-+- Also detect mockup-based modals in the "Click Overlay Link" and
-+  "Click Overlay Button" keywords.
-+  [davisagli]
-+
- - Read ``use_email_as_login`` setting from the registry instead of portal
-   properties (see https://github.com/plone/Products.CMFPlone/issues/216).
-   [jcerjak]
-diff --git a/src/plone/app/robotframework/keywords.robot b/src/plone/app/robotframework/keywords.robot
-index 4e83420..efbd616 100644
---- a/src/plone/app/robotframework/keywords.robot
-+++ b/src/plone/app/robotframework/keywords.robot
-@@ -103,15 +103,15 @@ Log out
- Click Overlay Link
-     [Arguments]  ${element}
-     Click Link  ${element}
--    Wait until keyword succeeds  10  1  Page Should Contain Element  css=.pb-ajax > div
--    Element Should Be Visible  css=.pb-ajax > div
-+    Wait until keyword succeeds  10  1  Page Should Contain Element  css=.pb-ajax > div,.plone-modal
-+    Element Should Be Visible  css=.pb-ajax > div,.plone-modal
- 
- Click Overlay Button
-     [Arguments]  ${element}
-     Click Button  ${element}
--    Wait until page contains element  css=.pb-ajax > div
--    Page Should Contain Element  css=.pb-ajax > div
--    Element Should Be Visible  css=.pb-ajax > div
-+    Wait until page contains element  css=.pb-ajax > div,.plone-modal
-+    Page Should Contain Element  css=.pb-ajax > div,.plone-modal
-+    Element Should Be Visible  css=.pb-ajax > div,.plone-modal
- 
- Should be above
-     [Arguments]  ${locator1}  ${locator2}
+diff --git a/plone/app/dexterity/tests/editing.txt b/plone/app/dexterity/tests/editing.txt
+index 832d45c..2adef24 100644
+--- a/plone/app/dexterity/tests/editing.txt
++++ b/plone/app/dexterity/tests/editing.txt
+@@ -105,7 +105,7 @@ and saved.
+   >>> for name, factory in sorted(component.getUtilitiesFor(
+   ...     interfaces.IFieldFactory)):
+   ...     browser.open(schemaeditor_url)
+-  ...     browser.getControl('Add new field').click()
++  ...     browser.getLink('Add new field').click()
+   ...     browser.getControl('Title').value = name
+   ...     field_id = normalizer.normalize(name).replace('-', '_')
+   ...     browser.getControl('Short Name').value = field_id
 
 
