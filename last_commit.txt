@@ -1,56 +1,88 @@
-Repository: plone.schemaeditor
+Repository: plone.app.discussion
 Branch: refs/heads/master
-Date: 2015-02-15T22:14:12-06:00
-Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.schemaeditor/commit/9da5e1fa1caeb536c94bdf543beb2df346fe548d
+Date: 2015-02-16T10:22:09+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.discussion/commit/b4c1d9e42d50fa5528fa07dbd5696cd1db9180a2
 
-disable robot tests until we figure out some of the wonkiness
+Sort imports
+
+As per the styleguide
 
 Files changed:
-M plone/schemaeditor/tests/test_robot.py
+M plone/app/discussion/conversation.py
 
-diff --git a/plone/schemaeditor/tests/test_robot.py b/plone/schemaeditor/tests/test_robot.py
-index a06bfad..0c77533 100644
---- a/plone/schemaeditor/tests/test_robot.py
-+++ b/plone/schemaeditor/tests/test_robot.py
-@@ -9,21 +9,21 @@
+diff --git a/plone/app/discussion/conversation.py b/plone/app/discussion/conversation.py
+index ba27c0f..540bf97 100644
+--- a/plone/app/discussion/conversation.py
++++ b/plone/app/discussion/conversation.py
+@@ -9,46 +9,36 @@
+ manipulating the comments directly in reply to a particular comment or at the
+ top level of the conversation.
+ """
+-
+-import time
+-
+-from persistent import Persistent
+-
+-from zope.interface import implements, implementer
+-from zope.component import adapts
+-from zope.component import adapter
+-
+-from zope.annotation.interfaces import IAnnotations, IAnnotatable
+-
+-from zope.event import notify
+-
+-from Acquisition import aq_base, aq_inner, aq_parent
++from AccessControl.SpecialUsers import nobody as user_nobody
++from Acquisition import aq_base
++from Acquisition import aq_inner
++from Acquisition import aq_parent
+ from Acquisition import Explicit
+-
+-from OFS.Traversable import Traversable
+-
++from BTrees.LLBTree import LLSet
++from BTrees.LOBTree import LOBTree
++from BTrees.OIBTree import OIBTree
+ from OFS.event import ObjectWillBeAddedEvent
+ from OFS.event import ObjectWillBeRemovedEvent
+-
++from OFS.Traversable import Traversable
++from Products.CMFPlone.interfaces import IHideFromBreadcrumbs
++from persistent import Persistent
++from plone.app.discussion.comment import Comment
++from plone.app.discussion.interfaces import IConversation
++from plone.app.discussion.interfaces import IReplies
++from zope.annotation.interfaces import IAnnotatable
++from zope.annotation.interfaces import IAnnotations
++from zope.component import adapter
++from zope.component import adapts
+ from zope.container.contained import ContainerModifiedEvent
+-
+-from zope.lifecycleevent import ObjectCreatedEvent
+-
++from zope.event import notify
++from zope.interface import implementer
++from zope.interface import implements
+ from zope.lifecycleevent import ObjectAddedEvent
++from zope.lifecycleevent import ObjectCreatedEvent
+ from zope.lifecycleevent import ObjectRemovedEvent
  
+-from BTrees.OIBTree import OIBTree
+-
+-from BTrees.LOBTree import LOBTree
+-from BTrees.LLBTree import LLSet
+-
+-from Products.CMFPlone.interfaces import IHideFromBreadcrumbs
+-
+-from plone.app.discussion.interfaces import IConversation
+-from plone.app.discussion.interfaces import IReplies
+-from plone.app.discussion.comment import Comment
++import time
  
- def test_suite():
--    suite = unittest.TestSuite()
--    current_dir = os.path.abspath(os.path.dirname(__file__))
--    robot_dir = os.path.join(current_dir, 'robot')
--    robot_tests = [
--        os.path.join('robot', doc) for doc in
--        os.listdir(robot_dir) if doc.endswith('.robot') and
--        doc.startswith('test_')
--    ]
--    for robot_test in robot_tests:
--        robottestsuite = robotsuite.RobotTestSuite(robot_test)
--        robottestsuite.level = ROBOT_TEST_LEVEL
--        suite.addTests([
--            layered(
--                robottestsuite,
--                layer=ACCEPTANCE
--            ),
--        ])
-+    # suite = unittest.TestSuite()
-+    # current_dir = os.path.abspath(os.path.dirname(__file__))
-+    # robot_dir = os.path.join(current_dir, 'robot')
-+    # robot_tests = [
-+    #     os.path.join('robot', doc) for doc in
-+    #     os.listdir(robot_dir) if doc.endswith('.robot') and
-+    #     doc.startswith('test_')
-+    # ]
-+    # for robot_test in robot_tests:
-+    #     robottestsuite = robotsuite.RobotTestSuite(robot_test)
-+    #     robottestsuite.level = ROBOT_TEST_LEVEL
-+    #     suite.addTests([
-+    #         layered(
-+    #             robottestsuite,
-+    #             layer=ACCEPTANCE
-+    #         ),
-+    #     ])
-     return suite
+-from AccessControl.SpecialUsers import nobody as user_nobody
+ 
+ ANNOTATION_KEY = 'plone.app.discussion:conversation'
+ 
 
 
