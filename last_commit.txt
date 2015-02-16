@@ -1,39 +1,35 @@
-Repository: plone.app.dexterity
+Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-02-16T12:58:32-08:00
-Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/plone.app.dexterity/commit/d56831cf34b058a19ca0063b12aacf51ee873551
+Date: 2015-02-16T22:34:47+01:00
+Author: Gil Forcada (gforcada) <gforcada@gnome.org>
+Commit: https://github.com/plone/plone.app.event/commit/a17c9e1178303639893a95141b468a73a654b5f5
 
-remove unnecessary TAL
+Check for distribution
+
+Plone's styleguide recommends not to check if a module can be imported
+but that the distribution can be found instead.
 
 Files changed:
-M plone/app/dexterity/browser/behaviors.pt
+M plone/app/event/dx/behaviors.py
 
-diff --git a/plone/app/dexterity/browser/behaviors.pt b/plone/app/dexterity/browser/behaviors.pt
-index c475dcc..f402414 100644
---- a/plone/app/dexterity/browser/behaviors.pt
-+++ b/plone/app/dexterity/browser/behaviors.pt
-@@ -7,11 +7,10 @@
-             tal:attributes="action request/getURL; enctype view/enctype">
+diff --git a/plone/app/event/dx/behaviors.py b/plone/app/event/dx/behaviors.py
+index 61838c8..0d4819d 100644
+--- a/plone/app/event/dx/behaviors.py
++++ b/plone/app/event/dx/behaviors.py
+@@ -42,10 +42,13 @@
+ # TODO: altern., for backwards compat., we could import from plone.z3cform
+ from z3c.form.browser.textlines import TextLinesFieldWidget
  
-           <tal:widgets repeat="widget view/widgets/values">
--            <tal:b define="hidden python:widget.mode == 'hidden'"
--                   omit-tag="hidden">
++import pkg_resources
++
+ try:
+     # Plone 5
++    pkg_resources.get_distribution('plone.app.z3cform')
+     from plone.app.z3cform.widget import DatetimeWidget
+-except ImportError:
++except pkg_resources.DistributionNotFound:
+     from plone.app.widgets.dx import DatetimeWidget
  
-                 <div class="field"
--                     tal:define="error widget/error"
-+                     tal:define="error widget/error;
-+                                 hidden python:widget.mode == 'hidden'"
-                      tal:attributes="class python:'field' + (error and ' error' or '')">
-                   <label for=""
-                          tal:attributes="for widget/id"
-@@ -45,7 +44,6 @@
  
-                 </div>
- 
--            </tal:b>
-           </tal:widgets>
- 
-         <metal:actions metal:use-macro="context/@@ploneform-macros/actions"/>
 
 
