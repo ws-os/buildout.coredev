@@ -1,31 +1,170 @@
-Repository: plone.app.z3cform
+Repository: plone.app.event
 Branch: refs/heads/master
-Date: 2015-02-16T16:50:55+01:00
+Date: 2015-02-16T17:13:57+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.z3cform/commit/6cb4e0b7fbe2e79a9aa00bae4e719d8381ca12ca
+Commit: https://github.com/plone/plone.app.event/commit/f42241e3350166ff61d5f74c16c1d2d3a2f860a4
 
-add missing changelog entry
+soft dependency on plone.app.z3cform &gt;= 1.1
 
 Files changed:
 M CHANGES.rst
+M plone/app/event/bbb/configure.zcml
+M plone/app/event/configure.zcml
+M plone/app/event/dx/behaviors.py
+M setup.py
+M versions.cfg
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 83dea0a..8dc4647 100644
+index d2e3092..796737d 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -1,6 +1,13 @@
+@@ -1,12 +1,20 @@
  Changelog
  =========
  
-+1.1 (unreleased)
-+----------------
-+
-+- Integrate plone.app.widgets.
+-2.0.0 (unreleased)
++2.1.0 (unreleased)
+ ------------------
+ 
+ - Some Plone 5 related js improvements
+   [vangheem]
+ 
++- Use Plone 5 imports from plone.app.z3cform and make plone.app.widgets a soft
++  dependency.
 +  [vangheem]
 +
 +
- 1.0.2 (unreleased)
- ------------------
++2.0.0 (unreleased)
++------------------
++
+ - Remove support for ``plone.app.collection`` and ``ATTopic`` - plone.app.event
+   2.x is Dexterity only.
+   [thet]
+diff --git a/plone/app/event/bbb/configure.zcml b/plone/app/event/bbb/configure.zcml
+index 11b91c6..05e91e7 100644
+--- a/plone/app/event/bbb/configure.zcml
++++ b/plone/app/event/bbb/configure.zcml
+@@ -3,6 +3,8 @@
+     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+     i18n_domain="plone.app.event">
  
++  <include package="plone.app.widgets" />
++
+   <include package=".browser" />
+   <include package=".portlets" />
+ 
+diff --git a/plone/app/event/configure.zcml b/plone/app/event/configure.zcml
+index d54a846..dd29e50 100644
+--- a/plone/app/event/configure.zcml
++++ b/plone/app/event/configure.zcml
+@@ -14,7 +14,6 @@
+   <include package="plone.formwidget.recurrence" />
+   <include package="plone.app.portlets" />
+   <include package="plone.app.registry" />
+-  <include package="plone.app.widgets" />
+ 
+   <!-- internal dependencies -->
+   <include file="permissions.zcml" />
+diff --git a/plone/app/event/dx/behaviors.py b/plone/app/event/dx/behaviors.py
+index bf98f91..61838c8 100644
+--- a/plone/app/event/dx/behaviors.py
++++ b/plone/app/event/dx/behaviors.py
+@@ -15,7 +15,6 @@
+ from plone.app.event.dx.interfaces import IDXEvent
+ from plone.app.event.dx.interfaces import IDXEventRecurrence
+ from plone.app.textfield.value import RichTextValue
+-from plone.app.z3cform.widget import DatetimeWidget
+ from plone.app.z3cform.interfaces import IPloneFormLayer
+ from plone.autoform import directives as form
+ from plone.autoform.interfaces import IFormFieldProvider
+@@ -43,6 +42,12 @@
+ # TODO: altern., for backwards compat., we could import from plone.z3cform
+ from z3c.form.browser.textlines import TextLinesFieldWidget
+ 
++try:
++    # Plone 5
++    from plone.app.z3cform.widget import DatetimeWidget
++except ImportError:
++    from plone.app.widgets.dx import DatetimeWidget
++
+ 
+ def first_weekday_sun0():
+     return wkday_to_mon1(first_weekday())
+diff --git a/setup.py b/setup.py
+index e3dcc23..638b4e0 100644
+--- a/setup.py
++++ b/setup.py
+@@ -4,7 +4,7 @@
+ import os
+ 
+ 
+-version = '2.0a5'
++version = '2.0.dev0'
+ 
+ 
+ setup(
+@@ -53,9 +53,8 @@
+         'plone.app.querystring',
+         'plone.app.registry',
+         'plone.app.textfield',
+-        'plone.app.widgets [dexterity] >= 1.7.0',
+         'plone.app.vocabularies >= 2.1.15.dev0',
+-        'plone.app.z3cform>=1.1.0.dev0',
++        'plone.app.z3cform',
+         'plone.autoform>=1.4',
+         'plone.behavior',
+         'plone.browserlayer',
+@@ -100,6 +99,12 @@
+             'unittest2',
+             'zExceptions',
+             'zope.event',
++        ],
++        'plone43': [
++            'plone.app.widgets [dexterity] >= 1.7.0',
++        ],
++        'plone50': [  # optional, plone 5 already depends on these versions
++            'plone.app.z3cform >= 1.1.0.dev0',
+         ]
+     },
+     entry_points="""
+diff --git a/versions.cfg b/versions.cfg
+index 748fefd..9b5a769 100644
+--- a/versions.cfg
++++ b/versions.cfg
+@@ -10,7 +10,8 @@ icalendar = 3.8.4
+ plone.app.event = 2.0a5
+ plone.event = 1.1
+ plone.formwidget.recurrence = 1.2.5
+-plone.app.widgets = 1.7.0
+ plone.app.contenttypes = 1.2a5
+ plone.app.dexterity = 2.1.2
++# Plone 4.3 dependencies
++plone.app.widgets = 1.7.0
+ plone.app.z3cform = 1.0.1
+
+
+Repository: plone.app.event
+Branch: refs/heads/master
+Date: 2015-02-16T20:45:49+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.event/commit/07ae9fc56a1ff40542a706a41029703c5c347ca7
+
+run p.a.e default profile from the bbb profile
+
+Files changed:
+M plone/app/event/bbb/profiles/default/metadata.xml
+
+diff --git a/plone/app/event/bbb/profiles/default/metadata.xml b/plone/app/event/bbb/profiles/default/metadata.xml
+index cf4492a..3cbcf5b 100644
+--- a/plone/app/event/bbb/profiles/default/metadata.xml
++++ b/plone/app/event/bbb/profiles/default/metadata.xml
+@@ -1,4 +1,7 @@
+ <?xml version="1.0"?>
+ <metadata>
+   <version>1</version>
++  <dependencies>
++    <dependency>profile-plone.app.event:default</dependency>
++  </dependencies>
+ </metadata>
 
 
