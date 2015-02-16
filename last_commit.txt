@@ -1,35 +1,86 @@
-Repository: plone.app.event
+Repository: plone.app.textfield
 Branch: refs/heads/master
-Date: 2015-02-16T22:34:47+01:00
-Author: Gil Forcada (gforcada) <gforcada@gnome.org>
-Commit: https://github.com/plone/plone.app.event/commit/a17c9e1178303639893a95141b468a73a654b5f5
+Date: 2015-02-16T13:41:19-08:00
+Author: David Glick (davisagli) <david@glicksoftware.com>
+Commit: https://github.com/plone/plone.app.textfield/commit/87e02670715bfe95459613e38e032937e83762b2
 
-Check for distribution
-
-Plone's styleguide recommends not to check if a module can be imported
-but that the distribution can be found instead.
+add __eq__ for RichTextValue
 
 Files changed:
-M plone/app/event/dx/behaviors.py
+M docs/HISTORY.rst
+M plone/app/textfield/field.rst
+M plone/app/textfield/value.py
 
-diff --git a/plone/app/event/dx/behaviors.py b/plone/app/event/dx/behaviors.py
-index 61838c8..0d4819d 100644
---- a/plone/app/event/dx/behaviors.py
-+++ b/plone/app/event/dx/behaviors.py
-@@ -42,10 +42,13 @@
- # TODO: altern., for backwards compat., we could import from plone.z3cform
- from z3c.form.browser.textlines import TextLinesFieldWidget
+diff --git a/docs/HISTORY.rst b/docs/HISTORY.rst
+index 4fae0b8..44584de 100644
+--- a/docs/HISTORY.rst
++++ b/docs/HISTORY.rst
+@@ -4,6 +4,9 @@ Changelog
+ 1.2.5 (unreleased)
+ ------------------
  
-+import pkg_resources
++- Add equality check (`__eq__`) for RawValueHolder and RichTextValue;
++  [davisagli]
 +
- try:
-     # Plone 5
-+    pkg_resources.get_distribution('plone.app.z3cform')
-     from plone.app.z3cform.widget import DatetimeWidget
--except ImportError:
-+except pkg_resources.DistributionNotFound:
-     from plone.app.widgets.dx import DatetimeWidget
+ - Fix marshaler decode to always decode raw value into unicode
+   [datakurre]
  
+@@ -18,10 +21,6 @@ Changelog
+   of sort order of imports
+   [thet]
  
+-- For Plone 5, support getting markup control panel settings from the registry,
+-  while still supporting normal portal_properties access for Plone < 5.
+-  [thet]
+-
+ 
+ 1.2.4 (2014-10-20)
+ ------------------
+diff --git a/plone/app/textfield/field.rst b/plone/app/textfield/field.rst
+index c6f8d54..d228481 100644
+--- a/plone/app/textfield/field.rst
++++ b/plone/app/textfield/field.rst
+@@ -115,6 +115,16 @@ Or to get the value encoded:
+     >>> value.raw_encoded
+     'Some plain text'
+ 
++Values are equal as long as they have the same `raw`, `mimeType`, `outputMimeType`,
++and `encoding`:
++
++    >>> value == RichTextValue(raw=u"Some plain text",
++    ...                        mimeType='text/plain',
++    ...                        outputMimeType=field.output_mime_type,
++    ...                        encoding='utf-8')
++    True
++
++
+ Converting a value from unicode
+ -------------------------------
+ 
+diff --git a/plone/app/textfield/value.py b/plone/app/textfield/value.py
+index 025ebb1..f70cc2b 100644
+--- a/plone/app/textfield/value.py
++++ b/plone/app/textfield/value.py
+@@ -19,6 +19,11 @@ def __init__(self, value):
+     def __repr__(self):
+         return u"<RawValueHolder: %s>" % self.value
+ 
++    def __eq__(self, other):
++        if not isinstance(other, RawValueHolder):
++            return NotImplemented
++        return self.value == other.value
++
+ 
+ class RichTextValue(object):
+     """The actual value.
+@@ -98,3 +103,8 @@ def output_relative_to(self, context):
+     def __repr__(self):
+         return u"RichTextValue object. (Did you mean <attribute>.raw or "\
+                u"<attribute>.output?)"
++
++    def __eq__(self, other):
++        if not isinstance(other, RichTextValue):
++            return NotImplemented
++        return vars(self) == vars(other)
 
 
