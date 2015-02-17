@@ -1,58 +1,82 @@
-Repository: plone.app.textfield
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-16T13:55:13-08:00
+Date: 2015-02-16T17:13:12-08:00
 Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/plone.app.textfield/commit/30db6745f0f2e74de270a13ff122a7fd67a407fc
+Commit: https://github.com/plone/Products.CMFPlone/commit/0e351cc4b13b60da8f9a5a33925ece1ea43b6e81
 
-need __ne__ also
+fix 404 similar items markup, don't use plone_view.getIcon
 
 Files changed:
-M plone/app/textfield/field.rst
-M plone/app/textfield/value.py
+M Products/CMFPlone/skins/plone_templates/default_error_message.pt
 
-diff --git a/plone/app/textfield/field.rst b/plone/app/textfield/field.rst
-index d228481..aca6d51 100644
---- a/plone/app/textfield/field.rst
-+++ b/plone/app/textfield/field.rst
-@@ -118,11 +118,14 @@ Or to get the value encoded:
- Values are equal as long as they have the same `raw`, `mimeType`, `outputMimeType`,
- and `encoding`:
+diff --git a/Products/CMFPlone/skins/plone_templates/default_error_message.pt b/Products/CMFPlone/skins/plone_templates/default_error_message.pt
+index 05cb4f1..a77f725 100644
+--- a/Products/CMFPlone/skins/plone_templates/default_error_message.pt
++++ b/Products/CMFPlone/skins/plone_templates/default_error_message.pt
+@@ -73,53 +73,24 @@
  
--    >>> value == RichTextValue(raw=u"Some plain text",
--    ...                        mimeType='text/plain',
--    ...                        outputMimeType=field.output_mime_type,
--    ...                        encoding='utf-8')
-+    >>> value2 = RichTextValue(raw=u"Some plain text",
-+    ...                    mimeType='text/plain',
-+    ...                    outputMimeType=field.output_mime_type,
-+    ...                    encoding='utf-8')
-+    >>> value == value2
-     True
-+    >>> value != value2
-+    False
+                         <tal:firstparent condition="first_parent/absolute_url | nothing">
+                             <li tal:define="result_url first_parent/absolute_url;
+-                                               result_type python:hasattr(first_parent, 'getTypeInfo') and first_parent.getTypeInfo().getId();
+-                                               item_icon python:plone_view.getIcon(first_parent);
+-                                               url python:test(result_type in use_view_action, result_url+'/view', result_url);"
+-                                       tal:condition="result_type">
+-                                <a tal:define="item_wf_state_class python:'state-' + context.portal_workflow.getInfoFor(first_parent, 'review_state', '');"
+-                                    tal:attributes="class python:'contenttype-' + normalizeString(result_type)"
+-                                    href="#"
+-                                     tal:attributes="href url;
+-                                                     class string:$item_wf_state_class"
+-                                     tal:content="first_parent/Title">
+-                                  <img tal:replace="structure item_icon/html_tag" />
+-                                    <span class="discreet" i18n:translate="results_by_author"
+-                                      tal:condition="python: not isAnon or site_properties.allowAnonymousViewAbout">
+-                                    by <span tal:omit-tag="" tal:content="first_parent/Creator" i18n:name="author">Author</span>,
+-                                    <span tal:omit-tag="" tal:content="python:toLocalizedTime(first_parent.ModificationDate(), long_format=1)" i18n:name="date">Modification Date</span>
+-                                    </span>
+-
+-                                </a>
+-
++                                            result_type python:hasattr(first_parent, 'getTypeInfo') and first_parent.getTypeInfo().getId();
++                                            url python:result_url + '/view' if result_type in use_view_action else result_url;"
++                                tal:condition="result_type">
++                                <a href="${url}"
++                                   tal:define="item_wf_state_class python:' state-' + context.portal_workflow.getInfoFor(first_parent, 'review_state', '');"
++                                   tal:attributes="class python:'contenttype-' + normalizeString(result_type) + item_wf_state_class">${first_parent/Title}</a>
+                                 <span tal:content="python:plone_view.cropText(first_parent.Description(), desc_length, desc_ellipsis)" class="discreet"> Description </span>
+-
+                             </li>
+                         </tal:firstparent>
  
+                         <tal:similar repeat="similar similar_items">
+                             <li tal:define="result_url similar/getURL;
+-                                               result_type similar/portal_type;
+-                                               item_icon python:plone_view.getIcon(similar);
+-                                               url python:test(result_type in use_view_action, result_url+'/view', result_url);">
+-                                <a tal:define="item_wf_state_class string:state-${similar/review_state};"
+-                                    tal:attributes="class python:'contenttype-' + normalizeString(result_type)"
+-                                    href="#"
+-                                     tal:attributes="href url;
+-                                                     class string:$item_wf_state_class"
+-                                     tal:content="similar/pretty_title_or_id">
+-                                  <img tal:replace="structure item_icon/html_tag" />
+-
+-                                    <span class="discreet" i18n:translate="results_by_author"
+-                                      tal:condition="python: not isAnon or site_properties.allowAnonymousViewAbout">
+-                                    by <span tal:omit-tag="" tal:content="similar/Creator" i18n:name="author">Author</span>,
+-                                    <span tal:omit-tag="" tal:content="python:toLocalizedTime(similar.ModificationDate, long_format=1)" i18n:name="date">Modification Date</span>
+-                                    </span>
+-
+-                                </a>
+-
++                                            result_type similar/portal_type;
++                                            url python:result_url + '/view' if result_type in use_view_action else result_url;">
++                                <a href="${url}"
++                                   tal:define="item_wf_state_class string: state-${similar/review_state};"
++                                   tal:attributes="class python:'contenttype-' + normalizeString(result_type) + item_wf_state_class">${similar/pretty_title_or_id}</a>
+                                 <span tal:content="python:plone_view.cropText(similar.Description or '', desc_length, desc_ellipsis)" class="discreet"> Description </span>
+-
+                             </li>
+                         </tal:similar>
  
- Converting a value from unicode
-diff --git a/plone/app/textfield/value.py b/plone/app/textfield/value.py
-index f70cc2b..7a1ca70 100644
---- a/plone/app/textfield/value.py
-+++ b/plone/app/textfield/value.py
-@@ -24,6 +24,9 @@ def __eq__(self, other):
-             return NotImplemented
-         return self.value == other.value
- 
-+    def __ne__(self, other):
-+        return not self.__eq__(other)
-+
- 
- class RichTextValue(object):
-     """The actual value.
-@@ -108,3 +111,6 @@ def __eq__(self, other):
-         if not isinstance(other, RichTextValue):
-             return NotImplemented
-         return vars(self) == vars(other)
-+
-+    def __ne__(self, other):
-+        return not self.__eq__(other)
 
 
