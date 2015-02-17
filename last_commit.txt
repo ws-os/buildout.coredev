@@ -1,49 +1,26 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-16T17:32:57-08:00
+Date: 2015-02-16T17:36:17-08:00
 Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/957fcd73e0b7eb3224600f3bd9073298cb799002
+Commit: https://github.com/plone/Products.CMFPlone/commit/8182e16ad477869617444bdf4d3edc19f7f75614
 
-oops, forgot to save
+fix i18n in plone-addsite.pt
 
 Files changed:
-M Products/CMFPlone/controlpanel/browser/quickinstaller.py
+M Products/CMFPlone/browser/templates/plone-addsite.pt
 
-diff --git a/Products/CMFPlone/controlpanel/browser/quickinstaller.py b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
-index 5541265..7a6ee1c 100644
---- a/Products/CMFPlone/controlpanel/browser/quickinstaller.py
-+++ b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
-@@ -153,7 +153,7 @@ def upgrade_product(self, product):
-         try:
-             qi.upgradeProduct(product)
-             messages.addStatusMessage(
--                _(u'Upgraded ${addon}!', mapping={'addon', product}), type="info")
-+                _(u'Upgraded ${product}!', mapping={'addon', product}), type="info")
-             return True
-         except Exception, e:
-             logging.error("Could not upgrade %s: %s" % (product, e))
-@@ -194,7 +194,7 @@ def __call__(self):
-                 # TODO: find out where this is and don't run already
-                 # activated profiles
-                 setupTool.runAllImportStepsFromProfile(profile)
--                msg = _(u'Installed ${addon}!', mapping={'addon': profile})
-+                msg = _(u'Installed ${product}!', mapping={'addon': profile})
-                 messages.addStatusMessage(msg, type=msg_type)
+diff --git a/Products/CMFPlone/browser/templates/plone-addsite.pt b/Products/CMFPlone/browser/templates/plone-addsite.pt
+index 46fbf91..a56cf81 100644
+--- a/Products/CMFPlone/browser/templates/plone-addsite.pt
++++ b/Products/CMFPlone/browser/templates/plone-addsite.pt
+@@ -137,7 +137,7 @@
+       </div>
  
-         purl = getToolByName(self.context, 'portal_url')()
-@@ -213,11 +213,11 @@ def __call__(self):
-             for product in products:
-                 try:
-                     qi.uninstallProducts(products=[product, ])
--                    msg = _(u'Uninstalled ${addon}.', mapping={'addon': product})
-+                    msg = _(u'Uninstalled ${product}.', mapping={'addon': product})
-                 except Exception, e:
-                     logging.error("Could not uninstall %s: %s" % (product, e))
-                     msg_type = 'error'
--                    msg = _(u'Error uninstalling ${addon}.', mapping={'addon': product})
-+                    msg = _(u'Error uninstalling ${product}.', mapping={'addon': product})
-                 messages.addStatusMessage(msg, type=msg_type)
- 
-         purl = getToolByName(self.context, 'portal_url')()
+       <div class="field" tal:condition="advanced">
+-        <label i18n:translate=""><input type="checkbox" name="setup_content:boolean" checked="checked" /> Example content</label>
++        <label><input type="checkbox" name="setup_content:boolean" checked="checked" /> <tal:block i18n:translate="">Example content</tal:block></label>
+         <div class="formHelp" i18n:translate="">
+             Should the default example content be added to the site?
+         </div>
 
 
