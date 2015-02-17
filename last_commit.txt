@@ -1,42 +1,33 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-16T17:32:21-08:00
+Date: 2015-02-16T17:32:57-08:00
 Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/32c7fc891f3d4b19b38641b4aa43c704388699d9
+Commit: https://github.com/plone/Products.CMFPlone/commit/957fcd73e0b7eb3224600f3bd9073298cb799002
 
-fix i18n for addons control panel
+oops, forgot to save
 
 Files changed:
 M Products/CMFPlone/controlpanel/browser/quickinstaller.py
 
 diff --git a/Products/CMFPlone/controlpanel/browser/quickinstaller.py b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
-index 5d4eca3..5541265 100644
+index 5541265..7a6ee1c 100644
 --- a/Products/CMFPlone/controlpanel/browser/quickinstaller.py
 +++ b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
-@@ -152,13 +152,13 @@ def upgrade_product(self, product):
-         messages = IStatusMessage(self.request)
+@@ -153,7 +153,7 @@ def upgrade_product(self, product):
          try:
              qi.upgradeProduct(product)
--            messages.addStatusMessage(_(u'Upgraded %s!' % product),
--                                      type="info")
-+            messages.addStatusMessage(
-+                _(u'Upgraded ${addon}!', mapping={'addon', product}), type="info")
+             messages.addStatusMessage(
+-                _(u'Upgraded ${addon}!', mapping={'addon', product}), type="info")
++                _(u'Upgraded ${product}!', mapping={'addon', product}), type="info")
              return True
          except Exception, e:
              logging.error("Could not upgrade %s: %s" % (product, e))
--            messages.addStatusMessage(_(u'Error upgrading %s.' % product),
--                                      type="error")
-+            messages.addStatusMessage(
-+                _(u'Error upgrading %{addon}.', mapping={'addon': product}), type="error")
- 
-         return False
- 
 @@ -194,7 +194,7 @@ def __call__(self):
                  # TODO: find out where this is and don't run already
                  # activated profiles
                  setupTool.runAllImportStepsFromProfile(profile)
--                msg = _(u'Installed %s!' % profile)
-+                msg = _(u'Installed ${addon}!', mapping={'addon': profile})
+-                msg = _(u'Installed ${addon}!', mapping={'addon': profile})
++                msg = _(u'Installed ${product}!', mapping={'addon': profile})
                  messages.addStatusMessage(msg, type=msg_type)
  
          purl = getToolByName(self.context, 'portal_url')()
@@ -44,13 +35,13 @@ index 5d4eca3..5541265 100644
              for product in products:
                  try:
                      qi.uninstallProducts(products=[product, ])
--                    msg = _(u'Uninstalled %s.' % product)
-+                    msg = _(u'Uninstalled ${addon}.', mapping={'addon': product})
+-                    msg = _(u'Uninstalled ${addon}.', mapping={'addon': product})
++                    msg = _(u'Uninstalled ${product}.', mapping={'addon': product})
                  except Exception, e:
                      logging.error("Could not uninstall %s: %s" % (product, e))
                      msg_type = 'error'
--                    msg = _(u'Error uninstalling %s' % product)
-+                    msg = _(u'Error uninstalling ${addon}.', mapping={'addon': product})
+-                    msg = _(u'Error uninstalling ${addon}.', mapping={'addon': product})
++                    msg = _(u'Error uninstalling ${product}.', mapping={'addon': product})
                  messages.addStatusMessage(msg, type=msg_type)
  
          purl = getToolByName(self.context, 'portal_url')()
