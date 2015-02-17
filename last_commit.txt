@@ -1,82 +1,86 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-16T17:13:12-08:00
+Date: 2015-02-16T17:23:51-08:00
 Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/0e351cc4b13b60da8f9a5a33925ece1ea43b6e81
+Commit: https://github.com/plone/Products.CMFPlone/commit/c5ef3ca1773fb22d09ebfc3bccc8f0253a2c252b
 
-fix 404 similar items markup, don't use plone_view.getIcon
+fix missing &lt;/div&gt; in quickinstaller.pt
 
 Files changed:
-M Products/CMFPlone/skins/plone_templates/default_error_message.pt
+M Products/CMFPlone/controlpanel/browser/quickinstaller.pt
 
-diff --git a/Products/CMFPlone/skins/plone_templates/default_error_message.pt b/Products/CMFPlone/skins/plone_templates/default_error_message.pt
-index 05cb4f1..a77f725 100644
---- a/Products/CMFPlone/skins/plone_templates/default_error_message.pt
-+++ b/Products/CMFPlone/skins/plone_templates/default_error_message.pt
-@@ -73,53 +73,24 @@
+diff --git a/Products/CMFPlone/controlpanel/browser/quickinstaller.pt b/Products/CMFPlone/controlpanel/browser/quickinstaller.pt
+index 1379db6..cc40cc8 100644
+--- a/Products/CMFPlone/controlpanel/browser/quickinstaller.pt
++++ b/Products/CMFPlone/controlpanel/browser/quickinstaller.pt
+@@ -19,14 +19,7 @@
+       add-ons in the lists below.
+     </div>
  
-                         <tal:firstparent condition="first_parent/absolute_url | nothing">
-                             <li tal:define="result_url first_parent/absolute_url;
--                                               result_type python:hasattr(first_parent, 'getTypeInfo') and first_parent.getTypeInfo().getId();
--                                               item_icon python:plone_view.getIcon(first_parent);
--                                               url python:test(result_type in use_view_action, result_url+'/view', result_url);"
--                                       tal:condition="result_type">
--                                <a tal:define="item_wf_state_class python:'state-' + context.portal_workflow.getInfoFor(first_parent, 'review_state', '');"
--                                    tal:attributes="class python:'contenttype-' + normalizeString(result_type)"
--                                    href="#"
--                                     tal:attributes="href url;
--                                                     class string:$item_wf_state_class"
--                                     tal:content="first_parent/Title">
--                                  <img tal:replace="structure item_icon/html_tag" />
--                                    <span class="discreet" i18n:translate="results_by_author"
--                                      tal:condition="python: not isAnon or site_properties.allowAnonymousViewAbout">
--                                    by <span tal:omit-tag="" tal:content="first_parent/Creator" i18n:name="author">Author</span>,
--                                    <span tal:omit-tag="" tal:content="python:toLocalizedTime(first_parent.ModificationDate(), long_format=1)" i18n:name="date">Modification Date</span>
--                                    </span>
--
--                                </a>
--
-+                                            result_type python:hasattr(first_parent, 'getTypeInfo') and first_parent.getTypeInfo().getId();
-+                                            url python:result_url + '/view' if result_type in use_view_action else result_url;"
-+                                tal:condition="result_type">
-+                                <a href="${url}"
-+                                   tal:define="item_wf_state_class python:' state-' + context.portal_workflow.getInfoFor(first_parent, 'review_state', '');"
-+                                   tal:attributes="class python:'contenttype-' + normalizeString(result_type) + item_wf_state_class">${first_parent/Title}</a>
-                                 <span tal:content="python:plone_view.cropText(first_parent.Description(), desc_length, desc_ellipsis)" class="discreet"> Description </span>
--
-                             </li>
-                         </tal:firstparent>
+-    <div id="content-core"
+-         tal:define="products  view/get_addons">
+-        <!--<a href=""
+-           class="link-parent"
+-           tal:attributes="href string:${context/portal_url}/plone_control_panel"
+-           i18n:translate="label_up_to_plone_setup">
+-          Up to Site Setup
+-        </a>-->
++    <div id="content-core">
  
-                         <tal:similar repeat="similar similar_items">
-                             <li tal:define="result_url similar/getURL;
--                                               result_type similar/portal_type;
--                                               item_icon python:plone_view.getIcon(similar);
--                                               url python:test(result_type in use_view_action, result_url+'/view', result_url);">
--                                <a tal:define="item_wf_state_class string:state-${similar/review_state};"
--                                    tal:attributes="class python:'contenttype-' + normalizeString(result_type)"
--                                    href="#"
--                                     tal:attributes="href url;
--                                                     class string:$item_wf_state_class"
--                                     tal:content="similar/pretty_title_or_id">
--                                  <img tal:replace="structure item_icon/html_tag" />
--
--                                    <span class="discreet" i18n:translate="results_by_author"
--                                      tal:condition="python: not isAnon or site_properties.allowAnonymousViewAbout">
--                                    by <span tal:omit-tag="" tal:content="similar/Creator" i18n:name="author">Author</span>,
--                                    <span tal:omit-tag="" tal:content="python:toLocalizedTime(similar.ModificationDate, long_format=1)" i18n:name="date">Modification Date</span>
--                                    </span>
--
--                                </a>
--
-+                                            result_type similar/portal_type;
-+                                            url python:result_url + '/view' if result_type in use_view_action else result_url;">
-+                                <a href="${url}"
-+                                   tal:define="item_wf_state_class string: state-${similar/review_state};"
-+                                   tal:attributes="class python:'contenttype-' + normalizeString(result_type) + item_wf_state_class">${similar/pretty_title_or_id}</a>
-                                 <span tal:content="python:plone_view.cropText(similar.Description or '', desc_length, desc_ellipsis)" class="discreet"> Description </span>
--
-                             </li>
-                         </tal:similar>
+         <p class="discreet" i18n:translate="">
+           To make new add-ons show up here, add them to your buildout
+@@ -39,8 +32,8 @@
+           </span>.
+         </p>
  
+-        <section tal:define="products   view/get_upgrades;
+-                         num_products  python:len(products)"
++        <section tal:define="products view/get_upgrades;
++                         num_products python:len(products)"
+              id="upgrade-products" class="portlet">
+           <header class="portletHeader">Upgrades</header>
+           <section tal:condition="not:products" class="portletContent">
+@@ -106,7 +99,7 @@
+                 </ul>
+               </li>
+               </tal:products>
+-              <li  tal:condition="python:num_products > 1">
++              <li tal:condition="python:num_products > 1">
+                 <form action="upgrade_products" method="post">
+                    <tal:products  tal:repeat="product products">
+                    <input type="hidden" value="product"
+@@ -128,9 +121,8 @@
+           </section>
+         </section>
+ 
+-
+-        <section tal:define="products   view/get_available;
+-                         num_products  python:len(products)"
++        <section tal:define="products view/get_available;
++                         num_products python:len(products)"
+              id="install-products" class="portlet">
+           <header class="portletHeader" i18n:translate="">Available add-ons</header>
+           <section class="portletContent">
+@@ -167,9 +159,8 @@
+           </section>
+         </section>
+ 
+-
+-        <section tal:define="products   view/get_installed;
+-                         num_products  python:len(products)"
++        <section tal:define="products view/get_installed;
++                         num_products python:len(products)"
+              id="activated-products" class="portlet">
+           <header class="portletHeader" i18n:translate="">Activated add-ons</header>
+           <section class="portletContent">
+@@ -204,6 +195,8 @@
+               </ul>
+           </section>
+         </section>
++
++    </div>
+ </metal:main>
+ 
+ </body>
 
 
