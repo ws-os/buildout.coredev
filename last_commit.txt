@@ -1,86 +1,58 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-16T17:23:51-08:00
+Date: 2015-02-16T17:32:21-08:00
 Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/c5ef3ca1773fb22d09ebfc3bccc8f0253a2c252b
+Commit: https://github.com/plone/Products.CMFPlone/commit/32c7fc891f3d4b19b38641b4aa43c704388699d9
 
-fix missing &lt;/div&gt; in quickinstaller.pt
+fix i18n for addons control panel
 
 Files changed:
-M Products/CMFPlone/controlpanel/browser/quickinstaller.pt
+M Products/CMFPlone/controlpanel/browser/quickinstaller.py
 
-diff --git a/Products/CMFPlone/controlpanel/browser/quickinstaller.pt b/Products/CMFPlone/controlpanel/browser/quickinstaller.pt
-index 1379db6..cc40cc8 100644
---- a/Products/CMFPlone/controlpanel/browser/quickinstaller.pt
-+++ b/Products/CMFPlone/controlpanel/browser/quickinstaller.pt
-@@ -19,14 +19,7 @@
-       add-ons in the lists below.
-     </div>
+diff --git a/Products/CMFPlone/controlpanel/browser/quickinstaller.py b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
+index 5d4eca3..5541265 100644
+--- a/Products/CMFPlone/controlpanel/browser/quickinstaller.py
++++ b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
+@@ -152,13 +152,13 @@ def upgrade_product(self, product):
+         messages = IStatusMessage(self.request)
+         try:
+             qi.upgradeProduct(product)
+-            messages.addStatusMessage(_(u'Upgraded %s!' % product),
+-                                      type="info")
++            messages.addStatusMessage(
++                _(u'Upgraded ${addon}!', mapping={'addon', product}), type="info")
+             return True
+         except Exception, e:
+             logging.error("Could not upgrade %s: %s" % (product, e))
+-            messages.addStatusMessage(_(u'Error upgrading %s.' % product),
+-                                      type="error")
++            messages.addStatusMessage(
++                _(u'Error upgrading %{addon}.', mapping={'addon': product}), type="error")
  
--    <div id="content-core"
--         tal:define="products  view/get_addons">
--        <!--<a href=""
--           class="link-parent"
--           tal:attributes="href string:${context/portal_url}/plone_control_panel"
--           i18n:translate="label_up_to_plone_setup">
--          Up to Site Setup
--        </a>-->
-+    <div id="content-core">
+         return False
  
-         <p class="discreet" i18n:translate="">
-           To make new add-ons show up here, add them to your buildout
-@@ -39,8 +32,8 @@
-           </span>.
-         </p>
+@@ -194,7 +194,7 @@ def __call__(self):
+                 # TODO: find out where this is and don't run already
+                 # activated profiles
+                 setupTool.runAllImportStepsFromProfile(profile)
+-                msg = _(u'Installed %s!' % profile)
++                msg = _(u'Installed ${addon}!', mapping={'addon': profile})
+                 messages.addStatusMessage(msg, type=msg_type)
  
--        <section tal:define="products   view/get_upgrades;
--                         num_products  python:len(products)"
-+        <section tal:define="products view/get_upgrades;
-+                         num_products python:len(products)"
-              id="upgrade-products" class="portlet">
-           <header class="portletHeader">Upgrades</header>
-           <section tal:condition="not:products" class="portletContent">
-@@ -106,7 +99,7 @@
-                 </ul>
-               </li>
-               </tal:products>
--              <li  tal:condition="python:num_products > 1">
-+              <li tal:condition="python:num_products > 1">
-                 <form action="upgrade_products" method="post">
-                    <tal:products  tal:repeat="product products">
-                    <input type="hidden" value="product"
-@@ -128,9 +121,8 @@
-           </section>
-         </section>
+         purl = getToolByName(self.context, 'portal_url')()
+@@ -213,11 +213,11 @@ def __call__(self):
+             for product in products:
+                 try:
+                     qi.uninstallProducts(products=[product, ])
+-                    msg = _(u'Uninstalled %s.' % product)
++                    msg = _(u'Uninstalled ${addon}.', mapping={'addon': product})
+                 except Exception, e:
+                     logging.error("Could not uninstall %s: %s" % (product, e))
+                     msg_type = 'error'
+-                    msg = _(u'Error uninstalling %s' % product)
++                    msg = _(u'Error uninstalling ${addon}.', mapping={'addon': product})
+                 messages.addStatusMessage(msg, type=msg_type)
  
--
--        <section tal:define="products   view/get_available;
--                         num_products  python:len(products)"
-+        <section tal:define="products view/get_available;
-+                         num_products python:len(products)"
-              id="install-products" class="portlet">
-           <header class="portletHeader" i18n:translate="">Available add-ons</header>
-           <section class="portletContent">
-@@ -167,9 +159,8 @@
-           </section>
-         </section>
- 
--
--        <section tal:define="products   view/get_installed;
--                         num_products  python:len(products)"
-+        <section tal:define="products view/get_installed;
-+                         num_products python:len(products)"
-              id="activated-products" class="portlet">
-           <header class="portletHeader" i18n:translate="">Activated add-ons</header>
-           <section class="portletContent">
-@@ -204,6 +195,8 @@
-               </ul>
-           </section>
-         </section>
-+
-+    </div>
- </metal:main>
- 
- </body>
+         purl = getToolByName(self.context, 'portal_url')()
 
 
