@@ -1,26 +1,71 @@
-Repository: Products.CMFPlone
+Repository: plone.app.widgets
 Branch: refs/heads/master
-Date: 2015-02-16T17:36:17-08:00
-Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/8182e16ad477869617444bdf4d3edc19f7f75614
+Date: 2015-02-17T20:15:40-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/plone.app.widgets/commit/3b841adc3d070410156389d0604f6aadcd346cdc
 
-fix i18n in plone-addsite.pt
+use five.globalrequest
 
 Files changed:
-M Products/CMFPlone/browser/templates/plone-addsite.pt
+M plone/app/widgets/configure.zcml
+M plone/app/widgets/utils.py
+M setup.py
 
-diff --git a/Products/CMFPlone/browser/templates/plone-addsite.pt b/Products/CMFPlone/browser/templates/plone-addsite.pt
-index 46fbf91..a56cf81 100644
---- a/Products/CMFPlone/browser/templates/plone-addsite.pt
-+++ b/Products/CMFPlone/browser/templates/plone-addsite.pt
-@@ -137,7 +137,7 @@
-       </div>
+diff --git a/plone/app/widgets/configure.zcml b/plone/app/widgets/configure.zcml
+index aeb3e62..8a499f2 100644
+--- a/plone/app/widgets/configure.zcml
++++ b/plone/app/widgets/configure.zcml
+@@ -13,6 +13,7 @@
  
-       <div class="field" tal:condition="advanced">
--        <label i18n:translate=""><input type="checkbox" name="setup_content:boolean" checked="checked" /> Example content</label>
-+        <label><input type="checkbox" name="setup_content:boolean" checked="checked" /> <tal:block i18n:translate="">Example content</tal:block></label>
-         <div class="formHelp" i18n:translate="">
-             Should the default example content be added to the site?
-         </div>
+   <include package="Products.CMFPlone" />
+   <include package="plone.app.vocabularies" />
++  <include package="five.globalrequest" />
+ 
+   <include package="mockup" />
+ 
+diff --git a/plone/app/widgets/utils.py b/plone/app/widgets/utils.py
+index f64ef0a..63b0bc3 100644
+--- a/plone/app/widgets/utils.py
++++ b/plone/app/widgets/utils.py
+@@ -14,6 +14,7 @@
+ from zope.component import getMultiAdapter
+ from zope.component import ComponentLookupError
+ import json
++from zope.globalrequest import getRequest
+ 
+ _ = MessageFactory('plone.app.widgets')
+ _plone = MessageFactory('plone')
+@@ -124,13 +125,14 @@ def get_relateditems_options(context, value, separator, vocabulary_name,
+                                      vocabulary_name, vocabulary_view,
+                                      field_name)
+ 
+-    msgstr = translate(_plone(u'Search'), context=context.REQUEST)
++    request = getRequest()
++    msgstr = translate(_plone(u'Search'), context=request)
+     options.setdefault('searchText', msgstr)
+-    msgstr = translate(_(u'Entire site'), context=context.REQUEST)
++    msgstr = translate(_(u'Entire site'), context=request)
+     options.setdefault('searchAllText', msgstr)
+     msgstr = translate(_plone('tabs_home',
+                        default=u'Home'),
+-                       context=context.REQUEST)
++                       context=request)
+     options.setdefault('homeText', msgstr)
+     options.setdefault('folderTypes', ['Folder'])
+ 
+diff --git a/setup.py b/setup.py
+index b82c195..aed0238 100644
+--- a/setup.py
++++ b/setup.py
+@@ -30,7 +30,8 @@
+         # nedded because users vocabulary was added here
+         'plone.app.vocabularies>=2.1.12dev',
+         # needed for compatibility with jQuery 1.9+
+-        'Products.CMFPlone>=5.0.dev0'
++        'Products.CMFPlone>=5.0.dev0',
++        'five.globalrequest'
+     ],
+     extras_require={
+         'test': [
 
 
