@@ -1,139 +1,603 @@
-Repository: plone.batching
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-19T15:39:31+01:00
-Author: Patrick Gerken (do3cc) <do3cc@patrick-gerken.de>
-Commit: https://github.com/plone/plone.batching/commit/779895d2f377f71569350bd94ae5b2ac646d3025
+Date: 2015-02-19T09:42:55-06:00
+Author: vangheem (vangheem) <vangheem@gmail.com>
+Commit: https://github.com/plone/mockup/commit/dd92e9780380ab34e8a2f3380dd4e35ef305456f
 
-Fix documentation so that it works with pypi. Lost Sphinx specific things
+keep track of more stateg
 
 Files changed:
-M README.rst
-M plone/batching/batching.rst
-M setup.py
+A mockup/patterns/resourceregistry/js/builder.js
+M mockup/patterns/resourceregistry/js/registry.js
 
-diff --git a/README.rst b/README.rst
-index f8973b5..3026d34 100644
---- a/README.rst
-+++ b/README.rst
-@@ -5,24 +5,3 @@ This package includes facilities for creating a batched sequence.
- 
- It originated from the the PloneBatch module written for Plone which in
- itself has been based on Zope2's ZTUtils.Batch.
--
--Contents:
--
--.. toctree::
--   :maxdepth: 2
--
--   CHANGES
--   plone/batching/batching
--   USAGE
--
--.. automodule:: plone.batching.batch
--    :members:
--
--
--Indices and tables
--==================
--
--* :ref:`genindex`
--* :ref:`modindex`
--* :ref:`search`
--
-diff --git a/plone/batching/batching.rst b/plone/batching/batching.rst
-index a4409d8..ea2a38a 100644
---- a/plone/batching/batching.rst
-+++ b/plone/batching/batching.rst
-@@ -1,4 +1,3 @@
--========
- Batching
- ========
- 
-diff --git a/setup.py b/setup.py
-index 2bad0b9..0197e39 100644
---- a/setup.py
-+++ b/setup.py
-@@ -7,7 +7,9 @@
-     version=version,
-     description="Batching facilities used in Plone.",
-     long_description=open("README.rst").read() + "\n" +
--                     open("CHANGES.rst").read(),
-+                     open("CHANGES.rst").read() + "\n" +
-+                     open("plone/batching/batching.rst").read() + "\n" +
-+                     open("USAGE.rst").read(),
-     classifiers=[
-         'Framework :: Plone :: 4.3',
-         'Framework :: Zope2',
-
-
-Repository: plone.batching
-Branch: refs/heads/master
-Date: 2015-02-19T15:42:06+01:00
-Author: Patrick Gerken (do3cc) <do3cc@patrick-gerken.de>
-Commit: https://github.com/plone/plone.batching/commit/3046aef5577d2a6e5eb6fa91a9cbd11b6bbe625a
-
-Readd fix
-
-Files changed:
-M CHANGES.rst
-M plone/batching/batch.py
-M plone/batching/tests.py
-
-diff --git a/CHANGES.rst b/CHANGES.rst
-index a2eb2dc..c3a4d62 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,8 +4,8 @@ Changelog
- 1.0.3 (unreleased)
- ------------------
- 
--- Nothing changed yet.
--
-+- Fix issue with orphaning
-+  [do3cc]
- 
- 1.0.2 (2014-04-13)
- ------------------
-diff --git a/plone/batching/batch.py b/plone/batching/batch.py
-index c5e57d0..f6d3e87 100644
---- a/plone/batching/batch.py
-+++ b/plone/batching/batch.py
-@@ -31,6 +31,8 @@ def __init__(self, sequence, size, start=0, end=0, orphan=0, overlap=0,
-         overlap   - the number of overlapping elements in each batch
-         pagerange - the number of pages to display in the navigation
-         """
-+        assert orphan < size, "Having an orphan size, higher than batch size" \
-+                              " is undefined"
-         start += 1
-         self._sequence = sequence
-         self._size = size
-@@ -155,7 +157,7 @@ def lastpage(self):
-         """ Last page of batch
-         """
-         pages = self.sequence_length / self.pagesize
--        if self.sequence_length % self.pagesize:
-+        if (self.sequence_length - self.orphan) % self.pagesize:
-             pages += 1
-         return pages
- 
-diff --git a/plone/batching/tests.py b/plone/batching/tests.py
-index 3b442cc..3e5654a 100644
---- a/plone/batching/tests.py
-+++ b/plone/batching/tests.py
-@@ -97,6 +97,14 @@ def test_lastpage(self):
-         lastbatch = BaseBatch(range(20), 5, start=batch.last)
-         self.assertTrue(lastbatch.islastpage)
- 
-+    def test_lastpage_with_orphans(self):
-+        batch = BaseBatch(range(11), 10, orphan=1)
-+        self.assertEqual(1, batch.lastpage)
-+        batch = BaseBatch(range(109), 10, orphan=9)
-+        self.assertEqual(10, batch.lastpage)
-+        self.assertRaises(AssertionError, BaseBatch, [], 10, orphan=20)
+diff --git a/mockup/patterns/resourceregistry/js/builder.js b/mockup/patterns/resourceregistry/js/builder.js
+new file mode 100644
+index 0000000..14781a9
+--- /dev/null
++++ b/mockup/patterns/resourceregistry/js/builder.js
+@@ -0,0 +1,226 @@
 +
++define([
++  'jquery',
++  'mockup-patterns-modal',
++  'underscore',
++  'mockup-utils',
++  'mockup-patterns-resourceregistry-url/js/iframe',
++  'translate'
++], function($, Modal, _, utils, IFrame, _t){
++  'use strict';
 +
-     def test_items_not_on_page(self):
-         batch = BaseBatch(range(20), 5, start=5)
-         self.assertEqual(batch.items_not_on_page,
++  var Builder = function(bundleName, bundleListItem){
++    var self = this;
++    self.bundleName = bundleName;
++    self.bundleListItem = bundleListItem;
++    self.rview = bundleListItem.options.registryView;
++    self.$results = null;
++    self.$btnClose = null;
++
++    self.rview.loading.show();
++    self.modal = new Modal($('<div/>').appendTo(self.rview.$el), {
++      html: _.template('<div id="content">' +
++        '<h1>Bundle Builder</h1>' +
++        '<div class="start-info"><p>You are about to build the <span class="label label-primary">' +
++          '<%= name %></span> pattern. </p><p>This may take some a bit of time so ' +
++          'we will try to keep you updated on the progress.</p><p> Press the "Build it" ' +
++          'button to proceed.</p></div>' +
++        '<ul class="list-group hidden"></ul>' +
++        '<button class="plone-btn plone-btn-default cancel hidden cancel-build"><%- _t("Close") %></button>' +
++        '<button class="plone-btn plone-btn-primary build"><%- _t("Build it") %></button>' +
++      '</div>', $.extend({ _t: _t }, bundleListItem.options)),
++      content: null,
++      width: 500,
++      buttons: '.plone-btn'
++    });
++    self.modal.on('shown', function() {
++      var $el = self.modal.$modal;
++      var $info = $el.find('.start-info');
++      self.$btnClose = $el.find('button.cancel-build');
++      var $btn = $el.find('button.build');
++      $btn.off('click').on('click', function(e){
++        e.preventDefault();
++        $info.addClass('hidden');
++        $btn.prop('disabled', true);
++        self.$results = $el.find('.list-group').removeClass('hidden');
++        self.buildJS();
++        self.rview.loading.show();
++      });
++
++      self.$btnClose.off('click').on('click', function(){
++        self.modal.hide();
++      });
++    });
++
++    self.addResult = function(txt, klass){
++      if(!klass){
++        klass = '';
++      }
++      self.$results.append('<li class="list-group-item ' + klass + '">' + txt + '</li>');
++    };
++
++    self.run = function(){
++      self.modal.show();
++    };
++
++    self.finished = function(error){
++      var msg = _t('Finished!');
++      if(error){
++        msg = _t('Error in build process');
++      }
++      self.addResult(msg, 'list-group-item-warning');
++      self.$btnClose.removeClass('hidden');
++      self.rview.loading.hide();
++    };
++
++    self.buildJS = function(){
++      self.addResult(_t('building javascripts'));
++      $.ajax({
++        url: self.rview.options.data.manageUrl,
++        type: 'POST',
++        dataType: 'json',
++        data: {
++          action: 'js-build-config',
++          bundle: self.bundleName,
++          _authenticator: utils.getAuthenticator()
++        },
++        success: function(data){
++          /* sort of weird here, follow along. We'll build CSS after JS */
++          self._buildJSBundle(data);
++        },
++        error: function(){
++          self.addResult(_t('Error building resources'));
++          self.finished(true);
++        }
++      });
++    };
++
++    self._buildCSSBundle = function(config){
++      var iframe = new IFrame({
++        name: 'lessc',
++        resources: config.less.concat([
++          self.rview.options.data.lessConfigUrl,
++          self.rview.options.data.lessUrl]),
++        configure: function(iframe){
++          iframe.window.lessErrorReporting = function(what, error, href){
++            if(what !== 'remove'){
++              self.addResult(_t('less compilation error on file ') + href + ': ' + error);
++            }
++          };
++        }
++      });
++
++      /* XXX okay, wish there were a better way,
++         but we need to pool to find the out if it's down loading less */
++      self.addResult(config.less.length + _t(' css files to build'));
++      var checkFinished = function(){
++        var $styles =  $('style[type="text/css"][id]', iframe.document);
++        for(var i=0; i<$styles.length; i=i+1){
++          var $style = $styles.eq(i); 
++          if($style.attr('id') === 'less:error-message'){
++            self.addResult(_t('Error compiling less'));
++            return self.finished(true);
++          }
++        }
++        if($styles.length === config.less.length){
++          // we're finished, save it
++          var data = {};
++          $styles.each(function(){
++            var $el = $(this);
++            data['data-' + $el.attr('id')] = $el.html();
++          });
++          iframe.destroy();
++          $.ajax({
++            url: self.rview.options.data.manageUrl,
++            type: 'POST',
++            dataType: 'json',
++            data: $.extend(data, {
++              action: 'save-less-build',
++              bundle: self.bundleName,
++              _authenticator: utils.getAuthenticator()
++            }),
++            success: function(data){
++              self.rview.options.data.overrides.push(data.filepath);
++              self.rview.tabView.overridesView.render();
++              self.addResult(_t('finished saving css bundles'));
++              self.finished();
++            },
++            error: function(){
++              self.addResult(_t('Error saving css bundle'));
++              self.finished(true);
++            }
++          });
++        }else{
++          setTimeout(checkFinished, 300);
++        }
++      };
++      checkFinished();
++    };
++
++    self.buildCSSBundle = function(){
++      self.addResult(_t('building CSS bundle'));
++      $.ajax({
++        url: self.rview.options.data.manageUrl,
++        type: 'POST',
++        dataType: 'json',
++        data: {
++          action: 'less-build-config',
++          bundle: self.bundleName,
++          _authenticator: utils.getAuthenticator()
++        },
++        success: function(data){
++          /* sort of weird here, follow along. We'll build CSS after JS */
++          self._buildCSSBundle(data);
++        },
++        error: function(){
++          self.addResult(_t('Error building css bundle'));
++          self.finished(true);
++        }
++      });
++    };
++
++    self._buildJSBundle = function(config){
++      if(config.include.length === 0){
++        self.addResult(_t('No javascripts to build, skipping'));
++        return self.buildCSSBundle();
++      }
++
++      config.out = function(results){
++        $.ajax({
++          url: self.rview.options.data.manageUrl,
++          type: 'POST',
++          dataType: 'json',
++          data: {
++            action: 'save-js-build',
++            bundle: self.bundleName,
++            data: results,
++            _authenticator: utils.getAuthenticator()
++          },
++          success: function(data){
++            self.rview.options.data.overrides.push(data.filepath);
++            self.rview.tabView.overridesView.render();
++          },
++          error: function(){
++            self.addResult(_t('Error building bundle'));
++            self.finished(true);
++          }
++        });
++      };
++      new IFrame({
++        name: 'rjs',
++        resources: [self.rview.options.data.rjsUrl],
++        onLoad: function(iframe){
++          iframe.window.requirejs.optimize(config, function(combined_files){
++            self.addResult(_t('Saved javascript bundle, Build results') + ': <pre>' + combined_files + '</pre>');
++            self.buildCSSBundle();
++            iframe.destroy();
++          });
++        }
++      });
++    };
++
++    return self;
++  };
++
++  return Builder;
++});
+\ No newline at end of file
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index fe810f4..053be43 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -5,14 +5,12 @@ define([
+   'underscore',
+   'mockup-ui-url/views/base',
+   'mockup-utils',
+-  'mockup-patterns-modal',
+   'mockup-patterns-resourceregistry-url/js/fields',
+-  'mockup-patterns-resourceregistry-url/js/iframe',
++  'mockup-patterns-resourceregistry-url/js/builder',
+   'translate'
+-], function($, _, BaseView, utils, Modal, fields, IFrame, _t) {
++], function($, _, BaseView, utils, fields, Builder, _t) {
+   'use strict';
+ 
+-
+   var AbstractResourceEntryView = BaseView.extend({
+     tagName: 'div',
+     className: 'resource-entry',
+@@ -176,7 +174,7 @@ define([
+         parent: this
+       });
+       var resource = new ResourceEntryView(options);
+-      this.registryView.showResourceEditor(resource);
++      this.registryView.showResourceEditor(resource, this, 'resource');
+ 
+       // and scroll to resource since huge list makes this hard to notice
+       $('html, body').animate({
+@@ -194,226 +192,12 @@ define([
+   });
+ 
+ 
+-  var Builder = function(bundleName, bundleListItem){
+-    var self = this;
+-    self.bundleName = bundleName;
+-    self.bundleListItem = bundleListItem;
+-    self.rview = bundleListItem.options.registryView;
+-    self.$results = null;
+-    self.$btnClose = null;
+-
+-    self.rview.loading.show();
+-    self.modal = new Modal($('<div/>').appendTo(self.rview.$el), {
+-      html: _.template('<div id="content">' +
+-        '<h1>Bundle Builder</h1>' +
+-        '<div class="start-info"><p>You are about to build the <span class="label label-primary">' +
+-          '<%= name %></span> pattern. </p><p>This may take some a bit of time so ' +
+-          'we will try to keep you updated on the progress.</p><p> Press the "Build it" ' +
+-          'button to proceed.</p></div>' +
+-        '<ul class="list-group hidden"></ul>' +
+-        '<button class="plone-btn plone-btn-default cancel hidden cancel-build"><%- _t("Close") %></button>' +
+-        '<button class="plone-btn plone-btn-primary build"><%- _t("Build it") %></button>' +
+-      '</div>', $.extend({ _t: _t }, bundleListItem.options)),
+-      content: null,
+-      width: 500,
+-      buttons: '.plone-btn'
+-    });
+-    self.modal.on('shown', function() {
+-      var $el = self.modal.$modal;
+-      var $info = $el.find('.start-info');
+-      self.$btnClose = $el.find('button.cancel-build');
+-      var $btn = $el.find('button.build');
+-      $btn.off('click').on('click', function(e){
+-        e.preventDefault();
+-        $info.addClass('hidden');
+-        $btn.prop('disabled', true);
+-        self.$results = $el.find('.list-group').removeClass('hidden');
+-        self.buildJS();
+-        self.rview.loading.show();
+-      });
+-
+-      self.$btnClose.off('click').on('click', function(){
+-        self.modal.hide();
+-      });
+-    });
+-
+-    self.addResult = function(txt, klass){
+-      if(!klass){
+-        klass = '';
+-      }
+-      self.$results.append('<li class="list-group-item ' + klass + '">' + txt + '</li>');
+-    };
+-
+-    self.run = function(){
+-      self.modal.show();
+-    };
+-
+-    self.finished = function(error){
+-      var msg = _t('Finished!');
+-      if(error){
+-        msg = _t('Error in build process');
+-      }
+-      self.addResult(msg, 'list-group-item-warning');
+-      self.$btnClose.removeClass('hidden');
+-      self.rview.loading.hide();
+-    };
+-
+-    self.buildJS = function(){
+-      self.addResult(_t('building javascripts'));
+-      $.ajax({
+-        url: self.rview.options.data.manageUrl,
+-        type: 'POST',
+-        dataType: 'json',
+-        data: {
+-          action: 'js-build-config',
+-          bundle: self.bundleName,
+-          _authenticator: utils.getAuthenticator()
+-        },
+-        success: function(data){
+-          /* sort of weird here, follow along. We'll build CSS after JS */
+-          self._buildJSBundle(data);
+-        },
+-        error: function(){
+-          self.addResult(_t('Error building resources'));
+-          self.finished(true);
+-        }
+-      });
+-    };
+-
+-    self._buildCSSBundle = function(config){
+-      var iframe = new IFrame({
+-        name: 'lessc',
+-        resources: config.less.concat([
+-          self.rview.options.data.lessConfigUrl,
+-          self.rview.options.data.lessUrl]),
+-        configure: function(iframe){
+-          iframe.window.lessErrorReporting = function(what, error, href){
+-            if(what !== 'remove'){
+-              self.addResult(_t('less compilation error on file ') + href + ': ' + error);
+-            }
+-          };
+-        }
+-      });
+-
+-      /* XXX okay, wish there were a better way,
+-         but we need to pool to find the out if it's down loading less */
+-      self.addResult(config.less.length + _t(' css files to build'));
+-      var checkFinished = function(){
+-        var $styles =  $('style[type="text/css"][id]', iframe.document);
+-        for(var i=0; i<$styles.length; i=i+1){
+-          var $style = $styles.eq(i); 
+-          if($style.attr('id') === 'less:error-message'){
+-            self.addResult(_t('Error compiling less'));
+-            return self.finished(true);
+-          }
+-        }
+-        if($styles.length === config.less.length){
+-          // we're finished, save it
+-          var data = {};
+-          $styles.each(function(){
+-            var $el = $(this);
+-            data['data-' + $el.attr('id')] = $el.html();
+-          });
+-          iframe.destroy();
+-          $.ajax({
+-            url: self.rview.options.data.manageUrl,
+-            type: 'POST',
+-            dataType: 'json',
+-            data: $.extend(data, {
+-              action: 'save-less-build',
+-              bundle: self.bundleName,
+-              _authenticator: utils.getAuthenticator()
+-            }),
+-            success: function(data){
+-              self.rview.options.data.overrides.push(data.filepath);
+-              self.rview.tabView.overridesView.render();
+-              self.addResult(_t('finished saving css bundles'));
+-              self.finished();
+-            },
+-            error: function(){
+-              self.addResult(_t('Error saving css bundle'));
+-              self.finished(true);
+-            }
+-          });
+-        }else{
+-          setTimeout(checkFinished, 300);
+-        }
+-      };
+-      checkFinished();
+-    };
+-
+-    self.buildCSSBundle = function(){
+-      self.addResult(_t('building CSS bundle'));
+-      $.ajax({
+-        url: self.rview.options.data.manageUrl,
+-        type: 'POST',
+-        dataType: 'json',
+-        data: {
+-          action: 'less-build-config',
+-          bundle: self.bundleName,
+-          _authenticator: utils.getAuthenticator()
+-        },
+-        success: function(data){
+-          /* sort of weird here, follow along. We'll build CSS after JS */
+-          self._buildCSSBundle(data);
+-        },
+-        error: function(){
+-          self.addResult(_t('Error building css bundle'));
+-          self.finished(true);
+-        }
+-      });
+-    };
+-
+-    self._buildJSBundle = function(config){
+-      if(config.include.length === 0){
+-        self.addResult(_t('No javascripts to build, skipping'));
+-        return self.buildCSSBundle();
+-      }
+-
+-      config.out = function(results){
+-        $.ajax({
+-          url: self.rview.options.data.manageUrl,
+-          type: 'POST',
+-          dataType: 'json',
+-          data: {
+-            action: 'save-js-build',
+-            bundle: self.bundleName,
+-            data: results,
+-            _authenticator: utils.getAuthenticator()
+-          },
+-          success: function(data){
+-            self.rview.options.data.overrides.push(data.filepath);
+-            self.rview.tabView.overridesView.render();
+-          },
+-          error: function(){
+-            self.addResult(_t('Error building bundle'));
+-            self.finished(true);
+-          }
+-        });
+-      };
+-      new IFrame({
+-        name: 'rjs',
+-        resources: [self.rview.options.data.rjsUrl],
+-        onLoad: function(iframe){
+-          iframe.window.requirejs.optimize(config, function(combined_files){
+-            self.addResult(_t('Saved javascript bundle, Build results') + ': <pre>' + combined_files + '</pre>');
+-            self.buildCSSBundle();
+-            iframe.destroy();
+-          });
+-        }
+-      });
+-    };
+-
+-    return self;
+-  };
+-
+-
+   var RegistryBundleListItem = RegistryResourceListItem.extend({
+     type: 'bundle',
+-    showActions: false,
++    active: false,
+     template: _.template(
+       '<a href="#"><%- name %></a> ' +
+-      '<div class="actions>' +
++      '<div class="actions">' +
+         '<div class="plone-btn-group">' +
+           '<% if(view.options.data.development) { %>' +
+             '<% if(develop_javascript){ %>' +
+@@ -453,8 +237,8 @@ define([
+     },
+     afterRender: function(){
+       RegistryResourceListItem.prototype.afterRender.apply(this);
+-      if(this.showActions){
+-        this.$el.find('.actions').show();
++      if(this.active){
++        this.editResource();
+       }
+     },
+     editResource: function(e){
+@@ -466,7 +250,15 @@ define([
+         parent: this
+       });
+       var resource = new BundleEntryView(options);
+-      this.registryView.showResourceEditor(resource);
++      this.registryView.showResourceEditor(resource, this, 'bundle');
++
++      // only one can be edited at a time, deactivate
++      _.each(this.options.registryView.items.bundles, function(bundleItem){
++        bundleItem.active = false;
++      });
++      this.active = true;
++      this.$el.parent().find('.list-group-item').removeClass('active');
++      this.$el.addClass('active');
+     },
+     deleteClicked: function(e){
+       e.preventDefault();
+@@ -493,6 +285,7 @@ define([
+     tagName: 'div',
+     className: 'tab-pane',
+     $form: null,
++    activeResource: null,
+ 
+     initialize: function(options) {
+       var self = this;
+@@ -514,7 +307,12 @@ define([
+       */
+     },
+ 
+-    showResourceEditor: function(resource){
++    showResourceEditor: function(resource, view, type){
++      this.activeResource = {
++        resource: resource,
++        item: view,
++        type: type
++      };
+       this.$form.empty().append(resource.render().el);
+     },
+ 
+@@ -656,23 +454,38 @@ define([
+         resources: {}
+       };
+       _.each(bundles, function(resourceName){
+-        var item = new RegistryBundleListItem({
+-          data: data.bundles[resourceName],
+-          name: resourceName,
+-          registryView: self});
++        var item;
++        if(self.activeResource && self.activeResource.type === 'bundle' && self.activeResource.item.options.name === resourceName){
++          item = self.activeResource.item;
++        }else{
++          item = new RegistryBundleListItem({
++            data: data.bundles[resourceName],
++            name: resourceName,
++            registryView: self});
++        }
+         self.items.bundles[resourceName] = item;
+         self.$bundles.append(item.render().el);
+       });
+       var resources = _.sortBy(_.keys(data.resources), function(v){ return v.toLowerCase(); });
+       _.each(resources, function(resourceName){
+-        var item = new RegistryResourceListItem({
+-          data: data.resources[resourceName],
+-          name: resourceName,
+-          registryView: self});
++        var item;
++        if(self.activeResource && self.activeResource.type === 'resource' && self.activeResource.item.options.name === resourceName){
++          item = self.activeResource.item;
++        } else {
++          item = new RegistryResourceListItem({
++            data: data.resources[resourceName],
++            name: resourceName,
++            registryView: self});
++        }
+         self.items.resources[resourceName] = item;
+         self.$resources.append(item.render().el);
+       });
+       BaseResourcesPane.prototype.afterRender.apply(self);
++
++      // finally, show edit pane if there is an active resource
++      if(self.activeResource){
++        self.showResourceEditor(self.activeResource.resource, self.activeResource.item, self.activeResource.type);
++      }
+       return self;
+     },
+ 
 
 
