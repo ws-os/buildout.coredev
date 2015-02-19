@@ -1,250 +1,132 @@
-Repository: mockup
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-19T01:26:41-06:00
+Date: 2015-02-19T08:41:42-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/mockup/commit/85e3939b2219a39b65bf9d4a26188957759aff88
+Commit: https://github.com/plone/Products.CMFPlone/commit/3f61b0672fd0c6ea9a0d0eb1265935a0248d3b47
 
-be able to develop individual bundle js and css
+pay attention to FEDEV environ variable still
 
 Files changed:
-M mockup/patterns/resourceregistry/js/registry.js
-M mockup/patterns/resourceregistry/pattern.js
-M mockup/tests/pattern-resourceregistry-test.js
+M Products/CMFPlone/controlpanel/browser/resourceregistry.py
+M Products/CMFPlone/resources/__init__.py
+M Products/CMFPlone/resources/browser/resource.py
+M Products/CMFPlone/resources/browser/scripts.py
+M Products/CMFPlone/resources/browser/styles.py
 
-diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
-index 55d765e..fe810f4 100644
---- a/mockup/patterns/resourceregistry/js/registry.js
-+++ b/mockup/patterns/resourceregistry/js/registry.js
-@@ -152,12 +152,17 @@ define([
-       'click a': 'editResource',
-       'click button.delete': 'deleteClicked'
-     },
-+    defaults: {
-+      develop_javascript: false,
-+      develop_css: false,
-+      compile: true
-+    },
-     afterRender: function(){
-       this.$el.attr('data-name', this.options.name);
-       this.$el.addClass(this.type + '-list-item-' + this.options.name);
-     },
-     serializedModel: function(){
--      return $.extend({}, {
-+      return $.extend({}, this.defaults, {
-         name: this.options.name,
-         view: this.options.registryView
-       }, this.options.data);
-@@ -180,9 +185,11 @@ define([
-     },
-     deleteClicked: function(e){
-       e.preventDefault();
--      delete this.options.registryView.options.data.resources[this.options.name];
--      this.options.registryView.dirty = true;
--      this.options.registryView.render();
-+      if(confirm(_t('Are you sure you want to delete the ' + this.options.name + ' resource?'))){
-+        delete this.options.registryView.options.data.resources[this.options.name];
-+        this.options.registryView.dirty = true;
-+        this.options.registryView.render();
-+      }
-     }
-   });
+diff --git a/Products/CMFPlone/controlpanel/browser/resourceregistry.py b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+index 1684c43..960b77f 100644
+--- a/Products/CMFPlone/controlpanel/browser/resourceregistry.py
++++ b/Products/CMFPlone/controlpanel/browser/resourceregistry.py
+@@ -12,8 +12,10 @@
+ from zope.component import getUtility
+ import json
+ from Products.CMFPlone.resources import add_bundle_on_request
++from Products.CMFPlone.resources import RESOURCE_DEVELOPMENT_MODE
+ from plone.registry import field
+ from plone.registry.record import Record
++from Products.statusmessages.interfaces import IStatusMessage
  
-@@ -403,18 +410,53 @@ define([
  
-   var RegistryBundleListItem = RegistryResourceListItem.extend({
-     type: 'bundle',
-+    showActions: false,
-     template: _.template(
-       '<a href="#"><%- name %></a> ' +
--      '<div class="plone-btn-group pull-right">' +
--        '<% if(view.options.data.nonBuildableBundles.indexOf(name) === -1){ %>' +
--          '<button class="plone-btn plone-btn-default build plone-btn-xs"><%- _t("Build") %></button>' +
-+      '<div class="actions>' +
-+        '<div class="plone-btn-group">' +
-+          '<% if(view.options.data.development) { %>' +
-+            '<% if(develop_javascript){ %>' +
-+              '<button class="plone-btn plone-btn-warning on develop-js plone-btn-xs"><%- _t("Stop Developing JavaScript") %></button>' +
-+            '<% } else { %>' +
-+              '<button class="plone-btn plone-btn-default develop-js plone-btn-xs"><%- _t("Develop JavaScript") %></button>' +
-+            '<% } %>' +
-+            '<% if(develop_css){ %>' +
-+              '<button class="plone-btn plone-btn-warning on develop-css plone-btn-xs"><%- _t("Stop Developing CSS") %></button>' +
-+            '<% } else { %>' +
-+              '<button class="plone-btn plone-btn-default develop-css plone-btn-xs"><%- _t("Develop CSS") %></button>' +
-+            '<% } %>' +
-+          '<% } %>' +
-+          '<% if(compile){ %>' +
-+            '<button class="plone-btn plone-btn-default build plone-btn-xs"><%- _t("Build") %></button>' +
-+          '<% } %>' +
-           '<button class="plone-btn plone-btn-danger delete plone-btn-xs"><%- _t("Delete") %></button>' +
--        '<% } %>' +
-+        '</div>' +
-       '</div>'
-     ),
-     events: $.extend({}, RegistryResourceListItem.prototype.events, {
--      'click button.build': 'buildClicked'
-+      'click button.build': 'buildClicked',
-+      'click button.develop-js': 'developJavaScriptClicked',
-+      'click button.develop-css': 'developCSSClicked'
-     }),
-+    developJavaScriptClicked: function(e){
-+      e.preventDefault();
-+      this.options.data.develop_javascript = !this.options.data.develop_javascript;
-+      this.options.registryView.dirty = true;
-+      this.options.registryView.render();
-+    },
-+    developCSSClicked: function(e){
-+      e.preventDefault();
-+      this.options.data.develop_css = !this.options.data.develop_css;
-+      this.options.registryView.dirty = true;
-+      this.options.registryView.render();
-+    },
-+    afterRender: function(){
-+      RegistryResourceListItem.prototype.afterRender.apply(this);
-+      if(this.showActions){
-+        this.$el.find('.actions').show();
-+      }
-+    },
-     editResource: function(e){
-       if(e){
-         e.preventDefault();
-@@ -428,9 +470,11 @@ define([
-     },
-     deleteClicked: function(e){
-       e.preventDefault();
--      delete this.options.registryView.options.data.bundles[this.options.name];
--      this.options.registryView.dirty = true;
--      this.options.registryView.render();
-+      if(confirm(_t('Are you sure you want to delete the ' + this.options.name + ' bundle?'))){
-+        delete this.options.registryView.options.data.bundles[this.options.name];
-+        this.options.registryView.dirty = true;
-+        this.options.registryView.render();
-+      }
-     },
-     
-     buildClicked: function(e){
-@@ -674,6 +718,9 @@ define([
-       }
-       self.options.tabView.saveData('save-development-mode', {
-         value: value
-+      }, function(){
-+        self.options.data.development = self.$('.development-mode input')[0].checked;
-+        self.render();
-       });
-     }
-   });
-diff --git a/mockup/patterns/resourceregistry/pattern.js b/mockup/patterns/resourceregistry/pattern.js
-index 82b81a8..93de78e 100644
---- a/mockup/patterns/resourceregistry/pattern.js
-+++ b/mockup/patterns/resourceregistry/pattern.js
-@@ -24,15 +24,21 @@
-  *        data-pat-resourceregistry='{"bundles":{
-  *                                     "plone": {
-  *                                       "resources": ["plone"], "depends": "",
-- *                                       "expression": "", "enabled": true, "conditionalcomment": ""
-+ *                                       "expression": "", "enabled": true, "conditionalcomment": "",
-+ *                                       "develop_javascript": false, "develop_css": false,
-+ *                                       "compile": true
-  *                                     },
-  *                                     "plone-auth": {
-  *                                       "resources": ["plone-auth"], "depends": "plone",
-- *                                       "expression": "", "enabled": true, "conditionalcomment": ""
-+ *                                       "expression": "", "enabled": true, "conditionalcomment": "",
-+ *                                       "develop_javascript": false, "develop_css": false,
-+ *                                       "compile": true
-  *                                     },
-  *                                     "barceloneta": {
-  *                                       "resources": ["barceloneta"], "depends": "*",
-- *                                       "expression": "", "enabled": true, "conditionalcomment": ""
-+ *                                       "expression": "", "enabled": true, "conditionalcomment": "",
-+ *                                       "develop_javascript": false, "develop_css": false,
-+ *                                       "compile": false
-  *                                     }
-  *                                   },
-  *                                   "resources": {
-@@ -75,8 +81,7 @@
-  *                                   "manageUrl": "/registry-manager",
-  *                                   "lessUrl": "node_modules/less/dist/less-1.7.4.min.js",
-  *                                   "lessConfigUrl": "tests/files/lessconfig.js",
-- *                                   "rjsUrl": "tests/files/r.js",
-- *                                   "nonBuildableBundles": ["plone-legacy"]}'>
-+ *                                   "rjsUrl": "tests/files/r.js"}'>
-  *    </div>
-  *
-  */
-@@ -227,8 +232,7 @@ define([
-       baseUrl: null,
-       rjsUrl: null,
-       lessvariables: {},
--      patternoptions: {},
--      nonBuildableBundles: ['plone-legacy']
-+      patternoptions: {}
-     },
-     init: function() {
-       var self = this;
-diff --git a/mockup/tests/pattern-resourceregistry-test.js b/mockup/tests/pattern-resourceregistry-test.js
-index c3847cb..6c99c51 100644
---- a/mockup/tests/pattern-resourceregistry-test.js
-+++ b/mockup/tests/pattern-resourceregistry-test.js
-@@ -4,7 +4,7 @@ define([
-   'jquery',
-   'pat-registry',
-   'mockup-patterns-resourceregistry'
--], function(sinon, expect, $, registry) {
-+], function(sinon, expect, $, registry, ResourceRegistry) {
-   'use strict';
+ class JSONEncoder(json.JSONEncoder):
+@@ -128,6 +130,11 @@ def __call__(self):
+                     'msg': 'Invalid action: ' + action
+                 })
+         else:
++            if RESOURCE_DEVELOPMENT_MODE:
++                messages = IStatusMessage(self.request)
++                messages.add(u"The FEDEV environment variable is set. No matter "
++                             u"what settings are done here, all bundles will "
++                             u"always be in development mode.", type=u"warn")
+             return self.index()
  
-   window.mocha.setup('bdd');
-@@ -15,15 +15,18 @@ define([
-       var testData = {"bundles":{
-                         "plone": {
-                           "resources": "plone", "depends": null,
--                          "expression": "", "enabled": true, "conditionalcomment": ""
-+                          "expression": "", "enabled": true, "conditionalcomment": "",
-+                          "develop_javascript": false, "develop_css": false, "compile": true
-                         },
-                         "plone-auth": {
-                           "resources": "plone-auth", "depends": "plone",
--                          "expression": "", "enabled": true, "conditionalcomment": ""
-+                          "expression": "", "enabled": true, "conditionalcomment": "",
-+                          "develop_javascript": false, "develop_css": false, "compile": true
-                         },
-                         "barceloneta": {
-                           "resources": "plone", "depends": "*",
--                          "expression": "", "enabled": true, "conditionalcomment": ""
-+                          "expression": "", "enabled": true, "conditionalcomment": "",
-+                          "develop_javascript": false, "develop_css": false, "compile": true
-                         }
-                       },
-                       "resources": {
-@@ -65,13 +68,11 @@ define([
-       this.$el = $('' +
-         '<div>' +
-         '  <div class="pat-resourceregistry "' +
--        "    data-pat-resourceregistry='" + JSON.stringify(testData) + "'>" +
-         '  </div>' +
-         '</div>');
+     @property
+diff --git a/Products/CMFPlone/resources/__init__.py b/Products/CMFPlone/resources/__init__.py
+index 9a616c0..41e2e36 100644
+--- a/Products/CMFPlone/resources/__init__.py
++++ b/Products/CMFPlone/resources/__init__.py
+@@ -1,5 +1,11 @@
+ from zope.component import adapter
+ from plone.app.theming.interfaces import IThemeAppliedEvent
++import os
++
++
++RESOURCE_DEVELOPMENT_MODE = False
++if os.getenv('FEDEV', '').lower() == 'true':
++    RESOURCE_DEVELOPMENT_MODE = True
  
--      registry.scan(this.$el);
-       this.$pat =  this.$el.find('.pat-resourceregistry');
--      this.pat = this.$pat.data('pattern-resourceregistry');
-+      this.pat = new ResourceRegistry(this.$pat, testData);
-     });
-     afterEach(function() {
-       this.$el.remove();
-@@ -112,11 +113,13 @@ define([
-     });
  
-     it('delete resource', function(){
-+      window.confirm = function() { return true; };
-       this.$pat.find('.resource-list-item-autotoc button').trigger('click');
-       expect(this.pat.options.resources.autotoc).to.equal(undefined);
-     });
+ @adapter(IThemeAppliedEvent)
+diff --git a/Products/CMFPlone/resources/browser/resource.py b/Products/CMFPlone/resources/browser/resource.py
+index f4ce902..af9b570 100644
+--- a/Products/CMFPlone/resources/browser/resource.py
++++ b/Products/CMFPlone/resources/browser/resource.py
+@@ -14,7 +14,8 @@
+ from zope.component import getUtility
+ from zope.ramcache.interfaces import ram
+ from Products.CMFCore.utils import _getAuthenticatedUser
+-import os
++from plone.memoize.view import memoize
++from Products.CMFPlone.resources import RESOURCE_DEVELOPMENT_MODE
  
-     it('delete bundle', function(){
-+      window.confirm = function() { return true; };
-       this.$pat.find('.bundle-list-item-plone button').trigger('click');
-       expect(this.pat.options.bundles.plone).to.equal(undefined);
-     });
+ 
+ class ResourceView(ViewletBase):
+@@ -22,6 +23,7 @@ class ResourceView(ViewletBase):
+     """
+ 
+     @property
++    @memoize
+     def development(self):
+         """
+         To set development mode:
+@@ -30,16 +32,17 @@ def development(self):
+         - otherwise if its anonymous is using production mode
+         - finally is checked on the registry entry
+         """
+-        env_development = os.getenv('FEDEV')
+-        if env_development:
+-            if env_development.lower() == 'false':
+-                return False
+-            elif env_development.lower() == 'true':
+-                return True
++        if RESOURCE_DEVELOPMENT_MODE:
++            return True
+         if _getAuthenticatedUser(self.context).getUserName() == 'Anonymous User':
+             return False
+         return self.registry.records['plone.resources.development'].value
+ 
++    def develop_bundle(self, bundle, attr):
++        if RESOURCE_DEVELOPMENT_MODE:
++            return True
++        return self.development and getattr(bundle, attr, False)
++
+     @property
+     def last_legacy_import(self):
+         return self.registry.records['plone.resources.last_legacy_import'].value  # noqa
+diff --git a/Products/CMFPlone/resources/browser/scripts.py b/Products/CMFPlone/resources/browser/scripts.py
+index 7e13e28..5675c91 100644
+--- a/Products/CMFPlone/resources/browser/scripts.py
++++ b/Products/CMFPlone/resources/browser/scripts.py
+@@ -9,7 +9,7 @@ class ScriptsView(ResourceView):
+ 
+     def get_data(self, bundle, result):
+         bundle_name = bundle.__prefix__.split('/', 1)[1].rstrip('.')
+-        if self.development and getattr(bundle, 'develop_javascript', False):
++        if self.develop_bundle(bundle, 'develop_javascript'):
+             resources = self.get_resources()
+             for resource in bundle.resources:
+                 if resource in resources:
+diff --git a/Products/CMFPlone/resources/browser/styles.py b/Products/CMFPlone/resources/browser/styles.py
+index 92b5020..66e92bc 100644
+--- a/Products/CMFPlone/resources/browser/styles.py
++++ b/Products/CMFPlone/resources/browser/styles.py
+@@ -42,7 +42,7 @@ def get_data(self, bundle, result):
+         bundle_name = bundle.__prefix__.split(
+             '/',
+             1)[1].rstrip('.') if bundle else 'none'
+-        if self.development and getattr(bundle, 'develop_css', False):
++        if self.develop_bundle(bundle, 'develop_css'):
+             self.resources = self.get_resources()
+             # The bundle resources
+             for resource in bundle.resources:
 
 
