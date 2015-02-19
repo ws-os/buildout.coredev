@@ -1,71 +1,250 @@
-Repository: plone.app.widgets
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-17T20:15:40-06:00
+Date: 2015-02-19T01:26:41-06:00
 Author: vangheem (vangheem) <vangheem@gmail.com>
-Commit: https://github.com/plone/plone.app.widgets/commit/3b841adc3d070410156389d0604f6aadcd346cdc
+Commit: https://github.com/plone/mockup/commit/85e3939b2219a39b65bf9d4a26188957759aff88
 
-use five.globalrequest
+be able to develop individual bundle js and css
 
 Files changed:
-M plone/app/widgets/configure.zcml
-M plone/app/widgets/utils.py
-M setup.py
+M mockup/patterns/resourceregistry/js/registry.js
+M mockup/patterns/resourceregistry/pattern.js
+M mockup/tests/pattern-resourceregistry-test.js
 
-diff --git a/plone/app/widgets/configure.zcml b/plone/app/widgets/configure.zcml
-index aeb3e62..8a499f2 100644
---- a/plone/app/widgets/configure.zcml
-+++ b/plone/app/widgets/configure.zcml
-@@ -13,6 +13,7 @@
+diff --git a/mockup/patterns/resourceregistry/js/registry.js b/mockup/patterns/resourceregistry/js/registry.js
+index 55d765e..fe810f4 100644
+--- a/mockup/patterns/resourceregistry/js/registry.js
++++ b/mockup/patterns/resourceregistry/js/registry.js
+@@ -152,12 +152,17 @@ define([
+       'click a': 'editResource',
+       'click button.delete': 'deleteClicked'
+     },
++    defaults: {
++      develop_javascript: false,
++      develop_css: false,
++      compile: true
++    },
+     afterRender: function(){
+       this.$el.attr('data-name', this.options.name);
+       this.$el.addClass(this.type + '-list-item-' + this.options.name);
+     },
+     serializedModel: function(){
+-      return $.extend({}, {
++      return $.extend({}, this.defaults, {
+         name: this.options.name,
+         view: this.options.registryView
+       }, this.options.data);
+@@ -180,9 +185,11 @@ define([
+     },
+     deleteClicked: function(e){
+       e.preventDefault();
+-      delete this.options.registryView.options.data.resources[this.options.name];
+-      this.options.registryView.dirty = true;
+-      this.options.registryView.render();
++      if(confirm(_t('Are you sure you want to delete the ' + this.options.name + ' resource?'))){
++        delete this.options.registryView.options.data.resources[this.options.name];
++        this.options.registryView.dirty = true;
++        this.options.registryView.render();
++      }
+     }
+   });
  
-   <include package="Products.CMFPlone" />
-   <include package="plone.app.vocabularies" />
-+  <include package="five.globalrequest" />
+@@ -403,18 +410,53 @@ define([
  
-   <include package="mockup" />
+   var RegistryBundleListItem = RegistryResourceListItem.extend({
+     type: 'bundle',
++    showActions: false,
+     template: _.template(
+       '<a href="#"><%- name %></a> ' +
+-      '<div class="plone-btn-group pull-right">' +
+-        '<% if(view.options.data.nonBuildableBundles.indexOf(name) === -1){ %>' +
+-          '<button class="plone-btn plone-btn-default build plone-btn-xs"><%- _t("Build") %></button>' +
++      '<div class="actions>' +
++        '<div class="plone-btn-group">' +
++          '<% if(view.options.data.development) { %>' +
++            '<% if(develop_javascript){ %>' +
++              '<button class="plone-btn plone-btn-warning on develop-js plone-btn-xs"><%- _t("Stop Developing JavaScript") %></button>' +
++            '<% } else { %>' +
++              '<button class="plone-btn plone-btn-default develop-js plone-btn-xs"><%- _t("Develop JavaScript") %></button>' +
++            '<% } %>' +
++            '<% if(develop_css){ %>' +
++              '<button class="plone-btn plone-btn-warning on develop-css plone-btn-xs"><%- _t("Stop Developing CSS") %></button>' +
++            '<% } else { %>' +
++              '<button class="plone-btn plone-btn-default develop-css plone-btn-xs"><%- _t("Develop CSS") %></button>' +
++            '<% } %>' +
++          '<% } %>' +
++          '<% if(compile){ %>' +
++            '<button class="plone-btn plone-btn-default build plone-btn-xs"><%- _t("Build") %></button>' +
++          '<% } %>' +
+           '<button class="plone-btn plone-btn-danger delete plone-btn-xs"><%- _t("Delete") %></button>' +
+-        '<% } %>' +
++        '</div>' +
+       '</div>'
+     ),
+     events: $.extend({}, RegistryResourceListItem.prototype.events, {
+-      'click button.build': 'buildClicked'
++      'click button.build': 'buildClicked',
++      'click button.develop-js': 'developJavaScriptClicked',
++      'click button.develop-css': 'developCSSClicked'
+     }),
++    developJavaScriptClicked: function(e){
++      e.preventDefault();
++      this.options.data.develop_javascript = !this.options.data.develop_javascript;
++      this.options.registryView.dirty = true;
++      this.options.registryView.render();
++    },
++    developCSSClicked: function(e){
++      e.preventDefault();
++      this.options.data.develop_css = !this.options.data.develop_css;
++      this.options.registryView.dirty = true;
++      this.options.registryView.render();
++    },
++    afterRender: function(){
++      RegistryResourceListItem.prototype.afterRender.apply(this);
++      if(this.showActions){
++        this.$el.find('.actions').show();
++      }
++    },
+     editResource: function(e){
+       if(e){
+         e.preventDefault();
+@@ -428,9 +470,11 @@ define([
+     },
+     deleteClicked: function(e){
+       e.preventDefault();
+-      delete this.options.registryView.options.data.bundles[this.options.name];
+-      this.options.registryView.dirty = true;
+-      this.options.registryView.render();
++      if(confirm(_t('Are you sure you want to delete the ' + this.options.name + ' bundle?'))){
++        delete this.options.registryView.options.data.bundles[this.options.name];
++        this.options.registryView.dirty = true;
++        this.options.registryView.render();
++      }
+     },
+     
+     buildClicked: function(e){
+@@ -674,6 +718,9 @@ define([
+       }
+       self.options.tabView.saveData('save-development-mode', {
+         value: value
++      }, function(){
++        self.options.data.development = self.$('.development-mode input')[0].checked;
++        self.render();
+       });
+     }
+   });
+diff --git a/mockup/patterns/resourceregistry/pattern.js b/mockup/patterns/resourceregistry/pattern.js
+index 82b81a8..93de78e 100644
+--- a/mockup/patterns/resourceregistry/pattern.js
++++ b/mockup/patterns/resourceregistry/pattern.js
+@@ -24,15 +24,21 @@
+  *        data-pat-resourceregistry='{"bundles":{
+  *                                     "plone": {
+  *                                       "resources": ["plone"], "depends": "",
+- *                                       "expression": "", "enabled": true, "conditionalcomment": ""
++ *                                       "expression": "", "enabled": true, "conditionalcomment": "",
++ *                                       "develop_javascript": false, "develop_css": false,
++ *                                       "compile": true
+  *                                     },
+  *                                     "plone-auth": {
+  *                                       "resources": ["plone-auth"], "depends": "plone",
+- *                                       "expression": "", "enabled": true, "conditionalcomment": ""
++ *                                       "expression": "", "enabled": true, "conditionalcomment": "",
++ *                                       "develop_javascript": false, "develop_css": false,
++ *                                       "compile": true
+  *                                     },
+  *                                     "barceloneta": {
+  *                                       "resources": ["barceloneta"], "depends": "*",
+- *                                       "expression": "", "enabled": true, "conditionalcomment": ""
++ *                                       "expression": "", "enabled": true, "conditionalcomment": "",
++ *                                       "develop_javascript": false, "develop_css": false,
++ *                                       "compile": false
+  *                                     }
+  *                                   },
+  *                                   "resources": {
+@@ -75,8 +81,7 @@
+  *                                   "manageUrl": "/registry-manager",
+  *                                   "lessUrl": "node_modules/less/dist/less-1.7.4.min.js",
+  *                                   "lessConfigUrl": "tests/files/lessconfig.js",
+- *                                   "rjsUrl": "tests/files/r.js",
+- *                                   "nonBuildableBundles": ["plone-legacy"]}'>
++ *                                   "rjsUrl": "tests/files/r.js"}'>
+  *    </div>
+  *
+  */
+@@ -227,8 +232,7 @@ define([
+       baseUrl: null,
+       rjsUrl: null,
+       lessvariables: {},
+-      patternoptions: {},
+-      nonBuildableBundles: ['plone-legacy']
++      patternoptions: {}
+     },
+     init: function() {
+       var self = this;
+diff --git a/mockup/tests/pattern-resourceregistry-test.js b/mockup/tests/pattern-resourceregistry-test.js
+index c3847cb..6c99c51 100644
+--- a/mockup/tests/pattern-resourceregistry-test.js
++++ b/mockup/tests/pattern-resourceregistry-test.js
+@@ -4,7 +4,7 @@ define([
+   'jquery',
+   'pat-registry',
+   'mockup-patterns-resourceregistry'
+-], function(sinon, expect, $, registry) {
++], function(sinon, expect, $, registry, ResourceRegistry) {
+   'use strict';
  
-diff --git a/plone/app/widgets/utils.py b/plone/app/widgets/utils.py
-index f64ef0a..63b0bc3 100644
---- a/plone/app/widgets/utils.py
-+++ b/plone/app/widgets/utils.py
-@@ -14,6 +14,7 @@
- from zope.component import getMultiAdapter
- from zope.component import ComponentLookupError
- import json
-+from zope.globalrequest import getRequest
+   window.mocha.setup('bdd');
+@@ -15,15 +15,18 @@ define([
+       var testData = {"bundles":{
+                         "plone": {
+                           "resources": "plone", "depends": null,
+-                          "expression": "", "enabled": true, "conditionalcomment": ""
++                          "expression": "", "enabled": true, "conditionalcomment": "",
++                          "develop_javascript": false, "develop_css": false, "compile": true
+                         },
+                         "plone-auth": {
+                           "resources": "plone-auth", "depends": "plone",
+-                          "expression": "", "enabled": true, "conditionalcomment": ""
++                          "expression": "", "enabled": true, "conditionalcomment": "",
++                          "develop_javascript": false, "develop_css": false, "compile": true
+                         },
+                         "barceloneta": {
+                           "resources": "plone", "depends": "*",
+-                          "expression": "", "enabled": true, "conditionalcomment": ""
++                          "expression": "", "enabled": true, "conditionalcomment": "",
++                          "develop_javascript": false, "develop_css": false, "compile": true
+                         }
+                       },
+                       "resources": {
+@@ -65,13 +68,11 @@ define([
+       this.$el = $('' +
+         '<div>' +
+         '  <div class="pat-resourceregistry "' +
+-        "    data-pat-resourceregistry='" + JSON.stringify(testData) + "'>" +
+         '  </div>' +
+         '</div>');
  
- _ = MessageFactory('plone.app.widgets')
- _plone = MessageFactory('plone')
-@@ -124,13 +125,14 @@ def get_relateditems_options(context, value, separator, vocabulary_name,
-                                      vocabulary_name, vocabulary_view,
-                                      field_name)
+-      registry.scan(this.$el);
+       this.$pat =  this.$el.find('.pat-resourceregistry');
+-      this.pat = this.$pat.data('pattern-resourceregistry');
++      this.pat = new ResourceRegistry(this.$pat, testData);
+     });
+     afterEach(function() {
+       this.$el.remove();
+@@ -112,11 +113,13 @@ define([
+     });
  
--    msgstr = translate(_plone(u'Search'), context=context.REQUEST)
-+    request = getRequest()
-+    msgstr = translate(_plone(u'Search'), context=request)
-     options.setdefault('searchText', msgstr)
--    msgstr = translate(_(u'Entire site'), context=context.REQUEST)
-+    msgstr = translate(_(u'Entire site'), context=request)
-     options.setdefault('searchAllText', msgstr)
-     msgstr = translate(_plone('tabs_home',
-                        default=u'Home'),
--                       context=context.REQUEST)
-+                       context=request)
-     options.setdefault('homeText', msgstr)
-     options.setdefault('folderTypes', ['Folder'])
+     it('delete resource', function(){
++      window.confirm = function() { return true; };
+       this.$pat.find('.resource-list-item-autotoc button').trigger('click');
+       expect(this.pat.options.resources.autotoc).to.equal(undefined);
+     });
  
-diff --git a/setup.py b/setup.py
-index b82c195..aed0238 100644
---- a/setup.py
-+++ b/setup.py
-@@ -30,7 +30,8 @@
-         # nedded because users vocabulary was added here
-         'plone.app.vocabularies>=2.1.12dev',
-         # needed for compatibility with jQuery 1.9+
--        'Products.CMFPlone>=5.0.dev0'
-+        'Products.CMFPlone>=5.0.dev0',
-+        'five.globalrequest'
-     ],
-     extras_require={
-         'test': [
+     it('delete bundle', function(){
++      window.confirm = function() { return true; };
+       this.$pat.find('.bundle-list-item-plone button').trigger('click');
+       expect(this.pat.options.bundles.plone).to.equal(undefined);
+     });
 
 
