@@ -1,117 +1,50 @@
 Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-21T21:34:46-08:00
-Author: David Glick (davisagli) <david@glicksoftware.com>
-Commit: https://github.com/plone/Products.CMFPlone/commit/35bba15124f19e4fbf583f3c9af2b341301df820
+Date: 2015-02-22T08:55:00+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/Products.CMFPlone/commit/1b0f9cfe8947cb67bc4fd11760a653c3113e4b33
 
-make sure always-installed profiles don't show up in addons control panel
+Add __version__ attribute to __init__.py.
+
+This allows us to retrieve the current Plone version with 'Products.CMFPlone.__version__'. Even though this is no offical standard, many packages in the Python standard library provide this.
+
+This also allows us to skip tests easily with @unittest.skipIf(Products.CMFPlone.__version__ &gt;= '5.0').
 
 Files changed:
-M Products/CMFPlone/controlpanel/browser/quickinstaller.py
-M Products/CMFPlone/factory.py
+M CHANGES.rst
+M Products/CMFPlone/__init__.py
 
-diff --git a/Products/CMFPlone/controlpanel/browser/quickinstaller.py b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
-index 7a6ee1c..83414c5 100644
---- a/Products/CMFPlone/controlpanel/browser/quickinstaller.py
-+++ b/Products/CMFPlone/controlpanel/browser/quickinstaller.py
-@@ -1,10 +1,12 @@
--from Products.CMFPlone import PloneMessageFactory as _
- from Products.CMFCore.utils import getToolByName
--import logging
-+from Products.CMFPlone import PloneMessageFactory as _
-+from Products.CMFPlone.interfaces import INonInstallable
- from Products.Five.browser import BrowserView
--from Products.statusmessages.interfaces import IStatusMessage
- from Products.GenericSetup import EXTENSION
-+from Products.statusmessages.interfaces import IStatusMessage
- from plone.memoize import view
-+from zope.component import getAllUtilitiesRegisteredFor
-+import logging
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 95eba70..129eb67 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -8,6 +8,12 @@ Changelog
+ 5.0b1 (unreleased)
+ ------------------
  
- 
- class ManageProductsView(BrowserView):
-@@ -25,12 +27,19 @@ def __call__(self):
-     def marshall_addons(self):
-         addons = {}
- 
-+        ignore_profiles = []
-+        utils = getAllUtilitiesRegisteredFor(INonInstallable)
-+        for util in utils:
-+            ignore_profiles.extend(util.getNonInstallableProfiles())
++- Add __version__ attribute to __init__.py. This allows us to retrieve the
++  current Plone version with 'Products.CMFPlone.__version__'. Even though this
++  is no offical standard, many packages in the Python standard library provide
++  this.
++  [timo]
 +
-         profiles = self.ps.listProfileInfo()
-         for profile in profiles:
-             if profile['type'] != EXTENSION:
-                 continue
+ - Replaced the legacy mark_special_links javascript with a
+   corresponding mockup pattern.
+   [fulv]
+diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
+index 418d5bf..0ebf34d 100644
+--- a/Products/CMFPlone/__init__.py
++++ b/Products/CMFPlone/__init__.py
+@@ -1,6 +1,10 @@
+ from App.ImageFile import ImageFile
+ import os
+ import sys
++import pkg_resources
++
++__version__ = pkg_resources.require("Products.CMFPlone")[0].version
++
  
-             pid = profile['id']
-+            if pid in ignore_profiles:
-+                continue
-             pid_parts = pid.split(':')
-             if len(pid_parts) != 2:
-                 logging.error("Profile with id '%s' is invalid." % pid)
-@@ -153,12 +162,12 @@ def upgrade_product(self, product):
-         try:
-             qi.upgradeProduct(product)
-             messages.addStatusMessage(
--                _(u'Upgraded ${product}!', mapping={'addon', product}), type="info")
-+                _(u'Upgraded ${product}!', mapping={'product', product}), type="info")
-             return True
-         except Exception, e:
-             logging.error("Could not upgrade %s: %s" % (product, e))
-             messages.addStatusMessage(
--                _(u'Error upgrading %{addon}.', mapping={'addon': product}), type="error")
-+                _(u'Error upgrading ${product}.', mapping={'product': product}), type="error")
- 
-         return False
- 
-@@ -194,7 +203,7 @@ def __call__(self):
-                 # TODO: find out where this is and don't run already
-                 # activated profiles
-                 setupTool.runAllImportStepsFromProfile(profile)
--                msg = _(u'Installed ${product}!', mapping={'addon': profile})
-+                msg = _(u'Installed ${product}!', mapping={'product': profile})
-                 messages.addStatusMessage(msg, type=msg_type)
- 
-         purl = getToolByName(self.context, 'portal_url')()
-@@ -213,11 +222,11 @@ def __call__(self):
-             for product in products:
-                 try:
-                     qi.uninstallProducts(products=[product, ])
--                    msg = _(u'Uninstalled ${product}.', mapping={'addon': product})
-+                    msg = _(u'Uninstalled ${product}.', mapping={'product': product})
-                 except Exception, e:
-                     logging.error("Could not uninstall %s: %s" % (product, e))
-                     msg_type = 'error'
--                    msg = _(u'Error uninstalling ${product}.', mapping={'addon': product})
-+                    msg = _(u'Error uninstalling ${product}.', mapping={'product': product})
-                 messages.addStatusMessage(msg, type=msg_type)
- 
-         purl = getToolByName(self.context, 'portal_url')()
-diff --git a/Products/CMFPlone/factory.py b/Products/CMFPlone/factory.py
-index 594e9f0..ee8d0cb 100644
---- a/Products/CMFPlone/factory.py
-+++ b/Products/CMFPlone/factory.py
-@@ -51,14 +51,18 @@ def getNonInstallableProfiles(self):
-                 u'plone.app.contenttypes:default',
-                 u'plone.app.dexterity:default',
-                 u'plone.app.discussion:default',
--                u'plone.app.event.at:default',
--                u'plone.app.event.dx:default',
-+                u'plone.app.event:default',
-                 u'plone.app.folder:default',
-                 u'plone.app.imaging:default',
-                 u'plone.app.jquery:initial-upgrade',
-+                u'plone.app.jquery:default',
-+                u'plone.app.jquerytools:default',
-                 u'plone.app.registry:default',
-+                u'plone.app.theming:default',
-+                u'plone.app.versioningbehavior:default',
-                 u'plone.formwidget.recurrence:default',
-                 u'plone.resource:default',
-+                u'plonetheme.barceloneta:default',
-                 ]
- 
- 
+ cmfplone_globals = globals()
+ this_module = sys.modules[__name__]
 
 
