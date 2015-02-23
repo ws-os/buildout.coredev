@@ -1,107 +1,152 @@
-Repository: plone.app.contentlisting
+Repository: plone.app.z3cform
 Branch: refs/heads/master
-Date: 2015-02-23T10:01:05+01:00
+Date: 2015-02-23T14:48:12+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.contentlisting/commit/f7337c4f52878a11e3e13432711af571b7c036a4
+Commit: https://github.com/plone/plone.app.z3cform/commit/850a18b393ab9a9388d985821401e2f9ddfb86b1
 
-add interfaces which are missing but implemented
+Use the more specific browser layer IPloneFormLayer for adapter registrations. This avoids double registration errors.
 
 Files changed:
-M plone/app/contentlisting/configure.zcml
-M plone/app/contentlisting/interfaces.py
+M CHANGES.rst
+M plone/app/z3cform/configure.zcml
 
-diff --git a/plone/app/contentlisting/configure.zcml b/plone/app/contentlisting/configure.zcml
-index ab2b72b..d655460 100644
---- a/plone/app/contentlisting/configure.zcml
-+++ b/plone/app/contentlisting/configure.zcml
-@@ -19,7 +19,7 @@
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 8dc4647..ee96a10 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -4,6 +4,10 @@ Changelog
+ 1.1 (unreleased)
+ ----------------
+ 
++- Use the more specific browser layer ``IPloneFormLayer`` for adapter
++  registrations. This avoids double registration errors.
++  [thet]
++
+ - Integrate plone.app.widgets.
+   [vangheem]
+ 
+diff --git a/plone/app/z3cform/configure.zcml b/plone/app/z3cform/configure.zcml
+index c50e2a6..3d8f096 100644
+--- a/plone/app/z3cform/configure.zcml
++++ b/plone/app/z3cform/configure.zcml
+@@ -28,21 +28,21 @@
+   <browser:page
+       name="ploneform-render-widget"
+       for="z3c.form.interfaces.IWidget"
+-      layer="z3c.form.interfaces.IFormLayer"
++      layer="plone.app.z3cform.interfaces.IPloneFormLayer"
+       class=".templates.RenderWidget"
+       permission="zope.Public"
+       />
+   <browser:page
+       name="ploneform-render-widget"
+       for="zope.contentprovider.interfaces.IContentProvider"
+-      layer="z3c.form.interfaces.IFormLayer"
++      layer="plone.app.z3cform.interfaces.IPloneFormLayer"
+       class=".templates.RenderContentProvider"
+       permission="zope.Public"
+       />
+   <browser:page
+       name="ploneform-render-widget"
+       for="z3c.form.interfaces.ISingleCheckBoxWidget"
+-      layer="z3c.form.interfaces.IFormLayer"
++      layer="plone.app.z3cform.interfaces.IPloneFormLayer"
+       class=".templates.RenderSingleCheckboxWidget"
+       permission="zope.Public"
+       />
+@@ -59,21 +59,21 @@
+       provides="z3c.form.interfaces.IFieldWidget"
+       for="zope.schema.interfaces.IList
+            zope.schema.interfaces.ITextLine
+-           z3c.form.interfaces.IFormLayer"
++           plone.app.z3cform.interfaces.IPloneFormLayer"
+       />
    <adapter
-       factory=".contentlisting.ContentListing"
-       for="list"
--  />
-+      />
+       factory="plone.z3cform.textlines.textlines.TextLinesFieldWidgetFactory"
+       provides="z3c.form.interfaces.IFieldWidget"
+       for="zope.schema.interfaces.ITuple
+            zope.schema.interfaces.ITextLine
+-           z3c.form.interfaces.IFormLayer"
++           plone.app.z3cform.interfaces.IPloneFormLayer"
+       />
+   <adapter
+       factory="plone.z3cform.textlines.textlines.TextLinesFieldWidgetFactory"
+       provides="z3c.form.interfaces.IFieldWidget"
+       for="zope.schema.interfaces.IAbstractSet
+            zope.schema.interfaces.ITextLine
+-           z3c.form.interfaces.IFormLayer"
++           plone.app.z3cform.interfaces.IPloneFormLayer"
+       />
  
    <adapter
-       factory=".contentlisting.ContentListing"
-diff --git a/plone/app/contentlisting/interfaces.py b/plone/app/contentlisting/interfaces.py
-index b5a8bde..3acefb6 100644
---- a/plone/app/contentlisting/interfaces.py
-+++ b/plone/app/contentlisting/interfaces.py
-@@ -9,14 +9,14 @@ class IContentListing(IReadSequence):
- class IContentListingObject(IDublinCore):
-     """Unified representation of content objects in listings"""
+@@ -81,21 +81,21 @@
+       provides="z3c.form.interfaces.IFieldWidget"
+       for="zope.schema.interfaces.IList
+            zope.schema.interfaces.IASCIILine
+-           z3c.form.interfaces.IFormLayer"
++           plone.app.z3cform.interfaces.IPloneFormLayer"
+       />
+   <adapter
+       factory="plone.z3cform.textlines.textlines.TextLinesFieldWidgetFactory"
+       provides="z3c.form.interfaces.IFieldWidget"
+       for="zope.schema.interfaces.ITuple
+            zope.schema.interfaces.IASCIILine
+-           z3c.form.interfaces.IFormLayer"
++           plone.app.z3cform.interfaces.IPloneFormLayer"
+       />
+   <adapter
+       factory="plone.z3cform.textlines.textlines.TextLinesFieldWidgetFactory"
+       provides="z3c.form.interfaces.IFieldWidget"
+       for="zope.schema.interfaces.IAbstractSet
+            zope.schema.interfaces.IASCIILine
+-           z3c.form.interfaces.IFormLayer"
++           plone.app.z3cform.interfaces.IPloneFormLayer"
+       />
  
--    def getId():
--        """get the object id in its container"""
-+    def getDataOrigin():
-+        """The origin of the data for the object."""
+   <adapter
+@@ -158,7 +158,7 @@
+   <adapter
+       factory=".widget.DateFieldWidget"
+       for=".interfaces.IDateField
+-           z3c.form.interfaces.IFormLayer" />
++           plone.app.z3cform.interfaces.IPloneFormLayer" />
  
-     def getObject():
-         """get the real object (may be expensive)"""
+   <class class=".widget.DatetimeWidget">
+     <require permission="zope.Public"
+@@ -170,28 +170,28 @@
  
--    def getDataOrigin():
--        """The origin of the data for the object."""
-+    def getId():
-+        """get the object id in its container"""
+   <adapter factory=".widget.DatetimeFieldWidget"
+            for=".interfaces.IDatetimeField
+-                z3c.form.interfaces.IFormLayer" />
++                plone.app.z3cform.interfaces.IPloneFormLayer" />
  
-     def getPath():
-         """Path to the object, relative to the portal root"""
-@@ -36,12 +36,54 @@ def getSize():
-     def review_state():
-         """Workflow review state"""
+   <adapter factory=".widget.RelatedItemsFieldWidget"
+            for="z3c.relationfield.interfaces.IRelationChoice
+-                z3c.form.interfaces.IFormLayer" />
++                plone.app.z3cform.interfaces.IPloneFormLayer" />
  
--    def PortalType():
--        """Portal Type of the opject"""
-+    def Title():
-+        """Title"""
-+
-+    def Description():
-+        """Description"""
+   <adapter factory=".widget.RelatedItemsFieldWidget"
+            for="z3c.relationfield.interfaces.IRelationList
+-                z3c.form.interfaces.IFormLayer" />
++                plone.app.z3cform.interfaces.IPloneFormLayer" />
  
-     def CroppedDescription():
-         """A cropped description"""
+   <adapter factory=".widget.RelatedItemsFieldWidget"
+            for="zope.schema.interfaces.IChoice
+                 plone.app.vocabularies.catalog.CatalogSource
+-                z3c.form.interfaces.IFormLayer" />
++                plone.app.z3cform.interfaces.IPloneFormLayer" />
  
-+    def Type():
-+        """Type"""
-+
-+    def PortalType():
-+        """Portal Type of the opject"""
-+
-+    def listCreators():
-+        """List creators of the object"""
-+
-+    def getUserData(username):
-+        """Get some data of a given user"""
-+
-+    def Creator():
-+        """Creator of the object"""
-+
-+    def Author():
-+        """Author of the object"""
-+
-+    def Subject():
-+        """Subject(s) of the object"""
-+
-+    def Date():
-+        """Date of the object"""
-+
-+    def CreationDate():
-+        """Creation date of the object"""
-+
-+    def EffectiveDate():
-+        """Date, when content will be shown in listings"""
-+
-+    def ExpirationDate():
-+        """Date, when content will be removed from listings"""
-+
-+    def ModificationDate():
-+        """Date, when object was last modified"""
-+
-+    def Language():
-+        """Language of the object"""
-+
-     def ContentTypeClass():
-         """The contenttype suitable as a css class name,
-            matching plone conventions
+   <adapter factory=".widget.QueryStringFieldWidget"
+            for="zope.schema.interfaces.IList
+                 zope.schema.interfaces.IDict
+-                z3c.form.interfaces.IFormLayer"/>
++                plone.app.z3cform.interfaces.IPloneFormLayer"/>
+ 
+   <adapter factory=".widget.RichTextFieldWidget"
+            for="plone.app.textfield.interfaces.IRichText
+-                z3c.form.interfaces.IFormLayer"/>
++                plone.app.z3cform.interfaces.IPloneFormLayer"/>
+ 
+ </configure>
 
 
