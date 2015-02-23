@@ -1,50 +1,27 @@
-Repository: Products.CMFPlone
+Repository: plone.schemaeditor
 Branch: refs/heads/master
-Date: 2015-02-22T08:55:00+01:00
-Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.CMFPlone/commit/1b0f9cfe8947cb67bc4fd11760a653c3113e4b33
+Date: 2015-02-23T08:11:43+01:00
+Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
+Commit: https://github.com/plone/plone.schemaeditor/commit/265fc252290a236bcef824f5c98f47f5d5f70600
 
-Add __version__ attribute to __init__.py.
-
-This allows us to retrieve the current Plone version with 'Products.CMFPlone.__version__'. Even though this is no offical standard, many packages in the Python standard library provide this.
-
-This also allows us to skip tests easily with @unittest.skipIf(Products.CMFPlone.__version__ &gt;= '5.0').
+restore allowedFields filtering in FieldsVocabularyFactory
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/__init__.py
+M plone/schemaeditor/fields.py
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 95eba70..129eb67 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,6 +8,12 @@ Changelog
- 5.0b1 (unreleased)
- ------------------
+diff --git a/plone/schemaeditor/fields.py b/plone/schemaeditor/fields.py
+index 5054c91..052304b 100644
+--- a/plone/schemaeditor/fields.py
++++ b/plone/schemaeditor/fields.py
+@@ -53,6 +53,9 @@ def editable(self, field):
  
-+- Add __version__ attribute to __init__.py. This allows us to retrieve the
-+  current Plone version with 'Products.CMFPlone.__version__'. Even though this
-+  is no offical standard, many packages in the Python standard library provide
-+  this.
-+  [timo]
-+
- - Replaced the legacy mark_special_links javascript with a
-   corresponding mockup pattern.
-   [fulv]
-diff --git a/Products/CMFPlone/__init__.py b/Products/CMFPlone/__init__.py
-index 418d5bf..0ebf34d 100644
---- a/Products/CMFPlone/__init__.py
-+++ b/Products/CMFPlone/__init__.py
-@@ -1,6 +1,10 @@
- from App.ImageFile import ImageFile
- import os
- import sys
-+import pkg_resources
-+
-+__version__ = pkg_resources.require("Products.CMFPlone")[0].version
-+
- 
- cmfplone_globals = globals()
- this_module = sys.modules[__name__]
+ def FieldsVocabularyFactory(context):
+     field_factories = getUtilitiesFor(IFieldFactory)
++    if context.allowedFields is not None:
++        field_factories = [(id, factory) for id, factory in field_factories
++                            if id in context.allowedFields]
+     terms = []
+     for (field_id, factory) in field_factories:
+         terms.append(SimpleVocabulary.createTerm(factory,
 
 
