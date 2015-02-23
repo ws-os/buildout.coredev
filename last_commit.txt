@@ -1,40 +1,56 @@
-Repository: plone.app.content
+Repository: mockup
 Branch: refs/heads/master
-Date: 2015-02-23T22:27:12+01:00
+Date: 2015-02-23T22:29:03+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.content/commit/5f50399b6b93090f5806942644c475e0748db26a
+Commit: https://github.com/plone/mockup/commit/054936ddf76669ceae3c01fd7da638cbe84c8726
 
-Add id to available columns of the folder_contents view.
+Add id and Title to the default available columns of the structure pattern.
 
 Files changed:
 M CHANGES.rst
-M plone/app/content/browser/folder.py
+M mockup/patterns/structure/js/views/columns.js
+M mockup/patterns/structure/pattern.js
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 7ffddea..4af2b15 100644
+index f6fd285..8e28141 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 3.0.2 (unreleased)
+@@ -4,6 +4,10 @@ Changelog
+ 2.0.0 (unreleased)
  ------------------
  
-+- Add ``id`` to available columns of the ``folder_contents`` view.
++- Add ``id`` and ``Title`` to the default available columns of the structure
++  pattern.
 +  [thet]
 +
- - fix json responses to be able to handle datetime objects and Missing.Value
+ - fix bootstrap css bleeding into global namespaces
    [vangheem]
  
-diff --git a/plone/app/content/browser/folder.py b/plone/app/content/browser/folder.py
-index da67483..b621cba 100644
---- a/plone/app/content/browser/folder.py
-+++ b/plone/app/content/browser/folder.py
-@@ -59,6 +59,7 @@ def __call__(self):
-             'contextInfoUrl': '%s{path}/@@fc-contextInfo' % base_url,
-             'setDefaultPageUrl': '%s{path}/@@fc-setDefaultPage' % base_url,
-             'availableColumns': {
-+                'id': 'ID',
-                 'Title': 'Title',
-                 'ModificationDate': 'Last modified',
-                 'EffectiveDate': 'Published',
+diff --git a/mockup/patterns/structure/js/views/columns.js b/mockup/patterns/structure/js/views/columns.js
+index 8f6d68a..8b4ef8e 100644
+--- a/mockup/patterns/structure/js/views/columns.js
++++ b/mockup/patterns/structure/js/views/columns.js
+@@ -70,8 +70,3 @@ define([
+ 
+   return ColumnsView;
+ });
+-
+-
+-
+-
+-
+diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
+index dcd96aa..13c7fd1 100644
+--- a/mockup/patterns/structure/pattern.js
++++ b/mockup/patterns/structure/pattern.js
+@@ -67,6 +67,8 @@ define([
+         'review_state'
+       ],
+       availableColumns: {
++        'id': _t('ID'),
++        'Title': _t('Title'),
+         'ModificationDate': _t('Last modified'),
+         'EffectiveDate': _t('Published'),
+         'ExpirationDate': _t('Expiration'),
 
 
