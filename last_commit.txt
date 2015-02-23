@@ -1,27 +1,107 @@
-Repository: plone.schemaeditor
+Repository: plone.app.contentlisting
 Branch: refs/heads/master
-Date: 2015-02-23T08:11:43+01:00
-Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/plone.schemaeditor/commit/265fc252290a236bcef824f5c98f47f5d5f70600
+Date: 2015-02-23T10:01:05+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/plone.app.contentlisting/commit/f7337c4f52878a11e3e13432711af571b7c036a4
 
-restore allowedFields filtering in FieldsVocabularyFactory
+add interfaces which are missing but implemented
 
 Files changed:
-M plone/schemaeditor/fields.py
+M plone/app/contentlisting/configure.zcml
+M plone/app/contentlisting/interfaces.py
 
-diff --git a/plone/schemaeditor/fields.py b/plone/schemaeditor/fields.py
-index 5054c91..052304b 100644
---- a/plone/schemaeditor/fields.py
-+++ b/plone/schemaeditor/fields.py
-@@ -53,6 +53,9 @@ def editable(self, field):
+diff --git a/plone/app/contentlisting/configure.zcml b/plone/app/contentlisting/configure.zcml
+index ab2b72b..d655460 100644
+--- a/plone/app/contentlisting/configure.zcml
++++ b/plone/app/contentlisting/configure.zcml
+@@ -19,7 +19,7 @@
+   <adapter
+       factory=".contentlisting.ContentListing"
+       for="list"
+-  />
++      />
  
- def FieldsVocabularyFactory(context):
-     field_factories = getUtilitiesFor(IFieldFactory)
-+    if context.allowedFields is not None:
-+        field_factories = [(id, factory) for id, factory in field_factories
-+                            if id in context.allowedFields]
-     terms = []
-     for (field_id, factory) in field_factories:
-         terms.append(SimpleVocabulary.createTerm(factory,
+   <adapter
+       factory=".contentlisting.ContentListing"
+diff --git a/plone/app/contentlisting/interfaces.py b/plone/app/contentlisting/interfaces.py
+index b5a8bde..3acefb6 100644
+--- a/plone/app/contentlisting/interfaces.py
++++ b/plone/app/contentlisting/interfaces.py
+@@ -9,14 +9,14 @@ class IContentListing(IReadSequence):
+ class IContentListingObject(IDublinCore):
+     """Unified representation of content objects in listings"""
+ 
+-    def getId():
+-        """get the object id in its container"""
++    def getDataOrigin():
++        """The origin of the data for the object."""
+ 
+     def getObject():
+         """get the real object (may be expensive)"""
+ 
+-    def getDataOrigin():
+-        """The origin of the data for the object."""
++    def getId():
++        """get the object id in its container"""
+ 
+     def getPath():
+         """Path to the object, relative to the portal root"""
+@@ -36,12 +36,54 @@ def getSize():
+     def review_state():
+         """Workflow review state"""
+ 
+-    def PortalType():
+-        """Portal Type of the opject"""
++    def Title():
++        """Title"""
++
++    def Description():
++        """Description"""
+ 
+     def CroppedDescription():
+         """A cropped description"""
+ 
++    def Type():
++        """Type"""
++
++    def PortalType():
++        """Portal Type of the opject"""
++
++    def listCreators():
++        """List creators of the object"""
++
++    def getUserData(username):
++        """Get some data of a given user"""
++
++    def Creator():
++        """Creator of the object"""
++
++    def Author():
++        """Author of the object"""
++
++    def Subject():
++        """Subject(s) of the object"""
++
++    def Date():
++        """Date of the object"""
++
++    def CreationDate():
++        """Creation date of the object"""
++
++    def EffectiveDate():
++        """Date, when content will be shown in listings"""
++
++    def ExpirationDate():
++        """Date, when content will be removed from listings"""
++
++    def ModificationDate():
++        """Date, when object was last modified"""
++
++    def Language():
++        """Language of the object"""
++
+     def ContentTypeClass():
+         """The contenttype suitable as a css class name,
+            matching plone conventions
 
 
