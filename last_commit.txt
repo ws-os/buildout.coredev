@@ -1,56 +1,3784 @@
-Repository: mockup
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-02-23T22:29:03+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/mockup/commit/054936ddf76669ceae3c01fd7da638cbe84c8726
+Date: 2015-02-24T08:46:06+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/22d37e5551e850b57127a958053e14ea15d4ecc3
 
-Add id and Title to the default available columns of the structure pattern.
+Revert "unified folder/collection listings"
 
 Files changed:
-M CHANGES.rst
-M mockup/patterns/structure/js/views/columns.js
-M mockup/patterns/structure/pattern.js
+A plone/app/contenttypes/browser/templates/all_content.pt
+A plone/app/contenttypes/browser/templates/folder_full_view.pt
+A plone/app/contenttypes/browser/templates/folder_full_view_item.pt
+A plone/app/contenttypes/browser/templates/folder_listing.pt
+A plone/app/contenttypes/browser/templates/folder_summary_view.pt
+A plone/app/contenttypes/browser/templates/folder_tabular_view.pt
+A plone/app/contenttypes/browser/templates/standard_view.pt
+A plone/app/contenttypes/browser/templates/summary_view.pt
+A plone/app/contenttypes/browser/templates/tabular_view.pt
+M buildout.d/checkouts.cfg
+M buildout.d/development.cfg
+M buildout.d/sources.cfg
+M docs/CHANGES.rst
+M plone/app/contenttypes/behaviors/collection.py
+M plone/app/contenttypes/browser/collection.py
+M plone/app/contenttypes/browser/configure.zcml
+M plone/app/contenttypes/browser/templates/folder_album_view.pt
+D plone/app/contenttypes/browser/folder.py
+D plone/app/contenttypes/browser/full_view.py
+D plone/app/contenttypes/browser/templates/full_view.pt
+D plone/app/contenttypes/browser/templates/full_view_item.pt
+D plone/app/contenttypes/browser/templates/listing.pt
+D plone/app/contenttypes/browser/templates/listing_summary.pt
+D plone/app/contenttypes/browser/templates/listing_tabular.pt
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index f6fd285..8e28141 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -4,6 +4,10 @@ Changelog
- 2.0.0 (unreleased)
- ------------------
+diff --git a/buildout.d/checkouts.cfg b/buildout.d/checkouts.cfg
+index 6cb2d67..d5798b1 100644
+--- a/buildout.d/checkouts.cfg
++++ b/buildout.d/checkouts.cfg
+@@ -1,4 +1,3 @@
+ [buildout]
+ always-checkout = force
+ auto-checkout +=
+-    plone.app.dexterity
+diff --git a/buildout.d/development.cfg b/buildout.d/development.cfg
+index 6ff9460..ae61c81 100644
+--- a/buildout.d/development.cfg
++++ b/buildout.d/development.cfg
+@@ -4,10 +4,10 @@ extends =
  
-+- Add ``id`` and ``Title`` to the default available columns of the structure
-+  pattern.
-+  [thet]
+ eggs +=
+     plone.reload
+-#    Products.PDBDebugMode
+-#    Products.DocFinderTab
+-#    aws.zope2zcmldoc
+-#    collective.profiler
++    Products.PDBDebugMode
++    Products.DocFinderTab
++    aws.zope2zcmldoc
++    collective.profiler
+ 
+ extensions +=
+     mr.developer
+diff --git a/buildout.d/sources.cfg b/buildout.d/sources.cfg
+index 7ef2979..d253567 100644
+--- a/buildout.d/sources.cfg
++++ b/buildout.d/sources.cfg
+@@ -5,4 +5,3 @@ plone = git://github.com/plone
+ plone_push = git@github.com:plone
+ 
+ [sources]
+-plone.app.dexterity = git ${remotes:plone}/plone.app.dexterity.git pushurl=${remotes:plone_push}/plone.app.dexterity.git branch=2.0.x
+diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
+index 17b9a2b..9cffa9d 100644
+--- a/docs/CHANGES.rst
++++ b/docs/CHANGES.rst
+@@ -4,16 +4,6 @@ Changelog
+ 1.2 (unreleased)
+ ----------------
+ 
+-- Refactor full_view and incorporate fixes from collective.fullview to
+-  1) display the default views of it's items, 2) be recursively callable
+-  and 3) have the same templates for folder and collections.
+-  [thet] 
+-
+-- Refactor folder_listing, folder_summary_view, folder_tabular_view for folders
+-  and standard_view (collection_view), summary_view and tabular_view for
+-  collections to use the same templates and base view class.
+-  [thet]
+-
+ - In the file view, render HTML5 ``<audio>`` or ``<video>`` tags for audio
+   respectively video file types. Ancient browsers, which do not support that,
+   just don't render these tags.
+diff --git a/plone/app/contenttypes/behaviors/collection.py b/plone/app/contenttypes/behaviors/collection.py
+index 58c0773..871e570 100644
+--- a/plone/app/contenttypes/behaviors/collection.py
++++ b/plone/app/contenttypes/behaviors/collection.py
+@@ -187,8 +187,7 @@ def selectedViewFields(self):
+                            name='plone.app.contenttypes.metadatafields')
+         for field in vocab(self.context):
+             _mapping[field.value] = (field.value, field.title)
+-        ret = [_mapping[field] for field in self.customViewFields]
+-        return ret
++        return [_mapping[field] for field in self.customViewFields]
+ 
+     # Getters and setters for our fields.
+ 
+diff --git a/plone/app/contenttypes/browser/collection.py b/plone/app/contenttypes/browser/collection.py
+index a666659..ddb2f6f 100644
+--- a/plone/app/contenttypes/browser/collection.py
++++ b/plone/app/contenttypes/browser/collection.py
+@@ -1,42 +1,25 @@
+ # -*- coding: utf-8 -*-
+ from Acquisition import aq_inner
++from Products.Five import BrowserView
+ from plone.app.contenttypes.behaviors.collection import ICollection
+-from plone.app.contenttypes.browser.folder import FolderView
+-from plone.app.contenttypes import _
+ 
+ 
+-class CollectionView(FolderView):
+-
+-    def __init__(self, *args, **kwargs):
+-        super(CollectionView, self).__init__(*args, **kwargs)
+-        context = aq_inner(self.context)
+-        self.collection_behavior = ICollection(context)
+-        self.b_size = self.collection_behavior.item_count
++class CollectionView(BrowserView):
+ 
+     def results(self, **kwargs):
+-        return self.collection_behavior.results(
+-            b_start=self.b_start,
+-            b_size=self.b_size,
+-            **kwargs
+-        )
++        context = aq_inner(self.context)
++        wrapped = ICollection(context)
++        return wrapped.results(**kwargs)
+ 
+     def getFoldersAndImages(self, **kwargs):
+         context = aq_inner(self.context)
+         wrapped = ICollection(context)
+         return wrapped.getFoldersAndImages(**kwargs)
+ 
+-    def tabular_fields(self):
++    def selectedViewFields(self):
+         """Returns a list of all metadata fields from the catalog that were
+            selected.
+         """
+         context = aq_inner(self.context)
+         wrapped = ICollection(context)
+-        fields = wrapped.selectedViewFields()
+-        fields = [field[0] for field in fields]
+-        return fields
+-
+-    def no_items_message(self):
+-        return _(
+-            'description_no_results_found',
+-            default=u"No results were found."
+-        )
++        return wrapped.selectedViewFields()
+diff --git a/plone/app/contenttypes/browser/configure.zcml b/plone/app/contenttypes/browser/configure.zcml
+index e0fa89f..a3fc913 100644
+--- a/plone/app/contenttypes/browser/configure.zcml
++++ b/plone/app/contenttypes/browser/configure.zcml
+@@ -19,7 +19,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.interfaces.ICollection"
+     class=".collection.CollectionView"
+-    template="templates/listing.pt"
++    template="templates/standard_view.pt"
+     />
+ 
+   <browser:page
+@@ -27,7 +27,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.interfaces.ICollection"
+     class=".collection.CollectionView"
+-    template="templates/listing.pt"
++    template="templates/standard_view.pt"
+     />
+ 
+   <!-- VIEWS FOR ANYTHING WITH THE COLLECTION BEHAVIOR.
+@@ -41,7 +41,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.behaviors.collection.ISyndicatableCollection"
+     class=".collection.CollectionView"
+-    template="templates/listing.pt"
++    template="templates/standard_view.pt"
+     />
+ 
+   <browser:page
+@@ -49,7 +49,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.behaviors.collection.ISyndicatableCollection"
+     class=".collection.CollectionView"
+-    template="templates/listing_summary.pt"
++    template="templates/summary_view.pt"
+     />
+ 
+   <browser:page
+@@ -57,7 +57,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.behaviors.collection.ISyndicatableCollection"
+     class=".collection.CollectionView"
+-    template="templates/full_view.pt"
++    template="templates/all_content.pt"
+     />
+ 
+   <browser:page
+@@ -65,7 +65,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.behaviors.collection.ISyndicatableCollection"
+     class=".collection.CollectionView"
+-    template="templates/listing_tabular.pt"
++    template="templates/tabular_view.pt"
+     />
+ 
+   <browser:page
+@@ -128,8 +128,7 @@
+     name="folder_listing"
+     for="plone.dexterity.interfaces.IDexterityContainer"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing.pt"
++    template="templates/folder_listing.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Standard view"
+@@ -139,8 +138,7 @@
+     name="folder_listing"
+     for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing.pt"
++    template="templates/folder_listing.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Standard view"
+@@ -150,19 +148,17 @@
+     name="folder_full_view"
+     for="plone.dexterity.interfaces.IDexterityContainer"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/full_view.pt"
++    template="templates/folder_full_view.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="All content"
+     />
+ 
+   <browser:page
+-    name="full_view_item"
++    name="folder_full_view_item"
+     for="Products.CMFCore.interfaces._content.IContentish"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".full_view.FullViewItem"
+-    template="templates/full_view_item.pt"
++    template="templates/folder_full_view_item.pt"
+     permission="zope2.View"
+     />
+ 
+@@ -170,8 +166,7 @@
+     name="folder_summary_view"
+     for="plone.dexterity.interfaces.IDexterityContainer"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing_summary.pt"
++    template="templates/folder_summary_view.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Summary view"
+@@ -181,8 +176,7 @@
+     name="folder_summary_view"
+     for="Products.CMFPlone.interfaces.siteroot.IPloneSiteRoot"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing_summary.pt"
++    template="templates/folder_summary_view.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Summary view"
+@@ -192,19 +186,7 @@
+     name="folder_tabular_view"
+     for="plone.dexterity.interfaces.IDexterityContainer"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing_tabular.pt"
+-    permission="zope2.View"
+-    menu="plone_displayviews"
+-    title="Tabular view"
+-    />
+-
+-  <browser:page
+-    name="folder_tabular_view"
+-    for="Products.CMFPlone.interfaces.siteroot.IPloneSiteRoot"
+-    layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing_tabular.pt"
++    template="templates/folder_tabular_view.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Tabular view"
+diff --git a/plone/app/contenttypes/browser/folder.py b/plone/app/contenttypes/browser/folder.py
+deleted file mode 100644
+index 1fbde08..0000000
+--- a/plone/app/contenttypes/browser/folder.py
++++ /dev/null
+@@ -1,148 +0,0 @@
+-# -*- coding: utf-8 -*-
+-from Acquisition import aq_base
+-from Products.CMFPlone.PloneBatch import Batch
+-from Products.CMFPlone.utils import safe_callable
+-from Products.Five import BrowserView
+-from plone.app.contenttypes import _
+-from plone.event.interfaces import IEvent
+-from plone.registry.interfaces import IRegistry
+-from zope.component import getMultiAdapter
+-from zope.component import getUtility
+-from zope.contentprovider.interfaces import IContentProvider
+-
+-HAS_SECURITY_SETTINGS = True
+-try:
+-    from Products.CMFPlone.interfaces import ISecuritySchema
+-except ImportError:
+-    HAS_SECURITY_SETTINGS = False
+-
+-
+-class FolderView(BrowserView):
+-
+-    def __init__(self, context, request):
+-        super(FolderView, self).__init__(context, request)
+-
+-        registry = getUtility(IRegistry)
+-
+-        self.plone_view = getMultiAdapter(
+-            (context, request), name=u"plone")
+-
+-        self.portal_state = getMultiAdapter(
+-            (context, request), name=u"plone_portal_state")
+-        self.friendly_types = self.portal_state.friendly_types()
+-        self.isAnon = self.portal_state.anonymous()
+-        self.navigation_root_url = self.portal_state.navigation_root_url()
+-
+-        # BBB
+-        self.site_properties = context.restrictedTraverse(
+-            'portal_properties').site_properties
+-        self.use_view_action = getattr(
+-            self.site_properties, 'typesUseViewActionInListings', ())
+-
+-        if HAS_SECURITY_SETTINGS:
+-            security_settings = registry.forInterface(
+-                ISecuritySchema, prefix="plone")
+-            self.show_about = getattr(
+-                security_settings, 'allow_anon_views_about', False
+-            ) or not self.isAnon
+-        else:
+-            # BBB
+-            self.show_about = getattr(
+-                self.site_properties, 'allowAnonymousViewAbout', False
+-            ) or not self.isAnon
+-
+-        self.pas_member = getMultiAdapter(
+-            (context, request), name=u"pas_member")
+-
+-        self.text_class = None
+-
+-        limit_display = getattr(self.request, 'limit_display', None)
+-        limit_display = int(limit_display) if limit_display is not None else 20
+-        b_size = getattr(self.request, 'b_size', None)
+-        self.b_size = int(b_size) if b_size is not None else limit_display
+-        b_start = getattr(self.request, 'b_start', None)
+-        self.b_start = int(b_start) if b_start is not None else 0
+-
+-    def _content_filter(self):
+-        content_filter = getattr(self.request, 'contentFilter', None)
+-        content_filter = dict(content_filter) if content_filter else {}
+-        content_filter.setdefault('portal_type', self.friendly_types)
+-        content_filter.setdefault('batch', True)
+-        content_filter.setdefault('b_size', self.b_size)
+-        content_filter.setdefault('b_start', self.b_start)
+-        return content_filter
+-
+-    def results(self):
+-        results = self.context.restrictedTraverse(
+-            '@@folderListing')(**self._content_filter())
+-        return results
+-
+-    def batch(self):
+-        batch = Batch(
+-            self.results(), size=self.b_size, start=self.b_start, orphan=1)
+-        return batch
+-
+-    def normalizeString(self, text):
+-        return self.plone_view.normalizeString(text)
+-
+-    def toLocalizedTime(self, time, long_format=None, time_only=None):
+-        return self.plone_view.toLocalizedTime(time, long_format, time_only)
+-
+-    def text(self):
+-        textfield = getattr(aq_base(self.context), 'text', None)
+-        text = getattr(textfield, 'output', None)
+-        if text:
+-            self.text_class = 'stx' if textfield.mimeType in (
+-                'text/structured', 'text/x-rst', 'text/restructured'
+-            ) else 'plain'
+-        return text
+-
+-    def tabular_fields(self):
+-        ret = []
+-        ret.append('Title')
+-        if self.show_about:
+-            ret.append('Creator')
+-        ret.append('Type')
+-        if self.show_about:
+-            ret.append('ModificationDate')
+-        return ret
+-
+-    def tabular_fielddata(self, item, fieldname):
+-        value = getattr(item, fieldname, '')
+-        if safe_callable(value):
+-            value = value()
+-        if fieldname in [
+-                'CreationDate',
+-                'ModificationDate',
+-                'Date',
+-                'EffectiveDate',
+-                'ExpirationDate',
+-                'effective',
+-                'expires',
+-                'start',
+-                'end',
+-                'created',
+-                'modified',
+-                'last_comment_date']:
+-            value = self.toLocalizedTime(value, long_format=1)
+-
+-        return {
+-            # 'title': _(fieldname, default=fieldname),
+-            'value': value
+-        }
+-
+-    def is_event(self, obj):
+-        return IEvent.providedBy(obj)
+-
+-    def formatted_date(self, item):
+-        provider = getMultiAdapter(
+-            (self.context, self.request, self),
+-            IContentProvider, name='formatted_date'
+-        )
+-        return provider(item)
+-
+-    def no_items_message(self):
+-        return _(
+-            'description_no_items_in_folder',
+-            default=u"There are currently no items in this folder."
+-        )
+diff --git a/plone/app/contenttypes/browser/full_view.py b/plone/app/contenttypes/browser/full_view.py
+deleted file mode 100644
+index 58201f7..0000000
+--- a/plone/app/contenttypes/browser/full_view.py
++++ /dev/null
+@@ -1,35 +0,0 @@
+-from Products.Five.browser import BrowserView
+-from Products.CMFCore.utils import getToolByName
+-from zope.publisher.interfaces.browser import IBrowserView
+-
+-
+-class FullViewItem(BrowserView):
+-
+-    def __init__(self, context, request):
+-        super(FullViewItem, self).__init__(context, request)
+-        self.item_type = self.context.portal_type
+-
+-    @property
+-    def default_view(self):
+-        context = self.context
+-        item_layout = context.getLayout()
+-        default_view = context.restrictedTraverse(item_layout)
+-        return default_view
+-
+-    @property
+-    def item_macros(self):
+-        default_view = self.default_view
+-        if IBrowserView.providedBy(default_view):
+-            # IBrowserView
+-            return default_view.index.macros
+-        else:
+-            # FSPageTemplate
+-            return default_view.macros
+-
+-    @property
+-    def item_url(self):
+-        context = self.context
+-        url = context.absolute_url()
+-        props = getToolByName(context, 'portal_properties')
+-        use_view_action = props.site_properties.typesUseViewActionInListings
+-        return self.item_type in use_view_action and '%s/view' % url or url
+diff --git a/plone/app/contenttypes/browser/templates/all_content.pt b/plone/app/contenttypes/browser/templates/all_content.pt
+new file mode 100644
+index 0000000..7c78024
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/all_content.pt
+@@ -0,0 +1,29 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="here/main_template/macros/master"
++      i18n:domain="plone">
 +
- - fix bootstrap css bleeding into global namespaces
-   [vangheem]
++<body>
++
++<metal:content-core fill-slot="content-core">
++<metal:block use-macro="context/standard_view/macros/content-core">
++
++    <metal:entries fill-slot="entries">
++    <metal:block use-macro="context/standard_view/macros/entries">
++    <metal:entry fill-slot="entry">
++
++        <div tal:define="realobject python:item.getObject()"
++             tal:replace="structure realobject/folder_full_view_item" />
++
++    </metal:entry>
++    </metal:block>
++    </metal:entries>
++
++</metal:block>
++</metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_album_view.pt b/plone/app/contenttypes/browser/templates/folder_album_view.pt
+index e5b5609..010170b 100644
+--- a/plone/app/contenttypes/browser/templates/folder_album_view.pt
++++ b/plone/app/contenttypes/browser/templates/folder_album_view.pt
+@@ -88,9 +88,8 @@
+          metal:use-macro="here/batch_macros/macros/navigation" />
  
-diff --git a/mockup/patterns/structure/js/views/columns.js b/mockup/patterns/structure/js/views/columns.js
-index 8f6d68a..8b4ef8e 100644
---- a/mockup/patterns/structure/js/views/columns.js
-+++ b/mockup/patterns/structure/js/views/columns.js
-@@ -70,8 +70,3 @@ define([
+     <tal:listing condition="otherContents"
+-                 define="folderContents otherContents;
+-                         view nocall:here/@@folder_listing">
+-        <metal:listing metal:use-macro="view/macros/listing">
++                 define="folderContents otherContents">
++        <metal:listing metal:use-macro="here/folder_listing/macros/listing">
+             <metal:empty metal:fill-slot="no_items_in_listing"></metal:empty>
+         </metal:listing>
  
-   return ColumnsView;
- });
+diff --git a/plone/app/contenttypes/browser/templates/folder_full_view.pt b/plone/app/contenttypes/browser/templates/folder_full_view.pt
+new file mode 100644
+index 0000000..cb2671b
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_full_view.pt
+@@ -0,0 +1,26 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="context/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++    <metal:content-core fill-slot="content-core">
++        <metal:block use-macro="context/folder_listing/macros/content-core">
++            <!-- we don't want the dl -->
++            <metal:entries fill-slot="entries">
++                <metal:block use-macro="context/folder_listing/macros/entries">
++                    <metal:entry fill-slot="entry">
++                        <div tal:define="obj_view python:item.getObject().restrictedTraverse('folder_full_view_item')"
++                             tal:replace="structure python:obj_view()" />
++                    </metal:entry>
++                </metal:block>
++            </metal:entries>
++        </metal:block>
++    </metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_full_view_item.pt b/plone/app/contenttypes/browser/templates/folder_full_view_item.pt
+new file mode 100644
+index 0000000..55e3477
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_full_view_item.pt
+@@ -0,0 +1,80 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      i18n:domain="plone"
++      tal:omit-tag="">
++
++<body tal:omit-tag="">
++
++    <div class="item visualIEFloatFix"
++         tal:define="portal_state context/@@plone_portal_state;
++                     context_state context/@@plone_context_state;
++                     plone_view context/@@plone;
++                     plone_layout context/@@plone_layout;
++                     lang portal_state/language;
++                     view nocall:view | nocall: plone_view;
++                     dummy python: plone_layout.mark_view(view);
++                     portal_url portal_state/portal_url;
++                     checkPermission nocall: context/portal_membership/checkPermission;
++                     site_properties context/portal_properties/site_properties;
++                     item_type context/portal_type;
++                     item_layout here/getLayout;
++                     override python: {'Link': 'link_view'};
++                     item_macro python:path('here/%s/macros/content-core | nothing' % override.get(item_type, item_layout));
++                     use_view_action site_properties/typesUseViewActionInListings|python:();
++                     item_url context/absolute_url;
++                     normalizeString nocall: context/plone_utils/normalizeString;
++                     item_type_class python: 'contenttype-' + normalizeString(item_type);
++                     kss_inline_editable python:False;
++                     rendering_error python:[];
++                     ">
++
++        <div tal:replace="structure provider:plone.abovecontenttitle" />
++
++        <h2 class="headline">
++            <a href="#" class="summary url" tal:content="context/Title"
++               tal:attributes="href python:item_url+'/view' if item_type in use_view_action else item_url;">
++               Title or id
++             </a>
++        </h2>
++
++        <div tal:replace="structure provider:plone.belowcontenttitle" />
++
++        <div class="description"
++             tal:content="context/Description"
++             tal:condition="context/Description">
++            Description
++        </div>
++
++        <tal:block tal:condition="item_macro" tal:on-error="python:rendering_error.append(True)">
++
++            <div tal:replace="structure provider:plone.abovecontentbody" />
++
++            <div metal:use-macro="item_macro">
++                content
++            </div>
++
++            <div tal:replace="structure provider:plone.belowcontentbody" />
++
++        </tal:block>
++
++        <tal:block tal:condition="rendering_error">
++            <!-- Error rendering item macro -->
++        </tal:block>
++
++        <p class="more" tal:condition="python:not(item_macro) or rendering_error">
++            <a href=""
++               tal:attributes="href python: item_url+'/view' if item_type in use_view_action else item_url;"
++               i18n:translate="read_more">
++                Read More&hellip;
++            </a>
++        </p>
++
++        <div class="visualClear"><!-- --></div>
++
++    </div>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_listing.pt b/plone/app/contenttypes/browser/templates/folder_listing.pt
+new file mode 100644
+index 0000000..d63282c
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_listing.pt
+@@ -0,0 +1,194 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="context/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++<metal:content-core fill-slot="content-core">
++<metal:block define-macro="content-core"
++                    tal:define="templateId template/getId">
++
++    <div metal:define-macro="text-field-view"
++         id="parent-fieldname-text" class="stx"
++         tal:define="has_text exists:context/aq_explicit/text/output;
++                     text python:has_text and here.text.output or ''"
++         tal:condition="text"
++         tal:attributes="class python: context.Format() in ('text/structured',
++                                               'text/x-rst', ) and  'stx' or 'plain'">
++        <div metal:define-slot="inside" tal:replace="structure text">The body</div>
++    </div>
++
++    <metal:listingmacro define-macro="listing">
++    <tal:foldercontents define="contentFilter contentFilter|request/contentFilter|nothing;
++                        contentFilter python:contentFilter and dict(contentFilter) or {};
++                        limit_display limit_display|request/limit_display|nothing;
++                        limit_display python:limit_display and int(limit_display) or None;
++                        more_url more_url|request/more_url|string:folder_contents;
++                        is_a_topic python:context.portal_type=='Topic';
++                        friendly_types portal_state/friendly_types;
++                        dummy python:not is_a_topic and contentFilter.setdefault('portal_type', friendly_types);
++                        folderContents folderContents|nothing; folderContents python:folderContents or is_a_topic and context.queryCatalog(batch=True, **contentFilter) or context.getFolderContents(contentFilter, batch=True, b_size=limit_display or 100);
++                        site_properties context/portal_properties/site_properties;
++                        use_view_action site_properties/typesUseViewActionInListings|python:();
++                        Batch python:modules['Products.CMFPlone'].Batch;
++                        plone_layout context/@@plone_layout;
++                        b_start python:request.get('b_start', 0);
++                        batch python:isinstance(folderContents, Batch) and folderContents or Batch(folderContents, limit_display or 100, int(b_start), orphan=1);
++                        isAnon portal_state/anonymous;
++                        normalizeString nocall: context/plone_utils/normalizeString;
++                        toLocalizedTime nocall: plone_view/toLocalizedTime;
++                        show_about python:not isAnon or site_properties.allowAnonymousViewAbout;
++                        navigation_root_url portal_state/navigation_root_url;
++                        pas_member context/@@pas_member;">
++    <tal:listing condition="batch">
++
++        <ul metal:define-slot="entries">
++            <li tal:repeat="item batch" metal:define-macro="entries">
++            <tal:block tal:define="item_url item/getURL|item/absolute_url;
++                                   item_id item/getId|item/id;
++                                   item_title_or_id item/pretty_title_or_id;
++                                   item_description item/Description;
++                                   item_type item/portal_type;
++                                   item_type_title item/Type;
++                                   item_modified item/ModificationDate;
++                                   item_created item/CreationDate;
++                                   item_icon python:plone_layout.getIcon(item);
++                                   item_type_class python:'contenttype-' + normalizeString(item_type);
++                                   item_wf_state item/review_state|python: context.portal_workflow.getInfoFor(item, 'review_state', '');
++                                   item_wf_state_class python:'state-' + normalizeString(item_wf_state);
++                                   item_creator item/Creator;
++                                   item_start item/start|item/StartDate|nothing;
++                                   item_end item/end|item/EndDate|nothing;
++                                   item_sametime python: item_start == item_end;
++                                   item_samedate python: (item_end - item_start &lt; 1) if item_type == 'Event' else False">
++                <metal:block define-slot="entry">
++                <span metal:define-macro="listitem"
++                    tal:define="item_type_event_class python: item_type == 'Event' and 'vevent' or None"
++                    tal:attributes="class item_type_event_class|nothing">
++
++                    <span class="summary">
++                        <img tal:replace="structure item_icon/html_tag" />
++                        <a href="#"
++                           tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url;
++                                           class string:$item_type_class $item_wf_state_class url"
++                           tal:content="item_title_or_id">
++                            Item Title
++                        </a>
++                    </span>
++
++                    <span class="documentByLine">
++                        <span tal:condition="python: item_type == 'Event' and item_sametime"
++                              i18n:translate="label_event_byline_onlyfrom">
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                   i18n:name="start">from date</abbr>
++                        </span>
++                        <span tal:condition="python: item_type == 'Event' and item_samedate and not item_sametime"
++                              i18n:translate="label_event_byline_samedate">
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start)"
++                                   i18n:name="start">from date</abbr> from
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,time_only=1)"
++                                   i18n:name="starttime">from time</abbr> to
++                             <abbr class="dtend"
++                                   tal:attributes="title python:item_end"
++                                   tal:content="python:toLocalizedTime(item_end,time_only=1)"
++                                   i18n:name="end">to time</abbr>
++                        </span>
++                        <span tal:condition="python: item_type == 'Event' and not item_samedate and not item_sametime"
++                              i18n:translate="label_event_byline">
++                              from
++                                   <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                   i18n:name="start">from date</abbr> to
++                             <abbr class="dtend"
++                                   tal:attributes="title python:item_end"
++                                   tal:content="python:toLocalizedTime(item_end,long_format=1)"
++                                   i18n:name="end">to date</abbr>
++                        </span>
++                         <span tal:condition="python: item_type == 'Event' and item.location"
++                              i18n:translate="label_event_byline_location">&mdash;
++                             <span tal:content="string:${item/location}"
++                                   class="location"
++                                   i18n:name="location">Oslo</span>,
++                        </span>
++                        <tal:byline condition="show_about">
++                            &mdash;
++
++                            <tal:name tal:condition="item_creator"
++                                tal:define="author python:pas_member.info(item_creator);
++                                            creator_short_form author/username;
++                                            creator_long_form string:?author=${author/username};
++                                            creator_is_openid python:'/' in creator_short_form;
++                                            creator_id python:(creator_short_form, creator_long_form)[creator_is_openid];">
++                              <span i18n:translate="label_by_author">
++                                by
++                              <a href="#"
++                                 tal:attributes="href string:${navigation_root_url}/author/${item_creator}"
++                                 tal:content="author/name_or_id"
++                                 tal:omit-tag="not:author"
++                                 i18n:name="author">
++                                Bob Dobalina
++                              </a>
++                              </span>
++
++                            </tal:name>
++
++                            <tal:modified condition="python: item_type != 'Event'">
++                                &mdash;
++                                <tal:mod i18n:translate="box_last_modified">
++                                  last modified
++                                </tal:mod>
++                                <span tal:replace="python:toLocalizedTime(item_modified,long_format=1)">
++                                  August 16, 2001 at 23:35:59
++                                </span>
++                            </tal:modified>
++
++                            <metal:description define-slot="description_slot">
++                                <tal:comment replace="nothing">
++                                    Place custom listing info for custom types here
++                                </tal:comment>
++                            </metal:description>
++                        </tal:byline>
++                    </span>
++
++                </span>
++
++                <p class="description discreet"
++                    tal:condition="item_description"
++                    tal:content="item_description">
++                    description
++                </p>
++            </metal:block>
++            </tal:block>
++            </li>
++        </ul>
++
++        <div metal:use-macro="context/batch_macros/macros/navigation" />
++
++    </tal:listing>
++    <metal:empty metal:define-slot="no_items_in_listing">
++        <p class="discreet"
++           tal:condition="not: folderContents"
++           i18n:translate="description_no_items_in_folder">
++            There are currently no items in this folder.
++        </p>
++    </metal:empty>
++
++    </tal:foldercontents>
++    </metal:listingmacro>
++
++</metal:block>
++</metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_summary_view.pt b/plone/app/contenttypes/browser/templates/folder_summary_view.pt
+new file mode 100644
+index 0000000..c2d78c5
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_summary_view.pt
+@@ -0,0 +1,122 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="context/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++    <metal:content-core fill-slot="content-core">
++        <metal:block define-macro="listing" extend-macro="context/folder_listing/macros/content-core">
++            <!-- we don't want the dl -->
++            <metal:entries fill-slot="entries">
++                <metal:block use-macro="context/folder_listing/macros/entries">
++                    <metal:entry fill-slot="entry">
++                <div class="tileItem visualIEFloatFix"
++                     tal:define="item_object item/getObject;">
++
++                    <a href="#"
++                       tal:define="real_object python:item_object.aq_explicit"
++                       tal:condition="python:getattr(real_object, 'image', None)"
++                       tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url">
++                        <img tal:define="images item_object/@@images;
++                                         scale python: images.scale('image', scale='thumb')"
++                             tal:condition="scale"
++                             src="" alt=""
++                             tal:replace="structure python: scale.tag(css_class='tileImage')" />
++                    </a>
++
++                    <h2 class="tileHeadline"
++                        metal:define-macro="listitem">
++
++                        <a href="#"
++                           class="summary url"
++                           tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url;"
++                           tal:content="item_title_or_id">
++                            Item Title
++                        </a>
++
++                    </h2>
++
++                    <div class="documentByLine" tal:condition="python: site_properties.allowAnonymousViewAbout or not isAnon">
++                    <tal:event condition="python: item_type == 'Event'">
++                        <span tal:condition="python: item_type == 'Event' and item.location"
++                              i18n:translate="label_event_byline_with_location">
++                            (<span tal:content="string:${item/location}"
++                                   class="location"
++                                   i18n:name="location">Oslo</span>, from
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                   i18n:name="start">from date</abbr> to
++                             <abbr class="dtend"
++                                   tal:attributes="title python:item_end"
++                                   tal:content="python:toLocalizedTime(item_end,long_format=1)"
++                                   i18n:name="end">to date</abbr>)
++                        </span>
++                        <span tal:condition="python: item_type == 'Event' and not item.location"
++                              i18n:translate="label_event_byline_without_location">
++                            (from
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                   i18n:name="start">from date</abbr> to
++                             <abbr class="dtend"
++                                   tal:attributes="title python:item_end"
++                                   tal:content="python:toLocalizedTime(item_end,long_format=1)"
++                                   i18n:name="end">to date</abbr>)
++                        </span>
++                    </tal:event>
++                    <tal:newsitem condition="python: item_type == 'News Item'">
++                        <tal:name tal:condition="item_creator"
++                            tal:define="author python:pas_member.info(item_creator)">
++                          <span class="documentAuthor" i18n:translate="label_by_author">
++                            by
++                          <a href="#"
++                             tal:attributes="href string:${navigation_root_url}/author/${item_creator}"
++                             tal:content="author/name_or_id"
++                             tal:omit-tag="not:author"
++                             i18n:name="author">
++                            Bob Dobalina
++                          </a>
++                          </span>
++                        </tal:name>
++                        &mdash;
++                        <span class="documentModified">
++                              <tal:mod i18n:translate="box_last_modified">
++                              last modified
++                              </tal:mod>
++                              <span tal:replace="python:toLocalizedTime(item_modified,long_format=1)">
++                                      August 16, 2001 at 23:35:59
++                              </span>
++                        </span>
++                    </tal:newsitem>
++                    </div>
++
++                    <p class="tileBody" tal:condition="item_description">
++                        <span class="description" tal:content="item_description">
++                            description
++                        </span>
++                    </p>
++
++                    <p class="tileFooter">
++                        <a href=""
++                           tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url;"
++                           i18n:translate="read_more">
++                        Read More&hellip;
++                        </a>
++                    </p>
++
++                    <div class="visualClear"><!-- --></div>
++
++                </div>
++                    </metal:entry>
++                </metal:block>
++            </metal:entries>
++        </metal:block>
++    </metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_tabular_view.pt b/plone/app/contenttypes/browser/templates/folder_tabular_view.pt
+new file mode 100644
+index 0000000..c5e87a8
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_tabular_view.pt
+@@ -0,0 +1,96 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="context/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++  <metal:content-core fill-slot="content-core">
++    <metal:block define-macro="listing" extend-macro="context/folder_listing/macros/content-core">
++      <metal:entries fill-slot="entries">
++
++          <div metal:use-macro="context/batch_macros/macros/navigation" />
++          <div class="has-table">
++            <table class="listing"
++                   summary="Content listing"
++                   i18n:attributes="summary summary_content_listing;">
++                <thead>
++                    <tr>
++                        <th class="nosort">&nbsp;<tal:title i18n:translate="listingheader_title"
++                          >Title</tal:title>&nbsp;</th>
++                        <th class="nosort"
++                            tal:condition="show_about">&nbsp;<tal:title i18n:translate="listingheader_author"
++                          >Author</tal:title>&nbsp;</th>
++                        <th class="nosort">&nbsp;<tal:title i18n:translate="listingheader_type"
++                          >Type</tal:title>&nbsp;</th>
++                        <th class="nosort"
++                            tal:condition="show_about">&nbsp;<tal:modified i18n:translate="listingheader_modified"
++                          >Modified</tal:modified>&nbsp;</th>
++                    </tr>
++                </thead>
++
++                <tbody>
++                    <metal:block use-macro="context/folder_listing/macros/entries">
++                        <metal:entry fill-slot="entry">
++
++                    <tr metal:define-macro="listitem"
++                        tal:define="oddrow repeat/item/odd;"
++                        tal:attributes="class python: oddrow and 'even' or 'odd'">
++
++                            <td>
++                                <img width="16" height="16"
++                                     src="" alt=""
++                                     tal:condition="item_icon/url"
++                                     tal:attributes="src item_icon/url;
++                                                     alt item_icon/description;
++                                                     title item_icon/title;
++                                                     width item_icon/width;
++                                                     height item_icon/height;" />
++                                <a href="#"
++                                   tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url;
++                                                   class string:$item_wf_state_class $item_type_class;
++                                                   title item_description;"
++                                   tal:content="item_title_or_id">
++                                    Item Title
++                                </a>
++                            </td>
++
++                            <td tal:condition="show_about">
++                                <tal:name tal:condition="item_creator"
++                                  tal:define="author python:pas_member.info(item_creator)">
++                                <a href="#"
++                                   tal:attributes="href string:${navigation_root_url}/author/${item_creator}"
++                                   tal:content="author/name_or_id"
++                                   tal:omit-tag="not:author">
++                                  Bob Dobalina
++                                </a>
++                                </tal:name>
++                            </td>
++
++                            <td tal:content="item_type_title"
++                                i18n:translate="">
++                                Page
++                            </td>
++
++                        <td tal:condition="show_about"
++                            tal:content="python:toLocalizedTime(item_modified,long_format=1)">
++                          August 16, 2001 at 23:35:59
++                        </td>
++
++                    </tr>
++
++                        </metal:entry>
++                    </metal:block>
++                </tbody>
++            </table>
++          </div>
++      </metal:entries>
++    </metal:block>
++
++  </metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/full_view.pt b/plone/app/contenttypes/browser/templates/full_view.pt
+deleted file mode 100644
+index 37974ec..0000000
+--- a/plone/app/contenttypes/browser/templates/full_view.pt
++++ /dev/null
+@@ -1,29 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="context/main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-    <metal:content-core fill-slot="content-core">
+-    <metal:block define-macro="content-core">
+-        <metal:listing use-macro="context/@@folder_listing/macros/content-core|context/@@collection_view/macros/content-core">
+-            <!-- we don't want the dl -->
+-            <metal:entries fill-slot="entries">
+-                <metal:block use-macro="context/@@folder_listing/macros/entries|context/@@collection_view/macros/entries">
+-                    <metal:entry fill-slot="entry">
+-                        <div
+-                            tal:define="obj item/getObject;"
+-                            tal:replace="structure obj/@@full_view_item" />
+-                    </metal:entry>
+-                </metal:block>
+-            </metal:entries>
+-        </metal:listing>
+-    </metal:block>
+-    </metal:content-core>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/full_view_item.pt b/plone/app/contenttypes/browser/templates/full_view_item.pt
+deleted file mode 100644
+index 16eac28..0000000
+--- a/plone/app/contenttypes/browser/templates/full_view_item.pt
++++ /dev/null
+@@ -1,73 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      i18n:domain="plone"
+-      tal:omit-tag="">
+-
+-<body tal:omit-tag="">
+-
+-    <div class="item visualIEFloatFix"
+-         tal:define="item_macro nocall:view/item_macros/content-core|nothing;
+-                     item_url view/item_url;
+-                     rendering_error python:[];">
+-
+-        <div tal:replace="structure provider:plone.abovecontenttitle" />
+-
+-        <h2 class="headline">
+-            <a href="#" class="summary url" tal:content="context/Title"
+-               tal:attributes="href item_url;">
+-               Title
+-             </a>
+-        </h2>
+-
+-        <div tal:replace="structure provider:plone.belowcontenttitle" />
+-
+-        <div class="description"
+-             tal:content="context/Description"
+-             tal:condition="context/Description">
+-            Description
+-        </div>
+-
+-        <tal:block tal:condition="item_macro">
+-        <!-- tal:on-error="python:rendering_error.append(True)"-->
+-
+-            <div tal:replace="structure provider:plone.abovecontentbody" />
+-
+-            <div tal:define="view nocall:view/default_view;
+-                             portal_state context/@@plone_portal_state;
+-                             context_state context/@@plone_context_state;
+-                             plone_layout context/@@plone_layout;
+-                             lang portal_state/language;
+-                             dummy python: plone_layout.mark_view(view);
+-                             portal_url portal_state/portal_url;
+-                             checkPermission nocall: context/portal_membership/checkPermission;
+-                             site_properties context/portal_properties/site_properties;">
+-            <div metal:use-macro="item_macro">
+-                content
+-            </div>
+-            </div>
+-
+-            <div tal:replace="structure provider:plone.belowcontentbody" />
+-
+-        </tal:block>
+-
+-        <tal:block tal:condition="rendering_error">
+-            <!-- Error rendering item macro -->
+-        </tal:block>
+-
+-        <p class="more" tal:condition="python:not(item_macro) or rendering_error">
+-            <a href=""
+-               tal:attributes="href item_url"
+-               i18n:translate="read_more">
+-                Read More&hellip;
+-            </a>
+-        </p>
+-
+-        <div class="visualClear"><!-- --></div>
+-
+-    </div>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/listing.pt b/plone/app/contenttypes/browser/templates/listing.pt
+deleted file mode 100644
+index dd38ae0..0000000
+--- a/plone/app/contenttypes/browser/templates/listing.pt
++++ /dev/null
+@@ -1,139 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="context/main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:content-core fill-slot="content-core">
+-<metal:block define-macro="content-core">
+-
+-    <div metal:define-macro="text-field-view"
+-         id="parent-fieldname-text" class="stx"
+-         tal:define="text view/text"
+-         tal:condition="text"
+-         tal:attributes="class view/text_class">
+-        <div metal:define-slot="inside" tal:replace="structure text">The body</div>
+-    </div>
+-
+-    <metal:listingmacro define-macro="listing">
+-    <tal:results define="batch view/batch">
+-    <tal:listing condition="batch">
+-
+-        <div metal:define-slot="entries">
+-            <article tal:repeat="item batch" metal:define-macro="entries">
+-            <tal:block tal:define="obj item/getObject;
+-                                   item_url item/getURL;
+-                                   item_id item/getId;
+-                                   item_title item/Title;
+-                                   item_description item/Description;
+-                                   item_type item/PortalType;
+-                                   item_modified item/ModificationDate;
+-                                   item_created item/CreationDate;
+-                                   item_icon item/getIcon;
+-                                   item_type_class python:'contenttype-' + view.normalizeString(item_type);
+-                                   item_wf_state item/review_state;
+-                                   item_wf_state_class python:'state-' + view.normalizeString(item_wf_state);
+-                                   item_creator item/Creator;
+-                                   item_link python:item_type in view.use_view_action and item_url+'/view' or item_url">
+-                <metal:block define-slot="entry">
+-                <header metal:define-macro="listitem"
+-                    tal:attributes="class python:item_type == 'Event' and 'vevent' or ''">
+-
+-                    <span class="summary">
+-                        <a href="#"
+-                           tal:attributes="href item_link;
+-                                           class string:$item_type_class $item_wf_state_class url;
+-                                           title item_type"
+-                           tal:content="item_title">
+-                            Item Title
+-                        </a>
+-                    </span>
+-
+-                    <metal:block metal:define-macro="document_byline">
+-                    <span class="documentByLine">
+-                        <tal:event condition="python:view.is_event(obj)">
+-                            <tal:date tal:replace="structure python:view.formatted_date(obj)"/>
+-                            <span tal:condition="item/location"
+-                                  i18n:translate="label_event_byline_location">&mdash;
+-                                <span tal:content="string:${item/location}"
+-                                      class="location"
+-                                      i18n:name="location">Oslo</span>,
+-                            </span>
+-                        </tal:event>
+-                        <tal:byline condition="view/show_about">
+-                            &mdash;
+-
+-                            <tal:name tal:condition="item_creator"
+-                                tal:define="author python:view.pas_member.info(item_creator);
+-                                            creator_short_form author/username;
+-                                            creator_long_form string:?author=${author/username};
+-                                            creator_is_openid python:'/' in creator_short_form;
+-                                            creator_id python:(creator_short_form, creator_long_form)[creator_is_openid];">
+-                              <span i18n:translate="label_by_author">
+-                                by
+-                              <a href="#"
+-                                 tal:attributes="href string:${view/navigation_root_url}/author/${item_creator}"
+-                                 tal:content="author/name_or_id"
+-                                 tal:omit-tag="not:author"
+-                                 i18n:name="author">
+-                                Bob Dobalina
+-                              </a>
+-                              </span>
+-
+-                            </tal:name>
+-
+-                            <tal:modified condition="python: item_type != 'Event'">
+-                                &mdash;
+-                                <tal:mod i18n:translate="box_last_modified">
+-                                  last modified
+-                                </tal:mod>
+-                                <span tal:replace="python:view.toLocalizedTime(item_modified,long_format=1)">
+-                                  August 16, 2001 at 23:35:59
+-                                </span>
+-                            </tal:modified>
+-
+-                            <metal:description define-slot="description_slot">
+-                                <tal:comment replace="nothing">
+-                                    Place custom listing info for custom types here
+-                                </tal:comment>
+-                            </metal:description>
+-                        </tal:byline>
+-                    </span>
+-                    </metal:block>
+-
+-                </header>
+-
+-                <p class="description discreet"
+-                    tal:condition="item_description"
+-                    tal:content="item_description">
+-                    description
+-                </p>
+-            </metal:block>
+-            </tal:block>
+-            </article>
+-        </div>
+-
+-        <div metal:use-macro="context/batch_macros/macros/navigation" />
+-
+-    </tal:listing>
+-
+-    <metal:empty metal:define-slot="no_items_in_listing">
+-        <p class="discreet"
+-           tal:condition="not: view/batch"
+-           tal:content="view/no_items_message">
+-            There are currently no items in this folder.
+-        </p>
+-    </metal:empty>
+-
+-    </tal:results>
+-    </metal:listingmacro>
+-
+-</metal:block>
+-</metal:content-core>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/listing_summary.pt b/plone/app/contenttypes/browser/templates/listing_summary.pt
+deleted file mode 100644
+index af12928..0000000
+--- a/plone/app/contenttypes/browser/templates/listing_summary.pt
++++ /dev/null
+@@ -1,71 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="context/main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:content-core fill-slot="content-core">
+-<metal:block use-macro="context/@@folder_listing/macros/content-core|context/@@standard_view/macros/content-core">
+-
+-    <metal:entries fill-slot="entries">
+-    <metal:block use-macro="context/@@folder_listing/macros/entries|context/@@standard_view/macros/entries">
+-    <metal:entry fill-slot="entry">
+-
+-                <div class="tileItem visualIEFloatFix" tal:define="obj item/getObject">
+-
+-                    <a href="#"
+-                        tal:condition="python:getattr(obj.aq_explicit, 'image', None)"
+-                        tal:attributes="href item_link">
+-                        <div class="tileImage">
+-                            <img src="" alt=""
+-                                 tal:define="scales obj/@@images;
+-                                             scale python:scales.scale('image', 'thumb')"
+-                                 tal:replace="structure python:scale and scale.tag(css_class='tileImage') or None" />
+-                        </div>
+-                    </a>
+-
+-                    <h2 class="tileHeadline" metal:define-macro="listitem">
+-
+-                        <a href="#"
+-                           class="summary url"
+-                           tal:attributes="href item_link;
+-                                           title item_type"
+-                           tal:content="item_title">
+-                            Item Title
+-                        </a>
+-
+-                    </h2>
+-
+-                    <div metal:use-macro="context/@@folder_listing/macros/document_byline|context/@@collection_view/macros/document_byline"></div>
+-
+-                    <p class="tileBody" tal:condition="item_description">
+-                        <span class="description" tal:content="item_description">
+-                            description
+-                        </span>
+-                    </p>
+-
+-                    <p class="tileFooter">
+-                        <a href=""
+-                           tal:attributes="href item_link"
+-                           i18n:translate="read_more">
+-                        Read More&hellip;
+-                        </a>
+-                    </p>
+-
+-                    <div class="visualClear"><!-- --></div>
+-
+-                </div>
+-
+-    </metal:entry>
+-    </metal:block>
+-    </metal:entries>
+-
+-</metal:block>
+-</metal:content-core>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/listing_tabular.pt b/plone/app/contenttypes/browser/templates/listing_tabular.pt
+deleted file mode 100644
+index 3bd8c4f..0000000
+--- a/plone/app/contenttypes/browser/templates/listing_tabular.pt
++++ /dev/null
+@@ -1,108 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="context/main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:content-core fill-slot="content-core">
+-<metal:block define-macro="content-core">
+-
+-    <div metal:define-macro="text-field-view"
+-         id="parent-fieldname-text" class="stx"
+-         tal:define="text view/text"
+-         tal:condition="text"
+-         tal:attributes="class view/text_class">
+-        <div metal:define-slot="inside" tal:replace="structure text">The body</div>
+-    </div>
+-
+-    <tal:results define="batch view/batch">
+-    <tal:listing condition="batch">
 -
 -
+-          <div metal:use-macro="context/batch_macros/macros/navigation" />
+-          <div class="has-table">
+-            <table class="listing"
+-                   summary="Content listing"
+-                   i18n:attributes="summary summary_content_listing;">
+-                <thead>
+-                    <tr>
+-                        <th class="nosort"
+-                            i18n:translate=""
+-                            tal:repeat="field view/tabular_fields"
+-                            tal:content="field">Field name</th>
+-                    </tr>
+-                </thead>
+-
+-                <tbody>
+-
+-            <tal:entries tal:repeat="item batch">
+-            <tal:block tal:define="item_url item/getURL;
+-                                   item_title item/Title;
+-                                   item_description item/Description;
+-                                   item_type item/PortalType;
+-                                   item_type_class python:'contenttype-' + view.normalizeString(item_type);
+-                                   item_wf_state item/review_state;
+-                                   item_wf_state_class python:'state-' + view.normalizeString(item_wf_state);
+-                                   item_creator item/Creator;
+-                                   item_link python:item_type in view.use_view_action and item_url+'/view' or item_url">
+-
+-                    <tr metal:define-macro="listitem"
+-                        tal:define="oddrow repeat/item/odd;"
+-                        tal:attributes="class python: oddrow and 'even' or 'odd'">
+-
+-                        <tal:block tal:repeat="field view/tabular_fields">
+-                            <td tal:condition="python:field not in ['Title', 'Creator', 'getIcon']"
+-                                tal:define="field_data python:view.tabular_fielddata(item, field)">
+-                                <tal:block tal:replace="field_data/value" />
+-                            </td>
+-                            <td tal:condition="python:field == 'Title'">
+-                                <a href="#"
+-                                   tal:attributes="href item_link;
+-                                                   class string:$item_wf_state_class $item_type_class;
+-                                                   title item_description;"
+-                                   tal:content="item_title">
+-                                    Item Title
+-                                </a>
+-                            </td>
+-                            <td tal:condition="python:field == 'Creator'"
+-                                tal:define="author python:view.pas_member.info(item_creator);
+-                                            name python:author['fullname'] or author['username']">
+-                                <a href="#"
+-                                   tal:condition="author"
+-                                   tal:attributes="href string:${view/navigation_root_url}/author/${item_creator}"
+-                                   tal:content="name">Jos Henken</a>
+-                            </td>
+-                        </tal:block>
+-
+-                    </tr>
+-
+-            </tal:block>
+-            </tal:entries>
+-
+-                </tbody>
+-            </table>
+-          </div>
+-
+-        <div metal:use-macro="context/batch_macros/macros/navigation" />
+-
+-    </tal:listing>
+-
+-    <metal:empty metal:define-slot="no_items_in_listing">
+-        <p class="discreet"
+-           tal:condition="not: view/batch"
+-           tal:content="view/no_items_message">
+-            There are currently no items in this folder.
+-        </p>
+-    </metal:empty>
+-
+-    </tal:results>
+-
+-</metal:block>
+-</metal:content-core>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/standard_view.pt b/plone/app/contenttypes/browser/templates/standard_view.pt
+new file mode 100644
+index 0000000..0664273
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/standard_view.pt
+@@ -0,0 +1,181 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="here/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++  <div metal:fill-slot="content-core">
++    <metal:block define-macro="content-core"
++                 tal:define="templateId template/getId">
++
++        <div metal:define-macro="text-field-view"
++             id="parent-fieldname-text" class="stx"
++             tal:define="has_text exists:context/aq_explicit/text/output;
++                         text python:has_text and here.text.output or ''"
++             tal:condition="text"
++             tal:attributes="class python:context.Format() in ('text/structured', 'text/x-rst', ) and 'stx' or 'plain'">
++            <div metal:define-slot="inside" tal:replace="structure text">The body</div>
++        </div>
++
++        <metal:listingmacro define-macro="listing">
++        <tal:results define="b_start python:request.get('b_start', 0);
++                             batch python:view.results(b_start=b_start);
++                             site_properties context/portal_properties/site_properties;
++                             use_view_action site_properties/typesUseViewActionInListings|python:();
++                             isAnon portal_state/anonymous;
++                             normalizeString nocall: context/plone_utils/normalizeString;
++                             toLocalizedTime nocall: plone_view/toLocalizedTime;
++                             show_about python:not isAnon or site_properties.allowAnonymousViewAbout;
++                             navigation_root_url portal_state/navigation_root_url;
++                             pas_member context/@@pas_member;">
++        <tal:listing condition="batch">
++
++            <div metal:define-slot="entries">
++                <article tal:repeat="item batch" metal:define-macro="entries">
++                <tal:block tal:define="item_url item/getURL;
++                                       item_id item/getId;
++                                       item_description item/Description;
++                                       item_type item/Type;
++                                       item_modified item/ModificationDate;
++                                       item_created item/CreationDate;
++                                       item_icon item/getIcon;
++                                       item_type_class item/ContentTypeClass;
++                                       item_wf_state_class python:'state-' + normalizeString(item.review_state());
++                                       item_creator item/Creator;
++                                       item_start python:(item.start or item.StartDate) if item_type == 'Event' else None;
++                                       item_end python:(item.end or item.EndDate) if item_type == 'Event' else None;
++                                       item_modified item/ModificationDate;
++                                       item_sametime python: item_start == item_end;
++                                       item_samedate python: (item_end - item_start &lt; 1) if item_type == 'Event' else False">
++                    <metal:block define-slot="entry">
++                    <header metal:define-macro="listitem"
++                        tal:attributes="class python:item_type == 'Event' and 'vevent' or ''">
++
++                        <span class="summary">
++                            <img tal:replace="structure item_icon" />
++                            <a href="#"
++                               tal:attributes="href python:item_type in use_view_action and item_url+'/view' or item_url;
++                                               class string:$item_type_class $item_wf_state_class url"
++                               tal:content="item/Title">
++                                Item Title
++                            </a>
++                        </span>
++
++                        <metal:block metal:define-macro="document_byline">
++                        <span class="documentByLine">
++                            <span tal:condition="python: item_type == 'Event' and item_sametime"
++                                  i18n:translate="label_event_byline_onlyfrom">
++                                 <abbr class="dtstart"
++                                       tal:attributes="title python:item_start"
++                                       tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                       i18n:name="start">from date</abbr>
++                            </span>
++                            <span tal:condition="python: item_type == 'Event' and item_samedate and not item_sametime"
++                                  i18n:translate="label_event_byline_samedate">
++                                 <abbr class="dtstart"
++                                       tal:attributes="title python:item_start"
++                                       tal:content="python:toLocalizedTime(item_start)"
++                                       i18n:name="start">from date</abbr> from
++                                 <abbr class="dtstart"
++                                       tal:attributes="title python:item_start"
++                                       tal:content="python:toLocalizedTime(item_start,time_only=1)"
++                                       i18n:name="starttime">from time</abbr> to
++                                 <abbr class="dtend"
++                                       tal:attributes="title python:item_end"
++                                       tal:content="python:toLocalizedTime(item_end,time_only=1)"
++                                       i18n:name="end">to time</abbr>
++                            </span>
++                            <span tal:condition="python: item_type == 'Event' and not item_samedate and not item_sametime"
++                                  i18n:translate="label_event_byline">
++                                  from
++                                       <abbr class="dtstart"
++                                       tal:attributes="title python:item_start"
++                                       tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                       i18n:name="start">from date</abbr> to
++                                 <abbr class="dtend"
++                                       tal:attributes="title python:item_end"
++                                       tal:content="python:toLocalizedTime(item_end,long_format=1)"
++                                       i18n:name="end">to date</abbr>
++                            </span>
++                             <span tal:condition="python: item_type == 'Event' and item.location"
++                                  i18n:translate="label_event_byline_location">&mdash;
++                                 <span tal:content="string:${item/location}"
++                                       class="location"
++                                       i18n:name="location">Oslo</span>,
++                            </span>
++                            <tal:byline condition="show_about">
++                                &mdash;
++
++                                <tal:name tal:condition="item_creator"
++                                    tal:define="author python:pas_member.info(item_creator);
++                                                creator_short_form author/username;
++                                                creator_long_form string:?author=${author/username};
++                                                creator_is_openid python:'/' in creator_short_form;
++                                                creator_id python:(creator_short_form, creator_long_form)[creator_is_openid];">
++                                  <span i18n:translate="label_by_author">
++                                    by
++                                  <a href="#"
++                                     tal:attributes="href string:${navigation_root_url}/author/${item_creator}"
++                                     tal:content="author/name_or_id"
++                                     tal:omit-tag="not:author"
++                                     i18n:name="author">
++                                    Bob Dobalina
++                                  </a>
++                                  </span>
++
++                                </tal:name>
++
++                                <tal:modified condition="python: item_type != 'Event'">
++                                    &mdash;
++                                    <tal:mod i18n:translate="box_last_modified">
++                                      last modified
++                                    </tal:mod>
++                                    <span tal:replace="python:toLocalizedTime(item_modified,long_format=1)">
++                                      August 16, 2001 at 23:35:59
++                                    </span>
++                                </tal:modified>
++
++                                <metal:description define-slot="description_slot">
++                                    <tal:comment replace="nothing">
++                                        Place custom listing info for custom types here
++                                    </tal:comment>
++                                </metal:description>
++                            </tal:byline>
++                        </span>
++                        </metal:block>
++
++                    </header>
++
++                    <span class="description"
++                        tal:condition="item_description"
++                        tal:content="item_description">
++                      description
++                    </span>
++                </metal:block>
++                </tal:block>
++                </article>
++            </div>
++
++            <div metal:use-macro="context/batch_macros/macros/navigation" />
++
++        </tal:listing>
++        <metal:empty metal:define-slot="no_items_in_listing">
++            <p class="discreet"
++               tal:condition="not: batch"
++               i18n:translate="description_no_items_in_folder">
++                There are currently no items in this folder.
++            </p>
++        </metal:empty>
++
++        </tal:results>
++        </metal:listingmacro>
++
++    </metal:block>
++  </div>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/summary_view.pt b/plone/app/contenttypes/browser/templates/summary_view.pt
+new file mode 100644
+index 0000000..880f1e0
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/summary_view.pt
+@@ -0,0 +1,67 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="here/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++<metal:content-core fill-slot="content-core">
++<metal:block use-macro="context/standard_view/macros/content-core">
++
++    <metal:entries fill-slot="entries">
++    <metal:block use-macro="context/standard_view/macros/entries">
++    <metal:entry fill-slot="entry">
++
++        <div class="tileItem visualIEFloatFix"
++             tal:define="obj item/getObject">
++            <a href="#"
++                  tal:condition="python:getattr(obj.aq_explicit, 'image', None)"
++                  tal:attributes="href item/getURL">
++                  <div class="tileImage">
++                      <img src="" alt=""
++                           tal:define="scales obj/@@images;
++                                       scale python:scales.scale('image', 'thumb')"
++                           tal:replace="structure python:scale and scale.tag(css_class='tileImage') or None" />
++                  </div>
++            </a>
++
++            <h2 class="tileHeadline" metal:define-macro="listitem">
++                <a href="#"
++                   class="summary url"
++                   tal:attributes="href python:item_type in use_view_action and item_url+'/view' or item_url;"
++                   tal:content="item/Title">
++                    Item Title
++                </a>
++            </h2>
++
++            <div metal:use-macro="context/standard_view/macros/document_byline"></div>
++
++            <p class="tileBody" tal:condition="item_description">
++                <span class="description" tal:content="item_description">
++                    description
++                </span>
++            </p>
++
++            <p class="tileFooter">
++                <a href=""
++                   tal:attributes="href python:item_type in use_view_action and item_url+'/view' or item_url;"
++                   i18n:translate="read_more">
++                Read More&hellip;
++                </a>
++            </p>
++
++            <div class="visualClear"><!-- --></div>
++        </div>
++
++    </metal:entry>
++    </metal:block>
++    </metal:entries>
++
++</metal:block>
++</metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/tabular_view.pt b/plone/app/contenttypes/browser/templates/tabular_view.pt
+new file mode 100644
+index 0000000..4f2ea22
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/tabular_view.pt
+@@ -0,0 +1,77 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="here/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++    <div metal:fill-slot="content-core"
++         tal:define="b_start python:request.get('b_start', 0);
++                     batch python:view.results(b_start=b_start);">
++
++         <div metal:define-macro="text-field-view"
++              id="parent-fieldname-text" class="stx"
++              tal:define="has_text exists:context/aq_explicit/text/output;
++                          text python:has_text and here.text.output or ''"
++              tal:condition="text"
++              tal:attributes="class python:here.Format() in ('text/structured', 'text/x-rst', ) and 'stx' or 'plain'">
++             <div metal:define-slot="inside" tal:replace="structure text">The body</div>
++         </div>
++
++        <p class="discreet"
++           tal:condition="not: batch"
++           i18n:translate="description_no_items_in_folder">
++            There are currently no items in this folder.
++        </p>
++
++        <table class="listing" summary="Content listing"
++            i18n:attributes="summary"
++            tal:condition="batch"
++            tal:define="fields view/selectedViewFields;
++                        pas_member context/@@pas_member">
++            <thead>
++                <tr>
++                    <th class="nosort"
++                        i18n:translate=""
++                        tal:repeat="field fields"
++                        tal:content="python: field[1]">Field name</th>
++                </tr>
++            </thead>
++            <tbody>
++            <tal:block tal:repeat="item batch">
++                <tr tal:define="oddrow repeat/item/odd;"
++                    tal:attributes="class python:oddrow and 'even' or 'odd'" >
++                <tal:block tal:repeat="field fields">
++                    <td tal:condition="python:field[0] not in ['Title', 'Creator', ]"
++                        tal:define="field_data python:getattr(item, field[0])">
++                        <tal:block tal:replace="field_data" />
++                    </td>
++                    <td tal:condition="python:field[0] == 'Title'">
++                        <a href="#"
++                           tal:attributes="href item/getURL;
++                                           title item/Title"
++                           tal:content="item/Title">Item Title</a>
++                    </td>
++                    <td tal:condition="python:field[0] == 'Creator'"
++                        tal:define="author python:pas_member.info(item.Creator());
++                                    name python:author['fullname'] or author['username']">
++                        <a href="#"
++                           tal:condition="author"
++                           tal:attributes="href string:author/${author/username};
++                                           title name"
++                           tal:content="name">Jos Henken</a>
++                    </td>
++                </tal:block>
++                </tr>
++            </tal:block>
++            </tbody>
++        </table>
++
++        <div metal:use-macro="context/batch_macros/macros/navigation" />
++  </div>
++
++</body>
++</html>
+
+
+Repository: plone.app.contenttypes
+Branch: refs/heads/master
+Date: 2015-02-24T08:46:18+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.contenttypes/commit/9e657728db7c5bcc9ae83965076a4e9f1ddbc509
+
+Merge pull request #214 from plone/revert-202-thet-unifiedlistings
+
+Revert "unified folder/collection listings"
+
+Files changed:
+A plone/app/contenttypes/browser/templates/all_content.pt
+A plone/app/contenttypes/browser/templates/folder_full_view.pt
+A plone/app/contenttypes/browser/templates/folder_full_view_item.pt
+A plone/app/contenttypes/browser/templates/folder_listing.pt
+A plone/app/contenttypes/browser/templates/folder_summary_view.pt
+A plone/app/contenttypes/browser/templates/folder_tabular_view.pt
+A plone/app/contenttypes/browser/templates/standard_view.pt
+A plone/app/contenttypes/browser/templates/summary_view.pt
+A plone/app/contenttypes/browser/templates/tabular_view.pt
+M buildout.d/checkouts.cfg
+M buildout.d/development.cfg
+M buildout.d/sources.cfg
+M docs/CHANGES.rst
+M plone/app/contenttypes/behaviors/collection.py
+M plone/app/contenttypes/browser/collection.py
+M plone/app/contenttypes/browser/configure.zcml
+M plone/app/contenttypes/browser/templates/folder_album_view.pt
+D plone/app/contenttypes/browser/folder.py
+D plone/app/contenttypes/browser/full_view.py
+D plone/app/contenttypes/browser/templates/full_view.pt
+D plone/app/contenttypes/browser/templates/full_view_item.pt
+D plone/app/contenttypes/browser/templates/listing.pt
+D plone/app/contenttypes/browser/templates/listing_summary.pt
+D plone/app/contenttypes/browser/templates/listing_tabular.pt
+
+diff --git a/buildout.d/checkouts.cfg b/buildout.d/checkouts.cfg
+index 6cb2d67..d5798b1 100644
+--- a/buildout.d/checkouts.cfg
++++ b/buildout.d/checkouts.cfg
+@@ -1,4 +1,3 @@
+ [buildout]
+ always-checkout = force
+ auto-checkout +=
+-    plone.app.dexterity
+diff --git a/buildout.d/development.cfg b/buildout.d/development.cfg
+index 6ff9460..ae61c81 100644
+--- a/buildout.d/development.cfg
++++ b/buildout.d/development.cfg
+@@ -4,10 +4,10 @@ extends =
+ 
+ eggs +=
+     plone.reload
+-#    Products.PDBDebugMode
+-#    Products.DocFinderTab
+-#    aws.zope2zcmldoc
+-#    collective.profiler
++    Products.PDBDebugMode
++    Products.DocFinderTab
++    aws.zope2zcmldoc
++    collective.profiler
+ 
+ extensions +=
+     mr.developer
+diff --git a/buildout.d/sources.cfg b/buildout.d/sources.cfg
+index 7ef2979..d253567 100644
+--- a/buildout.d/sources.cfg
++++ b/buildout.d/sources.cfg
+@@ -5,4 +5,3 @@ plone = git://github.com/plone
+ plone_push = git@github.com:plone
+ 
+ [sources]
+-plone.app.dexterity = git ${remotes:plone}/plone.app.dexterity.git pushurl=${remotes:plone_push}/plone.app.dexterity.git branch=2.0.x
+diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
+index 17b9a2b..9cffa9d 100644
+--- a/docs/CHANGES.rst
++++ b/docs/CHANGES.rst
+@@ -4,16 +4,6 @@ Changelog
+ 1.2 (unreleased)
+ ----------------
+ 
+-- Refactor full_view and incorporate fixes from collective.fullview to
+-  1) display the default views of it's items, 2) be recursively callable
+-  and 3) have the same templates for folder and collections.
+-  [thet] 
+-
+-- Refactor folder_listing, folder_summary_view, folder_tabular_view for folders
+-  and standard_view (collection_view), summary_view and tabular_view for
+-  collections to use the same templates and base view class.
+-  [thet]
+-
+ - In the file view, render HTML5 ``<audio>`` or ``<video>`` tags for audio
+   respectively video file types. Ancient browsers, which do not support that,
+   just don't render these tags.
+diff --git a/plone/app/contenttypes/behaviors/collection.py b/plone/app/contenttypes/behaviors/collection.py
+index 58c0773..871e570 100644
+--- a/plone/app/contenttypes/behaviors/collection.py
++++ b/plone/app/contenttypes/behaviors/collection.py
+@@ -187,8 +187,7 @@ def selectedViewFields(self):
+                            name='plone.app.contenttypes.metadatafields')
+         for field in vocab(self.context):
+             _mapping[field.value] = (field.value, field.title)
+-        ret = [_mapping[field] for field in self.customViewFields]
+-        return ret
++        return [_mapping[field] for field in self.customViewFields]
+ 
+     # Getters and setters for our fields.
+ 
+diff --git a/plone/app/contenttypes/browser/collection.py b/plone/app/contenttypes/browser/collection.py
+index a666659..ddb2f6f 100644
+--- a/plone/app/contenttypes/browser/collection.py
++++ b/plone/app/contenttypes/browser/collection.py
+@@ -1,42 +1,25 @@
+ # -*- coding: utf-8 -*-
+ from Acquisition import aq_inner
++from Products.Five import BrowserView
+ from plone.app.contenttypes.behaviors.collection import ICollection
+-from plone.app.contenttypes.browser.folder import FolderView
+-from plone.app.contenttypes import _
+ 
+ 
+-class CollectionView(FolderView):
+-
+-    def __init__(self, *args, **kwargs):
+-        super(CollectionView, self).__init__(*args, **kwargs)
+-        context = aq_inner(self.context)
+-        self.collection_behavior = ICollection(context)
+-        self.b_size = self.collection_behavior.item_count
++class CollectionView(BrowserView):
+ 
+     def results(self, **kwargs):
+-        return self.collection_behavior.results(
+-            b_start=self.b_start,
+-            b_size=self.b_size,
+-            **kwargs
+-        )
++        context = aq_inner(self.context)
++        wrapped = ICollection(context)
++        return wrapped.results(**kwargs)
+ 
+     def getFoldersAndImages(self, **kwargs):
+         context = aq_inner(self.context)
+         wrapped = ICollection(context)
+         return wrapped.getFoldersAndImages(**kwargs)
+ 
+-    def tabular_fields(self):
++    def selectedViewFields(self):
+         """Returns a list of all metadata fields from the catalog that were
+            selected.
+         """
+         context = aq_inner(self.context)
+         wrapped = ICollection(context)
+-        fields = wrapped.selectedViewFields()
+-        fields = [field[0] for field in fields]
+-        return fields
+-
+-    def no_items_message(self):
+-        return _(
+-            'description_no_results_found',
+-            default=u"No results were found."
+-        )
++        return wrapped.selectedViewFields()
+diff --git a/plone/app/contenttypes/browser/configure.zcml b/plone/app/contenttypes/browser/configure.zcml
+index e0fa89f..a3fc913 100644
+--- a/plone/app/contenttypes/browser/configure.zcml
++++ b/plone/app/contenttypes/browser/configure.zcml
+@@ -19,7 +19,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.interfaces.ICollection"
+     class=".collection.CollectionView"
+-    template="templates/listing.pt"
++    template="templates/standard_view.pt"
+     />
+ 
+   <browser:page
+@@ -27,7 +27,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.interfaces.ICollection"
+     class=".collection.CollectionView"
+-    template="templates/listing.pt"
++    template="templates/standard_view.pt"
+     />
+ 
+   <!-- VIEWS FOR ANYTHING WITH THE COLLECTION BEHAVIOR.
+@@ -41,7 +41,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.behaviors.collection.ISyndicatableCollection"
+     class=".collection.CollectionView"
+-    template="templates/listing.pt"
++    template="templates/standard_view.pt"
+     />
+ 
+   <browser:page
+@@ -49,7 +49,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.behaviors.collection.ISyndicatableCollection"
+     class=".collection.CollectionView"
+-    template="templates/listing_summary.pt"
++    template="templates/summary_view.pt"
+     />
+ 
+   <browser:page
+@@ -57,7 +57,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.behaviors.collection.ISyndicatableCollection"
+     class=".collection.CollectionView"
+-    template="templates/full_view.pt"
++    template="templates/all_content.pt"
+     />
+ 
+   <browser:page
+@@ -65,7 +65,7 @@
+     permission="zope2.View"
+     for="plone.app.contenttypes.behaviors.collection.ISyndicatableCollection"
+     class=".collection.CollectionView"
+-    template="templates/listing_tabular.pt"
++    template="templates/tabular_view.pt"
+     />
+ 
+   <browser:page
+@@ -128,8 +128,7 @@
+     name="folder_listing"
+     for="plone.dexterity.interfaces.IDexterityContainer"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing.pt"
++    template="templates/folder_listing.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Standard view"
+@@ -139,8 +138,7 @@
+     name="folder_listing"
+     for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing.pt"
++    template="templates/folder_listing.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Standard view"
+@@ -150,19 +148,17 @@
+     name="folder_full_view"
+     for="plone.dexterity.interfaces.IDexterityContainer"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/full_view.pt"
++    template="templates/folder_full_view.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="All content"
+     />
+ 
+   <browser:page
+-    name="full_view_item"
++    name="folder_full_view_item"
+     for="Products.CMFCore.interfaces._content.IContentish"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".full_view.FullViewItem"
+-    template="templates/full_view_item.pt"
++    template="templates/folder_full_view_item.pt"
+     permission="zope2.View"
+     />
+ 
+@@ -170,8 +166,7 @@
+     name="folder_summary_view"
+     for="plone.dexterity.interfaces.IDexterityContainer"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing_summary.pt"
++    template="templates/folder_summary_view.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Summary view"
+@@ -181,8 +176,7 @@
+     name="folder_summary_view"
+     for="Products.CMFPlone.interfaces.siteroot.IPloneSiteRoot"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing_summary.pt"
++    template="templates/folder_summary_view.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Summary view"
+@@ -192,19 +186,7 @@
+     name="folder_tabular_view"
+     for="plone.dexterity.interfaces.IDexterityContainer"
+     layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing_tabular.pt"
+-    permission="zope2.View"
+-    menu="plone_displayviews"
+-    title="Tabular view"
+-    />
+-
+-  <browser:page
+-    name="folder_tabular_view"
+-    for="Products.CMFPlone.interfaces.siteroot.IPloneSiteRoot"
+-    layer="plone.app.contenttypes.interfaces.IPloneAppContenttypesLayer"
+-    class=".folder.FolderView"
+-    template="templates/listing_tabular.pt"
++    template="templates/folder_tabular_view.pt"
+     permission="zope2.View"
+     menu="plone_displayviews"
+     title="Tabular view"
+diff --git a/plone/app/contenttypes/browser/folder.py b/plone/app/contenttypes/browser/folder.py
+deleted file mode 100644
+index 1fbde08..0000000
+--- a/plone/app/contenttypes/browser/folder.py
++++ /dev/null
+@@ -1,148 +0,0 @@
+-# -*- coding: utf-8 -*-
+-from Acquisition import aq_base
+-from Products.CMFPlone.PloneBatch import Batch
+-from Products.CMFPlone.utils import safe_callable
+-from Products.Five import BrowserView
+-from plone.app.contenttypes import _
+-from plone.event.interfaces import IEvent
+-from plone.registry.interfaces import IRegistry
+-from zope.component import getMultiAdapter
+-from zope.component import getUtility
+-from zope.contentprovider.interfaces import IContentProvider
+-
+-HAS_SECURITY_SETTINGS = True
+-try:
+-    from Products.CMFPlone.interfaces import ISecuritySchema
+-except ImportError:
+-    HAS_SECURITY_SETTINGS = False
 -
 -
+-class FolderView(BrowserView):
 -
-diff --git a/mockup/patterns/structure/pattern.js b/mockup/patterns/structure/pattern.js
-index dcd96aa..13c7fd1 100644
---- a/mockup/patterns/structure/pattern.js
-+++ b/mockup/patterns/structure/pattern.js
-@@ -67,6 +67,8 @@ define([
-         'review_state'
-       ],
-       availableColumns: {
-+        'id': _t('ID'),
-+        'Title': _t('Title'),
-         'ModificationDate': _t('Last modified'),
-         'EffectiveDate': _t('Published'),
-         'ExpirationDate': _t('Expiration'),
+-    def __init__(self, context, request):
+-        super(FolderView, self).__init__(context, request)
+-
+-        registry = getUtility(IRegistry)
+-
+-        self.plone_view = getMultiAdapter(
+-            (context, request), name=u"plone")
+-
+-        self.portal_state = getMultiAdapter(
+-            (context, request), name=u"plone_portal_state")
+-        self.friendly_types = self.portal_state.friendly_types()
+-        self.isAnon = self.portal_state.anonymous()
+-        self.navigation_root_url = self.portal_state.navigation_root_url()
+-
+-        # BBB
+-        self.site_properties = context.restrictedTraverse(
+-            'portal_properties').site_properties
+-        self.use_view_action = getattr(
+-            self.site_properties, 'typesUseViewActionInListings', ())
+-
+-        if HAS_SECURITY_SETTINGS:
+-            security_settings = registry.forInterface(
+-                ISecuritySchema, prefix="plone")
+-            self.show_about = getattr(
+-                security_settings, 'allow_anon_views_about', False
+-            ) or not self.isAnon
+-        else:
+-            # BBB
+-            self.show_about = getattr(
+-                self.site_properties, 'allowAnonymousViewAbout', False
+-            ) or not self.isAnon
+-
+-        self.pas_member = getMultiAdapter(
+-            (context, request), name=u"pas_member")
+-
+-        self.text_class = None
+-
+-        limit_display = getattr(self.request, 'limit_display', None)
+-        limit_display = int(limit_display) if limit_display is not None else 20
+-        b_size = getattr(self.request, 'b_size', None)
+-        self.b_size = int(b_size) if b_size is not None else limit_display
+-        b_start = getattr(self.request, 'b_start', None)
+-        self.b_start = int(b_start) if b_start is not None else 0
+-
+-    def _content_filter(self):
+-        content_filter = getattr(self.request, 'contentFilter', None)
+-        content_filter = dict(content_filter) if content_filter else {}
+-        content_filter.setdefault('portal_type', self.friendly_types)
+-        content_filter.setdefault('batch', True)
+-        content_filter.setdefault('b_size', self.b_size)
+-        content_filter.setdefault('b_start', self.b_start)
+-        return content_filter
+-
+-    def results(self):
+-        results = self.context.restrictedTraverse(
+-            '@@folderListing')(**self._content_filter())
+-        return results
+-
+-    def batch(self):
+-        batch = Batch(
+-            self.results(), size=self.b_size, start=self.b_start, orphan=1)
+-        return batch
+-
+-    def normalizeString(self, text):
+-        return self.plone_view.normalizeString(text)
+-
+-    def toLocalizedTime(self, time, long_format=None, time_only=None):
+-        return self.plone_view.toLocalizedTime(time, long_format, time_only)
+-
+-    def text(self):
+-        textfield = getattr(aq_base(self.context), 'text', None)
+-        text = getattr(textfield, 'output', None)
+-        if text:
+-            self.text_class = 'stx' if textfield.mimeType in (
+-                'text/structured', 'text/x-rst', 'text/restructured'
+-            ) else 'plain'
+-        return text
+-
+-    def tabular_fields(self):
+-        ret = []
+-        ret.append('Title')
+-        if self.show_about:
+-            ret.append('Creator')
+-        ret.append('Type')
+-        if self.show_about:
+-            ret.append('ModificationDate')
+-        return ret
+-
+-    def tabular_fielddata(self, item, fieldname):
+-        value = getattr(item, fieldname, '')
+-        if safe_callable(value):
+-            value = value()
+-        if fieldname in [
+-                'CreationDate',
+-                'ModificationDate',
+-                'Date',
+-                'EffectiveDate',
+-                'ExpirationDate',
+-                'effective',
+-                'expires',
+-                'start',
+-                'end',
+-                'created',
+-                'modified',
+-                'last_comment_date']:
+-            value = self.toLocalizedTime(value, long_format=1)
+-
+-        return {
+-            # 'title': _(fieldname, default=fieldname),
+-            'value': value
+-        }
+-
+-    def is_event(self, obj):
+-        return IEvent.providedBy(obj)
+-
+-    def formatted_date(self, item):
+-        provider = getMultiAdapter(
+-            (self.context, self.request, self),
+-            IContentProvider, name='formatted_date'
+-        )
+-        return provider(item)
+-
+-    def no_items_message(self):
+-        return _(
+-            'description_no_items_in_folder',
+-            default=u"There are currently no items in this folder."
+-        )
+diff --git a/plone/app/contenttypes/browser/full_view.py b/plone/app/contenttypes/browser/full_view.py
+deleted file mode 100644
+index 58201f7..0000000
+--- a/plone/app/contenttypes/browser/full_view.py
++++ /dev/null
+@@ -1,35 +0,0 @@
+-from Products.Five.browser import BrowserView
+-from Products.CMFCore.utils import getToolByName
+-from zope.publisher.interfaces.browser import IBrowserView
+-
+-
+-class FullViewItem(BrowserView):
+-
+-    def __init__(self, context, request):
+-        super(FullViewItem, self).__init__(context, request)
+-        self.item_type = self.context.portal_type
+-
+-    @property
+-    def default_view(self):
+-        context = self.context
+-        item_layout = context.getLayout()
+-        default_view = context.restrictedTraverse(item_layout)
+-        return default_view
+-
+-    @property
+-    def item_macros(self):
+-        default_view = self.default_view
+-        if IBrowserView.providedBy(default_view):
+-            # IBrowserView
+-            return default_view.index.macros
+-        else:
+-            # FSPageTemplate
+-            return default_view.macros
+-
+-    @property
+-    def item_url(self):
+-        context = self.context
+-        url = context.absolute_url()
+-        props = getToolByName(context, 'portal_properties')
+-        use_view_action = props.site_properties.typesUseViewActionInListings
+-        return self.item_type in use_view_action and '%s/view' % url or url
+diff --git a/plone/app/contenttypes/browser/templates/all_content.pt b/plone/app/contenttypes/browser/templates/all_content.pt
+new file mode 100644
+index 0000000..7c78024
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/all_content.pt
+@@ -0,0 +1,29 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="here/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++<metal:content-core fill-slot="content-core">
++<metal:block use-macro="context/standard_view/macros/content-core">
++
++    <metal:entries fill-slot="entries">
++    <metal:block use-macro="context/standard_view/macros/entries">
++    <metal:entry fill-slot="entry">
++
++        <div tal:define="realobject python:item.getObject()"
++             tal:replace="structure realobject/folder_full_view_item" />
++
++    </metal:entry>
++    </metal:block>
++    </metal:entries>
++
++</metal:block>
++</metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_album_view.pt b/plone/app/contenttypes/browser/templates/folder_album_view.pt
+index e5b5609..010170b 100644
+--- a/plone/app/contenttypes/browser/templates/folder_album_view.pt
++++ b/plone/app/contenttypes/browser/templates/folder_album_view.pt
+@@ -88,9 +88,8 @@
+          metal:use-macro="here/batch_macros/macros/navigation" />
+ 
+     <tal:listing condition="otherContents"
+-                 define="folderContents otherContents;
+-                         view nocall:here/@@folder_listing">
+-        <metal:listing metal:use-macro="view/macros/listing">
++                 define="folderContents otherContents">
++        <metal:listing metal:use-macro="here/folder_listing/macros/listing">
+             <metal:empty metal:fill-slot="no_items_in_listing"></metal:empty>
+         </metal:listing>
+ 
+diff --git a/plone/app/contenttypes/browser/templates/folder_full_view.pt b/plone/app/contenttypes/browser/templates/folder_full_view.pt
+new file mode 100644
+index 0000000..cb2671b
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_full_view.pt
+@@ -0,0 +1,26 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="context/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++    <metal:content-core fill-slot="content-core">
++        <metal:block use-macro="context/folder_listing/macros/content-core">
++            <!-- we don't want the dl -->
++            <metal:entries fill-slot="entries">
++                <metal:block use-macro="context/folder_listing/macros/entries">
++                    <metal:entry fill-slot="entry">
++                        <div tal:define="obj_view python:item.getObject().restrictedTraverse('folder_full_view_item')"
++                             tal:replace="structure python:obj_view()" />
++                    </metal:entry>
++                </metal:block>
++            </metal:entries>
++        </metal:block>
++    </metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_full_view_item.pt b/plone/app/contenttypes/browser/templates/folder_full_view_item.pt
+new file mode 100644
+index 0000000..55e3477
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_full_view_item.pt
+@@ -0,0 +1,80 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      i18n:domain="plone"
++      tal:omit-tag="">
++
++<body tal:omit-tag="">
++
++    <div class="item visualIEFloatFix"
++         tal:define="portal_state context/@@plone_portal_state;
++                     context_state context/@@plone_context_state;
++                     plone_view context/@@plone;
++                     plone_layout context/@@plone_layout;
++                     lang portal_state/language;
++                     view nocall:view | nocall: plone_view;
++                     dummy python: plone_layout.mark_view(view);
++                     portal_url portal_state/portal_url;
++                     checkPermission nocall: context/portal_membership/checkPermission;
++                     site_properties context/portal_properties/site_properties;
++                     item_type context/portal_type;
++                     item_layout here/getLayout;
++                     override python: {'Link': 'link_view'};
++                     item_macro python:path('here/%s/macros/content-core | nothing' % override.get(item_type, item_layout));
++                     use_view_action site_properties/typesUseViewActionInListings|python:();
++                     item_url context/absolute_url;
++                     normalizeString nocall: context/plone_utils/normalizeString;
++                     item_type_class python: 'contenttype-' + normalizeString(item_type);
++                     kss_inline_editable python:False;
++                     rendering_error python:[];
++                     ">
++
++        <div tal:replace="structure provider:plone.abovecontenttitle" />
++
++        <h2 class="headline">
++            <a href="#" class="summary url" tal:content="context/Title"
++               tal:attributes="href python:item_url+'/view' if item_type in use_view_action else item_url;">
++               Title or id
++             </a>
++        </h2>
++
++        <div tal:replace="structure provider:plone.belowcontenttitle" />
++
++        <div class="description"
++             tal:content="context/Description"
++             tal:condition="context/Description">
++            Description
++        </div>
++
++        <tal:block tal:condition="item_macro" tal:on-error="python:rendering_error.append(True)">
++
++            <div tal:replace="structure provider:plone.abovecontentbody" />
++
++            <div metal:use-macro="item_macro">
++                content
++            </div>
++
++            <div tal:replace="structure provider:plone.belowcontentbody" />
++
++        </tal:block>
++
++        <tal:block tal:condition="rendering_error">
++            <!-- Error rendering item macro -->
++        </tal:block>
++
++        <p class="more" tal:condition="python:not(item_macro) or rendering_error">
++            <a href=""
++               tal:attributes="href python: item_url+'/view' if item_type in use_view_action else item_url;"
++               i18n:translate="read_more">
++                Read More&hellip;
++            </a>
++        </p>
++
++        <div class="visualClear"><!-- --></div>
++
++    </div>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_listing.pt b/plone/app/contenttypes/browser/templates/folder_listing.pt
+new file mode 100644
+index 0000000..d63282c
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_listing.pt
+@@ -0,0 +1,194 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="context/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++<metal:content-core fill-slot="content-core">
++<metal:block define-macro="content-core"
++                    tal:define="templateId template/getId">
++
++    <div metal:define-macro="text-field-view"
++         id="parent-fieldname-text" class="stx"
++         tal:define="has_text exists:context/aq_explicit/text/output;
++                     text python:has_text and here.text.output or ''"
++         tal:condition="text"
++         tal:attributes="class python: context.Format() in ('text/structured',
++                                               'text/x-rst', ) and  'stx' or 'plain'">
++        <div metal:define-slot="inside" tal:replace="structure text">The body</div>
++    </div>
++
++    <metal:listingmacro define-macro="listing">
++    <tal:foldercontents define="contentFilter contentFilter|request/contentFilter|nothing;
++                        contentFilter python:contentFilter and dict(contentFilter) or {};
++                        limit_display limit_display|request/limit_display|nothing;
++                        limit_display python:limit_display and int(limit_display) or None;
++                        more_url more_url|request/more_url|string:folder_contents;
++                        is_a_topic python:context.portal_type=='Topic';
++                        friendly_types portal_state/friendly_types;
++                        dummy python:not is_a_topic and contentFilter.setdefault('portal_type', friendly_types);
++                        folderContents folderContents|nothing; folderContents python:folderContents or is_a_topic and context.queryCatalog(batch=True, **contentFilter) or context.getFolderContents(contentFilter, batch=True, b_size=limit_display or 100);
++                        site_properties context/portal_properties/site_properties;
++                        use_view_action site_properties/typesUseViewActionInListings|python:();
++                        Batch python:modules['Products.CMFPlone'].Batch;
++                        plone_layout context/@@plone_layout;
++                        b_start python:request.get('b_start', 0);
++                        batch python:isinstance(folderContents, Batch) and folderContents or Batch(folderContents, limit_display or 100, int(b_start), orphan=1);
++                        isAnon portal_state/anonymous;
++                        normalizeString nocall: context/plone_utils/normalizeString;
++                        toLocalizedTime nocall: plone_view/toLocalizedTime;
++                        show_about python:not isAnon or site_properties.allowAnonymousViewAbout;
++                        navigation_root_url portal_state/navigation_root_url;
++                        pas_member context/@@pas_member;">
++    <tal:listing condition="batch">
++
++        <ul metal:define-slot="entries">
++            <li tal:repeat="item batch" metal:define-macro="entries">
++            <tal:block tal:define="item_url item/getURL|item/absolute_url;
++                                   item_id item/getId|item/id;
++                                   item_title_or_id item/pretty_title_or_id;
++                                   item_description item/Description;
++                                   item_type item/portal_type;
++                                   item_type_title item/Type;
++                                   item_modified item/ModificationDate;
++                                   item_created item/CreationDate;
++                                   item_icon python:plone_layout.getIcon(item);
++                                   item_type_class python:'contenttype-' + normalizeString(item_type);
++                                   item_wf_state item/review_state|python: context.portal_workflow.getInfoFor(item, 'review_state', '');
++                                   item_wf_state_class python:'state-' + normalizeString(item_wf_state);
++                                   item_creator item/Creator;
++                                   item_start item/start|item/StartDate|nothing;
++                                   item_end item/end|item/EndDate|nothing;
++                                   item_sametime python: item_start == item_end;
++                                   item_samedate python: (item_end - item_start &lt; 1) if item_type == 'Event' else False">
++                <metal:block define-slot="entry">
++                <span metal:define-macro="listitem"
++                    tal:define="item_type_event_class python: item_type == 'Event' and 'vevent' or None"
++                    tal:attributes="class item_type_event_class|nothing">
++
++                    <span class="summary">
++                        <img tal:replace="structure item_icon/html_tag" />
++                        <a href="#"
++                           tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url;
++                                           class string:$item_type_class $item_wf_state_class url"
++                           tal:content="item_title_or_id">
++                            Item Title
++                        </a>
++                    </span>
++
++                    <span class="documentByLine">
++                        <span tal:condition="python: item_type == 'Event' and item_sametime"
++                              i18n:translate="label_event_byline_onlyfrom">
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                   i18n:name="start">from date</abbr>
++                        </span>
++                        <span tal:condition="python: item_type == 'Event' and item_samedate and not item_sametime"
++                              i18n:translate="label_event_byline_samedate">
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start)"
++                                   i18n:name="start">from date</abbr> from
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,time_only=1)"
++                                   i18n:name="starttime">from time</abbr> to
++                             <abbr class="dtend"
++                                   tal:attributes="title python:item_end"
++                                   tal:content="python:toLocalizedTime(item_end,time_only=1)"
++                                   i18n:name="end">to time</abbr>
++                        </span>
++                        <span tal:condition="python: item_type == 'Event' and not item_samedate and not item_sametime"
++                              i18n:translate="label_event_byline">
++                              from
++                                   <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                   i18n:name="start">from date</abbr> to
++                             <abbr class="dtend"
++                                   tal:attributes="title python:item_end"
++                                   tal:content="python:toLocalizedTime(item_end,long_format=1)"
++                                   i18n:name="end">to date</abbr>
++                        </span>
++                         <span tal:condition="python: item_type == 'Event' and item.location"
++                              i18n:translate="label_event_byline_location">&mdash;
++                             <span tal:content="string:${item/location}"
++                                   class="location"
++                                   i18n:name="location">Oslo</span>,
++                        </span>
++                        <tal:byline condition="show_about">
++                            &mdash;
++
++                            <tal:name tal:condition="item_creator"
++                                tal:define="author python:pas_member.info(item_creator);
++                                            creator_short_form author/username;
++                                            creator_long_form string:?author=${author/username};
++                                            creator_is_openid python:'/' in creator_short_form;
++                                            creator_id python:(creator_short_form, creator_long_form)[creator_is_openid];">
++                              <span i18n:translate="label_by_author">
++                                by
++                              <a href="#"
++                                 tal:attributes="href string:${navigation_root_url}/author/${item_creator}"
++                                 tal:content="author/name_or_id"
++                                 tal:omit-tag="not:author"
++                                 i18n:name="author">
++                                Bob Dobalina
++                              </a>
++                              </span>
++
++                            </tal:name>
++
++                            <tal:modified condition="python: item_type != 'Event'">
++                                &mdash;
++                                <tal:mod i18n:translate="box_last_modified">
++                                  last modified
++                                </tal:mod>
++                                <span tal:replace="python:toLocalizedTime(item_modified,long_format=1)">
++                                  August 16, 2001 at 23:35:59
++                                </span>
++                            </tal:modified>
++
++                            <metal:description define-slot="description_slot">
++                                <tal:comment replace="nothing">
++                                    Place custom listing info for custom types here
++                                </tal:comment>
++                            </metal:description>
++                        </tal:byline>
++                    </span>
++
++                </span>
++
++                <p class="description discreet"
++                    tal:condition="item_description"
++                    tal:content="item_description">
++                    description
++                </p>
++            </metal:block>
++            </tal:block>
++            </li>
++        </ul>
++
++        <div metal:use-macro="context/batch_macros/macros/navigation" />
++
++    </tal:listing>
++    <metal:empty metal:define-slot="no_items_in_listing">
++        <p class="discreet"
++           tal:condition="not: folderContents"
++           i18n:translate="description_no_items_in_folder">
++            There are currently no items in this folder.
++        </p>
++    </metal:empty>
++
++    </tal:foldercontents>
++    </metal:listingmacro>
++
++</metal:block>
++</metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_summary_view.pt b/plone/app/contenttypes/browser/templates/folder_summary_view.pt
+new file mode 100644
+index 0000000..c2d78c5
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_summary_view.pt
+@@ -0,0 +1,122 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="context/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++    <metal:content-core fill-slot="content-core">
++        <metal:block define-macro="listing" extend-macro="context/folder_listing/macros/content-core">
++            <!-- we don't want the dl -->
++            <metal:entries fill-slot="entries">
++                <metal:block use-macro="context/folder_listing/macros/entries">
++                    <metal:entry fill-slot="entry">
++                <div class="tileItem visualIEFloatFix"
++                     tal:define="item_object item/getObject;">
++
++                    <a href="#"
++                       tal:define="real_object python:item_object.aq_explicit"
++                       tal:condition="python:getattr(real_object, 'image', None)"
++                       tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url">
++                        <img tal:define="images item_object/@@images;
++                                         scale python: images.scale('image', scale='thumb')"
++                             tal:condition="scale"
++                             src="" alt=""
++                             tal:replace="structure python: scale.tag(css_class='tileImage')" />
++                    </a>
++
++                    <h2 class="tileHeadline"
++                        metal:define-macro="listitem">
++
++                        <a href="#"
++                           class="summary url"
++                           tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url;"
++                           tal:content="item_title_or_id">
++                            Item Title
++                        </a>
++
++                    </h2>
++
++                    <div class="documentByLine" tal:condition="python: site_properties.allowAnonymousViewAbout or not isAnon">
++                    <tal:event condition="python: item_type == 'Event'">
++                        <span tal:condition="python: item_type == 'Event' and item.location"
++                              i18n:translate="label_event_byline_with_location">
++                            (<span tal:content="string:${item/location}"
++                                   class="location"
++                                   i18n:name="location">Oslo</span>, from
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                   i18n:name="start">from date</abbr> to
++                             <abbr class="dtend"
++                                   tal:attributes="title python:item_end"
++                                   tal:content="python:toLocalizedTime(item_end,long_format=1)"
++                                   i18n:name="end">to date</abbr>)
++                        </span>
++                        <span tal:condition="python: item_type == 'Event' and not item.location"
++                              i18n:translate="label_event_byline_without_location">
++                            (from
++                             <abbr class="dtstart"
++                                   tal:attributes="title python:item_start"
++                                   tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                   i18n:name="start">from date</abbr> to
++                             <abbr class="dtend"
++                                   tal:attributes="title python:item_end"
++                                   tal:content="python:toLocalizedTime(item_end,long_format=1)"
++                                   i18n:name="end">to date</abbr>)
++                        </span>
++                    </tal:event>
++                    <tal:newsitem condition="python: item_type == 'News Item'">
++                        <tal:name tal:condition="item_creator"
++                            tal:define="author python:pas_member.info(item_creator)">
++                          <span class="documentAuthor" i18n:translate="label_by_author">
++                            by
++                          <a href="#"
++                             tal:attributes="href string:${navigation_root_url}/author/${item_creator}"
++                             tal:content="author/name_or_id"
++                             tal:omit-tag="not:author"
++                             i18n:name="author">
++                            Bob Dobalina
++                          </a>
++                          </span>
++                        </tal:name>
++                        &mdash;
++                        <span class="documentModified">
++                              <tal:mod i18n:translate="box_last_modified">
++                              last modified
++                              </tal:mod>
++                              <span tal:replace="python:toLocalizedTime(item_modified,long_format=1)">
++                                      August 16, 2001 at 23:35:59
++                              </span>
++                        </span>
++                    </tal:newsitem>
++                    </div>
++
++                    <p class="tileBody" tal:condition="item_description">
++                        <span class="description" tal:content="item_description">
++                            description
++                        </span>
++                    </p>
++
++                    <p class="tileFooter">
++                        <a href=""
++                           tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url;"
++                           i18n:translate="read_more">
++                        Read More&hellip;
++                        </a>
++                    </p>
++
++                    <div class="visualClear"><!-- --></div>
++
++                </div>
++                    </metal:entry>
++                </metal:block>
++            </metal:entries>
++        </metal:block>
++    </metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/folder_tabular_view.pt b/plone/app/contenttypes/browser/templates/folder_tabular_view.pt
+new file mode 100644
+index 0000000..c5e87a8
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/folder_tabular_view.pt
+@@ -0,0 +1,96 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="context/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++  <metal:content-core fill-slot="content-core">
++    <metal:block define-macro="listing" extend-macro="context/folder_listing/macros/content-core">
++      <metal:entries fill-slot="entries">
++
++          <div metal:use-macro="context/batch_macros/macros/navigation" />
++          <div class="has-table">
++            <table class="listing"
++                   summary="Content listing"
++                   i18n:attributes="summary summary_content_listing;">
++                <thead>
++                    <tr>
++                        <th class="nosort">&nbsp;<tal:title i18n:translate="listingheader_title"
++                          >Title</tal:title>&nbsp;</th>
++                        <th class="nosort"
++                            tal:condition="show_about">&nbsp;<tal:title i18n:translate="listingheader_author"
++                          >Author</tal:title>&nbsp;</th>
++                        <th class="nosort">&nbsp;<tal:title i18n:translate="listingheader_type"
++                          >Type</tal:title>&nbsp;</th>
++                        <th class="nosort"
++                            tal:condition="show_about">&nbsp;<tal:modified i18n:translate="listingheader_modified"
++                          >Modified</tal:modified>&nbsp;</th>
++                    </tr>
++                </thead>
++
++                <tbody>
++                    <metal:block use-macro="context/folder_listing/macros/entries">
++                        <metal:entry fill-slot="entry">
++
++                    <tr metal:define-macro="listitem"
++                        tal:define="oddrow repeat/item/odd;"
++                        tal:attributes="class python: oddrow and 'even' or 'odd'">
++
++                            <td>
++                                <img width="16" height="16"
++                                     src="" alt=""
++                                     tal:condition="item_icon/url"
++                                     tal:attributes="src item_icon/url;
++                                                     alt item_icon/description;
++                                                     title item_icon/title;
++                                                     width item_icon/width;
++                                                     height item_icon/height;" />
++                                <a href="#"
++                                   tal:attributes="href python: item_type in use_view_action and item_url+'/view' or item_url;
++                                                   class string:$item_wf_state_class $item_type_class;
++                                                   title item_description;"
++                                   tal:content="item_title_or_id">
++                                    Item Title
++                                </a>
++                            </td>
++
++                            <td tal:condition="show_about">
++                                <tal:name tal:condition="item_creator"
++                                  tal:define="author python:pas_member.info(item_creator)">
++                                <a href="#"
++                                   tal:attributes="href string:${navigation_root_url}/author/${item_creator}"
++                                   tal:content="author/name_or_id"
++                                   tal:omit-tag="not:author">
++                                  Bob Dobalina
++                                </a>
++                                </tal:name>
++                            </td>
++
++                            <td tal:content="item_type_title"
++                                i18n:translate="">
++                                Page
++                            </td>
++
++                        <td tal:condition="show_about"
++                            tal:content="python:toLocalizedTime(item_modified,long_format=1)">
++                          August 16, 2001 at 23:35:59
++                        </td>
++
++                    </tr>
++
++                        </metal:entry>
++                    </metal:block>
++                </tbody>
++            </table>
++          </div>
++      </metal:entries>
++    </metal:block>
++
++  </metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/full_view.pt b/plone/app/contenttypes/browser/templates/full_view.pt
+deleted file mode 100644
+index 37974ec..0000000
+--- a/plone/app/contenttypes/browser/templates/full_view.pt
++++ /dev/null
+@@ -1,29 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="context/main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-    <metal:content-core fill-slot="content-core">
+-    <metal:block define-macro="content-core">
+-        <metal:listing use-macro="context/@@folder_listing/macros/content-core|context/@@collection_view/macros/content-core">
+-            <!-- we don't want the dl -->
+-            <metal:entries fill-slot="entries">
+-                <metal:block use-macro="context/@@folder_listing/macros/entries|context/@@collection_view/macros/entries">
+-                    <metal:entry fill-slot="entry">
+-                        <div
+-                            tal:define="obj item/getObject;"
+-                            tal:replace="structure obj/@@full_view_item" />
+-                    </metal:entry>
+-                </metal:block>
+-            </metal:entries>
+-        </metal:listing>
+-    </metal:block>
+-    </metal:content-core>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/full_view_item.pt b/plone/app/contenttypes/browser/templates/full_view_item.pt
+deleted file mode 100644
+index 16eac28..0000000
+--- a/plone/app/contenttypes/browser/templates/full_view_item.pt
++++ /dev/null
+@@ -1,73 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      i18n:domain="plone"
+-      tal:omit-tag="">
+-
+-<body tal:omit-tag="">
+-
+-    <div class="item visualIEFloatFix"
+-         tal:define="item_macro nocall:view/item_macros/content-core|nothing;
+-                     item_url view/item_url;
+-                     rendering_error python:[];">
+-
+-        <div tal:replace="structure provider:plone.abovecontenttitle" />
+-
+-        <h2 class="headline">
+-            <a href="#" class="summary url" tal:content="context/Title"
+-               tal:attributes="href item_url;">
+-               Title
+-             </a>
+-        </h2>
+-
+-        <div tal:replace="structure provider:plone.belowcontenttitle" />
+-
+-        <div class="description"
+-             tal:content="context/Description"
+-             tal:condition="context/Description">
+-            Description
+-        </div>
+-
+-        <tal:block tal:condition="item_macro">
+-        <!-- tal:on-error="python:rendering_error.append(True)"-->
+-
+-            <div tal:replace="structure provider:plone.abovecontentbody" />
+-
+-            <div tal:define="view nocall:view/default_view;
+-                             portal_state context/@@plone_portal_state;
+-                             context_state context/@@plone_context_state;
+-                             plone_layout context/@@plone_layout;
+-                             lang portal_state/language;
+-                             dummy python: plone_layout.mark_view(view);
+-                             portal_url portal_state/portal_url;
+-                             checkPermission nocall: context/portal_membership/checkPermission;
+-                             site_properties context/portal_properties/site_properties;">
+-            <div metal:use-macro="item_macro">
+-                content
+-            </div>
+-            </div>
+-
+-            <div tal:replace="structure provider:plone.belowcontentbody" />
+-
+-        </tal:block>
+-
+-        <tal:block tal:condition="rendering_error">
+-            <!-- Error rendering item macro -->
+-        </tal:block>
+-
+-        <p class="more" tal:condition="python:not(item_macro) or rendering_error">
+-            <a href=""
+-               tal:attributes="href item_url"
+-               i18n:translate="read_more">
+-                Read More&hellip;
+-            </a>
+-        </p>
+-
+-        <div class="visualClear"><!-- --></div>
+-
+-    </div>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/listing.pt b/plone/app/contenttypes/browser/templates/listing.pt
+deleted file mode 100644
+index dd38ae0..0000000
+--- a/plone/app/contenttypes/browser/templates/listing.pt
++++ /dev/null
+@@ -1,139 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="context/main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:content-core fill-slot="content-core">
+-<metal:block define-macro="content-core">
+-
+-    <div metal:define-macro="text-field-view"
+-         id="parent-fieldname-text" class="stx"
+-         tal:define="text view/text"
+-         tal:condition="text"
+-         tal:attributes="class view/text_class">
+-        <div metal:define-slot="inside" tal:replace="structure text">The body</div>
+-    </div>
+-
+-    <metal:listingmacro define-macro="listing">
+-    <tal:results define="batch view/batch">
+-    <tal:listing condition="batch">
+-
+-        <div metal:define-slot="entries">
+-            <article tal:repeat="item batch" metal:define-macro="entries">
+-            <tal:block tal:define="obj item/getObject;
+-                                   item_url item/getURL;
+-                                   item_id item/getId;
+-                                   item_title item/Title;
+-                                   item_description item/Description;
+-                                   item_type item/PortalType;
+-                                   item_modified item/ModificationDate;
+-                                   item_created item/CreationDate;
+-                                   item_icon item/getIcon;
+-                                   item_type_class python:'contenttype-' + view.normalizeString(item_type);
+-                                   item_wf_state item/review_state;
+-                                   item_wf_state_class python:'state-' + view.normalizeString(item_wf_state);
+-                                   item_creator item/Creator;
+-                                   item_link python:item_type in view.use_view_action and item_url+'/view' or item_url">
+-                <metal:block define-slot="entry">
+-                <header metal:define-macro="listitem"
+-                    tal:attributes="class python:item_type == 'Event' and 'vevent' or ''">
+-
+-                    <span class="summary">
+-                        <a href="#"
+-                           tal:attributes="href item_link;
+-                                           class string:$item_type_class $item_wf_state_class url;
+-                                           title item_type"
+-                           tal:content="item_title">
+-                            Item Title
+-                        </a>
+-                    </span>
+-
+-                    <metal:block metal:define-macro="document_byline">
+-                    <span class="documentByLine">
+-                        <tal:event condition="python:view.is_event(obj)">
+-                            <tal:date tal:replace="structure python:view.formatted_date(obj)"/>
+-                            <span tal:condition="item/location"
+-                                  i18n:translate="label_event_byline_location">&mdash;
+-                                <span tal:content="string:${item/location}"
+-                                      class="location"
+-                                      i18n:name="location">Oslo</span>,
+-                            </span>
+-                        </tal:event>
+-                        <tal:byline condition="view/show_about">
+-                            &mdash;
+-
+-                            <tal:name tal:condition="item_creator"
+-                                tal:define="author python:view.pas_member.info(item_creator);
+-                                            creator_short_form author/username;
+-                                            creator_long_form string:?author=${author/username};
+-                                            creator_is_openid python:'/' in creator_short_form;
+-                                            creator_id python:(creator_short_form, creator_long_form)[creator_is_openid];">
+-                              <span i18n:translate="label_by_author">
+-                                by
+-                              <a href="#"
+-                                 tal:attributes="href string:${view/navigation_root_url}/author/${item_creator}"
+-                                 tal:content="author/name_or_id"
+-                                 tal:omit-tag="not:author"
+-                                 i18n:name="author">
+-                                Bob Dobalina
+-                              </a>
+-                              </span>
+-
+-                            </tal:name>
+-
+-                            <tal:modified condition="python: item_type != 'Event'">
+-                                &mdash;
+-                                <tal:mod i18n:translate="box_last_modified">
+-                                  last modified
+-                                </tal:mod>
+-                                <span tal:replace="python:view.toLocalizedTime(item_modified,long_format=1)">
+-                                  August 16, 2001 at 23:35:59
+-                                </span>
+-                            </tal:modified>
+-
+-                            <metal:description define-slot="description_slot">
+-                                <tal:comment replace="nothing">
+-                                    Place custom listing info for custom types here
+-                                </tal:comment>
+-                            </metal:description>
+-                        </tal:byline>
+-                    </span>
+-                    </metal:block>
+-
+-                </header>
+-
+-                <p class="description discreet"
+-                    tal:condition="item_description"
+-                    tal:content="item_description">
+-                    description
+-                </p>
+-            </metal:block>
+-            </tal:block>
+-            </article>
+-        </div>
+-
+-        <div metal:use-macro="context/batch_macros/macros/navigation" />
+-
+-    </tal:listing>
+-
+-    <metal:empty metal:define-slot="no_items_in_listing">
+-        <p class="discreet"
+-           tal:condition="not: view/batch"
+-           tal:content="view/no_items_message">
+-            There are currently no items in this folder.
+-        </p>
+-    </metal:empty>
+-
+-    </tal:results>
+-    </metal:listingmacro>
+-
+-</metal:block>
+-</metal:content-core>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/listing_summary.pt b/plone/app/contenttypes/browser/templates/listing_summary.pt
+deleted file mode 100644
+index af12928..0000000
+--- a/plone/app/contenttypes/browser/templates/listing_summary.pt
++++ /dev/null
+@@ -1,71 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="context/main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:content-core fill-slot="content-core">
+-<metal:block use-macro="context/@@folder_listing/macros/content-core|context/@@standard_view/macros/content-core">
+-
+-    <metal:entries fill-slot="entries">
+-    <metal:block use-macro="context/@@folder_listing/macros/entries|context/@@standard_view/macros/entries">
+-    <metal:entry fill-slot="entry">
+-
+-                <div class="tileItem visualIEFloatFix" tal:define="obj item/getObject">
+-
+-                    <a href="#"
+-                        tal:condition="python:getattr(obj.aq_explicit, 'image', None)"
+-                        tal:attributes="href item_link">
+-                        <div class="tileImage">
+-                            <img src="" alt=""
+-                                 tal:define="scales obj/@@images;
+-                                             scale python:scales.scale('image', 'thumb')"
+-                                 tal:replace="structure python:scale and scale.tag(css_class='tileImage') or None" />
+-                        </div>
+-                    </a>
+-
+-                    <h2 class="tileHeadline" metal:define-macro="listitem">
+-
+-                        <a href="#"
+-                           class="summary url"
+-                           tal:attributes="href item_link;
+-                                           title item_type"
+-                           tal:content="item_title">
+-                            Item Title
+-                        </a>
+-
+-                    </h2>
+-
+-                    <div metal:use-macro="context/@@folder_listing/macros/document_byline|context/@@collection_view/macros/document_byline"></div>
+-
+-                    <p class="tileBody" tal:condition="item_description">
+-                        <span class="description" tal:content="item_description">
+-                            description
+-                        </span>
+-                    </p>
+-
+-                    <p class="tileFooter">
+-                        <a href=""
+-                           tal:attributes="href item_link"
+-                           i18n:translate="read_more">
+-                        Read More&hellip;
+-                        </a>
+-                    </p>
+-
+-                    <div class="visualClear"><!-- --></div>
+-
+-                </div>
+-
+-    </metal:entry>
+-    </metal:block>
+-    </metal:entries>
+-
+-</metal:block>
+-</metal:content-core>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/listing_tabular.pt b/plone/app/contenttypes/browser/templates/listing_tabular.pt
+deleted file mode 100644
+index 3bd8c4f..0000000
+--- a/plone/app/contenttypes/browser/templates/listing_tabular.pt
++++ /dev/null
+@@ -1,108 +0,0 @@
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+-      xmlns:tal="http://xml.zope.org/namespaces/tal"
+-      xmlns:metal="http://xml.zope.org/namespaces/metal"
+-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+-      lang="en"
+-      metal:use-macro="context/main_template/macros/master"
+-      i18n:domain="plone">
+-
+-<body>
+-
+-<metal:content-core fill-slot="content-core">
+-<metal:block define-macro="content-core">
+-
+-    <div metal:define-macro="text-field-view"
+-         id="parent-fieldname-text" class="stx"
+-         tal:define="text view/text"
+-         tal:condition="text"
+-         tal:attributes="class view/text_class">
+-        <div metal:define-slot="inside" tal:replace="structure text">The body</div>
+-    </div>
+-
+-    <tal:results define="batch view/batch">
+-    <tal:listing condition="batch">
+-
+-
+-          <div metal:use-macro="context/batch_macros/macros/navigation" />
+-          <div class="has-table">
+-            <table class="listing"
+-                   summary="Content listing"
+-                   i18n:attributes="summary summary_content_listing;">
+-                <thead>
+-                    <tr>
+-                        <th class="nosort"
+-                            i18n:translate=""
+-                            tal:repeat="field view/tabular_fields"
+-                            tal:content="field">Field name</th>
+-                    </tr>
+-                </thead>
+-
+-                <tbody>
+-
+-            <tal:entries tal:repeat="item batch">
+-            <tal:block tal:define="item_url item/getURL;
+-                                   item_title item/Title;
+-                                   item_description item/Description;
+-                                   item_type item/PortalType;
+-                                   item_type_class python:'contenttype-' + view.normalizeString(item_type);
+-                                   item_wf_state item/review_state;
+-                                   item_wf_state_class python:'state-' + view.normalizeString(item_wf_state);
+-                                   item_creator item/Creator;
+-                                   item_link python:item_type in view.use_view_action and item_url+'/view' or item_url">
+-
+-                    <tr metal:define-macro="listitem"
+-                        tal:define="oddrow repeat/item/odd;"
+-                        tal:attributes="class python: oddrow and 'even' or 'odd'">
+-
+-                        <tal:block tal:repeat="field view/tabular_fields">
+-                            <td tal:condition="python:field not in ['Title', 'Creator', 'getIcon']"
+-                                tal:define="field_data python:view.tabular_fielddata(item, field)">
+-                                <tal:block tal:replace="field_data/value" />
+-                            </td>
+-                            <td tal:condition="python:field == 'Title'">
+-                                <a href="#"
+-                                   tal:attributes="href item_link;
+-                                                   class string:$item_wf_state_class $item_type_class;
+-                                                   title item_description;"
+-                                   tal:content="item_title">
+-                                    Item Title
+-                                </a>
+-                            </td>
+-                            <td tal:condition="python:field == 'Creator'"
+-                                tal:define="author python:view.pas_member.info(item_creator);
+-                                            name python:author['fullname'] or author['username']">
+-                                <a href="#"
+-                                   tal:condition="author"
+-                                   tal:attributes="href string:${view/navigation_root_url}/author/${item_creator}"
+-                                   tal:content="name">Jos Henken</a>
+-                            </td>
+-                        </tal:block>
+-
+-                    </tr>
+-
+-            </tal:block>
+-            </tal:entries>
+-
+-                </tbody>
+-            </table>
+-          </div>
+-
+-        <div metal:use-macro="context/batch_macros/macros/navigation" />
+-
+-    </tal:listing>
+-
+-    <metal:empty metal:define-slot="no_items_in_listing">
+-        <p class="discreet"
+-           tal:condition="not: view/batch"
+-           tal:content="view/no_items_message">
+-            There are currently no items in this folder.
+-        </p>
+-    </metal:empty>
+-
+-    </tal:results>
+-
+-</metal:block>
+-</metal:content-core>
+-
+-</body>
+-</html>
+diff --git a/plone/app/contenttypes/browser/templates/standard_view.pt b/plone/app/contenttypes/browser/templates/standard_view.pt
+new file mode 100644
+index 0000000..0664273
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/standard_view.pt
+@@ -0,0 +1,181 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="here/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++  <div metal:fill-slot="content-core">
++    <metal:block define-macro="content-core"
++                 tal:define="templateId template/getId">
++
++        <div metal:define-macro="text-field-view"
++             id="parent-fieldname-text" class="stx"
++             tal:define="has_text exists:context/aq_explicit/text/output;
++                         text python:has_text and here.text.output or ''"
++             tal:condition="text"
++             tal:attributes="class python:context.Format() in ('text/structured', 'text/x-rst', ) and 'stx' or 'plain'">
++            <div metal:define-slot="inside" tal:replace="structure text">The body</div>
++        </div>
++
++        <metal:listingmacro define-macro="listing">
++        <tal:results define="b_start python:request.get('b_start', 0);
++                             batch python:view.results(b_start=b_start);
++                             site_properties context/portal_properties/site_properties;
++                             use_view_action site_properties/typesUseViewActionInListings|python:();
++                             isAnon portal_state/anonymous;
++                             normalizeString nocall: context/plone_utils/normalizeString;
++                             toLocalizedTime nocall: plone_view/toLocalizedTime;
++                             show_about python:not isAnon or site_properties.allowAnonymousViewAbout;
++                             navigation_root_url portal_state/navigation_root_url;
++                             pas_member context/@@pas_member;">
++        <tal:listing condition="batch">
++
++            <div metal:define-slot="entries">
++                <article tal:repeat="item batch" metal:define-macro="entries">
++                <tal:block tal:define="item_url item/getURL;
++                                       item_id item/getId;
++                                       item_description item/Description;
++                                       item_type item/Type;
++                                       item_modified item/ModificationDate;
++                                       item_created item/CreationDate;
++                                       item_icon item/getIcon;
++                                       item_type_class item/ContentTypeClass;
++                                       item_wf_state_class python:'state-' + normalizeString(item.review_state());
++                                       item_creator item/Creator;
++                                       item_start python:(item.start or item.StartDate) if item_type == 'Event' else None;
++                                       item_end python:(item.end or item.EndDate) if item_type == 'Event' else None;
++                                       item_modified item/ModificationDate;
++                                       item_sametime python: item_start == item_end;
++                                       item_samedate python: (item_end - item_start &lt; 1) if item_type == 'Event' else False">
++                    <metal:block define-slot="entry">
++                    <header metal:define-macro="listitem"
++                        tal:attributes="class python:item_type == 'Event' and 'vevent' or ''">
++
++                        <span class="summary">
++                            <img tal:replace="structure item_icon" />
++                            <a href="#"
++                               tal:attributes="href python:item_type in use_view_action and item_url+'/view' or item_url;
++                                               class string:$item_type_class $item_wf_state_class url"
++                               tal:content="item/Title">
++                                Item Title
++                            </a>
++                        </span>
++
++                        <metal:block metal:define-macro="document_byline">
++                        <span class="documentByLine">
++                            <span tal:condition="python: item_type == 'Event' and item_sametime"
++                                  i18n:translate="label_event_byline_onlyfrom">
++                                 <abbr class="dtstart"
++                                       tal:attributes="title python:item_start"
++                                       tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                       i18n:name="start">from date</abbr>
++                            </span>
++                            <span tal:condition="python: item_type == 'Event' and item_samedate and not item_sametime"
++                                  i18n:translate="label_event_byline_samedate">
++                                 <abbr class="dtstart"
++                                       tal:attributes="title python:item_start"
++                                       tal:content="python:toLocalizedTime(item_start)"
++                                       i18n:name="start">from date</abbr> from
++                                 <abbr class="dtstart"
++                                       tal:attributes="title python:item_start"
++                                       tal:content="python:toLocalizedTime(item_start,time_only=1)"
++                                       i18n:name="starttime">from time</abbr> to
++                                 <abbr class="dtend"
++                                       tal:attributes="title python:item_end"
++                                       tal:content="python:toLocalizedTime(item_end,time_only=1)"
++                                       i18n:name="end">to time</abbr>
++                            </span>
++                            <span tal:condition="python: item_type == 'Event' and not item_samedate and not item_sametime"
++                                  i18n:translate="label_event_byline">
++                                  from
++                                       <abbr class="dtstart"
++                                       tal:attributes="title python:item_start"
++                                       tal:content="python:toLocalizedTime(item_start,long_format=1)"
++                                       i18n:name="start">from date</abbr> to
++                                 <abbr class="dtend"
++                                       tal:attributes="title python:item_end"
++                                       tal:content="python:toLocalizedTime(item_end,long_format=1)"
++                                       i18n:name="end">to date</abbr>
++                            </span>
++                             <span tal:condition="python: item_type == 'Event' and item.location"
++                                  i18n:translate="label_event_byline_location">&mdash;
++                                 <span tal:content="string:${item/location}"
++                                       class="location"
++                                       i18n:name="location">Oslo</span>,
++                            </span>
++                            <tal:byline condition="show_about">
++                                &mdash;
++
++                                <tal:name tal:condition="item_creator"
++                                    tal:define="author python:pas_member.info(item_creator);
++                                                creator_short_form author/username;
++                                                creator_long_form string:?author=${author/username};
++                                                creator_is_openid python:'/' in creator_short_form;
++                                                creator_id python:(creator_short_form, creator_long_form)[creator_is_openid];">
++                                  <span i18n:translate="label_by_author">
++                                    by
++                                  <a href="#"
++                                     tal:attributes="href string:${navigation_root_url}/author/${item_creator}"
++                                     tal:content="author/name_or_id"
++                                     tal:omit-tag="not:author"
++                                     i18n:name="author">
++                                    Bob Dobalina
++                                  </a>
++                                  </span>
++
++                                </tal:name>
++
++                                <tal:modified condition="python: item_type != 'Event'">
++                                    &mdash;
++                                    <tal:mod i18n:translate="box_last_modified">
++                                      last modified
++                                    </tal:mod>
++                                    <span tal:replace="python:toLocalizedTime(item_modified,long_format=1)">
++                                      August 16, 2001 at 23:35:59
++                                    </span>
++                                </tal:modified>
++
++                                <metal:description define-slot="description_slot">
++                                    <tal:comment replace="nothing">
++                                        Place custom listing info for custom types here
++                                    </tal:comment>
++                                </metal:description>
++                            </tal:byline>
++                        </span>
++                        </metal:block>
++
++                    </header>
++
++                    <span class="description"
++                        tal:condition="item_description"
++                        tal:content="item_description">
++                      description
++                    </span>
++                </metal:block>
++                </tal:block>
++                </article>
++            </div>
++
++            <div metal:use-macro="context/batch_macros/macros/navigation" />
++
++        </tal:listing>
++        <metal:empty metal:define-slot="no_items_in_listing">
++            <p class="discreet"
++               tal:condition="not: batch"
++               i18n:translate="description_no_items_in_folder">
++                There are currently no items in this folder.
++            </p>
++        </metal:empty>
++
++        </tal:results>
++        </metal:listingmacro>
++
++    </metal:block>
++  </div>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/summary_view.pt b/plone/app/contenttypes/browser/templates/summary_view.pt
+new file mode 100644
+index 0000000..880f1e0
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/summary_view.pt
+@@ -0,0 +1,67 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="here/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++<metal:content-core fill-slot="content-core">
++<metal:block use-macro="context/standard_view/macros/content-core">
++
++    <metal:entries fill-slot="entries">
++    <metal:block use-macro="context/standard_view/macros/entries">
++    <metal:entry fill-slot="entry">
++
++        <div class="tileItem visualIEFloatFix"
++             tal:define="obj item/getObject">
++            <a href="#"
++                  tal:condition="python:getattr(obj.aq_explicit, 'image', None)"
++                  tal:attributes="href item/getURL">
++                  <div class="tileImage">
++                      <img src="" alt=""
++                           tal:define="scales obj/@@images;
++                                       scale python:scales.scale('image', 'thumb')"
++                           tal:replace="structure python:scale and scale.tag(css_class='tileImage') or None" />
++                  </div>
++            </a>
++
++            <h2 class="tileHeadline" metal:define-macro="listitem">
++                <a href="#"
++                   class="summary url"
++                   tal:attributes="href python:item_type in use_view_action and item_url+'/view' or item_url;"
++                   tal:content="item/Title">
++                    Item Title
++                </a>
++            </h2>
++
++            <div metal:use-macro="context/standard_view/macros/document_byline"></div>
++
++            <p class="tileBody" tal:condition="item_description">
++                <span class="description" tal:content="item_description">
++                    description
++                </span>
++            </p>
++
++            <p class="tileFooter">
++                <a href=""
++                   tal:attributes="href python:item_type in use_view_action and item_url+'/view' or item_url;"
++                   i18n:translate="read_more">
++                Read More&hellip;
++                </a>
++            </p>
++
++            <div class="visualClear"><!-- --></div>
++        </div>
++
++    </metal:entry>
++    </metal:block>
++    </metal:entries>
++
++</metal:block>
++</metal:content-core>
++
++</body>
++</html>
+diff --git a/plone/app/contenttypes/browser/templates/tabular_view.pt b/plone/app/contenttypes/browser/templates/tabular_view.pt
+new file mode 100644
+index 0000000..4f2ea22
+--- /dev/null
++++ b/plone/app/contenttypes/browser/templates/tabular_view.pt
+@@ -0,0 +1,77 @@
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
++      xmlns:tal="http://xml.zope.org/namespaces/tal"
++      xmlns:metal="http://xml.zope.org/namespaces/metal"
++      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
++      lang="en"
++      metal:use-macro="here/main_template/macros/master"
++      i18n:domain="plone">
++
++<body>
++
++    <div metal:fill-slot="content-core"
++         tal:define="b_start python:request.get('b_start', 0);
++                     batch python:view.results(b_start=b_start);">
++
++         <div metal:define-macro="text-field-view"
++              id="parent-fieldname-text" class="stx"
++              tal:define="has_text exists:context/aq_explicit/text/output;
++                          text python:has_text and here.text.output or ''"
++              tal:condition="text"
++              tal:attributes="class python:here.Format() in ('text/structured', 'text/x-rst', ) and 'stx' or 'plain'">
++             <div metal:define-slot="inside" tal:replace="structure text">The body</div>
++         </div>
++
++        <p class="discreet"
++           tal:condition="not: batch"
++           i18n:translate="description_no_items_in_folder">
++            There are currently no items in this folder.
++        </p>
++
++        <table class="listing" summary="Content listing"
++            i18n:attributes="summary"
++            tal:condition="batch"
++            tal:define="fields view/selectedViewFields;
++                        pas_member context/@@pas_member">
++            <thead>
++                <tr>
++                    <th class="nosort"
++                        i18n:translate=""
++                        tal:repeat="field fields"
++                        tal:content="python: field[1]">Field name</th>
++                </tr>
++            </thead>
++            <tbody>
++            <tal:block tal:repeat="item batch">
++                <tr tal:define="oddrow repeat/item/odd;"
++                    tal:attributes="class python:oddrow and 'even' or 'odd'" >
++                <tal:block tal:repeat="field fields">
++                    <td tal:condition="python:field[0] not in ['Title', 'Creator', ]"
++                        tal:define="field_data python:getattr(item, field[0])">
++                        <tal:block tal:replace="field_data" />
++                    </td>
++                    <td tal:condition="python:field[0] == 'Title'">
++                        <a href="#"
++                           tal:attributes="href item/getURL;
++                                           title item/Title"
++                           tal:content="item/Title">Item Title</a>
++                    </td>
++                    <td tal:condition="python:field[0] == 'Creator'"
++                        tal:define="author python:pas_member.info(item.Creator());
++                                    name python:author['fullname'] or author['username']">
++                        <a href="#"
++                           tal:condition="author"
++                           tal:attributes="href string:author/${author/username};
++                                           title name"
++                           tal:content="name">Jos Henken</a>
++                    </td>
++                </tal:block>
++                </tr>
++            </tal:block>
++            </tbody>
++        </table>
++
++        <div metal:use-macro="context/batch_macros/macros/navigation" />
++  </div>
++
++</body>
++</html>
 
 
