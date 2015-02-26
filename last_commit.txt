@@ -1,44 +1,45 @@
-Repository: Products.CMFPlone
+Repository: Products.ATContentTypes
 Branch: refs/heads/master
-Date: 2015-02-26T12:32:50+01:00
+Date: 2015-02-26T12:33:33+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/2db221a7bc7fb45d8666123148f468d97586f46a
+Commit: https://github.com/plone/Products.ATContentTypes/commit/44342ba32b9f89c4f433ef1b25573b2b915cfee9
 
-Remove the remaining Topic entry in default_page_types from propertiestool.xml. This setting is now done in plone.app.contenttypes respectively Products.ATContentTypes.
+Define default_page_types in the propertiestool.xml profile.
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/profiles/default/propertiestool.xml
+A Products/ATContentTypes/profiles/default/propertiestool.xml
+M CHANGES.txt
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 129eb67..fe6a3c7 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,6 +8,11 @@ Changelog
- 5.0b1 (unreleased)
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 206fa13..d6c074b 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,6 +4,9 @@ Changelog
+ 2.2.3 (unreleased)
  ------------------
  
-+- Remove the remaining ``Topic`` entry in ``default_page_types`` from
-+  ``propertiestool.xml``. This setting is now done in
-+  ``plone.app.contenttypes`` respectively ``Products.ATContentTypes``.
++- Define ``default_page_types`` in the ``propertiestool.xml`` profile.
 +  [thet]
 +
- - Add __version__ attribute to __init__.py. This allows us to retrieve the
-   current Plone version with 'Products.CMFPlone.__version__'. Even though this
-   is no offical standard, many packages in the Python standard library provide
-diff --git a/Products/CMFPlone/profiles/default/propertiestool.xml b/Products/CMFPlone/profiles/default/propertiestool.xml
-index 43fcd45..36bff9c 100644
---- a/Products/CMFPlone/profiles/default/propertiestool.xml
-+++ b/Products/CMFPlone/profiles/default/propertiestool.xml
-@@ -118,9 +118,6 @@
-   <property name="many_users" type="boolean">False</property>
-   <property name="many_groups" type="boolean">False</property>
-   <property name="enable_livesearch" type="boolean">True</property>
--  <property name="default_page_types" type="lines">
--   <element value="Topic"/>
--  </property>
-   <property name="use_folder_contents" type="lines"/>
-   <property name="forbidden_contenttypes" type="lines">
-    <element value="text/structured"/>
+ - Add profile 'base' to allow addons to depend on ATContentTypes in Plone 5
+   without uninstalling the dexterity default-types.
+   [pbauer]
+diff --git a/Products/ATContentTypes/profiles/default/propertiestool.xml b/Products/ATContentTypes/profiles/default/propertiestool.xml
+new file mode 100644
+index 0000000..b9f4db1
+--- /dev/null
++++ b/Products/ATContentTypes/profiles/default/propertiestool.xml
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<object name="portal_properties" meta_type="Plone Properties Tool">
++ <object name="site_properties" meta_type="Plone Property Sheet">
++  <property name="default_page_types" type="lines" purge="False">
++   <element value="Document"/>
++   <element value="Event"/>
++   <element value="News Item"/>
++   <element value="Topic"/>
++  </property>
++ </object>
++</object>
 
 
