@@ -1,45 +1,73 @@
-Repository: plone.app.contenttypes
+Repository: plone.schemaeditor
 Branch: refs/heads/master
-Date: 2015-02-26T12:33:42+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/13cc144cb6a9da08a8e14a7921d310989a4a8184
+Date: 2015-02-26T19:42:39+01:00
+Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
+Commit: https://github.com/plone/plone.schemaeditor/commit/d37d552045852c6d4f3c7adfc28cb602e10d8bb5
 
-Define default_page_types in the propertiestool.xml profile.
+add CSRF protection token
 
 Files changed:
-A plone/app/contenttypes/profiles/default/propertiestool.xml
-M docs/CHANGES.rst
+M CHANGES.rst
+M plone/schemaeditor/browser/schema/schema_listing.pt
+M plone/schemaeditor/browser/schema/schemaeditor.js
 
-diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
-index 9cffa9d..8c70585 100644
---- a/docs/CHANGES.rst
-+++ b/docs/CHANGES.rst
-@@ -4,6 +4,9 @@ Changelog
- 1.2 (unreleased)
- ----------------
+diff --git a/CHANGES.rst b/CHANGES.rst
+index f81ff7c..23c3b61 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -7,6 +7,8 @@ Changelog
+ - Update markup and javscript for Plone 5.
+   [davisagli]
  
-+- Define ``default_page_types`` in the ``propertiestool.xml`` profile.
-+  [thet]
-+
- - In the file view, render HTML5 ``<audio>`` or ``<video>`` tags for audio
-   respectively video file types. Ancient browsers, which do not support that,
-   just don't render these tags.
-diff --git a/plone/app/contenttypes/profiles/default/propertiestool.xml b/plone/app/contenttypes/profiles/default/propertiestool.xml
-new file mode 100644
-index 0000000..4442935
---- /dev/null
-+++ b/plone/app/contenttypes/profiles/default/propertiestool.xml
-@@ -0,0 +1,11 @@
-+<?xml version="1.0" encoding="UTF-8"?>
-+<object name="portal_properties" meta_type="Plone Properties Tool">
-+ <object name="site_properties" meta_type="Plone Property Sheet">
-+  <property name="default_page_types" type="lines" purge="False">
-+   <element value="Document"/>
-+   <element value="Event"/>
-+   <element value="News Item"/>
-+   <element value="Collection"/>
-+  </property>
-+ </object>
-+</object>
++- Add CSRF protection token
++  [ebrehault]
+ 
+ 2.0.1 (2014-10-23)
+ ------------------
+diff --git a/plone/schemaeditor/browser/schema/schema_listing.pt b/plone/schemaeditor/browser/schema/schema_listing.pt
+index 2b798b1..f019091 100644
+--- a/plone/schemaeditor/browser/schema/schema_listing.pt
++++ b/plone/schemaeditor/browser/schema/schema_listing.pt
+@@ -16,6 +16,7 @@
+ 
+   <metal:form metal:use-macro="context/@@ploneform-macros/form">
+     <metal:top-slot metal:fill-slot="formtop">
++      <input tal:replace="structure context/@@authenticator/authenticator" />
+       <script type="text/javascript"
+               tal:attributes="src context/++resource++schemaeditor.js"></script>
+       <style type="text/css">
+diff --git a/plone/schemaeditor/browser/schema/schemaeditor.js b/plone/schemaeditor/browser/schema/schemaeditor.js
+index e0e8b33..9d145cb 100644
+--- a/plone/schemaeditor/browser/schema/schemaeditor.js
++++ b/plone/schemaeditor/browser/schema/schemaeditor.js
+@@ -139,7 +139,9 @@
+             if (!confirm(trigger.attr('data-confirm_msg'))) {
+                 return;
+             }
+-            $.post(trigger.attr('href'), null, function (data) {
++            $.post(trigger.attr('href'), {
++                _authenticator: $('input[name="_authenticator"]').val(),
++            }, function (data) {
+                 trigger.closest('.fieldPreview').detach();
+             }, 'text');
+         });
+@@ -147,12 +149,16 @@
+         $('.fieldPreview.orderable').plone_schemaeditor_html5_sortable(function (position, fieldset_index) {
+             var url = window.location.href.replace('/@@fields', '') + '/' + this.attr('data-field_id') + '/@@order';
+             $.post(url, {
++                _authenticator: $('input[name="_authenticator"]').val(),
+                 pos: position,
+                 fieldset_index: fieldset_index
+             });
+         }, function (fieldset_index) {
+             var url = window.location.href.replace('/@@fields', '') + '/' + this.attr('data-field_id') + '/@@changefieldset';
+-            $.post(url, { fieldset_index: fieldset_index });
++            $.post(url, {
++                _authenticator: $('input[name="_authenticator"]').val(),
++                fieldset_index: fieldset_index
++            });
+         });
+         set_id_from_title = function () {
+             var id = $.plone_schemaeditor_normalize_string($(this).val());
 
 
