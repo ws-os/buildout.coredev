@@ -1,31 +1,115 @@
 Repository: plone.schemaeditor
 Branch: refs/heads/master
-Date: 2015-02-26T19:42:39+01:00
+Date: 2015-02-22T21:11:51+01:00
 Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
-Commit: https://github.com/plone/plone.schemaeditor/commit/d37d552045852c6d4f3c7adfc28cb602e10d8bb5
+Commit: https://github.com/plone/plone.schemaeditor/commit/8525b3354d5526b0a1ac87a68729947a538268ee
 
-add CSRF protection token
+make fieldset creation optional
+
+Files changed:
+M plone/schemaeditor/browser/schema/schema_listing.pt
+M plone/schemaeditor/browser/schema/traversal.py
+M plone/schemaeditor/interfaces.py
+
+diff --git a/plone/schemaeditor/browser/schema/schema_listing.pt b/plone/schemaeditor/browser/schema/schema_listing.pt
+index 2b798b1..adb694b 100644
+--- a/plone/schemaeditor/browser/schema/schema_listing.pt
++++ b/plone/schemaeditor/browser/schema/schema_listing.pt
+@@ -8,7 +8,7 @@
+            i18n:translate="add_new_field_hellip">Add new field&hellip;</button>
+   </a>
+ 
+-  <a id="add-fieldset" class="pat-modal"
++  <a id="add-fieldset" class="pat-modal" tal:condition="context/enableFieldsets"
+      href="${context/absolute_url}/@@add-fieldset">
+     <button style="float: right; display: block;"
+            i18n:translate="add_fieldset_hellip">Add new fieldset&hellip;</button>
+diff --git a/plone/schemaeditor/browser/schema/traversal.py b/plone/schemaeditor/browser/schema/traversal.py
+index 715e9c3..18d108a 100644
+--- a/plone/schemaeditor/browser/schema/traversal.py
++++ b/plone/schemaeditor/browser/schema/traversal.py
+@@ -20,6 +20,7 @@ class SchemaContext(SimpleItem):
+     additionalSchemata = ()
+     allowedFields = None  # all fields
+     fieldsWhichCannotBeDeleted = ()
++    enableFieldsets = True
+ 
+     def __init__(self, context, request, name=u'schema', title=None):
+         super(SchemaContext, self).__init__(context, request)
+diff --git a/plone/schemaeditor/interfaces.py b/plone/schemaeditor/interfaces.py
+index 417a96c..3de2928 100644
+--- a/plone/schemaeditor/interfaces.py
++++ b/plone/schemaeditor/interfaces.py
+@@ -40,6 +40,10 @@ class ISchemaContext(IItem):
+         """List of field names that may not be deleted from this schema."""
+         )
+ 
++    enableFieldsets = Attribute(
++        """Enable extra fieldsets."""
++        )
++
+ 
+ class ISchemaModifiedEvent(IObjectEvent):
+ 
+
+
+Repository: plone.schemaeditor
+Branch: refs/heads/master
+Date: 2015-02-22T23:36:01+01:00
+Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
+Commit: https://github.com/plone/plone.schemaeditor/commit/c458d716afe5dac47628c16f92b2b4e20feb497b
+
+update changelog
+
+Files changed:
+M CHANGES.rst
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index f81ff7c..efedb17 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -7,6 +7,9 @@ Changelog
+ - Update markup and javscript for Plone 5.
+   [davisagli]
+ 
++- Make fieldset creation optional
++  [ebrehault]
++
+ 
+ 2.0.1 (2014-10-23)
+ ------------------
+
+
+Repository: plone.schemaeditor
+Branch: refs/heads/master
+Date: 2015-02-26T19:44:03+01:00
+Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
+Commit: https://github.com/plone/plone.schemaeditor/commit/40621049523849507cf5815c2e1524be49a1dbe8
+
+merge master
 
 Files changed:
 M CHANGES.rst
 M plone/schemaeditor/browser/schema/schema_listing.pt
 M plone/schemaeditor/browser/schema/schemaeditor.js
+M plone/schemaeditor/fields.py
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index f81ff7c..23c3b61 100644
+index efedb17..70bc96a 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -7,6 +7,8 @@ Changelog
- - Update markup and javscript for Plone 5.
-   [davisagli]
+@@ -10,6 +10,9 @@ Changelog
+ - Make fieldset creation optional
+   [ebrehault]
  
 +- Add CSRF protection token
 +  [ebrehault]
++
  
  2.0.1 (2014-10-23)
  ------------------
 diff --git a/plone/schemaeditor/browser/schema/schema_listing.pt b/plone/schemaeditor/browser/schema/schema_listing.pt
-index 2b798b1..f019091 100644
+index adb694b..5bfd79c 100644
 --- a/plone/schemaeditor/browser/schema/schema_listing.pt
 +++ b/plone/schemaeditor/browser/schema/schema_listing.pt
 @@ -16,6 +16,7 @@
@@ -69,5 +153,95 @@ index e0e8b33..9d145cb 100644
          });
          set_id_from_title = function () {
              var id = $.plone_schemaeditor_normalize_string($(this).val());
+diff --git a/plone/schemaeditor/fields.py b/plone/schemaeditor/fields.py
+index 5054c91..052304b 100644
+--- a/plone/schemaeditor/fields.py
++++ b/plone/schemaeditor/fields.py
+@@ -53,6 +53,9 @@ def editable(self, field):
+ 
+ def FieldsVocabularyFactory(context):
+     field_factories = getUtilitiesFor(IFieldFactory)
++    if context.allowedFields is not None:
++        field_factories = [(id, factory) for id, factory in field_factories
++                            if id in context.allowedFields]
+     terms = []
+     for (field_id, factory) in field_factories:
+         terms.append(SimpleVocabulary.createTerm(factory,
+
+
+Repository: plone.schemaeditor
+Branch: refs/heads/master
+Date: 2015-02-26T19:45:10+01:00
+Author: Eric BREHAULT (ebrehault) <ebrehault@gmail.com>
+Commit: https://github.com/plone/plone.schemaeditor/commit/5b3e9569804362786ff72d7cf7924e0e8758a7a1
+
+Merge pull request #21 from plone/ebrehault-optional-fieldset
+
+make fieldset creation optional
+
+Files changed:
+M CHANGES.rst
+M plone/schemaeditor/browser/schema/schema_listing.pt
+M plone/schemaeditor/browser/schema/traversal.py
+M plone/schemaeditor/interfaces.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 23c3b61..70bc96a 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -7,9 +7,13 @@ Changelog
+ - Update markup and javscript for Plone 5.
+   [davisagli]
+ 
++- Make fieldset creation optional
++  [ebrehault]
++
+ - Add CSRF protection token
+   [ebrehault]
+ 
++
+ 2.0.1 (2014-10-23)
+ ------------------
+ 
+diff --git a/plone/schemaeditor/browser/schema/schema_listing.pt b/plone/schemaeditor/browser/schema/schema_listing.pt
+index f019091..5bfd79c 100644
+--- a/plone/schemaeditor/browser/schema/schema_listing.pt
++++ b/plone/schemaeditor/browser/schema/schema_listing.pt
+@@ -8,7 +8,7 @@
+            i18n:translate="add_new_field_hellip">Add new field&hellip;</button>
+   </a>
+ 
+-  <a id="add-fieldset" class="pat-modal"
++  <a id="add-fieldset" class="pat-modal" tal:condition="context/enableFieldsets"
+      href="${context/absolute_url}/@@add-fieldset">
+     <button style="float: right; display: block;"
+            i18n:translate="add_fieldset_hellip">Add new fieldset&hellip;</button>
+diff --git a/plone/schemaeditor/browser/schema/traversal.py b/plone/schemaeditor/browser/schema/traversal.py
+index 715e9c3..18d108a 100644
+--- a/plone/schemaeditor/browser/schema/traversal.py
++++ b/plone/schemaeditor/browser/schema/traversal.py
+@@ -20,6 +20,7 @@ class SchemaContext(SimpleItem):
+     additionalSchemata = ()
+     allowedFields = None  # all fields
+     fieldsWhichCannotBeDeleted = ()
++    enableFieldsets = True
+ 
+     def __init__(self, context, request, name=u'schema', title=None):
+         super(SchemaContext, self).__init__(context, request)
+diff --git a/plone/schemaeditor/interfaces.py b/plone/schemaeditor/interfaces.py
+index 417a96c..3de2928 100644
+--- a/plone/schemaeditor/interfaces.py
++++ b/plone/schemaeditor/interfaces.py
+@@ -40,6 +40,10 @@ class ISchemaContext(IItem):
+         """List of field names that may not be deleted from this schema."""
+         )
+ 
++    enableFieldsets = Attribute(
++        """Enable extra fieldsets."""
++        )
++
+ 
+ class ISchemaModifiedEvent(IObjectEvent):
+ 
 
 
