@@ -1,41 +1,109 @@
-Repository: plone.app.contenttypes
+Repository: Products.CMFPlone
 Branch: refs/heads/master
-Date: 2015-02-26T23:12:24+01:00
-Author: Philip Bauer (pbauer) <bauer@starzel.de>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/f6b61e8ec73b38df7af54e4994595640434ac174
+Date: 2015-02-27T02:41:31+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/Products.CMFPlone/commit/54f1d669e3e6ba9365bc850ed37190f2d016ece0
 
-exclude random image in photoAlbumFolder from robot-test
+Remove selectable_views from properties.xml, which isn't used anywhere anymore.
 
 Files changed:
-M plone/app/contenttypes/tests/robot/test_folderlisting.robot
+M CHANGES.rst
+M Products/CMFPlone/profiles/default/properties.xml
 
-diff --git a/plone/app/contenttypes/tests/robot/test_folderlisting.robot b/plone/app/contenttypes/tests/robot/test_folderlisting.robot
-index 18223d8..c15fed7 100644
---- a/plone/app/contenttypes/tests/robot/test_folderlisting.robot
-+++ b/plone/app/contenttypes/tests/robot/test_folderlisting.robot
-@@ -159,17 +159,17 @@ Album should list all images and albums
-   Page Should Contain  Test Image
-   Xpath Should Match X Times  //img[@title="Test Image"]  2
-   Page Should Contain  Test Album Image 1
--  Xpath Should Match X Times  //img[@title="Test Album Image 1"]  1
-+  Xpath Should Match X Times  //div[@class="photoAlbumEntry" and not(@class="photoAlbumFolder")]//img[@title="Test Album Image 1"]  1
-   Page Should Contain  Test Album Image 2
--  Xpath Should Match X Times  //img[@title="Test Album Image 2"]  1
-+  Xpath Should Match X Times  //div[@class="photoAlbumEntry" and not(@class="photoAlbumFolder")]//img[@title="Test Album Image 2"]  1
-   Page Should Contain  Test Album Image 3
--  Xpath Should Match X Times  //img[@title="Test Album Image 3"]  1
-+  Xpath Should Match X Times  //div[@class="photoAlbumEntry" and not(@class="photoAlbumFolder")]//img[@title="Test Album Image 3"]  1
-   Page Should Contain  Test Sub Album Image 1
--  Xpath Should Match X Times  //img[@title="Test Sub Album Image 1"]  1
-+  Xpath Should Match X Times  //div[@class="photoAlbumEntry" and not(@class="photoAlbumFolder")]//img[@title="Test Sub Album Image 1"]  1
-   Page Should Contain  Test Sub Album Image 2
--  Xpath Should Match X Times  //img[@title="Test Sub Album Image 2"]  1
-+  Xpath Should Match X Times  //div[@class="photoAlbumEntry" and not(@class="photoAlbumFolder")]//img[@title="Test Sub Album Image 2"]  1
-   Page Should Contain  Test Sub Album Image 3
--  Xpath Should Match X Times  //img[@title="Test Sub Album Image 3"]  1
-+  Xpath Should Match X Times  //div[@class="photoAlbumEntry" and not(@class="photoAlbumFolder")]//img[@title="Test Sub Album Image 3"]  1
-   Page Should Contain  Test Album
-   Page Should Contain  Test Sub Album
+diff --git a/CHANGES.rst b/CHANGES.rst
+index fe6a3c7..225b805 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -8,6 +8,10 @@ Changelog
+ 5.0b1 (unreleased)
+ ------------------
  
++- Remove ``selectable_views`` from ``properties.xml``, which isn't used
++  anywhere anymore.
++  [thet]
++
+ - Remove the remaining ``Topic`` entry in ``default_page_types`` from
+   ``propertiestool.xml``. This setting is now done in
+   ``plone.app.contenttypes`` respectively ``Products.ATContentTypes``.
+diff --git a/Products/CMFPlone/profiles/default/properties.xml b/Products/CMFPlone/profiles/default/properties.xml
+index 3e7fdc8..b3f921b 100644
+--- a/Products/CMFPlone/profiles/default/properties.xml
++++ b/Products/CMFPlone/profiles/default/properties.xml
+@@ -2,10 +2,6 @@
+ <site>
+  <property name="title">Site</property>
+  <property name="description"></property>
+- <property name="selectable_views" type="lines">
+-  <element value="folder_listing"/>
+-  <element value="news_listing"/>
+- </property>
+  <property name="email_from_address" type="string"></property>
+  <property name="email_from_name" type="string"></property>
+  <property name="validate_email" type="boolean">True</property>
+
+
+Repository: Products.CMFPlone
+Branch: refs/heads/master
+Date: 2015-02-27T04:26:04+01:00
+Author: Johannes Raggam (thet) <raggam-nl@adm.at>
+Commit: https://github.com/plone/Products.CMFPlone/commit/598cbc4f090d3305d6f37d389a5ee898ff62defd
+
+Fix tests for plone.app.contenttypes unified view names, which uses listing_view for Folder and Collection types.
+
+Files changed:
+M CHANGES.rst
+M Products/CMFPlone/browser/ploneview.py
+M Products/CMFPlone/tests/testBrowserDefault.py
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 225b805..087bce2 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -8,6 +8,10 @@ Changelog
+ 5.0b1 (unreleased)
+ ------------------
+ 
++- Fix tests for plone.app.contenttypes unified view names, which uses
++  ``listing_view`` for Folder and Collection types.
++  [thet]
++
+ - Remove ``selectable_views`` from ``properties.xml``, which isn't used
+   anywhere anymore.
+   [thet]
+diff --git a/Products/CMFPlone/browser/ploneview.py b/Products/CMFPlone/browser/ploneview.py
+index dd61f2e..02c11ed 100644
+--- a/Products/CMFPlone/browser/ploneview.py
++++ b/Products/CMFPlone/browser/ploneview.py
+@@ -116,9 +116,9 @@ def showEditableBorder(self):
+             idActions[obj.get('id', '')] = 1
+ 
+         if 'edit' in idActions:
+-            if (template_id in idActions or \
++            if (template_id in idActions or
+                 template_id in ['synPropertiesForm', 'folder_contents',
+-                                'folder_listing']):
++                                'folder_listing', 'listing_view']):
+                 return True
+ 
+         # Check to see if the user is able to add content
+diff --git a/Products/CMFPlone/tests/testBrowserDefault.py b/Products/CMFPlone/tests/testBrowserDefault.py
+index b4615c5..f264f50 100644
+--- a/Products/CMFPlone/tests/testBrowserDefault.py
++++ b/Products/CMFPlone/tests/testBrowserDefault.py
+@@ -228,8 +228,12 @@ def testFolderDefaultPageSameAsSelfWithPageMissing(self):
+         self.assertEqual(self.putils.browserDefault(f),
+                          (f, [f.getId()],))
+         f._delObject(f.getId())
+-        self.assertEqual(self.putils.browserDefault(f),
+-                         (f, ['folder_listing'],))
++        self.assertTrue(
++            self.putils.browserDefault(f) == (f, ['folder_listing'],)
++            or
++            self.putils.browserDefault(f) == (f, ['listing_view'],)
++            # plone.app.contenttypes has unified views
++        )
+ 
+     def testDefaultPageSetting(self):
+         sp = getToolByName(self.portal, "portal_properties").site_properties
 
 
