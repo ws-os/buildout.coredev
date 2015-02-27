@@ -1,146 +1,152 @@
-Repository: plone.app.contenttypes
+Repository: plone.app.search
 Branch: refs/heads/master
-Date: 2015-02-27T04:30:36+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/01198b947a5267a9202a3759774dd5a654508624
+Date: 2015-01-25T20:15:31+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/plone.app.search/commit/15427c420720ad481a619979e5ae0e959c01d811
 
-add Plone Site and configure new view names for it
+read "allow_anon_views_about" from registry instead of properties
 
 Files changed:
-A plone/app/contenttypes/profiles/default/types/Plone_Site.xml
-A plone/app/contenttypes/profiles/uninstall/types/Plone_Site.xml
-M plone/app/contenttypes/profiles/default/types.xml
-M plone/app/contenttypes/profiles/uninstall/types.xml
+M CHANGES.rst
+M plone/app/search/search.pt
 
-diff --git a/plone/app/contenttypes/profiles/default/types.xml b/plone/app/contenttypes/profiles/default/types.xml
-index ac9b7eb..4e13ba7 100644
---- a/plone/app/contenttypes/profiles/default/types.xml
-+++ b/plone/app/contenttypes/profiles/default/types.xml
-@@ -22,5 +22,8 @@
-  <object meta_type="Dexterity FTI" name="Image" />
-  <object meta_type="Dexterity FTI" name="News Item" />
-  <object meta_type="Dexterity FTI" name="Event" />
-+ 
-+ <object name="Plone Site"
-+    meta_type="Factory-based Type Information with dynamic views"/>
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 8a05d5c..a1ea647 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -5,7 +5,9 @@ Changelog
+ 1.2.3 (unreleased)
+ ------------------
  
- </object>
-diff --git a/plone/app/contenttypes/profiles/default/types/Plone_Site.xml b/plone/app/contenttypes/profiles/default/types/Plone_Site.xml
-new file mode 100644
-index 0000000..bd03b87
---- /dev/null
-+++ b/plone/app/contenttypes/profiles/default/types/Plone_Site.xml
-@@ -0,0 +1,13 @@
-+<?xml version="1.0"?>
-+<object name="Plone Site" meta_type="Factory-based Type Information with dynamic views" i18n:domain="plone" xmlns:i18n="http://xml.zope.org/namespaces/i18n">
-+  <property name="immediate_view">listing_view</property>
-+  <property name="default_view">listing_view</property>
-+  <property name="view_methods">
-+    <element value="listing_view" />
-+    <element value="summary_view" />
-+    <element value="tabular_view" />
-+    <element value="full_view" />
-+    <element value="album_view" />
-+    <element value="event_listing" />
-+  </property>
-+</object>
-diff --git a/plone/app/contenttypes/profiles/uninstall/types.xml b/plone/app/contenttypes/profiles/uninstall/types.xml
-index fcd0b15..fca8606 100644
---- a/plone/app/contenttypes/profiles/uninstall/types.xml
-+++ b/plone/app/contenttypes/profiles/uninstall/types.xml
-@@ -24,4 +24,8 @@
-     meta_type="Factory-based Type Information with dynamic views"/>
-  <object name="News Item"
-     meta_type="Factory-based Type Information with dynamic views"/>
+-- Nothing changed yet.
++- Read ``allow_anon_views_about`` setting from the registry instead of portal
++  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
++  [jcerjak]
+ 
+ 
+ 1.2.2 (2014-10-23)
+diff --git a/plone/app/search/search.pt b/plone/app/search/search.pt
+index 2549364..9ae4233 100644
+--- a/plone/app/search/search.pt
++++ b/plone/app/search/search.pt
+@@ -147,7 +147,7 @@
+                                       <div class="search-type-options">
+                                         <tal:div
+                                            tal:define="typeLists python:context.createMultiColumnList(types_list, numCols=2, sort_on='self');"
+-                                           
 +
-+ <object name="Plone Site"
-+    meta_type="Factory-based Type Information with dynamic views"/>
+                                            tal:repeat="sublist typeLists">
+                                           <tal:items repeat="type sublist">
+                                             <div>
+@@ -240,7 +240,7 @@
+ 
+                     </dl>
+ 
+-                    
 +
- </object>
-diff --git a/plone/app/contenttypes/profiles/uninstall/types/Plone_Site.xml b/plone/app/contenttypes/profiles/uninstall/types/Plone_Site.xml
-new file mode 100644
-index 0000000..316c0c5
---- /dev/null
-+++ b/plone/app/contenttypes/profiles/uninstall/types/Plone_Site.xml
-@@ -0,0 +1,12 @@
-+<?xml version="1.0"?>
-+<object name="Plone Site" meta_type="Factory-based Type Information with dynamic views" i18n:domain="plone" xmlns:i18n="http://xml.zope.org/namespaces/i18n">
-+  <property name="immediate_view">folder_listing</property>
-+  <property name="default_view">folder_listing</property>
-+  <property name="view_methods">
-+    <element value="folder_listing" />
-+    <element value="folder_summary_view" />
-+    <element value="folder_full_view" />
-+    <element value="folder_tabular_view" />
-+    <element value="atct_album_view" />
-+  </property>
-+</object>
+                 </div>
+ 
+ 
+@@ -275,8 +275,8 @@
+                                                    toLocalizedTime nocall: context/@@plone/toLocalizedTime;
+                                                    site_properties context/portal_properties/site_properties;
+                                                    use_view_action site_properties/typesUseViewActionInListings|python:();
+-                                                   allowAnonymousViewAbout site_properties/allowAnonymousViewAbout;
+-                                                   show_about python:not isAnon or allowAnonymousViewAbout;">
++                                                   allow_anon_views_about python:context.portal_registry['plone.allow_anon_views_about'];
++                                                   show_about python:not isAnon or allow_anon_views_about;">
+                           <ol class="searchResults">
+                               <tal:results repeat="item batch">
+                                     <li>
 
 
-Repository: plone.app.contenttypes
+Repository: plone.app.search
 Branch: refs/heads/master
-Date: 2015-02-27T04:34:57+01:00
-Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/plone.app.contenttypes/commit/972c589352f0e98efb275ad5ec6ace3c1c15d219
+Date: 2015-02-27T07:47:52+01:00
+Author: Timo Stollenwerk () <contact@timostollenwerk.net>
+Commit: https://github.com/plone/plone.app.search/commit/c233aec32600a4836ef504016a817a4d531c9b25
 
-When installing the default profile, restrict uninstalling of old types to old FTI based ones.
+Merge branch 'master' into plip10359-security-controlpanel
 
 Files changed:
-M docs/CHANGES.rst
-M plone/app/contenttypes/profiles/default/types.xml
+M README.rst
 
-diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
-index 30dc2c0..61d9679 100644
---- a/docs/CHANGES.rst
-+++ b/docs/CHANGES.rst
-@@ -4,6 +4,10 @@ Changelog
- 1.2 (unreleased)
- ----------------
+diff --git a/README.rst b/README.rst
+index 6868b6f..a42c0fb 100644
+--- a/README.rst
++++ b/README.rst
+@@ -8,4 +8,6 @@ plone.app.search also updates main search field (usually located at the top righ
+ plone.app.search has the aim to give intuitively clear and understandable interface for searching in Plone. But there might be some new things that are not so obvious. Let's see how the search results works now.
  
-+- When installing the default profile, restrict uninstalling of old types to
-+  old FTI based ones.
-+  [thet]
+ Notes
+-=====
+\ No newline at end of file
++=====
 +
- - Reformatted all templates for 2 space indentation, 4 space for attributes.
-   [thet]
++This package is merged into Products.CMFPlone in Plone 5.
+
+
+Repository: plone.app.search
+Branch: refs/heads/master
+Date: 2015-02-27T08:35:10+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/plone.app.search/commit/9c7459bdf8e61e5b4605f0d3402d990cf0311d98
+
+Merge pull request #14 from plone/plip10359-security-controlpanel
+
+Plip 10359 - Security Control Panel migration
+
+Files changed:
+M CHANGES.rst
+M plone/app/search/search.pt
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 8a05d5c..a1ea647 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -5,7 +5,9 @@ Changelog
+ 1.2.3 (unreleased)
+ ------------------
  
-diff --git a/plone/app/contenttypes/profiles/default/types.xml b/plone/app/contenttypes/profiles/default/types.xml
-index 4e13ba7..30011bd 100644
---- a/plone/app/contenttypes/profiles/default/types.xml
-+++ b/plone/app/contenttypes/profiles/default/types.xml
-@@ -4,15 +4,24 @@
-  <!-- We remove old ATContentTypes if they exist.
-       Instances of these types can still be looked at since the
-       skin-templates in CMFPlone are there but they cannot be edited -->
-- <object name="Collection" remove="True"/>
-- <object name="Document" remove="True"/>
-- <object name="Event" remove="True"/>
-- <object name="File" remove="True"/>
-- <object name="Folder" remove="True"/>
-- <object name="Image" remove="True"/>
-- <object name="Link" remove="True"/>
-- <object name="News Item" remove="True"/>
-- <object name="Topic" remove="True"/>
-+ <object name="Collection" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
-+ <object name="Document" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
-+ <object name="Event" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
-+ <object name="File" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
-+ <object name="Folder" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
-+ <object name="Image" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
-+ <object name="Link" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
-+ <object name="News Item" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
-+ <object name="Topic" remove="True"
-+    meta_type="Factory-based Type Information with dynamic views"/>
+-- Nothing changed yet.
++- Read ``allow_anon_views_about`` setting from the registry instead of portal
++  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
++  [jcerjak]
  
-  <object meta_type="Dexterity FTI" name="Collection" />
-  <object meta_type="Dexterity FTI" name="Document" />
+ 
+ 1.2.2 (2014-10-23)
+diff --git a/plone/app/search/search.pt b/plone/app/search/search.pt
+index 2549364..9ae4233 100644
+--- a/plone/app/search/search.pt
++++ b/plone/app/search/search.pt
+@@ -147,7 +147,7 @@
+                                       <div class="search-type-options">
+                                         <tal:div
+                                            tal:define="typeLists python:context.createMultiColumnList(types_list, numCols=2, sort_on='self');"
+-                                           
++
+                                            tal:repeat="sublist typeLists">
+                                           <tal:items repeat="type sublist">
+                                             <div>
+@@ -240,7 +240,7 @@
+ 
+                     </dl>
+ 
+-                    
++
+                 </div>
+ 
+ 
+@@ -275,8 +275,8 @@
+                                                    toLocalizedTime nocall: context/@@plone/toLocalizedTime;
+                                                    site_properties context/portal_properties/site_properties;
+                                                    use_view_action site_properties/typesUseViewActionInListings|python:();
+-                                                   allowAnonymousViewAbout site_properties/allowAnonymousViewAbout;
+-                                                   show_about python:not isAnon or allowAnonymousViewAbout;">
++                                                   allow_anon_views_about python:context.portal_registry['plone.allow_anon_views_about'];
++                                                   show_about python:not isAnon or allow_anon_views_about;">
+                           <ol class="searchResults">
+                               <tal:results repeat="item batch">
+                                     <li>
 
 
