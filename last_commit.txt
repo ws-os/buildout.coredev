@@ -1,59 +1,483 @@
-Repository: Products.CMFPlone
+Repository: Products.PasswordResetTool
 Branch: refs/heads/master
-Date: 2015-02-27T09:14:07+01:00
-Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/Products.CMFPlone/commit/ad452bb23c5f7d70eab014db0c76ebb5e7d615bc
+Date: 2015-01-24T16:02:38+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/3b81f12629a1950aa0f7183e4e77d07e1ffa062c
 
-Read security settings from the registry instead of portal properties.
+update browser.txt to reflect changes in CMFPlone
+
+validate_email was replaced by enable_user_pwd_choice
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/browser/templates/search.pt
+M Products/PasswordResetTool/tests/browser.txt
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 087bce2..f380775 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,6 +8,9 @@ Changelog
- 5.0b1 (unreleased)
+diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
+index b9a573e..5876c79 100644
+--- a/Products/PasswordResetTool/tests/browser.txt
++++ b/Products/PasswordResetTool/tests/browser.txt
+@@ -25,9 +25,9 @@ distinct password policies regarding member registration.
+   B. A password is generated for the users (and an e-mail with login
+      credentials is sent automatically).
+ 
+-This policy can enabled or disabled in the ``validate_email`` property
+-on the Plone Site object.  By default ``validate_email`` is enabled
+-and the second policy applies.
++This policy can be enabled or disabled with the ``enable_user_pwd_choice``
++setting in the security control panel.  By default ``enable_user_pwd_choice`` is
++disabled and the second policy applies.
+ 
+ Another aspect we have to take into account is the fact that Plone by
+ default only allows Administrators to register (other) members, but allowing
+
+
+Repository: Products.PasswordResetTool
+Branch: refs/heads/master
+Date: 2015-01-25T17:09:01+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/5a9bacc817c5cbd9d10dd9fbfe48f57f0a827cc2
+
+Read use_email_as_login from registry instead of portal properties
+
+Files changed:
+M CHANGES.txt
+M Products/PasswordResetTool/PasswordResetTool.py
+M Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
+
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 4a3883f..3a66e3f 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,6 +4,10 @@ Changelog
+ 2.1.2 (unreleased)
  ------------------
  
-+- Read security settings from the registry instead of portal properties.
-+  [jcerjak,timo]
++- Read ``use_email_as_login`` setting from the registry instead of portal
++  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
++  [jcerjak]
 +
- - Fix tests for plone.app.contenttypes unified view names, which uses
-   ``listing_view`` for Folder and Collection types.
-   [thet]
-diff --git a/Products/CMFPlone/browser/templates/search.pt b/Products/CMFPlone/browser/templates/search.pt
-index 2695daa..9212096 100644
---- a/Products/CMFPlone/browser/templates/search.pt
-+++ b/Products/CMFPlone/browser/templates/search.pt
-@@ -147,7 +147,7 @@
-                                       <div class="search-type-options">
-                                         <tal:div
-                                            tal:define="typeLists python:context.createMultiColumnList(types_list, numCols=2, sort_on='self');"
--                                           
+ - Amend browser.txt test to the new p.a.registry-based control panels
+   (Plone 5 only).
+   [timo]
+diff --git a/Products/PasswordResetTool/PasswordResetTool.py b/Products/PasswordResetTool/PasswordResetTool.py
+index dd03c3e..20d95aa 100644
+--- a/Products/PasswordResetTool/PasswordResetTool.py
++++ b/Products/PasswordResetTool/PasswordResetTool.py
+@@ -19,7 +19,9 @@
+ from App.special_dtml import DTMLFile
+ from AccessControl import ClassSecurityInfo
+ from AccessControl import ModuleSecurityInfo
++from plone.registry.interfaces import IRegistry
+ from Products.CMFCore.permissions import ManagePortal
++from Products.CMFPlone.interfaces import ISecuritySchema
+ try:
+     from Products.CMFPlone.RegistrationTool import get_member_by_login_name
+ except ImportError:
+@@ -33,6 +35,7 @@
+ import time
+ import socket
+ from DateTime import DateTime
++from zope.component import getUtility
+ from zope.interface import implements
+ 
+ module_security = ModuleSecurityInfo('Products.PasswordResetTool.PasswordResetTool')
+@@ -346,8 +349,10 @@ def expirationDate(self):
+     def getValidUser(self, userid):
+         """Returns the member with 'userid' if available and None otherwise."""
+         if get_member_by_login_name:
+-            props = getToolByName(self, 'portal_properties').site_properties
+-            if props.getProperty('use_email_as_login', False):
++            registry = getUtility(IRegistry)
++            settings = registry.forInterface(ISecuritySchema, prefix='plone')
 +
-                                            tal:repeat="sublist typeLists">
-                                           <tal:items repeat="type sublist">
-                                             <div>
-@@ -240,7 +240,7 @@
++            if settings.use_email_as_login:
+                 return get_member_by_login_name(
+                     self, userid, raise_exceptions=False)
+         membertool = getToolByName(self, 'portal_membership')
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt b/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
+index 53d325a..53be415 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
++++ b/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
+@@ -32,7 +32,7 @@
+                     <div class="field"
+                          tal:define="error errors/userid | nothing;
+                                      site_properties context/portal_properties/site_properties;
+-                                     use_email_as_login site_properties/use_email_as_login|nothing;"
++                                     use_email_as_login python:context.portal_registry['plone.use_email_as_login'];"
+                          tal:attributes="class python:test(error, 'field error', 'field')"
+                          tal:condition="here/portal_password_reset/checkUser | nothing">
  
-                     </dl>
+
+
+Repository: Products.PasswordResetTool
+Branch: refs/heads/master
+Date: 2015-01-25T20:39:07+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/d1b381b488922555b8ea9f86ff35eaa5bcfab0d4
+
+fix "use_email_as_login" in other templates as well
+
+Files changed:
+M Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
+M Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
+
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
+index 03daaad..d23c1f1 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
+@@ -14,7 +14,7 @@
  
--                    
+ <metal:main fill-slot="main"
+      tal:define="global props context/@@plone_tools/properties;
+-                 use_email_as_login props/site_properties/use_email_as_login|nothing;">
++                 use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
+ 
+     <h1 class="documentFirstHeading"
+         i18n:translate="heading_lost_password">Lost Password</h1>
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt b/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
+index 755ed7e..417cf2f 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
+@@ -6,7 +6,7 @@
+ 
+ <metal:main fill-slot="main"
+      tal:define="site_properties context/portal_properties/site_properties;
+-                 use_email_as_login site_properties/use_email_as_login|nothing;">
++                 use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
+ 
+     <h1 class="documentFirstHeading" i18n:translate="heading_pwreset_invalid">Error setting password</h1>
+ 
+
+
+Repository: Products.PasswordResetTool
+Branch: refs/heads/master
+Date: 2015-02-27T07:50:34+01:00
+Author: Timo Stollenwerk () <contact@timostollenwerk.net>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/a529ec2a49086ba564edf7ffbd91cfdab816de59
+
+Merge branch 'master' into plip10359-security-controlpanel
+
+Files changed:
+M CHANGES.txt
+M Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+M Products/PasswordResetTool/tests/browser.txt
+
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 3a66e3f..95ac758 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -11,6 +11,8 @@ Changelog
+ - Amend browser.txt test to the new p.a.registry-based control panels
+   (Plone 5 only).
+   [timo]
++- Added userid information in reset mail (useful when the administrator resets a user password)
++  [sgeulette]
+ 
+ 
+ 2.1.1 (2014-10-22)
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+index 792967e..d5a57a1 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
+@@ -3,6 +3,7 @@
+                   member python:options['member'];
+                   portal_state context/@@plone_portal_state;
+                   view context/@@passwordreset_view;
++                  isAnon context/@@plone_portal_state/anonymous;
+                   reset python:options['reset']"
+ >From: <span tal:replace="structure view/encoded_mail_sender" />
+ To: <span tal:replace="python:member.getProperty('email')" />
+@@ -10,6 +11,15 @@ Subject: <span tal:replace="view/mail_password_subject" />
+ Precedence: bulk
+ 
+ <div i18n:domain="passwordresettool"
++     i18n:translate="mailtemplate_reset_information"
++     tal:omit-tag=""
++     tal:condition="not:isAnon">
++The site administrator asks you to reset your password for '<span i18n:name="userid"
++          tal:omit-tag=""
++          tal:content="member/id" />' userid. Your old password doesn't work anymore.
++</div>
 +
-                 </div>
++<div i18n:domain="passwordresettool"
+      i18n:translate="mailtemplate_text_linkreset"
+      tal:omit-tag=""
+      tal:define="fullname python: test(member.fullname,
+@@ -32,7 +42,8 @@ The following link will take you to a page where you can reset your password for
  
+ <div i18n:domain="passwordresettool"
+      i18n:translate="mailtemplate_tracking_information"
+-     tal:omit-tag="">
++     tal:omit-tag=""
++     tal:condition="isAnon">
+ If you didn't expect to receive this email, please ignore it. Your password has not been changed.
+ Request made from IP address <span tal:define="host request/HTTP_X_FORWARDED_FOR|request/REMOTE_ADDR"
+           tal:content="host"
+diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
+index 5876c79..bc44317 100644
+--- a/Products/PasswordResetTool/tests/browser.txt
++++ b/Products/PasswordResetTool/tests/browser.txt
+@@ -72,6 +72,7 @@ What we do here:
+   - Log in
+   - Log out again
+   - Forget our password (this is where PasswordResetTool comes in)
++  - Check if this is a soft reset (old password already works until changed)
+   - Read the e-mail that contains the URL we visit to reset our password
+   - Reset our password
+   - Log in with our new password
+@@ -154,6 +155,24 @@ password`` in the login form:
+   >>> form.getControl(name='userid').value = 'jsmith'
+   >>> form.submit()
  
-@@ -275,7 +275,7 @@
-                                                    toLocalizedTime nocall: context/@@plone/toLocalizedTime;
-                                                    site_properties context/portal_properties/site_properties;
-                                                    use_view_action site_properties/typesUseViewActionInListings|python:();
--                                                   allowAnonymousViewAbout site_properties/allowAnonymousViewAbout;
-+                                                   allowAnonymousViewAbout python:context.portal_registry['plone.allow_anon_views_about'];
-                                                    show_about python:not isAnon or allowAnonymousViewAbout;">
-                           <ol class="searchResults">
-                               <tal:results repeat="item batch">
++We check if the old password always works.
++
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = 'jsmith'
++  >>> browser.getControl(name='__ac_password').value = 'secret'
++  >>> browser.getControl(name='submit').click()
++
++We should be logged in now:
++
++  >>> "You are now logged in" in browser.contents
++  True
++
++Log out again:
++
++  >>> browser.getLink('Log out').click()
++  >>> "You are now logged out" in browser.contents
++  True
++
+ As part of our test setup, we replaced the original MailHost with our
+ own version.  Our version doesn't mail messages, it just collects them
+ in a list called ``messages``:
+@@ -170,13 +189,17 @@ then we extract the address that lets us reset our password:
+   >>> msg = quopri.decodestring(msg)
+   >>> "To: jsmith@example.com" in msg
+   True
++  >>> "The site administrator asks you to reset your password for 'jsmith' userid" in msg
++  False
+   >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
+   >>> please_visit_text in msg
+   True
+   >>> url_index = msg.index(please_visit_text) + len(please_visit_text)
+   >>> address = msg[url_index:].strip().split()[0]
+- >>> address # doctest: +ELLIPSIS
++  >>> address # doctest: +ELLIPSIS
+   'http://nohost/plone/passwordreset/...'
++  >>> "If you didn't expect to receive this email" in msg
++  True
+ 
+ Now that we have the address, we will reset our password:
+ 
+@@ -221,6 +244,9 @@ Log out again:
+   - Register a member (with send email checked???)
+   - Log out
+   - Log in as the new member
++  - A manager resets a user password
++  - Check if this is a hard reset (old password is changed)
++  - Check the received mail
+ 
+ First, we want to login as the portal owner:
+ 
+@@ -261,6 +287,56 @@ We want to logout and login as the new member:
+ 
+   >>> browser.getLink('Log out').click()
+ 
++Again, we want to login as the portal owner:
++
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = SITE_OWNER_NAME
++  >>> browser.getControl(name='__ac_password').value = SITE_OWNER_PASSWORD
++  >>> browser.getControl(name='submit').click()
++  >>> "You are now logged in" in browser.contents
++  True
++
++We navigate to the Users Overview page and reset a password user:
++
++  >>> browser.getLink('Site Setup').click()
++  >>> browser.getLink('Users and Groups').click()
++  >>> resets = browser.getControl(name='users.resetpassword:records')
++  >>> reset = resets.getControl(value='wsmith')
++  >>> reset.selected = True  
++  >>> browser.getControl(name="form.button.Modify").click()
++  >>> "Changes applied." in browser.contents
++  True
++  >>> browser.getLink('Log out').click()
++  >>> "You are now logged out" in browser.contents
++  True
++
++We check if the old password is well changed.
++
++  >>> browser.open('http://nohost/plone/login')
++  >>> browser.getControl(name='__ac_name').value = 'wsmith'
++  >>> browser.getControl(name='__ac_password').value = 'supersecret'
++  >>> browser.getControl(name='submit').click()
++
++We should not be logged in:
++
++  >>> "Login failed" in browser.contents
++  True
++
++We should have received an e-mail at this point:
++
++  >>> mailhost = layer['portal'].MailHost
++  >>> len(mailhost.messages)
++  2
++  >>> import quopri
++  >>> msg = quopri.decodestring(str(mailhost.messages[-1]))
++  >>> "The site administrator asks you to reset your password for 'wsmith' userid" in msg
++  True
++  >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
++  >>> please_visit_text in msg
++  True
++  >>> "If you didn't expect to receive this email" in msg
++  False
++
+ 
+ 1B. User joins with e-mail validation enabled and forgets password
+ ------------------------------------------------------------------
+@@ -311,7 +387,7 @@ We should have received an e-mail at this point:
+ 
+   >>> mailhost = layer['portal'].MailHost
+   >>> len(mailhost.messages)
+-  2
++  3
+   >>> msg = str(mailhost.messages[-1])
+ 
+ Now that we have the message, we want to look at its contents, and
+@@ -397,7 +473,7 @@ We should have received an e-mail at this point:
+ 
+   >>> mailhost = layer['portal'].MailHost
+   >>> len(mailhost.messages)
+-  3
++  4
+   >>> msg = str(mailhost.messages[-1])
+ 
+ Now that we have the message, we want to look at its contents, and
+
+
+Repository: Products.PasswordResetTool
+Branch: refs/heads/master
+Date: 2015-02-27T10:00:03+01:00
+Author: Timo Stollenwerk (tisto) <tisto@plone.org>
+Commit: https://github.com/plone/Products.PasswordResetTool/commit/7019f76ebd2cd16873761fabc86e54b29cf1f33a
+
+Merge pull request #8 from plone/plip10359-security-controlpanel
+
+Plip10359 security controlpanel
+
+Files changed:
+M CHANGES.txt
+M Products/PasswordResetTool/PasswordResetTool.py
+M Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
+M Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
+M Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
+M Products/PasswordResetTool/tests/browser.txt
+
+diff --git a/CHANGES.txt b/CHANGES.txt
+index 4f951e3..95ac758 100644
+--- a/CHANGES.txt
++++ b/CHANGES.txt
+@@ -4,6 +4,10 @@ Changelog
+ 2.1.2 (unreleased)
+ ------------------
+ 
++- Read ``use_email_as_login`` setting from the registry instead of portal
++  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
++  [jcerjak]
++
+ - Amend browser.txt test to the new p.a.registry-based control panels
+   (Plone 5 only).
+   [timo]
+diff --git a/Products/PasswordResetTool/PasswordResetTool.py b/Products/PasswordResetTool/PasswordResetTool.py
+index dd03c3e..20d95aa 100644
+--- a/Products/PasswordResetTool/PasswordResetTool.py
++++ b/Products/PasswordResetTool/PasswordResetTool.py
+@@ -19,7 +19,9 @@
+ from App.special_dtml import DTMLFile
+ from AccessControl import ClassSecurityInfo
+ from AccessControl import ModuleSecurityInfo
++from plone.registry.interfaces import IRegistry
+ from Products.CMFCore.permissions import ManagePortal
++from Products.CMFPlone.interfaces import ISecuritySchema
+ try:
+     from Products.CMFPlone.RegistrationTool import get_member_by_login_name
+ except ImportError:
+@@ -33,6 +35,7 @@
+ import time
+ import socket
+ from DateTime import DateTime
++from zope.component import getUtility
+ from zope.interface import implements
+ 
+ module_security = ModuleSecurityInfo('Products.PasswordResetTool.PasswordResetTool')
+@@ -346,8 +349,10 @@ def expirationDate(self):
+     def getValidUser(self, userid):
+         """Returns the member with 'userid' if available and None otherwise."""
+         if get_member_by_login_name:
+-            props = getToolByName(self, 'portal_properties').site_properties
+-            if props.getProperty('use_email_as_login', False):
++            registry = getUtility(IRegistry)
++            settings = registry.forInterface(ISecuritySchema, prefix='plone')
++
++            if settings.use_email_as_login:
+                 return get_member_by_login_name(
+                     self, userid, raise_exceptions=False)
+         membertool = getToolByName(self, 'portal_membership')
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
+index 03daaad..d23c1f1 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
+@@ -14,7 +14,7 @@
+ 
+ <metal:main fill-slot="main"
+      tal:define="global props context/@@plone_tools/properties;
+-                 use_email_as_login props/site_properties/use_email_as_login|nothing;">
++                 use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
+ 
+     <h1 class="documentFirstHeading"
+         i18n:translate="heading_lost_password">Lost Password</h1>
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt b/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
+index 53d325a..53be415 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
++++ b/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
+@@ -32,7 +32,7 @@
+                     <div class="field"
+                          tal:define="error errors/userid | nothing;
+                                      site_properties context/portal_properties/site_properties;
+-                                     use_email_as_login site_properties/use_email_as_login|nothing;"
++                                     use_email_as_login python:context.portal_registry['plone.use_email_as_login'];"
+                          tal:attributes="class python:test(error, 'field error', 'field')"
+                          tal:condition="here/portal_password_reset/checkUser | nothing">
+ 
+diff --git a/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt b/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
+index 755ed7e..417cf2f 100644
+--- a/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
++++ b/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
+@@ -6,7 +6,7 @@
+ 
+ <metal:main fill-slot="main"
+      tal:define="site_properties context/portal_properties/site_properties;
+-                 use_email_as_login site_properties/use_email_as_login|nothing;">
++                 use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
+ 
+     <h1 class="documentFirstHeading" i18n:translate="heading_pwreset_invalid">Error setting password</h1>
+ 
+diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
+index d4dc5b1..bc44317 100644
+--- a/Products/PasswordResetTool/tests/browser.txt
++++ b/Products/PasswordResetTool/tests/browser.txt
+@@ -25,9 +25,9 @@ distinct password policies regarding member registration.
+   B. A password is generated for the users (and an e-mail with login
+      credentials is sent automatically).
+ 
+-This policy can enabled or disabled in the ``validate_email`` property
+-on the Plone Site object.  By default ``validate_email`` is enabled
+-and the second policy applies.
++This policy can be enabled or disabled with the ``enable_user_pwd_choice``
++setting in the security control panel.  By default ``enable_user_pwd_choice`` is
++disabled and the second policy applies.
+ 
+ Another aspect we have to take into account is the fact that Plone by
+ default only allows Administrators to register (other) members, but allowing
 
 
