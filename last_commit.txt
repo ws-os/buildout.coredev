@@ -1,483 +1,810 @@
-Repository: Products.PasswordResetTool
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2015-01-24T16:02:38+01:00
+Date: 2015-01-25T13:32:53+01:00
 Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/Products.PasswordResetTool/commit/3b81f12629a1950aa0f7183e4e77d07e1ffa062c
+Commit: https://github.com/plone/plone.app.layout/commit/ec8d8bb49ec6f7a912cd1cbbe702ec466df5f536
 
-update browser.txt to reflect changes in CMFPlone
-
-validate_email was replaced by enable_user_pwd_choice
+Read "allow_anon_views_about" from registry instead of properties
 
 Files changed:
-M Products/PasswordResetTool/tests/browser.txt
+M CHANGES.rst
+M plone/app/layout/links/viewlets.py
+M plone/app/layout/viewlets/content.py
+M plone/app/layout/viewlets/tests/test_content.py
 
-diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
-index b9a573e..5876c79 100644
---- a/Products/PasswordResetTool/tests/browser.txt
-+++ b/Products/PasswordResetTool/tests/browser.txt
-@@ -25,9 +25,9 @@ distinct password policies regarding member registration.
-   B. A password is generated for the users (and an e-mail with login
-      credentials is sent automatically).
- 
--This policy can enabled or disabled in the ``validate_email`` property
--on the Plone Site object.  By default ``validate_email`` is enabled
--and the second policy applies.
-+This policy can be enabled or disabled with the ``enable_user_pwd_choice``
-+setting in the security control panel.  By default ``enable_user_pwd_choice`` is
-+disabled and the second policy applies.
- 
- Another aspect we have to take into account is the fact that Plone by
- default only allows Administrators to register (other) members, but allowing
-
-
-Repository: Products.PasswordResetTool
-Branch: refs/heads/master
-Date: 2015-01-25T17:09:01+01:00
-Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/Products.PasswordResetTool/commit/5a9bacc817c5cbd9d10dd9fbfe48f57f0a827cc2
-
-Read use_email_as_login from registry instead of portal properties
-
-Files changed:
-M CHANGES.txt
-M Products/PasswordResetTool/PasswordResetTool.py
-M Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
-
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 4a3883f..3a66e3f 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
+diff --git a/CHANGES.rst b/CHANGES.rst
+index ee37d4c..2e0a425 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
 @@ -4,6 +4,10 @@ Changelog
- 2.1.2 (unreleased)
+ 2.5.4 (unreleased)
  ------------------
  
-+- Read ``use_email_as_login`` setting from the registry instead of portal
++- Read ``allow_anon_views_about`` settings from the registry instead of portal
 +  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
 +  [jcerjak]
 +
- - Amend browser.txt test to the new p.a.registry-based control panels
-   (Plone 5 only).
-   [timo]
-diff --git a/Products/PasswordResetTool/PasswordResetTool.py b/Products/PasswordResetTool/PasswordResetTool.py
-index dd03c3e..20d95aa 100644
---- a/Products/PasswordResetTool/PasswordResetTool.py
-+++ b/Products/PasswordResetTool/PasswordResetTool.py
-@@ -19,7 +19,9 @@
- from App.special_dtml import DTMLFile
- from AccessControl import ClassSecurityInfo
- from AccessControl import ModuleSecurityInfo
-+from plone.registry.interfaces import IRegistry
- from Products.CMFCore.permissions import ManagePortal
+ - Added support for site logos stored in the portal registry via the site
+   control panel for the logo viewlet with a fallback to the ``OFS.Image``
+   based ``logo.png`` file. Removed support of long-gone
+diff --git a/plone/app/layout/links/viewlets.py b/plone/app/layout/links/viewlets.py
+index 555616a..3ec1283 100644
+--- a/plone/app/layout/links/viewlets.py
++++ b/plone/app/layout/links/viewlets.py
+@@ -13,6 +13,7 @@
+ from zope.schema.interfaces import IVocabularyFactory
+ from zope.component import getUtility
+ from plone.registry.interfaces import IRegistry
 +from Products.CMFPlone.interfaces import ISecuritySchema
- try:
-     from Products.CMFPlone.RegistrationTool import get_member_by_login_name
- except ImportError:
-@@ -33,6 +35,7 @@
- import time
- import socket
+ from Products.CMFPlone.interfaces.syndication import IFeedSettings
+ from Products.CMFPlone.interfaces.syndication import ISiteSyndicationSettings
+ 
+@@ -62,12 +63,13 @@ def update(self):
+                                      name='plone_tools')
+ 
+     def show(self):
+-        properties = self.tools.properties()
+-        site_properties = getattr(properties, 'site_properties')
+         anonymous = self.portal_state.anonymous()
+-        allowAnonymousViewAbout = site_properties.getProperty(
+-            'allowAnonymousViewAbout', True)
+-        return not anonymous or allowAnonymousViewAbout
++        registry = getUtility(IRegistry)
++        settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
++        return not anonymous or settings.allow_anon_views_about
+ 
+     def render(self):
+         if self.show():
+diff --git a/plone/app/layout/viewlets/content.py b/plone/app/layout/viewlets/content.py
+index 15adcbd..7ac2abf 100644
+--- a/plone/app/layout/viewlets/content.py
++++ b/plone/app/layout/viewlets/content.py
+@@ -6,14 +6,17 @@
+ from AccessControl import getSecurityManager
+ from Acquisition import aq_inner
  from DateTime import DateTime
++from plone.registry.interfaces import IRegistry
+ from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+ from Products.CMFCore.utils import _checkPermission
+ from Products.CMFCore.utils import getToolByName
+ from Products.CMFCore.WorkflowCore import WorkflowException
+ from Products.CMFEditions.Permissions import AccessPreviousVersions
+ from Products.CMFPlone import PloneMessageFactory as _
++from Products.CMFPlone.interfaces import ISecuritySchema
+ from Products.CMFPlone.utils import base_hasattr
+ from Products.CMFPlone.utils import log
 +from zope.component import getUtility
- from zope.interface import implements
  
- module_security = ModuleSecurityInfo('Products.PasswordResetTool.PasswordResetTool')
-@@ -346,8 +349,10 @@ def expirationDate(self):
-     def getValidUser(self, userid):
-         """Returns the member with 'userid' if available and None otherwise."""
-         if get_member_by_login_name:
--            props = getToolByName(self, 'portal_properties').site_properties
--            if props.getProperty('use_email_as_login', False):
-+            registry = getUtility(IRegistry)
-+            settings = registry.forInterface(ISecuritySchema, prefix='plone')
+ from plone.app.layout.globals.interfaces import IViewView
+ from plone.app.layout.viewlets import ViewletBase
+@@ -64,11 +67,12 @@ def update(self):
+         self.has_pam = HAS_PAM
+ 
+     def show(self):
+-        properties = getToolByName(self.context, 'portal_properties')
+-        site_properties = getattr(properties, 'site_properties')
+-        allowAnonymousViewAbout = site_properties.getProperty(
+-            'allowAnonymousViewAbout', True)
+-        return not self.anonymous or allowAnonymousViewAbout
++        registry = getUtility(IRegistry)
++        settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
++        return not self.anonymous or settings.allow_anon_views_about
+ 
+     def show_history(self):
+         has_access_preview_versions_permission = _checkPermission(
+diff --git a/plone/app/layout/viewlets/tests/test_content.py b/plone/app/layout/viewlets/tests/test_content.py
+index 2e32def..d474d08 100644
+--- a/plone/app/layout/viewlets/tests/test_content.py
++++ b/plone/app/layout/viewlets/tests/test_content.py
+@@ -8,6 +8,8 @@
+ from plone.app.layout.viewlets.content import ContentRelatedItems
+ from plone.locking.tests import addMember
+ from plone.locking.interfaces import ILockable
++from plone.registry.interfaces import IRegistry
++from Products.CMFPlone.interfaces import ISecuritySchema
+ 
+ from DateTime import DateTime
+ from Products.CMFCore.utils import getToolByName
+@@ -35,6 +37,44 @@ def afterSetUp(self):
+         portal = getSite()
+         addMember(portal, 'Alan', roles=('Member', 'Manager'))
+         addMember(portal, 'Ano', roles=())
++        self.folder.invokeFactory('Document', 'doc1', title='Document 1')
 +
-+            if settings.use_email_as_login:
-                 return get_member_by_login_name(
-                     self, userid, raise_exceptions=False)
-         membertool = getToolByName(self, 'portal_membership')
-diff --git a/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt b/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
-index 53d325a..53be415 100644
---- a/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
-+++ b/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
-@@ -32,7 +32,7 @@
-                     <div class="field"
-                          tal:define="error errors/userid | nothing;
-                                      site_properties context/portal_properties/site_properties;
--                                     use_email_as_login site_properties/use_email_as_login|nothing;"
-+                                     use_email_as_login python:context.portal_registry['plone.use_email_as_login'];"
-                          tal:attributes="class python:test(error, 'field error', 'field')"
-                          tal:condition="here/portal_password_reset/checkUser | nothing">
++        registry = getUtility(IRegistry)
++        self.security_settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
++
++    def _get_viewlet(self):
++        context = self.folder['doc1']
++        request = self.app.REQUEST
++        viewlet = DocumentBylineViewlet(context, request, None, None)
++        viewlet.update()
++        return viewlet
++
++    def test_show_anonymous_not_allowed(self):
++        self.security_settings.allow_anon_views_about = False
++        self.logout()
++        viewlet = self._get_viewlet()
++        self.assertFalse(viewlet.show())
++
++    def test_show_anonymous_allowed(self):
++        self.security_settings.allow_anon_views_about = True
++        self.logout()
++        viewlet = self._get_viewlet()
++        self.assertTrue(viewlet.show())
++
++    def test_show_logged_in_anonymous_not_allowed(self):
++        self.security_settings.allow_anon_views_about = False
++        self.login('Alan')
++        viewlet = self._get_viewlet()
++        self.assertTrue(viewlet.show())
++
++    def test_show_logged_in_anonymous_allowed(self):
++        self.security_settings.allow_anon_views_about = True
++        self.login('Alan')
++        viewlet = self._get_viewlet()
++        self.assertTrue(viewlet.show())
  
+     def test_anonymous_locked_icon(self):
+         request = self.app.REQUEST
 
 
-Repository: Products.PasswordResetTool
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2015-01-25T20:39:07+01:00
+Date: 2015-01-25T13:52:55+01:00
 Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/Products.PasswordResetTool/commit/d1b381b488922555b8ea9f86ff35eaa5bcfab0d4
+Commit: https://github.com/plone/plone.app.layout/commit/49137b120ea0e127f587ba8fdc62571a95b6bd90
 
-fix "use_email_as_login" in other templates as well
+restructure DocumentBylineViewlet tests
 
 Files changed:
-M Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
-M Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
+M plone/app/layout/viewlets/tests/test_content.py
 
-diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
-index 03daaad..d23c1f1 100644
---- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
-+++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
-@@ -14,7 +14,7 @@
+diff --git a/plone/app/layout/viewlets/tests/test_content.py b/plone/app/layout/viewlets/tests/test_content.py
+index d474d08..c459ded 100644
+--- a/plone/app/layout/viewlets/tests/test_content.py
++++ b/plone/app/layout/viewlets/tests/test_content.py
+@@ -34,10 +34,8 @@ class TestDocumentBylineViewletView(ViewletsTestCase):
+     Test the document by line viewlet
+     """
+     def afterSetUp(self):
+-        portal = getSite()
+-        addMember(portal, 'Alan', roles=('Member', 'Manager'))
+-        addMember(portal, 'Ano', roles=())
+         self.folder.invokeFactory('Document', 'doc1', title='Document 1')
++        self.context = self.folder['doc1']
  
- <metal:main fill-slot="main"
-      tal:define="global props context/@@plone_tools/properties;
--                 use_email_as_login props/site_properties/use_email_as_login|nothing;">
-+                 use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
+         registry = getUtility(IRegistry)
+         self.security_settings = registry.forInterface(
+@@ -46,9 +44,8 @@ def afterSetUp(self):
+         )
  
-     <h1 class="documentFirstHeading"
-         i18n:translate="heading_lost_password">Lost Password</h1>
-diff --git a/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt b/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
-index 755ed7e..417cf2f 100644
---- a/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
-+++ b/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
-@@ -6,7 +6,7 @@
+     def _get_viewlet(self):
+-        context = self.folder['doc1']
+         request = self.app.REQUEST
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
++        viewlet = DocumentBylineViewlet(self.context, request, None, None)
+         viewlet.update()
+         return viewlet
  
- <metal:main fill-slot="main"
-      tal:define="site_properties context/portal_properties/site_properties;
--                 use_email_as_login site_properties/use_email_as_login|nothing;">
-+                 use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
+@@ -66,57 +63,45 @@ def test_show_anonymous_allowed(self):
  
-     <h1 class="documentFirstHeading" i18n:translate="heading_pwreset_invalid">Error setting password</h1>
+     def test_show_logged_in_anonymous_not_allowed(self):
+         self.security_settings.allow_anon_views_about = False
+-        self.login('Alan')
+         viewlet = self._get_viewlet()
+         self.assertTrue(viewlet.show())
  
+     def test_show_logged_in_anonymous_allowed(self):
+         self.security_settings.allow_anon_views_about = True
+-        self.login('Alan')
+         viewlet = self._get_viewlet()
+         self.assertTrue(viewlet.show())
+ 
+-    def test_anonymous_locked_icon(self):
+-        request = self.app.REQUEST
+-        self.setRoles(['Manager', 'Member'])
+-        self.portal.invokeFactory('Document', 'd1')
+-        context = getattr(self.portal, 'd1')
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
+-        viewlet.update()
+-        ILockable(context).lock()
+-        self.login('Ano')
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
+-        viewlet.update()
++    def test_anonymous_locked_icon_not_locked(self):
++        self.logout()
++        viewlet = self._get_viewlet()
+         self.assertEqual(viewlet.locked_icon(), "")
+ 
+-    def test_locked_icon(self):
+-        request = self.app.REQUEST
+-        self.setRoles(['Manager', 'Member'])
+-        self.portal.invokeFactory('Document', 'd1')
+-        context = getattr(self.portal, 'd1')
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
+-        viewlet.update()
++    def test_anonymous_locked_icon_is_locked(self):
++        self.logout()
++        ILockable(self.context).lock()
++        viewlet = self._get_viewlet()
+         self.assertEqual(viewlet.locked_icon(), "")
+-        ILockable(context).lock()
++
++    def test_logged_in_locked_icon_not_locked(self):
++        viewlet = self._get_viewlet()
++        self.assertEqual(viewlet.locked_icon(), "")
++
++    def test_logged_in_locked_icon_is_locked(self):
++        viewlet = self._get_viewlet()
++        ILockable(self.context).lock()
+         lockIconUrl = '<img src="http://nohost/plone/lock_icon.png" alt="" \
+ title="Locked" height="16" width="16" />'
+         self.assertEqual(viewlet.locked_icon(), lockIconUrl)
+ 
+     def test_pub_date(self):
+-        request = self.app.REQUEST
+-        self.login('Alan')
+-        self.portal.invokeFactory('Document', 'd1')
+-        context = getattr(self.portal, 'd1')
+-
+         # configure our portal to enable publication date on pages globally on
+         # the site
+-        properties = getToolByName(context, 'portal_properties')
++        properties = getToolByName(self.portal, 'portal_properties')
+         site_properties = getattr(properties, 'site_properties')
+         site_properties.displayPublicationDateInByline = True
+ 
+-        self.login('Ano')
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
+-        viewlet.update()
++        self.logout()
++        viewlet = self._get_viewlet()
+ 
+         # publication date should be None as there is not Effective date set
+         # for our document yet
+@@ -124,7 +109,7 @@ def test_pub_date(self):
+ 
+         # now set effective date for our document
+         effective = DateTime()
+-        context.setEffectiveDate(effective)
++        self.context.setEffectiveDate(effective)
+         self.assertEqual(viewlet.pub_date(), DateTime(effective.ISO8601()))
+ 
+         # now switch off publication date globally on the site and see if
 
 
-Repository: Products.PasswordResetTool
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2015-02-27T07:50:34+01:00
+Date: 2015-01-25T16:56:29+01:00
+Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
+Commit: https://github.com/plone/plone.app.layout/commit/24d7cb66d2ce259e2510b54777935964e1f669ae
+
+remove unused imports, reorganize imports in test_content
+
+Files changed:
+M plone/app/layout/viewlets/tests/test_content.py
+
+diff --git a/plone/app/layout/viewlets/tests/test_content.py b/plone/app/layout/viewlets/tests/test_content.py
+index c459ded..d7f4476 100644
+--- a/plone/app/layout/viewlets/tests/test_content.py
++++ b/plone/app/layout/viewlets/tests/test_content.py
+@@ -1,18 +1,15 @@
+-from z3c.relationfield import RelationValue
+-from zope.component import getUtility
+-from zope.component.hooks import getSite
+-from zope.interface import Interface
+-from zope.intid.interfaces import IIntIds
++from DateTime import DateTime
+ from plone.app.layout.viewlets.tests.base import ViewletsTestCase
+ from plone.app.layout.viewlets.content import DocumentBylineViewlet
+ from plone.app.layout.viewlets.content import ContentRelatedItems
+-from plone.locking.tests import addMember
+ from plone.locking.interfaces import ILockable
+ from plone.registry.interfaces import IRegistry
+-from Products.CMFPlone.interfaces import ISecuritySchema
+-
+-from DateTime import DateTime
+ from Products.CMFCore.utils import getToolByName
++from Products.CMFPlone.interfaces import ISecuritySchema
++from z3c.relationfield import RelationValue
++from zope.component import getUtility
++from zope.interface import Interface
++from zope.intid.interfaces import IIntIds
+ 
+ try:
+     import pkg_resources
+
+
+Repository: plone.app.layout
+Branch: refs/heads/master
+Date: 2015-02-27T07:49:09+01:00
 Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/Products.PasswordResetTool/commit/a529ec2a49086ba564edf7ffbd91cfdab816de59
+Commit: https://github.com/plone/plone.app.layout/commit/8d8c3cc5d53b8943ce16ef96d9b6d0d98a14eae5
 
 Merge branch 'master' into plip10359-security-controlpanel
 
+Conflicts:
+	CHANGES.rst
+
 Files changed:
-M CHANGES.txt
-M Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
-M Products/PasswordResetTool/tests/browser.txt
+A plone/app/layout/globals/tests/test_pattern_settings.py
+M CHANGES.rst
+M plone/app/layout/globals/patterns_settings.py
+M plone/app/layout/links/viewlets.py
+M plone/app/layout/viewlets/common.py
+M plone/app/layout/viewlets/searchbox.pt
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 3a66e3f..95ac758 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
-@@ -11,6 +11,8 @@ Changelog
- - Amend browser.txt test to the new p.a.registry-based control panels
-   (Plone 5 only).
-   [timo]
-+- Added userid information in reset mail (useful when the administrator resets a user password)
-+  [sgeulette]
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 2e0a425..9c87a70 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -8,6 +8,12 @@ Changelog
+   properties (see https://github.com/plone/Products.CMFPlone/issues/216).
+   [jcerjak]
+ 
++- use livesearch pattern
++  [vangheem]
++
++- use configuration registry pattern options
++  [vangheem]
++
+ - Added support for site logos stored in the portal registry via the site
+   control panel for the logo viewlet with a fallback to the ``OFS.Image``
+   based ``logo.png`` file. Removed support of long-gone
+diff --git a/plone/app/layout/globals/patterns_settings.py b/plone/app/layout/globals/patterns_settings.py
+index f72115d..669bbd1 100644
+--- a/plone/app/layout/globals/patterns_settings.py
++++ b/plone/app/layout/globals/patterns_settings.py
+@@ -2,12 +2,12 @@
+ 
+ from zope.interface import implements
+ from zope.component import getAdapters
+-from zope.component.hooks import getSite
+ from zope.publisher.browser import BrowserView
+ from .interfaces import IPatternsSettingsRenderer
+ from Products.CMFPlone.interfaces import IPatternsSettings
+-
+-import json
++from plone.registry.interfaces import IRegistry
++from zope.component import getUtility
++from zope.component import getMultiAdapter
  
  
- 2.1.1 (2014-10-22)
-diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
-index 792967e..d5a57a1 100644
---- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
-+++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_template.pt
-@@ -3,6 +3,7 @@
-                   member python:options['member'];
-                   portal_state context/@@plone_portal_state;
-                   view context/@@passwordreset_view;
-+                  isAnon context/@@plone_portal_state/anonymous;
-                   reset python:options['reset']"
- >From: <span tal:replace="structure view/encoded_mail_sender" />
- To: <span tal:replace="python:member.getProperty('email')" />
-@@ -10,6 +11,15 @@ Subject: <span tal:replace="view/mail_password_subject" />
- Precedence: bulk
+ class PatternsSettings(BrowserView):
+@@ -17,20 +17,28 @@ class PatternsSettings(BrowserView):
+     implements(IPatternsSettingsRenderer)
  
- <div i18n:domain="passwordresettool"
-+     i18n:translate="mailtemplate_reset_information"
-+     tal:omit-tag=""
-+     tal:condition="not:isAnon">
-+The site administrator asks you to reset your password for '<span i18n:name="userid"
-+          tal:omit-tag=""
-+          tal:content="member/id" />' userid. Your old password doesn't work anymore.
-+</div>
+     def __call__(self):
+-        modal_options = {
+-            'actionOptions': {
+-                'displayInModal': False,
+-            }
+-        }
+-        base_url = getSite().absolute_url()
++        portal_state = getMultiAdapter(
++            (self.context, self.request), name=u'plone_portal_state')
++        # do not use getSite because it's possible it could be different
++        # than the actual portal url
++        base_url = portal_state.portal_url()
+         result = {
+-            'data-pat-modal': json.dumps(modal_options),
+             'data-base-url': self.context.absolute_url(),
+             'data-portal-url': base_url,
+             'data-i18ncatalogurl': base_url + '/plonejsi18n'
+         }
 +
-+<div i18n:domain="passwordresettool"
-      i18n:translate="mailtemplate_text_linkreset"
-      tal:omit-tag=""
-      tal:define="fullname python: test(member.fullname,
-@@ -32,7 +42,8 @@ The following link will take you to a page where you can reset your password for
++        # first, check for any adapters that need pattern data defined
+         adapters = getAdapters((self.context, self.request, None), IPatternsSettings)
+         [result.update(x[1]()) for x in adapters]
+-        return result
  
- <div i18n:domain="passwordresettool"
-      i18n:translate="mailtemplate_tracking_information"
--     tal:omit-tag="">
-+     tal:omit-tag=""
-+     tal:condition="isAnon">
- If you didn't expect to receive this email, please ignore it. Your password has not been changed.
- Request made from IP address <span tal:define="host request/HTTP_X_FORWARDED_FOR|request/REMOTE_ADDR"
-           tal:content="host"
-diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
-index 5876c79..bc44317 100644
---- a/Products/PasswordResetTool/tests/browser.txt
-+++ b/Products/PasswordResetTool/tests/browser.txt
-@@ -72,6 +72,7 @@ What we do here:
-   - Log in
-   - Log out again
-   - Forget our password (this is where PasswordResetTool comes in)
-+  - Check if this is a soft reset (old password already works until changed)
-   - Read the e-mail that contains the URL we visit to reset our password
-   - Reset our password
-   - Log in with our new password
-@@ -154,6 +155,24 @@ password`` in the login form:
-   >>> form.getControl(name='userid').value = 'jsmith'
-   >>> form.submit()
++        # Resources Registered UI patterns can override adapters
++        registry = getUtility(IRegistry)
++        try:
++            pattern_options = registry['plone.patternoptions']
++        except (AttributeError, KeyError):
++            pattern_options = {}
++        for key, value in pattern_options.items():
++            result['data-pat-' + key] = value
  
-+We check if the old password always works.
++        return result
+diff --git a/plone/app/layout/globals/tests/test_pattern_settings.py b/plone/app/layout/globals/tests/test_pattern_settings.py
+new file mode 100644
+index 0000000..a17cc1a
+--- /dev/null
++++ b/plone/app/layout/globals/tests/test_pattern_settings.py
+@@ -0,0 +1,33 @@
++from plone.app.layout.globals.tests.base import GlobalsTestCase
++from plone.app.layout.globals.patterns_settings import PatternsSettings
++from plone.registry.interfaces import IRegistry
++from zope.component import getUtility
 +
-+  >>> browser.open('http://nohost/plone/login')
-+  >>> browser.getControl(name='__ac_name').value = 'jsmith'
-+  >>> browser.getControl(name='__ac_password').value = 'secret'
-+  >>> browser.getControl(name='submit').click()
 +
-+We should be logged in now:
++class TestPatternSettings(GlobalsTestCase):
++    """Ensure that the basic redirector setup is successful.
++    """
 +
-+  >>> "You are now logged in" in browser.contents
-+  True
++    def testShouldReturnCorrectType(self):
++        settings = PatternsSettings(self.folder, self.app.REQUEST)
++        result = settings()
++        self.assertEquals(type(result), dict)
++        for key, value in result.items():
++            self.assertTrue(isinstance(key, basestring))
++            self.assertTrue(isinstance(value, basestring))
 +
-+Log out again:
++    def testUrls(self):
++        settings = PatternsSettings(self.folder, self.app.REQUEST)
++        result = settings()
++        self.assertEquals(result['data-base-url'], self.folder.absolute_url())
++        self.assertEquals(result['data-portal-url'], self.portal.absolute_url())
 +
-+  >>> browser.getLink('Log out').click()
-+  >>> "You are now logged out" in browser.contents
-+  True
++    def testPatternOptions(self):
++        registry = getUtility(IRegistry)
++        registry['plone.patternoptions'] = {
++            'foo': u'{"foo": "bar"}'
++        }
 +
- As part of our test setup, we replaced the original MailHost with our
- own version.  Our version doesn't mail messages, it just collects them
- in a list called ``messages``:
-@@ -170,13 +189,17 @@ then we extract the address that lets us reset our password:
-   >>> msg = quopri.decodestring(msg)
-   >>> "To: jsmith@example.com" in msg
-   True
-+  >>> "The site administrator asks you to reset your password for 'jsmith' userid" in msg
-+  False
-   >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
-   >>> please_visit_text in msg
-   True
-   >>> url_index = msg.index(please_visit_text) + len(please_visit_text)
-   >>> address = msg[url_index:].strip().split()[0]
-- >>> address # doctest: +ELLIPSIS
-+  >>> address # doctest: +ELLIPSIS
-   'http://nohost/plone/passwordreset/...'
-+  >>> "If you didn't expect to receive this email" in msg
-+  True
++        settings = PatternsSettings(self.folder, self.app.REQUEST)
++        result = settings()
++        self.assertEquals(result['data-pat-foo'], u'{"foo": "bar"}')
+\ No newline at end of file
+diff --git a/plone/app/layout/links/viewlets.py b/plone/app/layout/links/viewlets.py
+index 3ec1283..48d1534 100644
+--- a/plone/app/layout/links/viewlets.py
++++ b/plone/app/layout/links/viewlets.py
+@@ -112,12 +112,13 @@ def update(self):
+                     settings = registry.forInterface(ISiteSyndicationSettings)
+                 except KeyError:
+                     return
+-                for uid in settings.site_rss_items:
+-                    obj = uuidToObject(uid)
+-                    if obj is not None:
+-                        self.rsslinks.extend(self.getRssLinks(obj))
+-                self.rsslinks.extend(self.getRssLinks(
+-                    self.portal_state.portal()))
++                if settings.site_rss_items:
++                    for uid in settings.site_rss_items:
++                        obj = uuidToObject(uid)
++                        if obj is not None:
++                            self.rsslinks.extend(self.getRssLinks(obj))
++                    self.rsslinks.extend(self.getRssLinks(
++                        self.portal_state.portal()))
+         else:
+             if util.context_enabled():
+                 self.rsslinks.extend(self.getRssLinks(self.context))
+diff --git a/plone/app/layout/viewlets/common.py b/plone/app/layout/viewlets/common.py
+index 0f65305..4a05b72 100644
+--- a/plone/app/layout/viewlets/common.py
++++ b/plone/app/layout/viewlets/common.py
+@@ -17,6 +17,7 @@
  
- Now that we have the address, we will reset our password:
+ from Products.CMFCore.utils import getToolByName
+ from Products.CMFPlone.interfaces import ISiteSchema
++from Products.CMFPlone.interfaces import ISearchSchema
+ from Products.CMFPlone.utils import safe_unicode
+ from Products.CMFPlone.interfaces import IPloneSiteRoot
+ from Products.Five.browser import BrowserView
+@@ -175,13 +176,9 @@ def update(self):
+         context_state = getMultiAdapter((self.context, self.request),
+                                         name=u'plone_context_state')
  
-@@ -221,6 +244,9 @@ Log out again:
-   - Register a member (with send email checked???)
-   - Log out
-   - Log in as the new member
-+  - A manager resets a user password
-+  - Check if this is a hard reset (old password is changed)
-+  - Check the received mail
+-        props = getToolByName(self.context, 'portal_properties')
+-        livesearch = props.site_properties.getProperty(
+-            'enable_livesearch', False)
+-        if livesearch:
+-            self.search_input_id = "searchGadget"
+-        else:
+-            self.search_input_id = "nolivesearchGadget"  # don't use "" here!
++        registry = getUtility(IRegistry)
++        search_settings = registry.forInterface(ISearchSchema, prefix='plone')
++        self.livesearch = search_settings.enable_livesearch
  
- First, we want to login as the portal owner:
+         folder = context_state.folder()
+         self.folder_path = '/'.join(folder.getPhysicalPath())
+diff --git a/plone/app/layout/viewlets/searchbox.pt b/plone/app/layout/viewlets/searchbox.pt
+index 879a6d7..bde537c 100644
+--- a/plone/app/layout/viewlets/searchbox.pt
++++ b/plone/app/layout/viewlets/searchbox.pt
+@@ -1,30 +1,30 @@
+ <div id="portal-searchbox"
+      i18n:domain="plone"
+-     tal:define="navigation_root_url view/navigation_root_url;
+-                 search_input_id view/search_input_id;">
++     tal:define="navigation_root_url view/navigation_root_url;">
  
-@@ -261,6 +287,56 @@ We want to logout and login as the new member:
+     <form id="searchGadget_form"
+           action="@@search"
+           role="search"
+           tal:attributes="action string:${navigation_root_url}/@@search;
+-                          id string:${search_input_id}_form;">
++                          data-pat-livesearch string:ajaxUrl:${navigation_root_url}/@@ajax-search;
++                          class python: view.livesearch and 'pat-livesearch' or ''">
  
-   >>> browser.getLink('Log out').click()
+         <div class="LSBox">
+         <label class="hiddenStructure"
+-               tal:attributes="for search_input_id"
++               for="searchGadget"
+                i18n:translate="text_search">Search Site</label>
  
-+Again, we want to login as the portal owner:
-+
-+  >>> browser.open('http://nohost/plone/login')
-+  >>> browser.getControl(name='__ac_name').value = SITE_OWNER_NAME
-+  >>> browser.getControl(name='__ac_password').value = SITE_OWNER_PASSWORD
-+  >>> browser.getControl(name='submit').click()
-+  >>> "You are now logged in" in browser.contents
-+  True
-+
-+We navigate to the Users Overview page and reset a password user:
-+
-+  >>> browser.getLink('Site Setup').click()
-+  >>> browser.getLink('Users and Groups').click()
-+  >>> resets = browser.getControl(name='users.resetpassword:records')
-+  >>> reset = resets.getControl(value='wsmith')
-+  >>> reset.selected = True  
-+  >>> browser.getControl(name="form.button.Modify").click()
-+  >>> "Changes applied." in browser.contents
-+  True
-+  >>> browser.getLink('Log out').click()
-+  >>> "You are now logged out" in browser.contents
-+  True
-+
-+We check if the old password is well changed.
-+
-+  >>> browser.open('http://nohost/plone/login')
-+  >>> browser.getControl(name='__ac_name').value = 'wsmith'
-+  >>> browser.getControl(name='__ac_password').value = 'supersecret'
-+  >>> browser.getControl(name='submit').click()
-+
-+We should not be logged in:
-+
-+  >>> "Login failed" in browser.contents
-+  True
-+
-+We should have received an e-mail at this point:
-+
-+  >>> mailhost = layer['portal'].MailHost
-+  >>> len(mailhost.messages)
-+  2
-+  >>> import quopri
-+  >>> msg = quopri.decodestring(str(mailhost.messages[-1]))
-+  >>> "The site administrator asks you to reset your password for 'wsmith' userid" in msg
-+  True
-+  >>> please_visit_text = "The following link will take you to a page where you can reset your password for Plone site site:"
-+  >>> please_visit_text in msg
-+  True
-+  >>> "If you didn't expect to receive this email" in msg
-+  False
-+
+         <input name="SearchableText"
+                type="text"
+                size="18"
+                value=""
++               id="searchGadget"
+                title="Search Site"
+                placeholder="Search Site"
+                accesskey="4"
+                i18n:attributes="title title_search_site;
+                                 placeholder title_search_site"
+-               tal:attributes="value request/form/SearchableText|nothing;
+-                               id search_input_id"
++               tal:attributes="value request/form/SearchableText|nothing;"
+                class="searchField" />
  
- 1B. User joins with e-mail validation enabled and forgets password
- ------------------------------------------------------------------
-@@ -311,7 +387,7 @@ We should have received an e-mail at this point:
+         <input class="searchButton"
+@@ -46,8 +46,6 @@
+                 only in current section
+             </label>
+         </div>
+-
+-        <div class="LSResult" id="LSResult"><div class="LSShadow" id="LSShadow"></div></div>
+         </div>
+     </form>
  
-   >>> mailhost = layer['portal'].MailHost
-   >>> len(mailhost.messages)
--  2
-+  3
-   >>> msg = str(mailhost.messages[-1])
- 
- Now that we have the message, we want to look at its contents, and
-@@ -397,7 +473,7 @@ We should have received an e-mail at this point:
- 
-   >>> mailhost = layer['portal'].MailHost
-   >>> len(mailhost.messages)
--  3
-+  4
-   >>> msg = str(mailhost.messages[-1])
- 
- Now that we have the message, we want to look at its contents, and
 
 
-Repository: Products.PasswordResetTool
+Repository: plone.app.layout
 Branch: refs/heads/master
-Date: 2015-02-27T10:00:03+01:00
+Date: 2015-02-27T10:10:33+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/Products.PasswordResetTool/commit/7019f76ebd2cd16873761fabc86e54b29cf1f33a
+Commit: https://github.com/plone/plone.app.layout/commit/1cdded080d5ee37e532cfdfc621a7943d4fc5584
 
-Merge pull request #8 from plone/plip10359-security-controlpanel
+Merge pull request #39 from plone/plip10359-security-controlpanel
 
 Plip10359 security controlpanel
 
 Files changed:
-M CHANGES.txt
-M Products/PasswordResetTool/PasswordResetTool.py
-M Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
-M Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
-M Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
-M Products/PasswordResetTool/tests/browser.txt
+M CHANGES.rst
+M plone/app/layout/links/viewlets.py
+M plone/app/layout/viewlets/content.py
+M plone/app/layout/viewlets/tests/test_content.py
 
-diff --git a/CHANGES.txt b/CHANGES.txt
-index 4f951e3..95ac758 100644
---- a/CHANGES.txt
-+++ b/CHANGES.txt
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 7051605..9c87a70 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
 @@ -4,6 +4,10 @@ Changelog
- 2.1.2 (unreleased)
+ 2.5.4 (unreleased)
  ------------------
  
-+- Read ``use_email_as_login`` setting from the registry instead of portal
++- Read ``allow_anon_views_about`` settings from the registry instead of portal
 +  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
 +  [jcerjak]
 +
- - Amend browser.txt test to the new p.a.registry-based control panels
-   (Plone 5 only).
-   [timo]
-diff --git a/Products/PasswordResetTool/PasswordResetTool.py b/Products/PasswordResetTool/PasswordResetTool.py
-index dd03c3e..20d95aa 100644
---- a/Products/PasswordResetTool/PasswordResetTool.py
-+++ b/Products/PasswordResetTool/PasswordResetTool.py
-@@ -19,7 +19,9 @@
- from App.special_dtml import DTMLFile
- from AccessControl import ClassSecurityInfo
- from AccessControl import ModuleSecurityInfo
-+from plone.registry.interfaces import IRegistry
- from Products.CMFCore.permissions import ManagePortal
+ - use livesearch pattern
+   [vangheem]
+ 
+diff --git a/plone/app/layout/links/viewlets.py b/plone/app/layout/links/viewlets.py
+index 238c61d..48d1534 100644
+--- a/plone/app/layout/links/viewlets.py
++++ b/plone/app/layout/links/viewlets.py
+@@ -13,6 +13,7 @@
+ from zope.schema.interfaces import IVocabularyFactory
+ from zope.component import getUtility
+ from plone.registry.interfaces import IRegistry
 +from Products.CMFPlone.interfaces import ISecuritySchema
- try:
-     from Products.CMFPlone.RegistrationTool import get_member_by_login_name
- except ImportError:
-@@ -33,6 +35,7 @@
- import time
- import socket
+ from Products.CMFPlone.interfaces.syndication import IFeedSettings
+ from Products.CMFPlone.interfaces.syndication import ISiteSyndicationSettings
+ 
+@@ -62,12 +63,13 @@ def update(self):
+                                      name='plone_tools')
+ 
+     def show(self):
+-        properties = self.tools.properties()
+-        site_properties = getattr(properties, 'site_properties')
+         anonymous = self.portal_state.anonymous()
+-        allowAnonymousViewAbout = site_properties.getProperty(
+-            'allowAnonymousViewAbout', True)
+-        return not anonymous or allowAnonymousViewAbout
++        registry = getUtility(IRegistry)
++        settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
++        return not anonymous or settings.allow_anon_views_about
+ 
+     def render(self):
+         if self.show():
+diff --git a/plone/app/layout/viewlets/content.py b/plone/app/layout/viewlets/content.py
+index 15adcbd..7ac2abf 100644
+--- a/plone/app/layout/viewlets/content.py
++++ b/plone/app/layout/viewlets/content.py
+@@ -6,14 +6,17 @@
+ from AccessControl import getSecurityManager
+ from Acquisition import aq_inner
  from DateTime import DateTime
++from plone.registry.interfaces import IRegistry
+ from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+ from Products.CMFCore.utils import _checkPermission
+ from Products.CMFCore.utils import getToolByName
+ from Products.CMFCore.WorkflowCore import WorkflowException
+ from Products.CMFEditions.Permissions import AccessPreviousVersions
+ from Products.CMFPlone import PloneMessageFactory as _
++from Products.CMFPlone.interfaces import ISecuritySchema
+ from Products.CMFPlone.utils import base_hasattr
+ from Products.CMFPlone.utils import log
 +from zope.component import getUtility
- from zope.interface import implements
  
- module_security = ModuleSecurityInfo('Products.PasswordResetTool.PasswordResetTool')
-@@ -346,8 +349,10 @@ def expirationDate(self):
-     def getValidUser(self, userid):
-         """Returns the member with 'userid' if available and None otherwise."""
-         if get_member_by_login_name:
--            props = getToolByName(self, 'portal_properties').site_properties
--            if props.getProperty('use_email_as_login', False):
-+            registry = getUtility(IRegistry)
-+            settings = registry.forInterface(ISecuritySchema, prefix='plone')
+ from plone.app.layout.globals.interfaces import IViewView
+ from plone.app.layout.viewlets import ViewletBase
+@@ -64,11 +67,12 @@ def update(self):
+         self.has_pam = HAS_PAM
+ 
+     def show(self):
+-        properties = getToolByName(self.context, 'portal_properties')
+-        site_properties = getattr(properties, 'site_properties')
+-        allowAnonymousViewAbout = site_properties.getProperty(
+-            'allowAnonymousViewAbout', True)
+-        return not self.anonymous or allowAnonymousViewAbout
++        registry = getUtility(IRegistry)
++        settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
++        return not self.anonymous or settings.allow_anon_views_about
+ 
+     def show_history(self):
+         has_access_preview_versions_permission = _checkPermission(
+diff --git a/plone/app/layout/viewlets/tests/test_content.py b/plone/app/layout/viewlets/tests/test_content.py
+index 2e32def..d7f4476 100644
+--- a/plone/app/layout/viewlets/tests/test_content.py
++++ b/plone/app/layout/viewlets/tests/test_content.py
+@@ -1,16 +1,15 @@
+-from z3c.relationfield import RelationValue
+-from zope.component import getUtility
+-from zope.component.hooks import getSite
+-from zope.interface import Interface
+-from zope.intid.interfaces import IIntIds
++from DateTime import DateTime
+ from plone.app.layout.viewlets.tests.base import ViewletsTestCase
+ from plone.app.layout.viewlets.content import DocumentBylineViewlet
+ from plone.app.layout.viewlets.content import ContentRelatedItems
+-from plone.locking.tests import addMember
+ from plone.locking.interfaces import ILockable
+-
+-from DateTime import DateTime
++from plone.registry.interfaces import IRegistry
+ from Products.CMFCore.utils import getToolByName
++from Products.CMFPlone.interfaces import ISecuritySchema
++from z3c.relationfield import RelationValue
++from zope.component import getUtility
++from zope.interface import Interface
++from zope.intid.interfaces import IIntIds
+ 
+ try:
+     import pkg_resources
+@@ -32,51 +31,74 @@ class TestDocumentBylineViewletView(ViewletsTestCase):
+     Test the document by line viewlet
+     """
+     def afterSetUp(self):
+-        portal = getSite()
+-        addMember(portal, 'Alan', roles=('Member', 'Manager'))
+-        addMember(portal, 'Ano', roles=())
++        self.folder.invokeFactory('Document', 'doc1', title='Document 1')
++        self.context = self.folder['doc1']
 +
-+            if settings.use_email_as_login:
-                 return get_member_by_login_name(
-                     self, userid, raise_exceptions=False)
-         membertool = getToolByName(self, 'portal_membership')
-diff --git a/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt b/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
-index 03daaad..d23c1f1 100644
---- a/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
-+++ b/Products/PasswordResetTool/skins/PasswordReset/mail_password_form.pt
-@@ -14,7 +14,7 @@
++        registry = getUtility(IRegistry)
++        self.security_settings = registry.forInterface(
++            ISecuritySchema,
++            prefix='plone',
++        )
  
- <metal:main fill-slot="main"
-      tal:define="global props context/@@plone_tools/properties;
--                 use_email_as_login props/site_properties/use_email_as_login|nothing;">
-+                 use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
+-    def test_anonymous_locked_icon(self):
++    def _get_viewlet(self):
+         request = self.app.REQUEST
+-        self.setRoles(['Manager', 'Member'])
+-        self.portal.invokeFactory('Document', 'd1')
+-        context = getattr(self.portal, 'd1')
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
+-        viewlet.update()
+-        ILockable(context).lock()
+-        self.login('Ano')
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
++        viewlet = DocumentBylineViewlet(self.context, request, None, None)
+         viewlet.update()
++        return viewlet
++
++    def test_show_anonymous_not_allowed(self):
++        self.security_settings.allow_anon_views_about = False
++        self.logout()
++        viewlet = self._get_viewlet()
++        self.assertFalse(viewlet.show())
++
++    def test_show_anonymous_allowed(self):
++        self.security_settings.allow_anon_views_about = True
++        self.logout()
++        viewlet = self._get_viewlet()
++        self.assertTrue(viewlet.show())
++
++    def test_show_logged_in_anonymous_not_allowed(self):
++        self.security_settings.allow_anon_views_about = False
++        viewlet = self._get_viewlet()
++        self.assertTrue(viewlet.show())
++
++    def test_show_logged_in_anonymous_allowed(self):
++        self.security_settings.allow_anon_views_about = True
++        viewlet = self._get_viewlet()
++        self.assertTrue(viewlet.show())
++
++    def test_anonymous_locked_icon_not_locked(self):
++        self.logout()
++        viewlet = self._get_viewlet()
+         self.assertEqual(viewlet.locked_icon(), "")
  
-     <h1 class="documentFirstHeading"
-         i18n:translate="heading_lost_password">Lost Password</h1>
-diff --git a/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt b/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
-index 53d325a..53be415 100644
---- a/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
-+++ b/Products/PasswordResetTool/skins/PasswordReset/pwreset_form.cpt
-@@ -32,7 +32,7 @@
-                     <div class="field"
-                          tal:define="error errors/userid | nothing;
-                                      site_properties context/portal_properties/site_properties;
--                                     use_email_as_login site_properties/use_email_as_login|nothing;"
-+                                     use_email_as_login python:context.portal_registry['plone.use_email_as_login'];"
-                          tal:attributes="class python:test(error, 'field error', 'field')"
-                          tal:condition="here/portal_password_reset/checkUser | nothing">
+-    def test_locked_icon(self):
+-        request = self.app.REQUEST
+-        self.setRoles(['Manager', 'Member'])
+-        self.portal.invokeFactory('Document', 'd1')
+-        context = getattr(self.portal, 'd1')
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
+-        viewlet.update()
++    def test_anonymous_locked_icon_is_locked(self):
++        self.logout()
++        ILockable(self.context).lock()
++        viewlet = self._get_viewlet()
+         self.assertEqual(viewlet.locked_icon(), "")
+-        ILockable(context).lock()
++
++    def test_logged_in_locked_icon_not_locked(self):
++        viewlet = self._get_viewlet()
++        self.assertEqual(viewlet.locked_icon(), "")
++
++    def test_logged_in_locked_icon_is_locked(self):
++        viewlet = self._get_viewlet()
++        ILockable(self.context).lock()
+         lockIconUrl = '<img src="http://nohost/plone/lock_icon.png" alt="" \
+ title="Locked" height="16" width="16" />'
+         self.assertEqual(viewlet.locked_icon(), lockIconUrl)
  
-diff --git a/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt b/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
-index 755ed7e..417cf2f 100644
---- a/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
-+++ b/Products/PasswordResetTool/skins/PasswordReset/pwreset_invalid.pt
-@@ -6,7 +6,7 @@
+     def test_pub_date(self):
+-        request = self.app.REQUEST
+-        self.login('Alan')
+-        self.portal.invokeFactory('Document', 'd1')
+-        context = getattr(self.portal, 'd1')
+-
+         # configure our portal to enable publication date on pages globally on
+         # the site
+-        properties = getToolByName(context, 'portal_properties')
++        properties = getToolByName(self.portal, 'portal_properties')
+         site_properties = getattr(properties, 'site_properties')
+         site_properties.displayPublicationDateInByline = True
  
- <metal:main fill-slot="main"
-      tal:define="site_properties context/portal_properties/site_properties;
--                 use_email_as_login site_properties/use_email_as_login|nothing;">
-+                 use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
+-        self.login('Ano')
+-        viewlet = DocumentBylineViewlet(context, request, None, None)
+-        viewlet.update()
++        self.logout()
++        viewlet = self._get_viewlet()
  
-     <h1 class="documentFirstHeading" i18n:translate="heading_pwreset_invalid">Error setting password</h1>
+         # publication date should be None as there is not Effective date set
+         # for our document yet
+@@ -84,7 +106,7 @@ def test_pub_date(self):
  
-diff --git a/Products/PasswordResetTool/tests/browser.txt b/Products/PasswordResetTool/tests/browser.txt
-index d4dc5b1..bc44317 100644
---- a/Products/PasswordResetTool/tests/browser.txt
-+++ b/Products/PasswordResetTool/tests/browser.txt
-@@ -25,9 +25,9 @@ distinct password policies regarding member registration.
-   B. A password is generated for the users (and an e-mail with login
-      credentials is sent automatically).
+         # now set effective date for our document
+         effective = DateTime()
+-        context.setEffectiveDate(effective)
++        self.context.setEffectiveDate(effective)
+         self.assertEqual(viewlet.pub_date(), DateTime(effective.ISO8601()))
  
--This policy can enabled or disabled in the ``validate_email`` property
--on the Plone Site object.  By default ``validate_email`` is enabled
--and the second policy applies.
-+This policy can be enabled or disabled with the ``enable_user_pwd_choice``
-+setting in the security control panel.  By default ``enable_user_pwd_choice`` is
-+disabled and the second policy applies.
- 
- Another aspect we have to take into account is the fact that Plone by
- default only allows Administrators to register (other) members, but allowing
+         # now switch off publication date globally on the site and see if
 
 
