@@ -1,152 +1,169 @@
-Repository: plone.app.search
+Repository: plone.app.portlets
 Branch: refs/heads/master
-Date: 2015-01-25T20:15:31+01:00
+Date: 2015-01-25T20:33:16+01:00
 Author: Jure Cerjak (jcerjak) <jcerjak@termitnjak.si>
-Commit: https://github.com/plone/plone.app.search/commit/15427c420720ad481a619979e5ae0e959c01d811
+Commit: https://github.com/plone/plone.app.portlets/commit/3a154ee83f1e6b996dde29f528c8911854290a2c
 
-read "allow_anon_views_about" from registry instead of properties
+Read "use_email_as_login" from registry instead of properties
 
 Files changed:
 M CHANGES.rst
-M plone/app/search/search.pt
+M plone/app/portlets/portlets/login.pt
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 8a05d5c..a1ea647 100644
+index 3a4ad10..93bcdd1 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -5,7 +5,9 @@ Changelog
- 1.2.3 (unreleased)
+@@ -4,6 +4,10 @@ Changelog
+ 3.0.3 (unreleased)
  ------------------
  
--- Nothing changed yet.
-+- Read ``allow_anon_views_about`` setting from the registry instead of portal
++- Read ``use_email_as_login`` setting from the registry instead of portal
 +  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
 +  [jcerjak]
- 
- 
- 1.2.2 (2014-10-23)
-diff --git a/plone/app/search/search.pt b/plone/app/search/search.pt
-index 2549364..9ae4233 100644
---- a/plone/app/search/search.pt
-+++ b/plone/app/search/search.pt
-@@ -147,7 +147,7 @@
-                                       <div class="search-type-options">
-                                         <tal:div
-                                            tal:define="typeLists python:context.createMultiColumnList(types_list, numCols=2, sort_on='self');"
--                                           
 +
-                                            tal:repeat="sublist typeLists">
-                                           <tal:items repeat="type sublist">
-                                             <div>
-@@ -240,7 +240,7 @@
+ - Use plone_layout for getIcon.
+   [pbauer]
  
-                     </dl>
+diff --git a/plone/app/portlets/portlets/login.pt b/plone/app/portlets/portlets/login.pt
+index d210276..606737f 100644
+--- a/plone/app/portlets/portlets/login.pt
++++ b/plone/app/portlets/portlets/login.pt
+@@ -30,7 +30,7 @@
+             </div>
  
--                    
-+
-                 </div>
+             <div class="field"
+-                 tal:define="use_email_as_login context/portal_properties/site_properties/use_email_as_login|nothing;">
++                 tal:define="use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
  
- 
-@@ -275,8 +275,8 @@
-                                                    toLocalizedTime nocall: context/@@plone/toLocalizedTime;
-                                                    site_properties context/portal_properties/site_properties;
-                                                    use_view_action site_properties/typesUseViewActionInListings|python:();
--                                                   allowAnonymousViewAbout site_properties/allowAnonymousViewAbout;
--                                                   show_about python:not isAnon or allowAnonymousViewAbout;">
-+                                                   allow_anon_views_about python:context.portal_registry['plone.allow_anon_views_about'];
-+                                                   show_about python:not isAnon or allow_anon_views_about;">
-                           <ol class="searchResults">
-                               <tal:results repeat="item batch">
-                                     <li>
+               <tal:loginname condition="not:use_email_as_login">
+                 <label for=""
 
 
-Repository: plone.app.search
+Repository: plone.app.portlets
 Branch: refs/heads/master
-Date: 2015-02-27T07:47:52+01:00
+Date: 2015-02-27T07:48:27+01:00
 Author: Timo Stollenwerk () <contact@timostollenwerk.net>
-Commit: https://github.com/plone/plone.app.search/commit/c233aec32600a4836ef504016a817a4d531c9b25
+Commit: https://github.com/plone/plone.app.portlets/commit/ac464455c3d49406b89192f72c1eb711e7b10848
 
 Merge branch 'master' into plip10359-security-controlpanel
 
+Conflicts:
+	CHANGES.rst
+
 Files changed:
-M README.rst
+M CHANGES.rst
+M plone/app/portlets/browser/templates/manage-contextual.pt
+M plone/app/portlets/browser/templates/topbar-manage-portlets.pt
+M plone/app/portlets/portlets/recent.pt
 
-diff --git a/README.rst b/README.rst
-index 6868b6f..a42c0fb 100644
---- a/README.rst
-+++ b/README.rst
-@@ -8,4 +8,6 @@ plone.app.search also updates main search field (usually located at the top righ
- plone.app.search has the aim to give intuitively clear and understandable interface for searching in Plone. But there might be some new things that are not so obvious. Let's see how the search results works now.
+diff --git a/CHANGES.rst b/CHANGES.rst
+index 93bcdd1..f206468 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -8,6 +8,9 @@ Changelog
+   properties (see https://github.com/plone/Products.CMFPlone/issues/216).
+   [jcerjak]
  
- Notes
--=====
-\ No newline at end of file
-+=====
++- Fix missing definitions of ``plone_view``. Fixes the recent portlet.
++  [thet]
 +
-+This package is merged into Products.CMFPlone in Plone 5.
+ - Use plone_layout for getIcon.
+   [pbauer]
+ 
+diff --git a/plone/app/portlets/browser/templates/manage-contextual.pt b/plone/app/portlets/browser/templates/manage-contextual.pt
+index 1db5528..d01927c 100644
+--- a/plone/app/portlets/browser/templates/manage-contextual.pt
++++ b/plone/app/portlets/browser/templates/manage-contextual.pt
+@@ -13,7 +13,7 @@
+ </head>
+ 
+ <body>
+-<metal:main fill-slot="main" tal:define="ploneview context/@@plone">
++<metal:main fill-slot="main" tal:define="plone_view context/@@plone">
+ 
+   <h1 class="documentFirstHeading"
+       i18n:translate="title_manage_contextual_portlets">
+@@ -40,7 +40,7 @@
+     </tal:block>
+ 
+       <div class="portalMessage info"
+-          tal:condition="ploneview/isDefaultPageInFolder|nothing">
++          tal:condition="plone_view/isDefaultPageInFolder|nothing">
+         <strong i18n:translate="">
+             Info
+         </strong>
+diff --git a/plone/app/portlets/browser/templates/topbar-manage-portlets.pt b/plone/app/portlets/browser/templates/topbar-manage-portlets.pt
+index f501d48..f8199e4 100644
+--- a/plone/app/portlets/browser/templates/topbar-manage-portlets.pt
++++ b/plone/app/portlets/browser/templates/topbar-manage-portlets.pt
+@@ -6,9 +6,9 @@
+       i18n:domain="plone">
+ <body>
+ 
+-  <div metal:fill-slot="main">
++  <div metal:fill-slot="main" tal:define="plone_view context/@@plone">
+     <div class="portalMessage info"
+-        tal:condition="ploneview/isDefaultPageInFolder|nothing">
++        tal:condition="plone_view/isDefaultPageInFolder|nothing">
+       <strong>
+           Info
+       </strong>
+diff --git a/plone/app/portlets/portlets/recent.pt b/plone/app/portlets/portlets/recent.pt
+index f5c0a26..a5ab758 100644
+--- a/plone/app/portlets/portlets/recent.pt
++++ b/plone/app/portlets/portlets/recent.pt
+@@ -15,6 +15,7 @@
+         tal:condition="view/recent_items">
+       <ul>
+         <tal:items tal:define="plone_layout context/@@plone_layout;
++                           plone_view context/@@plone;
+                            getIcon nocall:plone_layout/getIcon;
+                            normalizeString nocall:plone_view/normalizeString;
+                            toLocalizedTime nocall:plone_view/toLocalizedTime;"
 
 
-Repository: plone.app.search
+Repository: plone.app.portlets
 Branch: refs/heads/master
-Date: 2015-02-27T08:35:10+01:00
+Date: 2015-02-27T09:05:39+01:00
 Author: Timo Stollenwerk (tisto) <tisto@plone.org>
-Commit: https://github.com/plone/plone.app.search/commit/9c7459bdf8e61e5b4605f0d3402d990cf0311d98
+Commit: https://github.com/plone/plone.app.portlets/commit/0842bd5af2b005c0be48ed47c86bd6ab809c93a2
 
-Merge pull request #14 from plone/plip10359-security-controlpanel
+Merge pull request #46 from plone/plip10359-security-controlpanel
 
 Plip 10359 - Security Control Panel migration
 
 Files changed:
 M CHANGES.rst
-M plone/app/search/search.pt
+M plone/app/portlets/portlets/login.pt
 
 diff --git a/CHANGES.rst b/CHANGES.rst
-index 8a05d5c..a1ea647 100644
+index 186b99b..f206468 100644
 --- a/CHANGES.rst
 +++ b/CHANGES.rst
-@@ -5,7 +5,9 @@ Changelog
- 1.2.3 (unreleased)
+@@ -4,6 +4,10 @@ Changelog
+ 3.0.3 (unreleased)
  ------------------
  
--- Nothing changed yet.
-+- Read ``allow_anon_views_about`` setting from the registry instead of portal
++- Read ``use_email_as_login`` setting from the registry instead of portal
 +  properties (see https://github.com/plone/Products.CMFPlone/issues/216).
 +  [jcerjak]
- 
- 
- 1.2.2 (2014-10-23)
-diff --git a/plone/app/search/search.pt b/plone/app/search/search.pt
-index 2549364..9ae4233 100644
---- a/plone/app/search/search.pt
-+++ b/plone/app/search/search.pt
-@@ -147,7 +147,7 @@
-                                       <div class="search-type-options">
-                                         <tal:div
-                                            tal:define="typeLists python:context.createMultiColumnList(types_list, numCols=2, sort_on='self');"
--                                           
 +
-                                            tal:repeat="sublist typeLists">
-                                           <tal:items repeat="type sublist">
-                                             <div>
-@@ -240,7 +240,7 @@
+ - Fix missing definitions of ``plone_view``. Fixes the recent portlet.
+   [thet]
  
-                     </dl>
+diff --git a/plone/app/portlets/portlets/login.pt b/plone/app/portlets/portlets/login.pt
+index d210276..606737f 100644
+--- a/plone/app/portlets/portlets/login.pt
++++ b/plone/app/portlets/portlets/login.pt
+@@ -30,7 +30,7 @@
+             </div>
  
--                    
-+
-                 </div>
+             <div class="field"
+-                 tal:define="use_email_as_login context/portal_properties/site_properties/use_email_as_login|nothing;">
++                 tal:define="use_email_as_login python:context.portal_registry['plone.use_email_as_login'];">
  
- 
-@@ -275,8 +275,8 @@
-                                                    toLocalizedTime nocall: context/@@plone/toLocalizedTime;
-                                                    site_properties context/portal_properties/site_properties;
-                                                    use_view_action site_properties/typesUseViewActionInListings|python:();
--                                                   allowAnonymousViewAbout site_properties/allowAnonymousViewAbout;
--                                                   show_about python:not isAnon or allowAnonymousViewAbout;">
-+                                                   allow_anon_views_about python:context.portal_registry['plone.allow_anon_views_about'];
-+                                                   show_about python:not isAnon or allow_anon_views_about;">
-                           <ol class="searchResults">
-                               <tal:results repeat="item batch">
-                                     <li>
+               <tal:loginname condition="not:use_email_as_login">
+                 <label for=""
 
 
