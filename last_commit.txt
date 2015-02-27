@@ -1,109 +1,146 @@
-Repository: Products.CMFPlone
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-02-27T02:41:31+01:00
+Date: 2015-02-27T04:30:36+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/54f1d669e3e6ba9365bc850ed37190f2d016ece0
+Commit: https://github.com/plone/plone.app.contenttypes/commit/01198b947a5267a9202a3759774dd5a654508624
 
-Remove selectable_views from properties.xml, which isn't used anywhere anymore.
+add Plone Site and configure new view names for it
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/profiles/default/properties.xml
+A plone/app/contenttypes/profiles/default/types/Plone_Site.xml
+A plone/app/contenttypes/profiles/uninstall/types/Plone_Site.xml
+M plone/app/contenttypes/profiles/default/types.xml
+M plone/app/contenttypes/profiles/uninstall/types.xml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index fe6a3c7..225b805 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,6 +8,10 @@ Changelog
- 5.0b1 (unreleased)
- ------------------
+diff --git a/plone/app/contenttypes/profiles/default/types.xml b/plone/app/contenttypes/profiles/default/types.xml
+index ac9b7eb..4e13ba7 100644
+--- a/plone/app/contenttypes/profiles/default/types.xml
++++ b/plone/app/contenttypes/profiles/default/types.xml
+@@ -22,5 +22,8 @@
+  <object meta_type="Dexterity FTI" name="Image" />
+  <object meta_type="Dexterity FTI" name="News Item" />
+  <object meta_type="Dexterity FTI" name="Event" />
++ 
++ <object name="Plone Site"
++    meta_type="Factory-based Type Information with dynamic views"/>
  
-+- Remove ``selectable_views`` from ``properties.xml``, which isn't used
-+  anywhere anymore.
-+  [thet]
+ </object>
+diff --git a/plone/app/contenttypes/profiles/default/types/Plone_Site.xml b/plone/app/contenttypes/profiles/default/types/Plone_Site.xml
+new file mode 100644
+index 0000000..bd03b87
+--- /dev/null
++++ b/plone/app/contenttypes/profiles/default/types/Plone_Site.xml
+@@ -0,0 +1,13 @@
++<?xml version="1.0"?>
++<object name="Plone Site" meta_type="Factory-based Type Information with dynamic views" i18n:domain="plone" xmlns:i18n="http://xml.zope.org/namespaces/i18n">
++  <property name="immediate_view">listing_view</property>
++  <property name="default_view">listing_view</property>
++  <property name="view_methods">
++    <element value="listing_view" />
++    <element value="summary_view" />
++    <element value="tabular_view" />
++    <element value="full_view" />
++    <element value="album_view" />
++    <element value="event_listing" />
++  </property>
++</object>
+diff --git a/plone/app/contenttypes/profiles/uninstall/types.xml b/plone/app/contenttypes/profiles/uninstall/types.xml
+index fcd0b15..fca8606 100644
+--- a/plone/app/contenttypes/profiles/uninstall/types.xml
++++ b/plone/app/contenttypes/profiles/uninstall/types.xml
+@@ -24,4 +24,8 @@
+     meta_type="Factory-based Type Information with dynamic views"/>
+  <object name="News Item"
+     meta_type="Factory-based Type Information with dynamic views"/>
 +
- - Remove the remaining ``Topic`` entry in ``default_page_types`` from
-   ``propertiestool.xml``. This setting is now done in
-   ``plone.app.contenttypes`` respectively ``Products.ATContentTypes``.
-diff --git a/Products/CMFPlone/profiles/default/properties.xml b/Products/CMFPlone/profiles/default/properties.xml
-index 3e7fdc8..b3f921b 100644
---- a/Products/CMFPlone/profiles/default/properties.xml
-+++ b/Products/CMFPlone/profiles/default/properties.xml
-@@ -2,10 +2,6 @@
- <site>
-  <property name="title">Site</property>
-  <property name="description"></property>
-- <property name="selectable_views" type="lines">
--  <element value="folder_listing"/>
--  <element value="news_listing"/>
-- </property>
-  <property name="email_from_address" type="string"></property>
-  <property name="email_from_name" type="string"></property>
-  <property name="validate_email" type="boolean">True</property>
++ <object name="Plone Site"
++    meta_type="Factory-based Type Information with dynamic views"/>
++
+ </object>
+diff --git a/plone/app/contenttypes/profiles/uninstall/types/Plone_Site.xml b/plone/app/contenttypes/profiles/uninstall/types/Plone_Site.xml
+new file mode 100644
+index 0000000..316c0c5
+--- /dev/null
++++ b/plone/app/contenttypes/profiles/uninstall/types/Plone_Site.xml
+@@ -0,0 +1,12 @@
++<?xml version="1.0"?>
++<object name="Plone Site" meta_type="Factory-based Type Information with dynamic views" i18n:domain="plone" xmlns:i18n="http://xml.zope.org/namespaces/i18n">
++  <property name="immediate_view">folder_listing</property>
++  <property name="default_view">folder_listing</property>
++  <property name="view_methods">
++    <element value="folder_listing" />
++    <element value="folder_summary_view" />
++    <element value="folder_full_view" />
++    <element value="folder_tabular_view" />
++    <element value="atct_album_view" />
++  </property>
++</object>
 
 
-Repository: Products.CMFPlone
+Repository: plone.app.contenttypes
 Branch: refs/heads/master
-Date: 2015-02-27T04:26:04+01:00
+Date: 2015-02-27T04:34:57+01:00
 Author: Johannes Raggam (thet) <raggam-nl@adm.at>
-Commit: https://github.com/plone/Products.CMFPlone/commit/598cbc4f090d3305d6f37d389a5ee898ff62defd
+Commit: https://github.com/plone/plone.app.contenttypes/commit/972c589352f0e98efb275ad5ec6ace3c1c15d219
 
-Fix tests for plone.app.contenttypes unified view names, which uses listing_view for Folder and Collection types.
+When installing the default profile, restrict uninstalling of old types to old FTI based ones.
 
 Files changed:
-M CHANGES.rst
-M Products/CMFPlone/browser/ploneview.py
-M Products/CMFPlone/tests/testBrowserDefault.py
+M docs/CHANGES.rst
+M plone/app/contenttypes/profiles/default/types.xml
 
-diff --git a/CHANGES.rst b/CHANGES.rst
-index 225b805..087bce2 100644
---- a/CHANGES.rst
-+++ b/CHANGES.rst
-@@ -8,6 +8,10 @@ Changelog
- 5.0b1 (unreleased)
- ------------------
+diff --git a/docs/CHANGES.rst b/docs/CHANGES.rst
+index 30dc2c0..61d9679 100644
+--- a/docs/CHANGES.rst
++++ b/docs/CHANGES.rst
+@@ -4,6 +4,10 @@ Changelog
+ 1.2 (unreleased)
+ ----------------
  
-+- Fix tests for plone.app.contenttypes unified view names, which uses
-+  ``listing_view`` for Folder and Collection types.
++- When installing the default profile, restrict uninstalling of old types to
++  old FTI based ones.
 +  [thet]
 +
- - Remove ``selectable_views`` from ``properties.xml``, which isn't used
-   anywhere anymore.
+ - Reformatted all templates for 2 space indentation, 4 space for attributes.
    [thet]
-diff --git a/Products/CMFPlone/browser/ploneview.py b/Products/CMFPlone/browser/ploneview.py
-index dd61f2e..02c11ed 100644
---- a/Products/CMFPlone/browser/ploneview.py
-+++ b/Products/CMFPlone/browser/ploneview.py
-@@ -116,9 +116,9 @@ def showEditableBorder(self):
-             idActions[obj.get('id', '')] = 1
  
-         if 'edit' in idActions:
--            if (template_id in idActions or \
-+            if (template_id in idActions or
-                 template_id in ['synPropertiesForm', 'folder_contents',
--                                'folder_listing']):
-+                                'folder_listing', 'listing_view']):
-                 return True
+diff --git a/plone/app/contenttypes/profiles/default/types.xml b/plone/app/contenttypes/profiles/default/types.xml
+index 4e13ba7..30011bd 100644
+--- a/plone/app/contenttypes/profiles/default/types.xml
++++ b/plone/app/contenttypes/profiles/default/types.xml
+@@ -4,15 +4,24 @@
+  <!-- We remove old ATContentTypes if they exist.
+       Instances of these types can still be looked at since the
+       skin-templates in CMFPlone are there but they cannot be edited -->
+- <object name="Collection" remove="True"/>
+- <object name="Document" remove="True"/>
+- <object name="Event" remove="True"/>
+- <object name="File" remove="True"/>
+- <object name="Folder" remove="True"/>
+- <object name="Image" remove="True"/>
+- <object name="Link" remove="True"/>
+- <object name="News Item" remove="True"/>
+- <object name="Topic" remove="True"/>
++ <object name="Collection" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
++ <object name="Document" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
++ <object name="Event" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
++ <object name="File" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
++ <object name="Folder" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
++ <object name="Image" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
++ <object name="Link" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
++ <object name="News Item" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
++ <object name="Topic" remove="True"
++    meta_type="Factory-based Type Information with dynamic views"/>
  
-         # Check to see if the user is able to add content
-diff --git a/Products/CMFPlone/tests/testBrowserDefault.py b/Products/CMFPlone/tests/testBrowserDefault.py
-index b4615c5..f264f50 100644
---- a/Products/CMFPlone/tests/testBrowserDefault.py
-+++ b/Products/CMFPlone/tests/testBrowserDefault.py
-@@ -228,8 +228,12 @@ def testFolderDefaultPageSameAsSelfWithPageMissing(self):
-         self.assertEqual(self.putils.browserDefault(f),
-                          (f, [f.getId()],))
-         f._delObject(f.getId())
--        self.assertEqual(self.putils.browserDefault(f),
--                         (f, ['folder_listing'],))
-+        self.assertTrue(
-+            self.putils.browserDefault(f) == (f, ['folder_listing'],)
-+            or
-+            self.putils.browserDefault(f) == (f, ['listing_view'],)
-+            # plone.app.contenttypes has unified views
-+        )
- 
-     def testDefaultPageSetting(self):
-         sp = getToolByName(self.portal, "portal_properties").site_properties
+  <object meta_type="Dexterity FTI" name="Collection" />
+  <object meta_type="Dexterity FTI" name="Document" />
 
 
